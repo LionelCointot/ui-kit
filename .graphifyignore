@@ -1,0 +1,3 @@
+# graphify lit déjà .gitignore ; on exclut en plus ce qui n'est pas le code du projet.
+.claude/
+*.min.js

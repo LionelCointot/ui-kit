@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS / éditeurs
+.DS_Store
+.idea/
+.vs/
+*.user
+
+# Claude Code (local à chaque poste)
+CLAUDE.local.md
+.claude/settings.local.json
+
+# graphify : graphe local, reconstruit à chaque commit / checkout par les hooks git
+graphify-out/
+
+# impeccable : moteur binaire propre à chaque OS, téléchargé et vérifié à la demande
+.claude/skills/impeccable/scripts/bin/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+coverage/
+
+# .NET
+bin/
+obj/
+TestResults/
+*.trx
