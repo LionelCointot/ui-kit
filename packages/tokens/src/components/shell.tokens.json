@@ -1,0 +1,20 @@
+{
+  "shell": {
+    "header-background": {
+      "$value": "{sys.color.surface-raised}",
+      "$type": "color"
+    },
+    "nav-background": {
+      "$value": "{sys.color.surface}",
+      "$type": "color"
+    },
+    "nav-width": {
+      "$value": "16rem",
+      "$type": "dimension"
+    },
+    "nav-collapsed-width": {
+      "$value": "4.5rem",
+      "$type": "dimension"
+    }
+  }
+}

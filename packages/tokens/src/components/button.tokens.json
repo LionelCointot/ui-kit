@@ -1,0 +1,40 @@
+{
+  "button": {
+    "radius": {
+      "$value": "{sys.radius.md}",
+      "$type": "dimension"
+    },
+    "font-weight": {
+      "$value": "{sys.font.weight.semibold}",
+      "$type": "fontWeight"
+    },
+    "height": {
+      "sm": {
+        "$value": "{sys.control.height.sm}",
+        "$type": "dimension"
+      },
+      "md": {
+        "$value": "{sys.control.height.md}",
+        "$type": "dimension"
+      },
+      "lg": {
+        "$value": "{sys.control.height.lg}",
+        "$type": "dimension"
+      }
+    },
+    "padding-inline": {
+      "sm": {
+        "$value": "{sys.space.3}",
+        "$type": "dimension"
+      },
+      "md": {
+        "$value": "{sys.space.4}",
+        "$type": "dimension"
+      },
+      "lg": {
+        "$value": "{sys.space.5}",
+        "$type": "dimension"
+      }
+    }
+  }
+}

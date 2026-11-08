@@ -1,0 +1,29 @@
+{
+  "name": "@lionelcointot/ui-angular",
+  "version": "0.1.0",
+  "description": "Composants Angular du ui-kit, pilotés par les design tokens (@lionelcointot/ui-tokens).",
+  "license": "UNLICENSED",
+  "peerDependencies": {
+    "@angular/cdk": "^22.2.0",
+    "@angular/common": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "echarts": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "echarts": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LionelCointot/ui-kit"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "input": {
+    "radius": {
+      "$value": "{sys.radius.md}",
+      "$type": "dimension"
+    },
+    "background": {
+      "$value": "{sys.color.surface-raised}",
+      "$type": "color"
+    },
+    "border": {
+      "$value": "{sys.color.border-strong}",
+      "$type": "color"
+    },
+    "border-invalid": {
+      "$value": "{sys.color.error}",
+      "$type": "color"
+    },
+    "height": {
+      "$value": "{sys.control.height.md}",
+      "$type": "dimension"
+    }
+  }
+}

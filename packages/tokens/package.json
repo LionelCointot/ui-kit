@@ -1,0 +1,34 @@
+{
+  "name": "@lionelcointot/ui-tokens",
+  "version": "0.1.0",
+  "description": "Design tokens du ui-kit (format DTCG) : CSS des thèmes default et dark, CLI lc-tokens pour les thèmes produit (contrôle de contraste WCAG).",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "lc-tokens": "bin/lc-tokens.mjs"
+  },
+  "exports": {
+    "./css/*": "./dist/css/*",
+    "./json/*": "./dist/json/*",
+    "./scss/*": "./dist/scss/*",
+    "./breakpoints": "./dist/js/breakpoints.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "node lib/build-all.mjs",
+    "test": "node --test lib/"
+  },
+  "dependencies": {
+    "style-dictionary": "^5.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LionelCointot/ui-kit"
+  }
+}
