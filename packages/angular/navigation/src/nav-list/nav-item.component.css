@@ -1,0 +1,63 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-3);
+  min-height: var(--lc-sys-control-height-md);
+  padding: 0 var(--lc-sys-space-3);
+  border-radius: var(--lc-nav-item-radius, var(--lc-sys-radius-md));
+  color: var(--lc-sys-color-on-surface);
+  font-weight: var(--lc-sys-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:host(:hover) {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+:host(.lc-nav-item--active) {
+  background: var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container));
+  color: var(--lc-nav-item-active-color, var(--lc-sys-color-on-primary-container));
+}
+
+:host(:focus-visible) {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-nav-item__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host(.lc-nav-item--collapsed) {
+  justify-content: center;
+  padding: 0;
+}
+
+:host(.lc-nav-item--collapsed) .lc-nav-item__label,
+:host(.lc-nav-item--collapsed) .lc-nav-item__badge {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lc-nav-item__badge {
+  padding: 0 var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-secondary-container);
+  color: var(--lc-sys-color-on-secondary-container);
+  font-size: var(--lc-sys-font-size-xs);
+}
+
+@media (forced-colors: active) {
+  :host(.lc-nav-item--active) {
+    outline: var(--lc-sys-border-width-thick) solid Highlight;
+  }
+}
