@@ -1,0 +1,170 @@
+:host {
+  display: block;
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-table__scroll {
+  max-inline-size: 100%;
+  overflow: auto;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-table-radius, var(--lc-sys-radius-md));
+}
+
+:host(.lc-table--sticky-header) .lc-table__scroll {
+  max-block-size: var(--lc-table-max-height, 70dvh);
+}
+
+.lc-table__scroll:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
+}
+
+.lc-table__table {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-table__caption {
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  text-align: start;
+}
+
+.lc-table__caption--hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+th,
+td {
+  --_cell-padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  padding: var(--_cell-padding);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  background: var(--lc-table-background, var(--lc-sys-color-surface-raised));
+  white-space: nowrap;
+}
+
+:host(.lc-table--compact) th,
+:host(.lc-table--compact) td {
+  --_cell-padding: var(--lc-sys-space-1) var(--lc-sys-space-3);
+}
+
+thead th {
+  background: var(--lc-table-header-background, var(--lc-sys-color-surface-sunken));
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+:host(.lc-table--sticky-header) thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+}
+
+.lc-table__cell--start {
+  text-align: start;
+}
+
+.lc-table__cell--center {
+  text-align: center;
+}
+
+.lc-table__cell--end {
+  text-align: end;
+}
+
+/* Première colonne collante pendant le défilement horizontal ; colonnes `sticky` explicites. */
+tr > :first-child,
+.lc-table__cell--sticky-start {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+}
+
+.lc-table__cell--sticky-end {
+  position: sticky;
+  inset-inline-end: 0;
+  z-index: 1;
+}
+
+:host(.lc-table--sticky-header) thead tr > :first-child,
+:host(.lc-table--sticky-header) thead .lc-table__cell--sticky-start,
+:host(.lc-table--sticky-header) thead .lc-table__cell--sticky-end {
+  z-index: 3;
+}
+
+.lc-table__group td {
+  background: var(--lc-sys-color-surface-sunken);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+tfoot td {
+  border-block-end: 0;
+  border-block-start: var(--lc-sys-border-width-thick) solid var(--lc-sys-color-border-strong);
+  background: var(--lc-table-header-background, var(--lc-sys-color-surface-sunken));
+  font-weight: var(--lc-sys-font-weight-bold);
+}
+
+tbody tr:not(.lc-table__group):hover td {
+  background: color-mix(in srgb, var(--lc-sys-color-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-sys-color-surface-raised));
+}
+
+.lc-table__empty td {
+  padding-block: var(--lc-sys-space-8);
+  color: var(--lc-sys-color-on-surface-muted);
+  text-align: center;
+}
+
+.lc-table__sort,
+.lc-table__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  min-block-size: var(--lc-sys-control-height-sm);
+  margin: calc(var(--lc-sys-space-2) * -1);
+  padding: 0 var(--lc-sys-space-2);
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+}
+
+.lc-table__sort:hover,
+.lc-table__toggle:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+.lc-table__sort:focus-visible,
+.lc-table__toggle:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-offset) * -1);
+}
+
+.lc-table__sort-icon {
+  opacity: 0.4;
+}
+
+th[aria-sort] .lc-table__sort-icon {
+  opacity: 1;
+}
+
+.lc-table__notice {
+  margin: var(--lc-sys-space-2) 0 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+@media (forced-colors: active) {
+  .lc-table__scroll,
+  th,
+  td {
+    border-color: CanvasText;
+  }
+}

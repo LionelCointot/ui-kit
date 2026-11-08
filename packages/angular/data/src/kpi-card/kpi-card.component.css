@@ -1,0 +1,71 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  padding: var(--lc-sys-space-4);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-kpi-card-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-kpi-card-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+}
+
+p {
+  margin: 0;
+}
+
+.lc-kpi-card__label {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+/* Chiffres proportionnels pour la valeur principale ; les chiffres tabulaires sont réservés aux colonnes. */
+.lc-kpi-card__value {
+  font-size: var(--lc-sys-font-size-3xl);
+  font-weight: var(--lc-sys-font-weight-bold);
+  line-height: var(--lc-sys-font-line-height-tight);
+  font-variant-numeric: proportional-nums;
+  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-kpi-card__value--stale {
+  opacity: 0.6;
+}
+
+.lc-kpi-card__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-kpi-card__delta--positive {
+  color: var(--lc-sys-color-success);
+}
+
+.lc-kpi-card__delta--negative {
+  color: var(--lc-sys-color-error);
+}
+
+.lc-kpi-card__delta--neutral {
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-kpi-card__hint {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-kpi-card__visual:empty {
+  display: none;
+}
+
+.lc-kpi-card__visual {
+  margin-block-start: var(--lc-sys-space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-kpi-card__value {
+    transition: none;
+  }
+}
