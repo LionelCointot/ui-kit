@@ -30,3 +30,6 @@ bin/
 obj/
 TestResults/
 *.trx
+
+# CLI du paquet de tokens (le motif « bin/ » ci-dessus vise les sorties .NET)
+!packages/tokens/bin/
