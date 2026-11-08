@@ -40,3 +40,9 @@ Angular 22 fournit le **CDK** (stable) et **Angular Aria** (`@angular/aria`), de
 - **Positives** : accessibilité et clavier fiables dès le départ ; sémantique native préservée ; API et style entièrement maîtrisés ; une seule dépendance comportementale officielle.
 - **Négatives / dette** : deux contrats de formulaire à maintenir tant que l'interopérabilité n'est pas native ; suivre l'évolution d'Angular Aria.
 - **À surveiller** : la stabilité d'Angular Aria à chaque version majeure d'Angular.
+
+## Mise à jour (2026-11-08) : décision effective
+
+- **Angular Aria n'est pas retenu** : tout le comportement vient du CDK (`a11y`, `overlay`, `dialog`, `layout`, `portal`). Les onglets utilisent un focus itinérant maison ; les listes déroulantes personnalisées sont reportées.
+- **Menu** : construit sur CDK Overlay et `FocusKeyManager` plutôt que sur `CdkMenu`, car `CdkMenu` impose de déclarer les éléments dans le gabarit du déclencheur, incompatible avec l'API `<lc-menu>` à contenu projeté.
+- **Formulaires** : seul le contrat Signal Forms (`FormValueControl`) est fourni ; `ControlValueAccessor` reste à ajouter à la demande.

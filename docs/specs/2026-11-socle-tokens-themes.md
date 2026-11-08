@@ -1,6 +1,6 @@
 # Spec : socle du ui-kit (paquets, tokens, thèmes, API commune, Storybook, qualité)
 
-- **Statut** : En revue
+- **Statut** : Implémentée (écarts constatés en fin de document)
 - **Auteur** : Lionel Cointot (rédaction assistée par Claude Code)
 - **Date** : 2026-11-08
 - **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0002 Comportement et sélecteurs](../adr/0002-comportement-cdk-et-selecteurs.md) · [0003 Graphiques](../adr/0003-bibliotheque-graphiques-echarts.md) · [0004 Grille](../adr/0004-grille-de-donnees.md) · [0005 Icônes](../adr/0005-icones.md)
@@ -290,3 +290,13 @@ Toutes les entrées des composants sont des `input()` signaux. Une entrée non r
 | YAGNI, règle de trois (`clean-code`) | Tokens de composant à la demande ; Theme Builder reporté |
 | Décisions structurantes en ADR (`spec-writer`) | ADR 0001 à 0005 |
 | Couleur jamais seule, palette validée par calcul (`dataviz`) | Contrôle de palette dans la CLI |
+
+## 13. Écarts constatés à l'implémentation (2026-11-08)
+
+- **CSS au lieu de SCSS** : composants et feuille globale en `.css` (variables `--lc-<composant>-*` avec repli sur `--lc-sys-*`) ; la sortie SCSS des breakpoints est conservée pour les consommateurs Sass.
+- **Feuille globale des directives natives** : `styles/ui-angular.css` (publiée dans le paquet) porte les styles des directives sur éléments natifs et des panneaux CDK (dialogue, menu) ; elle est à importer après les fichiers de tokens.
+- **Angular Aria non retenu** (voir ADR 0002) : le comportement vient du CDK.
+- **Contrôle de palette** : la CLI `lc-tokens check` ne vérifie que le **contraste** ; le contrôle de distinction pour les daltoniens n'est pas implémenté.
+- **Node.js ≥ 24.15** requis par Angular CLI 22.
+- **Storybook 10** : `@storybook/angular` exige `@angular-devkit/build-angular` (22.x) et `@angular/platform-browser-dynamic` ; configuration dans `.storybook/` (racine) au lieu de `apps/storybook` ; stories placées à côté des composants (`*.stories.ts`) ; sélecteur de thème (`data-theme` default/dark) et addon a11y. Le build statique (`npm run build-storybook`, sortie `dist/storybook`) est vérifié ; les tests visuels Playwright ne sont pas faits.
+- **Taille de `charts`** : voir la spec graphiques.

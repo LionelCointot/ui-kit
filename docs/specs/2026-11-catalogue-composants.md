@@ -1,6 +1,6 @@
 # Spec : catalogue des composants du ui-kit
 
-- **Statut** : En revue
+- **Statut** : Implémentée (écarts constatés en fin de document)
 - **Auteur** : Lionel Cointot (rédaction assistée par Claude Code)
 - **Date** : 2026-11-08
 - **ADR liés** : [0002 Comportement et sélecteurs](../adr/0002-comportement-cdk-et-selecteurs.md) · [0004 Grille](../adr/0004-grille-de-donnees.md) · [0005 Icônes](../adr/0005-icones.md)
@@ -487,3 +487,23 @@ Pour chaque composant :
 | Montants au format français, alignés à droite, chiffres tabulaires (`frontend-guidelines`) | `LcFormatService`, `lc-table` |
 | Composants de présentation sans service métier ; `input()`/`output()` (`angular-best-practices`) | Tout le catalogue |
 | YAGNI (`clean-code`) | P5 à la demande ; pas de composant sans consommateur |
+
+## 13. Écarts constatés à l'implémentation (2026-11-08)
+
+| Sujet | Spec | Réalisé | Raison |
+|---|---|---|---|
+| Point d'entrée du bouton | `button` (secondaire) | **fusionné dans le principal** `@lionelcointot/ui-angular` (avec `lc-button-group`, `lc-icon`, `lc-spinner`, `lc-skeleton`) | tous les points d'entrée secondaires utilisent le bouton ; un secondaire n'importe que le principal |
+| `lc-spinner`, `lc-skeleton` | `feedback` | point d'entrée principal | utilisés par le bouton, le tableau et les graphiques sans dépendance entre secondaires |
+| Styles | SCSS (`<nom>.scss`) | **CSS** (`<nom>.component.css`), variables `--lc-<composant>-*` avec repli sur `--lc-sys-*` | pas de compilation Sass nécessaire ; les variables suffisent |
+| Directives sur éléments natifs | styles encapsulés | feuille globale **`@lionelcointot/ui-angular/styles/ui-angular.css`** (`lcInput`, `lcSelect`, `lcCheckbox`, `lcRadio`, panneaux de dialogue et de menu) | un style encapsulé n'atteint pas un élément natif sans gabarit ni les panneaux CDK ; la feuille doit être importée par l'application |
+| Angular Aria | tabs, listbox, combobox si stable | **non retenu** : tout le comportement vient du CDK | une seule dépendance comportementale ; `lc-tabs` utilise un focus itinérant maison (flèches, Début, Fin) |
+| `lc-menu` | CDK Menu | **CDK Overlay + `FocusKeyManager`** (frappe de lettres, retour en boucle, Échap, Tab) | `CdkMenu` suppose des éléments déclarés dans le gabarit du déclencheur ; l'API `<lc-menu>` avec contenu projeté (ergonomique) casse l'injection et les requêtes de `CdkMenuItem` |
+| `lc-table` | « sur CDK Table » | `<table>` natif piloté par des fonctions pures (`buildTableModel`, `sortRows`, `nextSort`) | tri, groupes et sous-totaux sont plus simples et testables sans `CdkTable` ; sémantique inchangée |
+| Contrôles composites | `FormValueControl` + `ControlValueAccessor` si nécessaire | `FormValueControl` seulement (Signal Forms, `[(value)]`) | pas de besoin de formulaires réactifs identifié |
+| `lc-dropdown-list` | P2 | **non implémenté** (élément facultatif) | pas de consommateur ; `select[lcSelect]` couvre les listes courtes |
+| `lc-nav-list` | `<nav>` possible | simple conteneur ; le repère `<nav>` est fourni par `lc-app-shell` (`navLabel`) | évite deux repères de navigation imbriqués |
+| `lc-nav-list` réduit | état partagé avec la coquille | entrée `collapsed` sur `lc-nav-list`, à lier à `shell.navCollapsed()` | un secondaire n'importe pas un autre secondaire |
+| `lc-grid` / `lc-grid-item` | requêtes de conteneur | seuils 360, 768, 1024 et 1280 px écrits en dur dans le CSS | une requête de conteneur n'accepte pas de variable CSS (valeurs de `LC_BREAKPOINTS`) |
+| Libellés | `LC_LABELS` | clés ajoutées : `category`, `part`, `value`, `share`, `chartSummary` | vue tableau et résumé des graphiques |
+| `lc-description-list` | — | utilise `lc-badge` du point d'entrée `feedback` | seconde exception « data → feedback » (en plus de la règle générale) |
+| Node.js | 24 | **≥ 24.15** requis (Angular CLI 22 refuse le 24.9) | contrainte d'Angular CLI |

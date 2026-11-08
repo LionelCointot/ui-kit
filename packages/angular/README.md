@@ -46,13 +46,13 @@ bootstrapApplication(AppComponent, {
 | Point d'entrée | Contenu |
 |---|---|
 | `@lionelcointot/ui-angular` | types communs, `provideLcUiKit`, `LC_LABELS`, `LcFormatService`, pipes, `LcThemeService`, `button[lcButton]`, `a[lcButton]`, `lc-button-group`, `lc-icon`, `provideLcIcons`, `lc-spinner`, `lc-skeleton` |
-| `…/forms` | `lc-form-field`, `input[lcInput]`, `textarea[lcInput]`, `select[lcSelect]`, `input[type=checkbox][lcCheckbox]`, `button[lcSwitch]`, `lc-money-input`, `lc-percent-input`, `lc-number-input`, `lc-date-input`, `lc-segmented-control` |
-| `…/feedback` | `lc-alert`, `LcToastService` + `lc-toast-outlet`, `lc-badge`, `lc-empty-state`, `lc-error-state` |
-| `…/overlay` | `LcDialogService`, `lc-dialog`, `LC_DIALOG_DATA`, `LcDialogRef` |
-| `…/layout` | `lc-app-shell`, `lc-page`, `lc-stack`, `lc-grid`, `lc-card`, `lc-divider` |
-| `…/navigation` | `lc-tabs`, `lc-nav-list`, `a[lcNavItem]`, `lc-menu`, `[lcMenuTriggerFor]`, `button[lcMenuItem]` |
-| `…/data` | `lc-table`, `lc-description-list`, `lc-kpi-card` |
-| `…/charts` | graphiques ECharts 6 (dépendance pair optionnelle `echarts`) |
+| `…/forms` | `lc-form-field`, `input[lcInput]`, `textarea[lcInput]`, `select[lcSelect]`, `input[type=checkbox][lcCheckbox]`, `lc-radio-group` + `input[type=radio][lcRadio]`, `button[lcSwitch]`, `lc-money-input`, `lc-percent-input`, `lc-number-input`, `lc-date-input`, `lc-segmented-control` |
+| `…/feedback` | `lc-alert`, `LcToastService` + `lc-toast-outlet`, `lc-badge`, `lc-progress-bar`, `lc-empty-state`, `lc-error-state` |
+| `…/overlay` | `LcDialogService`, `lc-dialog`, `LC_DIALOG_DATA`, `LcDialogRef`, `[lcTooltip]` |
+| `…/layout` | `lc-app-shell`, `lc-page`, `lc-stack`, `lc-grid` + `lc-grid-item`, `lc-card` + `lc-card-header`, `lc-divider` |
+| `…/navigation` | `lc-tabs` + `lc-tab` (`lcTabContent`), `lc-nav-list`, `a[lcNavItem]`, `lc-menu`, `[lcMenuTriggerFor]`, `button[lcMenuItem]` |
+| `…/data` | `lc-table` (+ `lcCell`), `lc-description-list`, `lc-kpi-card` |
+| `…/charts` | `lc-line-chart`, `lc-area-chart`, `lc-bar-chart`, `lc-segmented-bar`, `lc-sparkline`, `lc-chart`, `provideLcCharts`, `LcChartThemeService` (ECharts 6, dépendance pair optionnelle `echarts`) |
 
 L'API détaillée est dans `docs/specs/2026-11-catalogue-composants.md` et `docs/specs/2026-11-graphiques.md`.
 
@@ -67,6 +67,25 @@ fourni pour l'instant (formulaires réactifs non pris en charge par les contrôl
   <lc-money-input [formField]="form.amount" />
 </lc-form-field>
 ```
+
+## Menu, tableau, graphiques : usage
+
+```html
+<button lcButton [lcMenuTriggerFor]="actions">Actions</button>
+<lc-menu #actions ariaLabel="Actions du scénario">
+  <button lcMenuItem icon="pencil" (click)="rename()">Renommer</button>
+  <lc-divider />
+  <button lcMenuItem destructive (click)="remove()">Supprimer</button>
+</lc-menu>
+
+<lc-table caption="Échéancier" [data]="rows" [columns]="columns" [trackBy]="byId" [groupBy]="byYear" [footer]="totals" [(sort)]="sort">
+  <ng-template lcCell="status" let-row>…</ng-template>
+</lc-table>
+
+<lc-area-chart title="Capital restant dû" [data]="series" [yAxis]="{ format: 'money' }" [stale]="recomputing()" />
+```
+
+Les graphiques chargent ECharts (~563 Kio minifiés) : à placer dans un `@defer (on viewport)`.
 
 ## Développement
 

@@ -1,6 +1,6 @@
 # Spec : graphiques du ui-kit (point d'entrée `charts`, Apache ECharts 6)
 
-- **Statut** : En revue
+- **Statut** : Implémentée (écarts constatés en fin de document)
 - **Auteur** : Lionel Cointot (rédaction assistée par Claude Code, règles issues du skill `dataviz`)
 - **Date** : 2026-11-08
 - **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0003 Graphiques ECharts](../adr/0003-bibliotheque-graphiques-echarts.md)
@@ -373,3 +373,20 @@ function foldExtraSeries(series: readonly LcChartSeries[], max: number, otherLab
 | Le recalcul garde le cadre (`dataviz`) | `stale` |
 | Couleur jamais seule, mouvement réduit, `@defer` pour les graphiques (`frontend-guidelines`) | §5.3.7 et §7 |
 | Fonctions pures testées (`clean-code`, `test-strategy`) | Builders du §5.3.9 |
+
+## 13. Écarts constatés à l'implémentation (2026-11-08)
+
+| Sujet | Spec | Réalisé |
+|---|---|---|
+| Contrôle de palette | « CLI `lc-tokens` valide la palette (clair/sombre, daltoniens) » | la CLI ne vérifie que le **contraste** ; le contrôle de distinction pour les daltoniens (ΔE par paire adjacente) **n'est pas implémenté** ; la palette de référence validée par le skill `dataviz` reste la source |
+| Taille du point d'entrée | < 350 Kio minifiés | **non tenue** : ECharts 6 pèse ~378 Kio minifiés pour `echarts/core` seul ; avec ligne, barre, grille, info-bulle, aria, SVG et canvas : **~563 Kio minifiés, ~193 Kio gzip**. Atténuation : dépendance optionnelle, chargement à la demande (`@defer`), `CustomChart` retiré du registre |
+| Arborescence | `charts/builders/shared/…`, `provideLcCharts` dans un fichier dédié | `builders/shared.ts` (axes, info-bulles, motifs, accessibilité), `builders/palette.ts`, `builders/summary.ts`, `builders/table.ts` ; le moteur est injecté via `LC_ECHARTS_ENGINE` (tests sans ECharts réel) |
+| Registre ECharts | `LineChart, BarChart, CustomChart, Grid, Tooltip, Legend, Aria, SVG, Canvas` | `LineChart, BarChart, Grid, Tooltip, Aria, SVGRenderer, CanvasRenderer` (pas de légende ECharts : la légende est en HTML) |
+| `lc-chart` | `options`, `ariaLabel`, `table?` | + `title?`, `description?`, `height`, `loading`, `stale`, `showDataTable` ; seules les séries `line` et `bar` sont enregistrées |
+| Motifs | hachures à 45° et 135°, ton sur ton | `itemStyle.decal` / `areaStyle.decal` par série (rotation alternée), couleur de surface ; le mécanisme `aria.decal` d'ECharts est désactivé |
+| Texte sur segment | blanc, sauf `#0b0b0b` sur le jaune | encre ou surface (tokens), selon le meilleur contraste calculé : aucune couleur littérale |
+| Rupture d'axe | rupture visible | deux traits obliques (`graphic`) sur l'axe quand une courbe ne part pas de 0 (valeurs positives groupées : écart relatif < 50 %) |
+| Résumé accessible | français généré par les builders | `LC_LABELS.chartSummary` (français et anglais) : titre, nombre de séries et de catégories, plage, maximum |
+| Barre segmentée | 6 parts | 5 parts + « Autres » ; « Non réparti » en plus si `total` > somme ; légende non interactive |
+| Légende | masquer sans repeindre | au moins une série reste affichée (la dernière ne peut pas être masquée) |
+| Tests | ECharts simulé | `LC_ECHARTS_ENGINE` simulé ; builders testés sans DOM ; rendu réel vérifié dans le build Storybook |

@@ -52,3 +52,7 @@ Pour Angular, le wrapper `ngx-echarts` (MIT, version 22) existe. Il ajoute cepen
   - échapper systématiquement le contenu des info-bulles HTML ;
   - Apache-2.0 impose de livrer la licence et la mention NOTICE (notices tierces du hub).
 - **À surveiller** : la taille du point d'entrée `charts` (objectif < 350 Kio minifiés) et le rendu SVG au-delà de 5 000 points (basculer en canvas si nécessaire).
+
+## Mise à jour (2026-11-08) : taille mesurée
+
+Avec l'import fin (`echarts/core`, ligne, barre, grille, info-bulle, aria, SVG et canvas), le point d'entrée pèse environ **563 Kio minifiés (193 Kio gzip)** ; `echarts/core` seul en représente 378 Kio. L'objectif de 350 Kio n'est donc pas atteignable avec ECharts 6. Mitigations : dépendance optionnelle, chargement à la demande (`@defer`), moteur de rendu SVG par défaut. À réévaluer à chaque mineure d'ECharts. Le contrôle de palette de la CLI `lc-tokens` ne couvre que le contraste ; la distinction pour les daltoniens n'est pas calculée.
