@@ -1,9 +1,9 @@
 ﻿# Prépare Node et .NET (installés dans le dossier utilisateur, sans droits administrateur) puis délègue à dev.mjs.
-# Usage : powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\bootstrap.ps1 <install|build|start>
+# Usage : powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\bootstrap.ps1 <install|build|start|admin>
 # Variables facultatives : SIMULATEUR_DEV_HOME (défaut %LOCALAPPDATA%\simulateur-dev), SIMULATEUR_DOTNET_DIR (défaut %LOCALAPPDATA%\Microsoft\dotnet).
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('install', 'build', 'start')]
+    [ValidateSet('install', 'build', 'start', 'admin')]
     [string]$Command = ''
 )
 
@@ -21,7 +21,7 @@ function Write-Step($Message) { Write-Host "`n==> $Message" -ForegroundColor Gre
 function Write-Info($Message) { Write-Host "    $Message" }
 function Stop-Script($Message) { Write-Host "`nERREUR : $Message" -ForegroundColor Red; exit 1 }
 
-if (-not $Command) { Stop-Script 'Usage : bootstrap.ps1 <install|build|start>' }
+if (-not $Command) { Stop-Script 'Usage : bootstrap.ps1 <install|build|start|admin>' }
 
 # Les TLS récents sont nécessaires pour nodejs.org et dot.net avec Windows PowerShell 5.
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -103,6 +103,12 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
 
 Set-Location $Root
+if ($Command -eq 'admin') {
+    if (-not (Test-Path 'scripts/dev/admin.mjs')) { Stop-Script "Le panneau des serveurs n'existe que dans finance-hub." }
+    Write-Step 'node scripts/dev/admin.mjs'
+    & node scripts/dev/admin.mjs
+    exit $LASTEXITCODE
+}
 Write-Step "node scripts/dev/dev.mjs $Command"
 & node scripts/dev/dev.mjs $Command
 exit $LASTEXITCODE

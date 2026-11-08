@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prépare Node et .NET (installés dans le dossier utilisateur, sans droits administrateur) puis délègue à dev.mjs.
-# Usage : bash scripts/dev/bootstrap.sh <install|build|start>
+# Usage : bash scripts/dev/bootstrap.sh <install|build|start|admin>   (admin : panneau des serveurs, finance-hub seulement)
 # Variables facultatives : SIMULATEUR_DEV_HOME (défaut ~/.local/share/simulateur-dev), SIMULATEUR_DOTNET_DIR (défaut ~/.dotnet).
 set -euo pipefail
 
@@ -18,8 +18,8 @@ info() { printf '    %s\n' "$1"; }
 die() { printf '\nERREUR : %s\n' "$1" >&2; exit 1; }
 
 case "$COMMAND" in
-  install | build | start) ;;
-  *) die "Usage : bash scripts/dev/bootstrap.sh <install|build|start>" ;;
+  install | build | start | admin) ;;
+  *) die "Usage : bash scripts/dev/bootstrap.sh <install|build|start|admin>" ;;
 esac
 
 download() { # url fichier
@@ -117,5 +117,10 @@ fi
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
 cd "$ROOT"
+if [ "$COMMAND" = "admin" ]; then
+  [ -f scripts/dev/admin.mjs ] || die "Le panneau des serveurs n'existe que dans finance-hub."
+  step "node scripts/dev/admin.mjs"
+  exec node scripts/dev/admin.mjs
+fi
 step "node scripts/dev/dev.mjs $COMMAND"
 exec node scripts/dev/dev.mjs "$COMMAND"
