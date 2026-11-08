@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "build": "node lib/build-all.mjs",
-    "test": "node --test lib/"
+    "test": "node --test \"lib/*.test.mjs\""
   },
   "dependencies": {
     "style-dictionary": "^5.8.0"

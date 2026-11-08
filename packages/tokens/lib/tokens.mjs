@@ -118,3 +118,11 @@ export async function checkTheme(baseTheme, themeFile) {
 
 export const isSystemToken = (token) => token.path[0] === 'sys';
 export const isBaseToken = (token) => token.path[0] !== 'sys';
+
+/**
+ * Jetons d'un thème produit : tous les jetons sémantiques de la base choisie (surcharges du produit appliquées)
+ * et tout autre jeton déclaré par le fichier du produit. Un thème dérivé de « dark » reste ainsi sombre même
+ * pour les jetons qu'il ne surcharge pas (sinon ils retomberaient sur les valeurs de `:root`, claires).
+ */
+export const productThemeFilter = (themeFile) => (token) =>
+  isSystemToken(token) || path.resolve(token.filePath) === path.resolve(themeFile);

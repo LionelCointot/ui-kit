@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CLI des thèmes produit : lc-tokens build | check --theme <fichier.tokens.json> [--name <nom>] [--extends default|dark] [--out <fichier.css>]
 import path from 'node:path';
-import { buildCss, checkTheme } from '../lib/tokens.mjs';
+import { buildCss, checkTheme, productThemeFilter } from '../lib/tokens.mjs';
 
 const USAGE = `Usage :
   lc-tokens check --theme <fichier.tokens.json> [--extends default|dark]
@@ -40,7 +40,7 @@ try {
       selector: `[data-theme="${options.name}"]`,
       buildPath: path.dirname(out),
       destination: path.basename(out),
-      filter: (token) => path.resolve(token.filePath) === themeFile,
+      filter: productThemeFilter(themeFile),
     });
     console.log(`Thème « ${options.name} » écrit dans ${out}`);
   } else {
