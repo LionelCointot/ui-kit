@@ -1,4 +1,4 @@
-import { applicationConfig, type Preview } from '@storybook/angular';
+import { applicationConfig, type Preview } from '@storybook/angular-vite';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 

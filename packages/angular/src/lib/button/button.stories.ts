@@ -1,4 +1,4 @@
-import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from './button.component';
 import { LcIconComponent } from '../icon/icon.component';
 

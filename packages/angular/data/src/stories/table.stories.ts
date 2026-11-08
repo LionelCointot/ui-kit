@@ -1,4 +1,4 @@
-import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcTableComponent } from '../table/table.component';
 import { LcTableColumn } from '../table/table-model';

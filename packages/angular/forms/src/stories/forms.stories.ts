@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcInputDirective } from '../input/input.directive';
 import { LcMoneyInputComponent } from '../numeric/money-input.component';

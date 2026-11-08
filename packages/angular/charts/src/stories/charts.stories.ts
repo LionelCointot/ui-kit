@@ -1,4 +1,4 @@
-import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcAreaChartComponent } from '../components/area-chart.component';
 import { LcBarChartComponent } from '../components/bar-chart.component';
 import { LcLineChartComponent } from '../components/line-chart.component';

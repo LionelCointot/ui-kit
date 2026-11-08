@@ -32,9 +32,8 @@
     "@angular/cli": "^22.2.6",
     "@angular/compiler-cli": "^22.2.0",
     "@angular/platform-browser-dynamic": "^22.2.5",
-    "@storybook/addon-a11y": "10.6",
+    "@storybook/addon-a11y": "10.6.6",
     "@storybook/addon-docs": "10.6",
-    "@storybook/angular": "10.6",
     "jsdom": "^30.0.0",
     "lucide-static": "^1.70.0",
     "ng-packagr": "^22.2.0",
@@ -42,7 +41,15 @@
     "storybook": "10.6",
     "style-dictionary": "^5.8.0",
     "typescript": "~6.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "@storybook/angular-vite": "10.6.6",
+    "@analogjs/vite-plugin-angular": "^2.7.3",
+    "@angular/animations": "22.2.5",
+    "@angular-devkit/architect": "0.2202.5",
+    "@storybook/addon-vitest": "10.6.6",
+    "@vitest/browser-playwright": "5.1.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "playwright": "latest"
   },
   "description": "Espace de travail du ui-kit (bibliothèque de composants Angular et design tokens)",
   "workspaces": [
