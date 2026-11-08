@@ -1,0 +1,50 @@
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-progress-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lc-progress-bar-color, var(--lc-sys-color-primary));
+  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+:host(.lc-progress-bar--indeterminate) .lc-progress-bar__fill {
+  width: 40%;
+  animation: lc-progress-slide calc(var(--lc-sys-duration-slow) * 5) var(--lc-sys-easing-standard) infinite;
+}
+
+@keyframes lc-progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.lc-progress-bar--indeterminate) .lc-progress-bar__fill {
+    width: 100%;
+    opacity: var(--lc-sys-state-disabled-opacity);
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :host {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
+
+  .lc-progress-bar__fill {
+    background: Highlight;
+  }
+}

@@ -157,7 +157,9 @@ textarea.lc-input.lc-input--auto-resize {
 
 /* ---------- Emplacements [lcPrefix] / [lcSuffix] de lc-form-field ---------- */
 .lc-form-field-prefix,
-.lc-form-field-suffix {
+.lc-form-field-suffix,
+lc-form-field [lcPrefix],
+lc-form-field [lcSuffix] {
   display: inline-flex;
   flex: none;
   align-items: center;

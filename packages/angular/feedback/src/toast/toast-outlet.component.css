@@ -1,0 +1,96 @@
+.lc-toast-outlet__region {
+  position: fixed;
+  z-index: var(--lc-sys-z-toast);
+  inset-block-end: var(--lc-sys-space-4);
+  inset-inline-end: var(--lc-sys-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  width: min(calc(100vw - 2 * var(--lc-sys-space-4)), var(--lc-toast-width, calc(var(--lc-sys-space-16) * 6)));
+  pointer-events: none;
+}
+
+.lc-toast {
+  --_accent: var(--lc-sys-color-info);
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-3);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-3) var(--lc-sys-space-3) var(--lc-sys-space-4);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-inline-start: calc(var(--lc-sys-border-width-thick) * 2) solid var(--_accent);
+  border-radius: var(--lc-sys-radius-md);
+  background: var(--lc-sys-color-surface-raised);
+  box-shadow: var(--lc-sys-shadow-3);
+  color: var(--lc-sys-color-on-surface);
+  pointer-events: auto;
+}
+
+.lc-toast--success {
+  --_accent: var(--lc-sys-color-success);
+}
+
+.lc-toast--warning {
+  --_accent: var(--lc-sys-color-warning);
+}
+
+.lc-toast--error {
+  --_accent: var(--lc-sys-color-error);
+}
+
+.lc-toast__icon {
+  margin-block-start: calc((1lh - var(--lc-icon-size)) / 2);
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-toast__message {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.lc-toast__action,
+.lc-toast__close {
+  flex: none;
+  min-height: var(--lc-sys-control-height-sm);
+  margin-block: calc(var(--lc-sys-space-1) * -1);
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: var(--lc-sys-color-on-primary-container);
+  font: inherit;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  cursor: pointer;
+}
+
+.lc-toast__action {
+  padding-inline: var(--lc-sys-space-2);
+}
+
+.lc-toast__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--lc-sys-control-height-sm);
+  padding: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-toast__action:hover,
+.lc-toast__close:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+.lc-toast__action:focus-visible,
+.lc-toast__close:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+@media (forced-colors: active) {
+  .lc-toast {
+    border-color: CanvasText;
+  }
+}

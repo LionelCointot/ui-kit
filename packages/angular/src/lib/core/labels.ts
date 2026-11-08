@@ -22,6 +22,8 @@ export interface LcLabels {
   readonly sortAscending: string;
   readonly sortDescending: string;
   readonly total: string;
+  readonly notifications: string;
+  readonly unallocated: string;
   readonly truncatedRows: (count: number) => string;
 }
 
@@ -46,6 +48,8 @@ export const LC_LABELS_FR: LcLabels = {
   sortAscending: 'tri croissant',
   sortDescending: 'tri décroissant',
   total: 'Total',
+  notifications: 'Notifications',
+  unallocated: 'Non réparti',
   truncatedRows: (count) => `${count} premières lignes affichées`,
 };
 
@@ -70,6 +74,8 @@ export const LC_LABELS_EN: LcLabels = {
   sortAscending: 'ascending',
   sortDescending: 'descending',
   total: 'Total',
+  notifications: 'Notifications',
+  unallocated: 'Unallocated',
   truncatedRows: (count) => `First ${count} rows shown`,
 };
 

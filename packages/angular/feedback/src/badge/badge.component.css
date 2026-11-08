@@ -1,0 +1,128 @@
+/* Badge : variables privées --_bg, --_fg, --_border. */
+:host {
+  --_bg: var(--lc-sys-color-surface-sunken);
+  --_fg: var(--lc-sys-color-on-surface);
+  --_border: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  max-width: 100%;
+  padding-block: 0;
+  padding-inline: var(--lc-sys-space-2);
+  border: var(--lc-sys-border-width-thin) solid var(--_border);
+  border-radius: var(--lc-badge-radius, var(--lc-sys-radius-full));
+  background: var(--_bg);
+  color: var(--_fg);
+  font-size: var(--lc-sys-font-size-xs);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: var(--lc-sys-font-line-height-normal);
+  white-space: nowrap;
+  vertical-align: middle;
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+:host(.lc-badge--small) {
+  padding-inline: var(--lc-sys-space-1);
+}
+
+:host(.lc-badge--large) {
+  padding-inline: var(--lc-sys-space-3);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+:host(.lc-badge--solid.lc-badge--neutral) {
+  --_bg: var(--lc-sys-color-neutral);
+  --_fg: var(--lc-sys-color-on-neutral);
+}
+
+:host(.lc-badge--outline.lc-badge--neutral) {
+  --_bg: transparent;
+  --_border: var(--lc-sys-color-border-strong);
+}
+
+:host(.lc-badge--solid.lc-badge--primary) {
+  --_bg: var(--lc-sys-color-primary);
+  --_fg: var(--lc-sys-color-on-primary);
+}
+
+:host(.lc-badge--flat.lc-badge--primary) {
+  --_bg: var(--lc-sys-color-primary-container);
+  --_fg: var(--lc-sys-color-on-primary-container);
+}
+
+:host(.lc-badge--outline.lc-badge--primary) {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-primary-container);
+  --_border: var(--lc-sys-color-primary);
+}
+
+:host(.lc-badge--solid.lc-badge--secondary) {
+  --_bg: var(--lc-sys-color-secondary);
+  --_fg: var(--lc-sys-color-on-secondary);
+}
+
+:host(.lc-badge--flat.lc-badge--secondary) {
+  --_bg: var(--lc-sys-color-secondary-container);
+  --_fg: var(--lc-sys-color-on-secondary-container);
+}
+
+:host(.lc-badge--outline.lc-badge--secondary) {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-secondary-container);
+  --_border: var(--lc-sys-color-secondary);
+}
+
+:host(.lc-badge--solid.lc-badge--success) {
+  --_bg: var(--lc-sys-color-success);
+  --_fg: var(--lc-sys-color-on-success);
+}
+
+:host(.lc-badge--flat.lc-badge--success) {
+  --_bg: var(--lc-sys-color-success-container);
+  --_fg: var(--lc-sys-color-on-success-container);
+}
+
+:host(.lc-badge--outline.lc-badge--success) {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-success-container);
+  --_border: var(--lc-sys-color-success);
+}
+
+:host(.lc-badge--solid.lc-badge--warning) {
+  --_bg: var(--lc-sys-color-warning);
+  --_fg: var(--lc-sys-color-on-warning);
+}
+
+:host(.lc-badge--flat.lc-badge--warning) {
+  --_bg: var(--lc-sys-color-warning-container);
+  --_fg: var(--lc-sys-color-on-warning-container);
+}
+
+:host(.lc-badge--outline.lc-badge--warning) {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-warning-container);
+  --_border: var(--lc-sys-color-warning);
+}
+
+:host(.lc-badge--solid.lc-badge--error) {
+  --_bg: var(--lc-sys-color-error);
+  --_fg: var(--lc-sys-color-on-error);
+}
+
+:host(.lc-badge--flat.lc-badge--error) {
+  --_bg: var(--lc-sys-color-error-container);
+  --_fg: var(--lc-sys-color-on-error-container);
+}
+
+:host(.lc-badge--outline.lc-badge--error) {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-error-container);
+  --_border: var(--lc-sys-color-error);
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}

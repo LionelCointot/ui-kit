@@ -1,0 +1,90 @@
+:host {
+  --_accent: var(--lc-sys-color-info);
+  --_bg: var(--lc-sys-color-info-container);
+  --_fg: var(--lc-sys-color-on-info-container);
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-3);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  border: var(--lc-sys-border-width-thin) solid color-mix(in srgb, var(--_accent) 40%, transparent);
+  border-inline-start: calc(var(--lc-sys-border-width-thick) * 2) solid var(--_accent);
+  border-radius: var(--lc-alert-radius, var(--lc-sys-radius-md));
+  background: var(--_bg);
+  color: var(--_fg);
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+:host(.lc-alert--success) {
+  --_accent: var(--lc-sys-color-success);
+  --_bg: var(--lc-sys-color-success-container);
+  --_fg: var(--lc-sys-color-on-success-container);
+}
+
+:host(.lc-alert--warning) {
+  --_accent: var(--lc-sys-color-warning);
+  --_bg: var(--lc-sys-color-warning-container);
+  --_fg: var(--lc-sys-color-on-warning-container);
+}
+
+:host(.lc-alert--error) {
+  --_accent: var(--lc-sys-color-error);
+  --_bg: var(--lc-sys-color-error-container);
+  --_fg: var(--lc-sys-color-on-error-container);
+}
+
+.lc-alert__icon {
+  margin-block-start: calc((1lh - var(--lc-icon-size)) / 2);
+}
+
+.lc-alert__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  min-width: 0;
+}
+
+.lc-alert__title {
+  margin: 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-alert__message {
+  overflow-wrap: anywhere;
+}
+
+.lc-alert__close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--lc-sys-control-height-sm);
+  height: var(--lc-sys-control-height-sm);
+  margin: calc(var(--lc-sys-space-1) * -1) calc(var(--lc-sys-space-2) * -1) 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.lc-alert__close:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+.lc-alert__close:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}
