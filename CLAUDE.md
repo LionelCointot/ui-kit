@@ -1,52 +1,66 @@
-# [Nom du projet]
+# ui-kit
 
-> Fichier lu à chaque session. Gardez-le court (< 100 lignes). Complétez les `[...]` (skill `project-init`).
+> Fichier lu à chaque session. Gardez-le court (< 100 lignes).
 
 ## Contexte
-[1-2 phrases : ce que fait le projet, pour qui.]
+Bibliothèque de composants Angular et de design tokens, **générique**, réutilisée par tous les projets front (premier consommateur : le simulateur immobilier). Aucune logique ni aucun vocabulaire métier.
 
 ## Stack
-- Langage / runtime : [...]
-- Framework(s) : [...]
-- Base de données : [...]
-- Déploiement : [...]
+- Langage / runtime : TypeScript (strict), Node.js 24
+- Framework(s) : Angular 22 (standalone, signaux, zoneless), Angular CDK 22 ; Style Dictionary 5 (tokens DTCG) ; Apache ECharts 6 (point d'entrée `charts`, dépendance optionnelle) ; AG Grid Community 36 (`data-grid`, phase 5, optionnelle)
+- Outillage : Storybook 10, Vitest, Playwright (tests visuels), ESLint, stylelint, ng-packagr, workspaces npm
+- Base de données : aucune
+- Déploiement : paquets npm `@lionelcointot/ui-tokens` et `@lionelcointot/ui-angular` sur GitHub Packages (release-please) ; Storybook publié en artefact de CI
 
-## Commandes
-- Installer : `[...]`
-- Lancer en dev : `[...]`
-- Tests : `[...]`
-- Lint / format : `[...]`
-- Build : `[...]`
-- Générer le client d'API depuis l'OpenAPI : `[...]`
+## Commandes (prévues, créées à la tâche T1 de la spec socle)
+- Installer : `npm ci`
+- Lancer en dev : `npm run storybook`
+- Tests : `npm test` (Vitest) · `npm run test:visual` (Playwright sur Storybook)
+- Lint / format : `npm run lint` (ESLint + stylelint)
+- Build : `npm run build` (tokens puis bibliothèque)
+- Tokens : `npm run tokens:build` · `npx lc-tokens check --theme <fichier.tokens.json>`
+- Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
+
+## Documentation
+- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`
+- ADR : `docs/adr/0001` (tokens) à `0005` (icônes)
+- Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
+- Direction visuelle : `PRODUCT.md` et `DESIGN.md` (créés par `/impeccable init` et `/impeccable document`, tâche T2)
 
 ## Workflow (spec d'abord, code ensuite)
 1. Toute feature non triviale commence par une spec dans `docs/specs/` (skill `spec-writer`), validée avant de coder.
 2. Chaque choix d'architecture notable est consigné dans `docs/adr/` (skill `adr`).
 3. Une branche par tâche : `feat/...`, `fix/...`, `chore/...`.
-4. En écrivant du code : `clean-code` + le skill de la stack (`angular-best-practices`, `dotnet-best-practices`).
-5. Avant de déclarer une tâche finie : build, tests et lint passent.
+4. En écrivant du code : `clean-code` + `angular-best-practices` ; rendu visuel : `impeccable` (`shape` avant, `critique` et `audit` après).
+5. Avant de déclarer une tâche finie : build, tests, lint et a11y Storybook passent.
 6. PR décrite avec `pr-description`, revue avec `review-checklist` (et `/code-review` pour la chasse aux bugs).
 
 ## Conventions
-- Commits : Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
-- Code et identifiants en anglais, libellés affichés en français.
-- Nommage : [...]
-- Structure des dossiers : [...]
-- Gestion d'erreurs : [...]
+- Commits : Conventional Commits. SemVer : les tokens (noms et rôles), sélecteurs, entrées et sorties sont le **contrat public** (renommer = version majeure, alias déprécié pendant au moins une mineure).
+- Code et identifiants en anglais ; libellés via `LC_LABELS` (français par défaut, anglais fourni), jamais en dur.
+- Préfixe `lc` : élément `lc-…`, attribut `lc…`, variable CSS `--lc-…`, type `Lc…`, classe `LcXxxComponent` / `LcXxxDirective` / `LcXxxService`.
+- Sélecteur d'attribut sur les éléments natifs (`button[lcButton]`, `input[lcInput]`…), élément hôte pour les composites.
+- Tokens à 3 couches : `--lc-ref-*` (thèmes uniquement), `--lc-sys-*` (rôles), `--lc-<composant>-*` (avec repli sur `sys`).
+- API commune : `themeColor`, `fillMode`, `size`, `rounded`, `disabled` ; `input()`, `output()`, `model()` ; OnPush ; `host: {}`.
+- Contrôles de formulaire : `FormValueControl<T>` (Signal Forms) + `ControlValueAccessor` si nécessaire.
+- Structure : `packages/tokens`, `packages/angular/<famille>/<composant>/` (`.ts`, `.scss`, `.stories.ts`, `.spec.ts`, `index.ts`), `apps/storybook`.
+- Gestion d'erreurs : avertissements console en développement seulement (`isDevMode()`), jamais d'exception visible pour un usage incorrect non bloquant.
 
 ## À ne pas faire
-- Ne pas commiter de secrets (.env, clés, tokens).
-- Ne pas ajouter de dépendance sans la justifier.
-- Ne pas modifier du code hors périmètre de la tâche.
-- Ne pas modifier à la main un client d'API généré : le régénérer.
+- Ne pas écrire de couleur, taille ou durée en dur dans un composant ; ne pas utiliser `--lc-ref-*` hors des thèmes.
+- Ne pas utiliser `innerHTML` (exception : SVG d'icônes enregistrés par le code ; info-bulles de graphiques échappées).
+- Ne pas importer un point d'entrée secondaire depuis un autre (exception : `data` → `feedback`).
+- Ne pas ajouter de vocabulaire métier (finance, prêt…) ni de composant sans consommateur identifié.
+- Ne pas utiliser de fonctionnalité CSS hors Baseline 2024 (pas d'*anchor positioning*).
+- Ne pas commiter de secrets ; ne pas ajouter de dépendance sans la justifier ; ne pas modifier du code hors périmètre.
 
 ## Skills (`.claude/skills/`)
 - Processus : `project-init`, `spec-writer`, `adr`, `pr-description`
 - Conception : `web-architecture`, `api-design`, `frontend-guidelines`
-- Code : `clean-code`, `angular-best-practices`, `dotnet-best-practices`
+- Code : `clean-code`, `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici)
 - Qualité : `review-checklist`, `security-checklist`, `test-strategy`
 - Outils : `graphify` (graphe du code), `impeccable` (design front : `/impeccable init`, `shape`, `critique`, `audit`, `polish`)
-- Les skills propres à ce projet s'ajoutent ici, pas dans le template.
+- Global utile : `dataviz` (règles et validation de palette des graphiques)
 
 ## Outils
 - **graphify** : graphe de connaissances du code dans `graphify-out/` (non versionné), reconstruit automatiquement après chaque commit par les hooks git. Installation sur un nouveau poste : `./scripts/setup.sh`.

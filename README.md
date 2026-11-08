@@ -1,48 +1,41 @@
-# Template projet : workflow spec-first avec Claude Code
+# ui-kit
 
-Template générique : skills, conventions, specs, ADR, plus **graphify** (graphe du code mis à jour après chaque commit) et **impeccable** (design front). Les skills propres à un projet s'ajoutent dans le repo du projet, pas ici.
+Bibliothèque de composants Angular et de design tokens, **générique** et réutilisable par tous les projets : boutons, champs (dont montants, pourcentages, durées, dates), tableaux, mise en page, navigation, dialogues, retours d'état, indicateurs et graphiques. Le style est entièrement piloté par des tokens : chaque projet applique son thème sans modifier la bibliothèque.
 
-## Démarrer un nouveau projet
-1. Sur GitHub : **Use this template** → nouveau repo.
-2. Cloner dans `~/Projects/<nom>` et ouvrir dans VS Code avec Claude Code.
-3. Une fois par poste : `./scripts/setup.sh` (installe graphify si besoin, branche les hooks git, construit le graphe). À défaut, le hook de session de Claude Code branche graphify automatiquement s'il est installé.
-4. Dans Claude Code : « Initialise ce projet » (skill `project-init`) : remplit `CLAUDE.md`, retire les skills inutiles pour la stack.
-5. « Écris la spec de [feature] » (skill `spec-writer`), valider, puis implémenter.
-6. Projet avec front : `/impeccable init` pour poser le contexte design.
+> **Statut** : spécification. Le code arrive phase par phase (voir les specs).
 
-## Contenu
+## Paquets
 
-| Élément | Rôle |
+| Paquet | Contenu |
 |---|---|
-| `CLAUDE.md` | Contexte du projet, lu à chaque session (à compléter) |
-| `docs/specs/_TEMPLATE.md`, `docs/adr/_TEMPLATE.md` | Modèles de spec et de décision d'architecture |
-| `.claude/skills/` | Skills (voir ci-dessous) |
-| `.claude/settings.json` | Hooks : graphify (consultation du graphe, branchement auto des hooks git), impeccable (vérification UI) |
-| `.claude/agents/` | Sous-agents d'impeccable |
-| `scripts/setup.sh` | Installation de graphify, hooks git, graphe initial, moteur impeccable |
-| `scripts/update-tools.sh` | Mise à jour de graphify et impeccable |
-| `scripts/install-global-skills.sh` | Copie de skills vers `~/.claude/skills` (disponibles dans tous les projets) |
-| `.github/pull_request_template.md` | Modèle de PR |
-| `.editorconfig`, `.vscode/` | Format et éditeur |
+| `@lionelcointot/ui-tokens` | Tokens au format DTCG, CSS des thèmes `default` et `dark`, CLI `lc-tokens` (thèmes produit, contrôles de contraste et de palette). Sans Angular |
+| `@lionelcointot/ui-angular` | Composants Angular 22, avec un point d'entrée secondaire par famille : `button`, `forms`, `layout`, `navigation`, `overlay`, `feedback`, `data`, `charts` (ECharts 6, optionnel), `data-grid` (AG Grid Community, phase 5) |
 
-## Skills
-- **Processus** : `project-init`, `spec-writer`, `adr`, `pr-description`
-- **Conception** : `web-architecture`, `api-design`, `frontend-guidelines`
-- **Code** : `clean-code` (lisibilité, maintenabilité), `angular-best-practices` (signaux, store, client d'API généré, composants de présentation), `dotnet-best-practices` (couches, minimal APIs, ProblemDetails, tests)
-- **Qualité** : `review-checklist`, `security-checklist`, `test-strategy`
-- **Outils** : `graphify`, `impeccable`
+## Utilisation (cible)
 
-`review-checklist` et `security-checklist` complètent les commandes intégrées `/code-review` et `/security-review` de Claude Code.
+```bash
+npm i @lionelcointot/ui-tokens @lionelcointot/ui-angular   # registre GitHub Packages (.npmrc : @lionelcointot)
+```
 
-## graphify
-- Graphe dans `graphify-out/` (ignoré par git, propre à chaque poste).
-- Les hooks git `post-commit`, `post-checkout`, `post-merge` et `post-rewrite` le reconstruisent en arrière-plan (analyse du code seule, sans LLM ni clé API). Sauter une fois : `GRAPHIFY_SKIP_HOOK=1 git commit ...`.
-- État : `graphify hook status`. Requêtes : `graphify query "..."`, `graphify explain "X"`, `graphify affected "X"`.
+```html
+<button lcButton themeColor="primary" fillMode="solid">Simuler</button>
+<lc-form-field label="Prix du bien"><lc-money-input [(value)]="price" /></lc-form-field>
+```
 
-## impeccable
-- Commandes : `/impeccable init`, `shape`, `critique`, `audit`, `polish`, `harden`... (`/impeccable` seul les liste).
-- Le moteur binaire (spécifique à l'OS) n'est pas versionné : le lanceur le télécharge et vérifie son empreinte au premier usage.
-- Télémétrie anonyme activée par défaut : `npx impeccable telemetry off` pour la couper.
+Un thème produit se décrit dans un fichier `*.tokens.json`, puis se compile avec `npx lc-tokens build --theme finance.tokens.json --name finance --out theme-finance.css`.
 
-## Améliorer le template
-Quand une règle générique s'avère utile en projet, remontez-la ici : « Améliore le skill X du template avec ce qu'on a appris. »
+## Documentation
+
+| Document | Contenu |
+|---|---|
+| [Spec du socle](docs/specs/2026-11-socle-tokens-themes.md) | Paquets, tokens (référence, système, composant), thèmes, CLI, API commune, services, Storybook, qualité |
+| [Catalogue des composants](docs/specs/2026-11-catalogue-composants.md) | Les 47 éléments, leur API, leur accessibilité et leur phase de livraison |
+| [Graphiques](docs/specs/2026-11-graphiques.md) | Courbes, aires, barres, barre segmentée, sparkline ; palette validée ; règles `dataviz` |
+| [ADR](docs/adr/) | 0001 Tokens · 0002 Comportement CDK et sélecteurs · 0003 ECharts · 0004 Grille de données · 0005 Icônes |
+| [Architecture du produit](https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md) | Place du ui-kit parmi les repos du simulateur |
+
+## Développer
+
+Prérequis : Node.js 24, un jeton GitHub `read:packages` pour le registre privé. Puis `./scripts/setup.sh` (graphify et impeccable), et les commandes listées dans [CLAUDE.md](CLAUDE.md).
+
+Créé depuis [project-template](https://github.com/LionelCointot/project-template) (workflow spec d'abord avec Claude Code).
