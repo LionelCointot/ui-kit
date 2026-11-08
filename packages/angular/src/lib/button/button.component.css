@@ -1,0 +1,235 @@
+/*
+ * Bouton : uniquement des variables CSS (--lc-button-* avec repli sur --lc-sys-*).
+ * Variables privées : --_bg (fond), --_fg (texte et icônes), --_border (bordure).
+ */
+:host {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-surface);
+  --_border: transparent;
+  --_height: var(--lc-button-height-md, var(--lc-sys-control-height-md));
+  --_padding: var(--lc-button-padding-inline-md, var(--lc-sys-space-4));
+  --_radius: var(--lc-button-radius, var(--lc-sys-radius-md));
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lc-sys-space-2);
+  box-sizing: border-box;
+  min-height: var(--_height);
+  margin: 0;
+  padding-block: var(--lc-sys-space-1);
+  padding-inline: var(--_padding);
+  border: var(--lc-sys-border-width-thin) solid var(--_border);
+  border-radius: var(--_radius);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-family: inherit;
+  font-size: var(--lc-sys-font-size-md);
+  font-weight: var(--lc-button-font-weight, var(--lc-sys-font-weight-semibold));
+  line-height: var(--lc-sys-font-line-height-tight);
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard),
+    border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard),
+    color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+:host(:hover:not(:disabled):not([aria-disabled='true'])) {
+  background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--_bg));
+}
+
+:host(:active:not(:disabled):not([aria-disabled='true'])) {
+  background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-pressed-opacity) * 100%), var(--_bg));
+}
+
+:host(:focus-visible) {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+:host(:disabled),
+:host([aria-disabled='true']) {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+:host(.lc-button--solid.lc-button--primary) {
+  --_bg: var(--lc-button-solid-primary-bg, var(--lc-sys-color-primary));
+  --_fg: var(--lc-button-solid-primary-fg, var(--lc-sys-color-on-primary));
+}
+
+:host(.lc-button--solid.lc-button--secondary) {
+  --_bg: var(--lc-button-solid-secondary-bg, var(--lc-sys-color-secondary));
+  --_fg: var(--lc-button-solid-secondary-fg, var(--lc-sys-color-on-secondary));
+}
+
+:host(.lc-button--solid.lc-button--success) {
+  --_bg: var(--lc-button-solid-success-bg, var(--lc-sys-color-success));
+  --_fg: var(--lc-button-solid-success-fg, var(--lc-sys-color-on-success));
+}
+
+:host(.lc-button--solid.lc-button--warning) {
+  --_bg: var(--lc-button-solid-warning-bg, var(--lc-sys-color-warning));
+  --_fg: var(--lc-button-solid-warning-fg, var(--lc-sys-color-on-warning));
+}
+
+:host(.lc-button--solid.lc-button--error) {
+  --_bg: var(--lc-button-solid-error-bg, var(--lc-sys-color-error));
+  --_fg: var(--lc-button-solid-error-fg, var(--lc-sys-color-on-error));
+}
+
+:host(.lc-button--solid.lc-button--neutral) {
+  --_bg: var(--lc-button-solid-neutral-bg, var(--lc-sys-color-neutral));
+  --_fg: var(--lc-button-solid-neutral-fg, var(--lc-sys-color-on-neutral));
+}
+
+:host(.lc-button--outline.lc-button--primary) {
+  --_fg: var(--lc-button-outline-primary-fg, var(--lc-sys-color-on-primary-container));
+  --_border: var(--lc-button-outline-primary-border, var(--lc-sys-color-primary));
+}
+
+:host(.lc-button--flat.lc-button--primary) {
+  --_fg: var(--lc-button-flat-primary-fg, var(--lc-sys-color-on-primary-container));
+}
+
+:host(.lc-button--outline.lc-button--secondary) {
+  --_fg: var(--lc-button-outline-secondary-fg, var(--lc-sys-color-on-secondary-container));
+  --_border: var(--lc-button-outline-secondary-border, var(--lc-sys-color-secondary));
+}
+
+:host(.lc-button--flat.lc-button--secondary) {
+  --_fg: var(--lc-button-flat-secondary-fg, var(--lc-sys-color-on-secondary-container));
+}
+
+:host(.lc-button--outline.lc-button--success) {
+  --_fg: var(--lc-button-outline-success-fg, var(--lc-sys-color-on-success-container));
+  --_border: var(--lc-button-outline-success-border, var(--lc-sys-color-success));
+}
+
+:host(.lc-button--flat.lc-button--success) {
+  --_fg: var(--lc-button-flat-success-fg, var(--lc-sys-color-on-success-container));
+}
+
+:host(.lc-button--outline.lc-button--warning) {
+  --_fg: var(--lc-button-outline-warning-fg, var(--lc-sys-color-on-warning-container));
+  --_border: var(--lc-button-outline-warning-border, var(--lc-sys-color-warning));
+}
+
+:host(.lc-button--flat.lc-button--warning) {
+  --_fg: var(--lc-button-flat-warning-fg, var(--lc-sys-color-on-warning-container));
+}
+
+:host(.lc-button--outline.lc-button--error) {
+  --_fg: var(--lc-button-outline-error-fg, var(--lc-sys-color-on-error-container));
+  --_border: var(--lc-button-outline-error-border, var(--lc-sys-color-error));
+}
+
+:host(.lc-button--flat.lc-button--error) {
+  --_fg: var(--lc-button-flat-error-fg, var(--lc-sys-color-on-error-container));
+}
+
+:host(.lc-button--outline.lc-button--neutral) {
+  --_fg: var(--lc-button-outline-neutral-fg, var(--lc-sys-color-on-surface));
+  --_border: var(--lc-button-outline-neutral-border, var(--lc-sys-color-border-strong));
+}
+
+:host(.lc-button--flat.lc-button--neutral) {
+  --_fg: var(--lc-button-flat-neutral-fg, var(--lc-sys-color-on-surface));
+}
+
+/* Tailles : `small` garde une zone cliquable de 44 px (pseudo-élément) pour les zones denses. */
+:host(.lc-button--small) {
+  --_height: var(--lc-button-height-sm, var(--lc-sys-control-height-sm));
+  --_padding: var(--lc-button-padding-inline-sm, var(--lc-sys-space-3));
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+:host(.lc-button--small)::before {
+  content: '';
+  position: absolute;
+  inset: calc((var(--_height) - var(--lc-sys-control-height-md)) / 2) 0;
+}
+
+:host(.lc-button--large) {
+  --_height: var(--lc-button-height-lg, var(--lc-sys-control-height-lg));
+  --_padding: var(--lc-button-padding-inline-lg, var(--lc-sys-space-5));
+  --lc-icon-size: var(--lc-sys-icon-size-lg);
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+:host(.lc-button--rounded-none) {
+  --_radius: var(--lc-sys-radius-none);
+}
+
+:host(.lc-button--rounded-small) {
+  --_radius: var(--lc-sys-radius-sm);
+}
+
+:host(.lc-button--rounded-large) {
+  --_radius: var(--lc-sys-radius-lg);
+}
+
+:host(.lc-button--rounded-full) {
+  --_radius: var(--lc-sys-radius-full);
+}
+
+:host(.lc-button--icon-only) {
+  width: var(--_height);
+  min-width: var(--_height);
+  padding-inline: 0;
+}
+
+:host(.lc-button--full-width) {
+  display: flex;
+  width: 100%;
+}
+
+/* Chargement : contenu masqué (largeur conservée), anneau dessiné en CSS dans la couleur du texte. */
+:host(.lc-button--loading) {
+  color: transparent;
+  cursor: progress;
+}
+
+:host(.lc-button--loading)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: var(--lc-icon-size);
+  height: var(--lc-icon-size);
+  margin: auto;
+  border: var(--lc-sys-border-width-thick) solid var(--_fg);
+  border-inline-end-color: transparent;
+  border-radius: var(--lc-sys-radius-full);
+  animation: lc-button-spin calc(var(--lc-sys-duration-slow) * 3) linear infinite;
+}
+
+@keyframes lc-button-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.lc-button--loading)::after {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: ButtonText;
+  }
+
+  :host(.lc-button--loading)::after {
+    border-color: ButtonText;
+    border-inline-end-color: transparent;
+  }
+}

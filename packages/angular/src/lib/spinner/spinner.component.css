@@ -1,0 +1,52 @@
+:host {
+  --_size: var(--lc-spinner-size-md, var(--lc-sys-icon-size-lg));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lc-spinner-color, var(--lc-sys-color-primary));
+}
+
+:host(.lc-spinner--small) {
+  --_size: var(--lc-spinner-size-sm, var(--lc-sys-icon-size-sm));
+}
+
+:host(.lc-spinner--large) {
+  --_size: var(--lc-spinner-size-lg, var(--lc-sys-space-10));
+}
+
+.lc-spinner__ring {
+  display: block;
+  width: var(--_size);
+  height: var(--_size);
+  border: var(--lc-sys-border-width-thick) solid color-mix(in srgb, currentColor 20%, transparent);
+  border-top-color: currentColor;
+  border-radius: var(--lc-sys-radius-full);
+  animation: lc-spinner-spin calc(var(--lc-sys-duration-slow) * 3) linear infinite;
+}
+
+@keyframes lc-spinner-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes lc-spinner-pulse {
+  50% {
+    opacity: var(--lc-sys-state-disabled-opacity);
+  }
+}
+
+/* Mouvement réduit : aucune rotation, pulsation d'opacité à la place. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-spinner__ring {
+    border-color: currentColor;
+    animation: lc-spinner-pulse calc(var(--lc-sys-duration-slow) * 5) ease-in-out infinite;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-spinner__ring {
+    border-color: CanvasText;
+    border-top-color: Highlight;
+  }
+}

@@ -1,0 +1,31 @@
+lc-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--lc-icon-size, 1em);
+  height: var(--lc-icon-size, 1em);
+  color: inherit;
+  vertical-align: middle;
+}
+
+lc-icon.lc-icon--small {
+  width: var(--lc-sys-icon-size-sm);
+  height: var(--lc-sys-icon-size-sm);
+}
+
+lc-icon.lc-icon--medium {
+  width: var(--lc-sys-icon-size-md);
+  height: var(--lc-sys-icon-size-md);
+}
+
+lc-icon.lc-icon--large {
+  width: var(--lc-sys-icon-size-lg);
+  height: var(--lc-sys-icon-size-lg);
+}
+
+lc-icon > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

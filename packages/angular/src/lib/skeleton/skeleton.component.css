@@ -1,0 +1,59 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  width: 100%;
+}
+
+.lc-skeleton__bone {
+  display: block;
+  width: 100%;
+  height: 1em;
+  border-radius: var(--lc-sys-radius-sm);
+  background: var(--lc-skeleton-background, var(--lc-sys-color-surface-sunken));
+  animation: lc-skeleton-pulse calc(var(--lc-sys-duration-slow) * 5) ease-in-out infinite;
+}
+
+.lc-skeleton__bone--last {
+  width: 60%;
+}
+
+:host(.lc-skeleton--rect) {
+  height: var(--lc-sys-control-height-md);
+}
+
+:host(.lc-skeleton--circle) {
+  width: var(--lc-sys-control-height-md);
+  height: var(--lc-sys-control-height-md);
+}
+
+:host(.lc-skeleton--rect) .lc-skeleton__bone,
+:host(.lc-skeleton--circle) .lc-skeleton__bone {
+  height: 100%;
+}
+
+:host(.lc-skeleton--rect) .lc-skeleton__bone {
+  border-radius: var(--lc-sys-radius-md);
+}
+
+:host(.lc-skeleton--circle) .lc-skeleton__bone {
+  border-radius: var(--lc-sys-radius-full);
+}
+
+@keyframes lc-skeleton-pulse {
+  50% {
+    opacity: var(--lc-sys-state-disabled-opacity);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-skeleton__bone {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-skeleton__bone {
+    background: GrayText;
+  }
+}

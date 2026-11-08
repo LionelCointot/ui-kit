@@ -1,0 +1,8 @@
+/*
+ * Feuille globale de @lionelcointot/ui-angular : styles des directives posées sur des éléments natifs
+ * sans gabarit (input[lcInput], textarea[lcInput], select[lcSelect], input[type=checkbox][lcCheckbox],
+ * input[type=radio][lcRadio]). Les composants à gabarit portent leurs propres styles encapsulés.
+ *
+ * À importer après les fichiers de @lionelcointot/ui-tokens (lc-tokens.css, theme-default.css,
+ * theme-dark.css, base.css). Uniquement des variables CSS (--lc-<composant>-* avec repli sur --lc-sys-*).
+ */

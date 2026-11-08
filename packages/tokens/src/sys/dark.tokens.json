@@ -543,6 +543,20 @@
         "$value": "#898781",
         "$type": "color"
       }
+    },
+    "border": {
+      "width": {
+        "thin": {
+          "$value": "1px",
+          "$type": "dimension",
+          "$description": "Filet des contrôles, cartes, tableaux et séparateurs."
+        },
+        "thick": {
+          "$value": "2px",
+          "$type": "dimension",
+          "$description": "Indicateur de sélection (onglet actif, élément de navigation actif)."
+        }
+      }
     }
   }
 }

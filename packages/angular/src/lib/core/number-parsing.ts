@@ -1,10 +1,10 @@
 /**
- * Analyse une saisie numérique française ou anglaise : espaces (y compris insécables) ignorés, symbole € et %
+ * Analyse une saisie numérique française ou anglaise : espaces (y compris insécables) ignorés, symboles € et %
  * retirés, virgule ou point acceptés comme séparateur décimal. Si les deux apparaissent, le dernier est décimal
  * (« 1.234,5 » → 1234.5 ; « 1,234.5 » → 1234.5). Renvoie null pour une saisie vide, NaN pour une saisie invalide.
  */
 export function parseLocaleNumber(text: string): number | null {
-  const compact = text.replace(/[\s  ]/g, '').replace(/[€%]/g, '');
+  const compact = text.replace(/\s/g, '').replace(/[€%]/g, '');
   if (compact === '') {
     return null;
   }
@@ -16,8 +16,20 @@ export function parseLocaleNumber(text: string): number | null {
   return /^-?\d*\.?\d+$|^-?\d+\.$/.test(normalized) ? Number(normalized) : Number.NaN;
 }
 
-/** Arrondi décimal « demi au-dessus » (comme le back) à `decimals` chiffres. */
+/**
+ * Arrondi décimal « demi au-dessus » (comme le back) à `decimals` chiffres.
+ * Le décalage passe par la notation exponentielle pour éviter les erreurs binaires (1.005 → 1.01, et non 1).
+ */
 export function roundTo(value: number, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Math.sign(value) * Math.round(Math.abs(value) * factor + Number.EPSILON) / factor;
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+  const rounded = Math.round(shiftDecimal(Math.abs(value), decimals));
+  const result = Math.sign(value) * shiftDecimal(rounded, -decimals);
+  return result === 0 ? 0 : result;
+}
+
+function shiftDecimal(value: number, places: number): number {
+  const [mantissa, exponent = '0'] = String(value).split('e');
+  return Number(`${mantissa}e${Number(exponent) + places}`);
 }

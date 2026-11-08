@@ -9,7 +9,7 @@
     "ui-angular": {
       "projectType": "library",
       "root": "packages/angular",
-      "sourceRoot": "packages/angular/src",
+      "sourceRoot": "packages/angular",
       "prefix": "lc",
       "architect": {
         "build": {
@@ -27,7 +27,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "packages/angular/tsconfig.spec.json"
+            "tsConfig": "packages/angular/tsconfig.spec.json",
+            "include": [
+              "**/*.spec.ts"
+            ]
           }
         }
       }

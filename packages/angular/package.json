@@ -8,6 +8,7 @@
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",
     "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
     "echarts": "^6.0.0"
   },
@@ -25,5 +26,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/LionelCointot/ui-kit"
+  },
+  "exports": {
+    "./styles/*": {
+      "default": "./styles/*"
+    }
   }
 }
