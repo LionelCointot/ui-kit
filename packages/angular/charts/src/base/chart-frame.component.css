@@ -1,0 +1,170 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  min-width: 0;
+  color: var(--lc-sys-color-on-surface);
+}
+
+p {
+  margin: 0;
+}
+
+.lc-chart-frame__hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lc-chart-frame__title {
+  font-size: var(--lc-sys-font-size-lg);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-chart-frame__description {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-chart-frame__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-chart-frame__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  min-block-size: var(--lc-sys-control-height-sm);
+  padding: 0 var(--lc-sys-space-2);
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: var(--lc-sys-color-on-surface);
+  font: inherit;
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+button.lc-chart-frame__legend-item {
+  cursor: pointer;
+}
+
+button.lc-chart-frame__legend-item:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+button.lc-chart-frame__legend-item:focus-visible,
+.lc-chart-frame__data-toggle:focus-visible,
+.lc-chart-frame__table-wrap:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-chart-frame__legend-item--off {
+  color: var(--lc-sys-color-on-surface-muted);
+  text-decoration: line-through;
+}
+
+.lc-chart-frame__legend-item--off .lc-chart-frame__swatch {
+  opacity: 0.35;
+}
+
+.lc-chart-frame__swatch {
+  display: inline-block;
+  inline-size: var(--lc-sys-space-3);
+  block-size: var(--lc-sys-space-3);
+  border-radius: var(--lc-sys-radius-sm);
+}
+
+.lc-chart-frame__swatch--line {
+  inline-size: var(--lc-sys-space-4);
+  block-size: var(--lc-sys-border-width-thick);
+  border-radius: 0;
+}
+
+.lc-chart-frame__plot {
+  position: relative;
+}
+
+.lc-chart-frame__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lc-sys-color-on-surface-muted);
+  text-align: center;
+}
+
+.lc-chart-frame__chart {
+  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+/* Recalcul en cours : le rendu précédent reste affiché, atténué, sans squelette. */
+.lc-chart-frame__chart--stale {
+  opacity: 0.6;
+}
+
+.lc-chart-frame__data-toggle {
+  align-self: flex-start;
+  min-block-size: var(--lc-sys-control-height-sm);
+  padding: 0 var(--lc-sys-space-2);
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: var(--lc-sys-color-primary);
+  font: inherit;
+  font-size: var(--lc-sys-font-size-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.lc-chart-frame__table-wrap {
+  max-block-size: 20rem;
+  overflow: auto;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-sys-radius-md);
+}
+
+.lc-chart-frame__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--lc-sys-font-size-sm);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-chart-frame__table th,
+.lc-chart-frame__table td {
+  padding: var(--lc-sys-space-2) var(--lc-sys-space-3);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.lc-chart-frame__table th[scope='row'],
+.lc-chart-frame__table th:first-child {
+  text-align: start;
+}
+
+.lc-chart-frame__table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-chart-frame__chart {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-chart-frame__swatch {
+    forced-color-adjust: none;
+  }
+}

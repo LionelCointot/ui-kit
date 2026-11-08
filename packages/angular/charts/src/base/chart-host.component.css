@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.lc-chart-host__canvas {
+  inline-size: 100%;
+  border-radius: var(--lc-sys-radius-sm);
+}
+
+.lc-chart-host__canvas:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
