@@ -1,0 +1,170 @@
+/*
+ * Cadre commun des saisies composites (montant, pourcentage, nombre, date) : l'hôte est le cadre,
+ * le champ texte interne n'a pas de bordure. Uniquement des variables CSS (--lc-input-* avec repli sur --lc-sys-*).
+ */
+:host {
+  --_border: var(--lc-input-border, var(--lc-sys-color-border-strong));
+  --_height: var(--lc-input-height, var(--lc-sys-control-height-md));
+  --_radius: var(--lc-input-radius, var(--lc-sys-radius-md));
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+
+  display: inline-flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--_height);
+  border: var(--lc-sys-border-width-thin) solid var(--_border);
+  border-radius: var(--_radius);
+  background: var(--lc-input-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+  font-size: var(--lc-sys-font-size-md);
+  transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+:host(:hover:not(.lc-field--disabled):not(.lc-field--readonly)) {
+  --_border: var(--lc-sys-color-on-surface-muted);
+}
+
+:host(:focus-within) {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: 0;
+}
+
+:host(.lc-field--invalid) {
+  --_border: var(--lc-input-border-invalid, var(--lc-sys-color-error));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_border);
+}
+
+:host(.lc-field--disabled) {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+:host(.lc-field--readonly) {
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+:host(.lc-field--small) {
+  --_height: var(--lc-sys-control-height-sm);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+:host(.lc-field--large) {
+  --_height: var(--lc-sys-control-height-lg);
+  --lc-icon-size: var(--lc-sys-icon-size-lg);
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+:host(.lc-field--outline) {
+  background: transparent;
+}
+
+:host(.lc-field--flat) {
+  border-color: transparent;
+  border-block-end-color: var(--_border);
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+:host(.lc-field--rounded-none) {
+  --_radius: var(--lc-sys-radius-none);
+}
+
+:host(.lc-field--rounded-small) {
+  --_radius: var(--lc-sys-radius-sm);
+}
+
+:host(.lc-field--rounded-large) {
+  --_radius: var(--lc-sys-radius-lg);
+}
+
+:host(.lc-field--rounded-full) {
+  --_radius: var(--lc-sys-radius-full);
+}
+
+.lc-field__input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: var(--lc-sys-space-3);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: var(--lc-sys-font-line-height-normal);
+}
+
+.lc-field__input:focus {
+  outline: none;
+}
+
+.lc-field__input:disabled {
+  cursor: not-allowed;
+}
+
+.lc-field__input::placeholder {
+  color: var(--lc-sys-color-on-surface-subtle);
+  opacity: 1;
+}
+
+.lc-field__input--numeric {
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+  text-align: end;
+}
+
+.lc-field__input:has(+ .lc-field__unit) {
+  padding-inline-end: var(--lc-sys-space-1);
+}
+
+.lc-field__unit {
+  display: flex;
+  align-items: center;
+  padding-inline-end: var(--lc-sys-space-3);
+  color: var(--lc-sys-color-on-surface-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.lc-field__step {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--_height);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lc-sys-color-on-surface-muted);
+  cursor: pointer;
+}
+
+.lc-field__step:first-child {
+  border-start-start-radius: inherit;
+  border-end-start-radius: inherit;
+  border-inline-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-field__step:last-child {
+  border-start-end-radius: inherit;
+  border-end-end-radius: inherit;
+  border-inline-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-field__step:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-field__step:disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,149 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  booleanAttribute,
+  computed,
+  forwardRef,
+  inject,
+  input,
+  isDevMode,
+  model,
+  output,
+  afterNextRender,
+  viewChildren,
+} from '@angular/core';
+import type { FormValueControl } from '@angular/forms/signals';
+import { LC_DEFAULTS, LcIconComponent, LcOption, LcSize, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
+
+interface SegmentView<T> {
+  readonly option: LcOption<T>;
+  readonly selected: boolean;
+  readonly disabled: boolean;
+  readonly tabIndex: 0 | -1;
+}
+
+/**
+ * Contrôle segmenté (`role="radiogroup"`, options `role="radio"`) : un seul choix parmi quelques options.
+ * Focus itinérant : les flèches déplacent le focus et la sélection, Début et Fin vont aux extrémités,
+ * Tab sort du groupe. Implémente `FormValueControl<T | null>` (Signal Forms) et `[(value)]`.
+ */
+@Component({
+  selector: 'lc-segmented-control',
+  imports: [LcIconComponent],
+  template: `
+    @for (segment of segments(); track $index) {
+      <button #segment type="button" role="radio" class="lc-segmented-control__option"
+        [attr.aria-checked]="segment.selected" [tabIndex]="segment.tabIndex" [disabled]="segment.disabled"
+        (click)="select(segment.option)" (keydown)="onKeydown($event, $index)" (blur)="touch.emit()">
+        @if (segment.option.icon) {
+          <lc-icon [name]="segment.option.icon" />
+        }
+        <span>{{ segment.option.label }}</span>
+      </button>
+    }
+  `,
+  styleUrl: './segmented-control.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: LC_FORM_FIELD_CONTROL, useExisting: forwardRef(() => LcSegmentedControlComponent) }],
+  host: {
+    class: 'lc-segmented-control',
+    role: 'radiogroup',
+    '[attr.id]': 'id()',
+    '[attr.aria-label]': 'ariaLabel() || null',
+    '[attr.aria-labelledby]': 'ariaLabel() ? null : (field?.labelId ?? null)',
+    '[attr.aria-describedby]': 'field?.describedBy() ?? null',
+    '[attr.aria-disabled]': "disabled() ? 'true' : null",
+    '[class]': "'lc-segmented-control--' + resolvedSize()",
+    '[class.lc-segmented-control--full-width]': 'fullWidth()',
+  },
+})
+export class LcSegmentedControlComponent<T> implements FormValueControl<T | null>, LcFormFieldControl {
+  private readonly defaults = inject(LC_DEFAULTS);
+  protected readonly field = inject(LC_FORM_FIELD, { optional: true });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+
+  readonly options = input.required<readonly LcOption<T>[]>();
+  readonly value = model<T | null>(null);
+  /** Nom accessible du groupe (obligatoire hors de `lc-form-field`, sinon le libellé du champ est utilisé). */
+  readonly ariaLabel = input<string>();
+  readonly size = input<LcSize | undefined>(undefined);
+  readonly fullWidth = input(false, { transform: booleanAttribute });
+  readonly disabled = input(false, { transform: booleanAttribute });
+  readonly id = input<string>(lcUniqueId('segmented'));
+  /** Émis quand le focus quitte une option (champ « touché » pour Signal Forms). */
+  readonly touch = output<void>();
+
+  readonly controlId = computed(() => this.id());
+  readonly labelable = false;
+
+  private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('segment');
+  protected readonly resolvedSize = computed(() => this.size() ?? this.defaults.size);
+
+  protected readonly segments = computed<readonly SegmentView<T>[]>(() => {
+    const options = this.options();
+    const selectedIndex = options.findIndex((option) => Object.is(option.value, this.value()));
+    const focusIndex = selectedIndex >= 0 ? selectedIndex : options.findIndex((option) => !option.disabled);
+    return options.map((option, index) => ({
+      option,
+      selected: index === selectedIndex,
+      disabled: this.disabled() || !!option.disabled,
+      tabIndex: index === focusIndex ? 0 : -1,
+    }));
+  });
+
+  constructor() {
+    if (isDevMode()) {
+      afterNextRender(() => {
+        if (!this.ariaLabel() && !this.field && !this.host.hasAttribute('aria-labelledby')) {
+          console.warn('[lc-segmented-control] ariaLabel est obligatoire hors de lc-form-field.');
+        }
+      });
+    }
+  }
+
+  focus(options?: FocusOptions): void {
+    const index = this.segments().findIndex((segment) => segment.tabIndex === 0);
+    this.buttons()[Math.max(0, index)]?.nativeElement.focus(options);
+  }
+
+  protected select(option: LcOption<T>): void {
+    if (!this.disabled() && !option.disabled) {
+      this.value.set(option.value);
+    }
+  }
+
+  protected onKeydown(event: KeyboardEvent, index: number): void {
+    const target = this.targetIndex(event.key, index);
+    if (target === null) return;
+    event.preventDefault();
+    const segment = this.segments()[target];
+    this.select(segment.option);
+    this.buttons()[target]?.nativeElement.focus();
+  }
+
+  /** Index de l'option suivante activable selon la touche (les options désactivées sont sautées). */
+  private targetIndex(key: string, from: number): number | null {
+    const enabled = this.segments().map((segment, index) => (segment.disabled ? -1 : index)).filter((index) => index >= 0);
+    if (enabled.length === 0) return null;
+    const rtl = getComputedStyle(this.host).direction === 'rtl';
+    const position = enabled.indexOf(from);
+    switch (key) {
+      case 'ArrowRight':
+        return enabled[(position + (rtl ? enabled.length - 1 : 1)) % enabled.length];
+      case 'ArrowLeft':
+        return enabled[(position + (rtl ? 1 : enabled.length - 1)) % enabled.length];
+      case 'ArrowDown':
+        return enabled[(position + 1) % enabled.length];
+      case 'ArrowUp':
+        return enabled[(position + enabled.length - 1) % enabled.length];
+      case 'Home':
+        return enabled[0];
+      case 'End':
+        return enabled[enabled.length - 1];
+      default:
+        return null;
+    }
+  }
+}

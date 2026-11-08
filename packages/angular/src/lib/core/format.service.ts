@@ -15,6 +15,11 @@ export class LcFormatService {
   private readonly numberFormats = new Map<string, Intl.NumberFormat>();
   private readonly dateFormats = new Map<string, Intl.DateTimeFormat>();
 
+  /** Séparateur décimal de la locale (« , » en français). */
+  readonly decimalSeparator = this.numberPart({}, 1.5, 'decimal') ?? '.';
+  /** Symbole de la devise configurée (« € »). */
+  readonly currencySymbol = this.numberPart({ style: 'currency', currency: this.options.currency }, 0, 'currency') ?? this.options.currency;
+
   /** Montant dans la devise configurée : 1159.92 → « 1 159,92 € » (espaces insécables). */
   money(value: number | null | undefined, options: { compact?: boolean; decimals?: number } = {}): string {
     if (isMissing(value)) return EMPTY_VALUE;
@@ -76,6 +81,10 @@ export class LcFormatService {
       case 'month': return this.date(value as string | Date, 'month');
       default: return String(value);
     }
+  }
+
+  private numberPart(options: Intl.NumberFormatOptions, sample: number, type: Intl.NumberFormatPartTypes): string | undefined {
+    return new Intl.NumberFormat(this.options.locale, options).formatToParts(sample).find((part) => part.type === type)?.value;
   }
 
   private numberFormat(options: Intl.NumberFormatOptions): Intl.NumberFormat {

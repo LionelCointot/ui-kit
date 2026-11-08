@@ -84,3 +84,11 @@ describe('dates ISO', () => {
     expect(isoToLocalDate('31/01/2026')).toBeNull();
   });
 });
+
+describe('LcFormatService (parties de nombre)', () => {
+  it('expose le séparateur décimal et le symbole de la devise', () => {
+    const format = TestBed.inject(LcFormatService);
+    expect(format.decimalSeparator).toBe(',');
+    expect(format.currencySymbol).toBe('€');
+  });
+});

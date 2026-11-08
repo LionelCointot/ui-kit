@@ -1,0 +1,86 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  min-width: 0;
+}
+
+.lc-form-field__label {
+  align-self: flex-start;
+  color: var(--lc-form-field-label-color, var(--lc-sys-color-on-surface));
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
+  line-height: var(--lc-sys-font-line-height-tight);
+}
+
+.lc-form-field__required {
+  margin-inline-start: var(--lc-sys-space-1);
+  color: var(--lc-sys-color-on-error-container);
+}
+
+.lc-form-field__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  min-width: 0;
+}
+
+.lc-form-field__row {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-form-field__control {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.lc-form-field__hint {
+  margin: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-form-field__messages:empty {
+  display: none;
+}
+
+.lc-form-field__errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-form-field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
+  color: var(--lc-form-field-error-color, var(--lc-sys-color-on-error-container));
+  font-size: var(--lc-sys-font-size-sm);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-form-field__error lc-icon {
+  margin-block-start: calc((1lh - var(--lc-sys-icon-size-sm)) / 2);
+}
+
+/* Libellé à gauche à partir du point de rupture md (768 px, valeur littérale : une variable CSS est inutilisable dans une media query). */
+@media (min-width: 768px) {
+  :host(.lc-form-field--inline) {
+    display: grid;
+    grid-template-columns: var(--lc-form-field-label-width, minmax(0, 1fr)) minmax(0, 2fr);
+    align-items: start;
+    column-gap: var(--lc-sys-space-4);
+  }
+
+  :host(.lc-form-field--inline) .lc-form-field__label {
+    display: flex;
+    align-items: center;
+    min-height: var(--lc-input-height, var(--lc-sys-control-height-md));
+  }
+}

@@ -1,0 +1,90 @@
+:host {
+  --_track-width: calc(var(--lc-sys-space-10) + var(--lc-sys-space-1));
+  --_track-height: var(--lc-sys-space-6);
+  --_thumb-size: calc(var(--_track-height) - 2 * var(--lc-sys-space-1));
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-3);
+  min-height: var(--lc-sys-control-height-md);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lc-sys-color-on-surface);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.lc-switch__track {
+  position: relative;
+  flex: none;
+  width: var(--_track-width);
+  height: var(--_track-height);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-switch-border, var(--lc-sys-color-border-strong));
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-switch-track, var(--lc-sys-color-surface-sunken));
+  transition: background-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-switch__thumb {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: var(--lc-sys-space-1);
+  width: var(--_thumb-size);
+  height: var(--_thumb-size);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-on-surface-muted);
+  transform: translateY(-50%);
+  transition:
+    inset-inline-start var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
+    background-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+/* Coché : le pouce change de position (information portée par la forme, pas seulement par la couleur). */
+:host(.lc-switch--checked) .lc-switch__track {
+  border-color: var(--lc-switch-checked-track, var(--lc-sys-color-primary));
+  background: var(--lc-switch-checked-track, var(--lc-sys-color-primary));
+}
+
+:host(.lc-switch--checked) .lc-switch__thumb {
+  inset-inline-start: calc(100% - var(--_thumb-size) - var(--lc-sys-space-1));
+  background: var(--lc-sys-color-on-primary);
+}
+
+:host(:focus-visible) {
+  outline: none;
+}
+
+:host(:focus-visible) .lc-switch__track {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+:host(:disabled) {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-switch__label:empty {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .lc-switch__track {
+    border-color: ButtonText;
+  }
+
+  .lc-switch__thumb {
+    background: ButtonText;
+  }
+
+  :host(.lc-switch--checked) .lc-switch__track {
+    background: Highlight;
+  }
+
+  :host(.lc-switch--checked) .lc-switch__thumb {
+    background: HighlightText;
+  }
+}

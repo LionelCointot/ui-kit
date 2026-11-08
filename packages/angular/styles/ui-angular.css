@@ -6,3 +6,172 @@
  * À importer après les fichiers de @lionelcointot/ui-tokens (lc-tokens.css, theme-default.css,
  * theme-dark.css, base.css). Uniquement des variables CSS (--lc-<composant>-* avec repli sur --lc-sys-*).
  */
+
+/* ---------- input[lcInput], textarea[lcInput] ---------- */
+.lc-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--lc-input-height, var(--lc-sys-control-height-md));
+  margin: 0;
+  padding-block: var(--lc-sys-space-2);
+  padding-inline: var(--lc-sys-space-3);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-input-border, var(--lc-sys-color-border-strong));
+  border-radius: var(--lc-input-radius, var(--lc-sys-radius-md));
+  background: var(--lc-input-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+  font: inherit;
+  font-size: var(--lc-sys-font-size-md);
+  line-height: var(--lc-sys-font-line-height-normal);
+  transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+.lc-input::placeholder {
+  color: var(--lc-sys-color-on-surface-subtle);
+  opacity: 1;
+}
+
+.lc-input:hover:not(:disabled):not([readonly]) {
+  border-color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-input:focus {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: 0;
+}
+
+.lc-input:disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-input[readonly] {
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-input.lc-input--invalid {
+  border-color: var(--lc-input-border-invalid, var(--lc-sys-color-error));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-input-border-invalid, var(--lc-sys-color-error));
+}
+
+.lc-input.lc-input--small {
+  min-height: var(--lc-sys-control-height-sm);
+  padding-block: var(--lc-sys-space-1);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-input.lc-input--large {
+  min-height: var(--lc-sys-control-height-lg);
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+textarea.lc-input {
+  min-height: calc(var(--lc-sys-control-height-md) * 2);
+  resize: vertical;
+}
+
+textarea.lc-input.lc-input--auto-resize {
+  overflow: hidden;
+  resize: none;
+}
+
+/* ---------- select[lcSelect] (chevron dessiné en dégradés, couleur du texte) ---------- */
+.lc-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--lc-input-height, var(--lc-sys-control-height-md));
+  margin: 0;
+  padding-block: var(--lc-sys-space-2);
+  padding-inline: var(--lc-sys-space-3) calc(var(--lc-sys-space-3) + var(--lc-sys-space-6));
+  border: var(--lc-sys-border-width-thin) solid var(--lc-input-border, var(--lc-sys-color-border-strong));
+  border-radius: var(--lc-input-radius, var(--lc-sys-radius-md));
+  background-color: var(--lc-input-background, var(--lc-sys-color-surface-raised));
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - var(--lc-sys-space-4) - var(--lc-sys-space-1)) 50%,
+    calc(100% - var(--lc-sys-space-4)) 50%;
+  background-repeat: no-repeat;
+  background-size:
+    calc(var(--lc-sys-space-1) + var(--lc-sys-border-width-thin)) calc(var(--lc-sys-space-1) + var(--lc-sys-border-width-thin)),
+    calc(var(--lc-sys-space-1) + var(--lc-sys-border-width-thin)) calc(var(--lc-sys-space-1) + var(--lc-sys-border-width-thin));
+  color: var(--lc-sys-color-on-surface);
+  font: inherit;
+  font-size: var(--lc-sys-font-size-md);
+  line-height: var(--lc-sys-font-line-height-normal);
+  appearance: none;
+  cursor: pointer;
+}
+
+.lc-select:hover:not(:disabled) {
+  border-color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-select:focus {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: 0;
+}
+
+.lc-select:disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-select.lc-select--invalid {
+  border-color: var(--lc-input-border-invalid, var(--lc-sys-color-error));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-input-border-invalid, var(--lc-sys-color-error));
+}
+
+.lc-select.lc-select--small {
+  min-height: var(--lc-sys-control-height-sm);
+  padding-block: var(--lc-sys-space-1);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-select.lc-select--large {
+  min-height: var(--lc-sys-control-height-lg);
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+/* ---------- input[type=checkbox][lcCheckbox], input[type=radio][lcRadio] ---------- */
+.lc-checkbox,
+.lc-radio {
+  flex: none;
+  width: var(--lc-sys-icon-size-md);
+  height: var(--lc-sys-icon-size-md);
+  margin: 0;
+  accent-color: var(--lc-checkbox-accent, var(--lc-sys-color-primary));
+  cursor: pointer;
+}
+
+.lc-checkbox:focus-visible,
+.lc-radio:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-checkbox:disabled,
+.lc-radio:disabled {
+  cursor: not-allowed;
+}
+
+/* ---------- Emplacements [lcPrefix] / [lcSuffix] de lc-form-field ---------- */
+.lc-form-field-prefix,
+.lc-form-field-suffix {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+@media (forced-colors: active) {
+  .lc-input,
+  .lc-select {
+    border-color: CanvasText;
+  }
+
+  .lc-select {
+    background-image: none;
+    appearance: auto;
+  }
+}
