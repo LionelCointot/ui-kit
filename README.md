@@ -34,6 +34,18 @@ Un thème produit se décrit dans un fichier `*.tokens.json`, puis se compile av
 | [ADR](docs/adr/) | 0001 Tokens · 0002 Comportement CDK et sélecteurs · 0003 ECharts · 0004 Grille de données · 0005 Icônes |
 | [Architecture du produit](https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md) | Place du ui-kit parmi les repos du simulateur |
 
+## Installer et lancer
+
+Le ui-kit n'a aucun repo voisin. Après le clonage :
+
+| Système | Installer | Lancer Storybook |
+|---|---|---|
+| macOS | double-clic sur `installer.command` | double-clic sur `lancer.command` |
+| Windows | double-clic sur `installer.cmd` | double-clic sur `lancer.cmd` |
+| Linux | `bash installer.command` | `bash lancer.command` |
+
+Les scripts installent si besoin Node >= 24.15 dans votre dossier utilisateur (sans droits administrateur), installent les dépendances, construisent les tokens et la bibliothèque (`dist/ui-angular`, consommée par les autres repos en `file:`), puis lancent Storybook (http://localhost:6006). Configuration : `dev.config.json`. Détails et dépannage : [architecture, « Installer et lancer »](https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md).
+
 ## Développer
 
 Prérequis : Node.js 24, un jeton GitHub `read:packages` pour le registre privé. Puis `./scripts/setup.sh` (graphify et impeccable), et les commandes listées dans [CLAUDE.md](CLAUDE.md).

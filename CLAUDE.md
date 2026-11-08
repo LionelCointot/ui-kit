@@ -13,6 +13,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Déploiement : paquets npm `@lionelcointot/ui-tokens` et `@lionelcointot/ui-angular` sur GitHub Packages (release-please) ; Storybook publié en artefact de CI
 
 ## Commandes
+- Tout installer / lancer Storybook (Node installé au besoin) : `installer.command` / `lancer.command` (macOS), `.cmd` (Windows), `bash installer.command` (Linux) ; équivalent : `bash scripts/dev/bootstrap.sh install|start`. Configuration : `dev.config.json`
 - Installer : `npm ci`
 - Lancer en dev : `npm run storybook`
 - Tests : `npx ng test ui-angular --watch=false` (Vitest) ; pas encore : `test:visual` (Playwright), `lint` (ESLint, stylelint)

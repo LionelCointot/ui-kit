@@ -1,0 +1,23 @@
+{
+  "name": "ui-kit",
+  "neighbors": [],
+  "install": [
+    { "name": "Dépendances npm", "type": "npm" }
+  ],
+  "build": [
+    { "name": "Build de la bibliothèque", "type": "command", "command": "npm run build" }
+  ],
+  "start": {
+    "processes": [
+      {
+        "name": "storybook",
+        "cwd": ".",
+        "command": "npm run storybook",
+        "port": 6006,
+        "health": "http://localhost:6006",
+        "color": "magenta"
+      }
+    ],
+    "open": [{ "url": "http://localhost:6006" }]
+  }
+}
