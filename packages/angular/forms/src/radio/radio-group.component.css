@@ -1,0 +1,27 @@
+:host {
+  display: block;
+}
+
+.lc-radio-group__fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.lc-radio-group__legend {
+  padding: 0;
+  margin-block-end: var(--lc-sys-space-2);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-radio-group__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-radio-group__items--horizontal {
+  flex-flow: row wrap;
+  gap: var(--lc-sys-space-2) var(--lc-sys-space-5);
+}

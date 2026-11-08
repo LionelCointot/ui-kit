@@ -15,3 +15,5 @@ export * from './numeric/percent-input.component';
 export * from './numeric/number-input.component';
 export * from './date-input/date-input.component';
 export * from './segmented-control/segmented-control.component';
+export * from './radio/radio-group.component';
+export * from './radio/radio.directive';

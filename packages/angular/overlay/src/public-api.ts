@@ -4,3 +4,4 @@
 export { LC_DIALOG_DATA, LcDialogRef } from './dialog/dialog-ref';
 export * from './dialog/dialog.service';
 export * from './dialog/dialog.component';
+export * from './tooltip/tooltip.directive';
