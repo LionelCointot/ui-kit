@@ -1,0 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+:host(.lc-stack--horizontal) {
+  flex-direction: row;
+}
+
+:host(.lc-stack--wrap) {
+  flex-wrap: wrap;
+}

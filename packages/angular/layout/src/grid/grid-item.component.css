@@ -1,0 +1,30 @@
+:host {
+  --_s: var(--_span, 1);
+  display: block;
+  min-width: 0;
+  grid-column: span min(var(--_s), var(--_c, 1));
+}
+
+@container (min-width: 360px) {
+  :host {
+    --_s: var(--_span-sm, var(--_span, 1));
+  }
+}
+
+@container (min-width: 768px) {
+  :host {
+    --_s: var(--_span-md, var(--_span-sm, var(--_span, 1)));
+  }
+}
+
+@container (min-width: 1024px) {
+  :host {
+    --_s: var(--_span-lg, var(--_span-md, var(--_span-sm, var(--_span, 1))));
+  }
+}
+
+@container (min-width: 1280px) {
+  :host {
+    --_s: var(--_span-xl, var(--_span-lg, var(--_span-md, var(--_span-sm, var(--_span, 1)))));
+  }
+}

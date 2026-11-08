@@ -1,0 +1,58 @@
+:host {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-3);
+  padding: var(--_padding, var(--lc-sys-space-5)) var(--_padding, var(--lc-sys-space-5)) 0;
+}
+
+.lc-card-header__text {
+  min-width: 0;
+}
+
+.lc-card-header__title {
+  margin: 0;
+  font-size: var(--lc-sys-font-size-lg);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: var(--lc-sys-font-line-height-tight);
+}
+
+.lc-card-header__subtitle {
+  margin: var(--lc-sys-space-1) 0 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-card-header__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  min-height: var(--lc-sys-control-height-md);
+  margin: calc(var(--lc-sys-space-2) * -1);
+  padding: var(--lc-sys-space-2);
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lc-card-header__toggle:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+.lc-card-header__toggle:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-card-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-card-header__actions:empty {
+  display: none;
+}

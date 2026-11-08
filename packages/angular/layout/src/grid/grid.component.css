@@ -1,0 +1,36 @@
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.lc-grid__inner {
+  --_c: var(--_cols, 1);
+  display: grid;
+  grid-template-columns: repeat(var(--_c), minmax(0, 1fr));
+  gap: var(--_gap);
+}
+
+/* Les requêtes de conteneur n'acceptent pas de variable : seuils des points de rupture du socle (tokens, LC_BREAKPOINTS). */
+@container (min-width: 360px) {
+  .lc-grid__inner {
+    --_c: var(--_cols-sm, var(--_cols, 1));
+  }
+}
+
+@container (min-width: 768px) {
+  .lc-grid__inner {
+    --_c: var(--_cols-md, var(--_cols-sm, var(--_cols, 1)));
+  }
+}
+
+@container (min-width: 1024px) {
+  .lc-grid__inner {
+    --_c: var(--_cols-lg, var(--_cols-md, var(--_cols-sm, var(--_cols, 1))));
+  }
+}
+
+@container (min-width: 1280px) {
+  .lc-grid__inner {
+    --_c: var(--_cols-xl, var(--_cols-lg, var(--_cols-md, var(--_cols-sm, var(--_cols, 1)))));
+  }
+}

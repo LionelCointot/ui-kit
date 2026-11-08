@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-card-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-card-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+}
+
+:host(.lc-card--elevation-0) {
+  box-shadow: none;
+}
+
+:host(.lc-card--elevation-1) {
+  box-shadow: var(--lc-sys-shadow-1);
+}
+
+:host(.lc-card--elevation-2) {
+  box-shadow: var(--lc-sys-shadow-2);
+}
+
+:host(:not(.lc-card--elevation-0)) {
+  border-color: transparent;
+}
+
+.lc-card__body[hidden] {
+  display: none;
+}
+
+.lc-card__content {
+  padding: var(--_padding);
+}
+
+.lc-card__footer {
+  padding: 0 var(--_padding) var(--_padding);
+}
+
+.lc-card__footer:empty {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,19 @@
+:host {
+  display: block;
+  flex: none;
+  align-self: stretch;
+  inline-size: auto;
+  block-size: var(--lc-sys-border-width-thin);
+  background: var(--lc-divider-color, var(--lc-sys-color-border));
+}
+
+:host(.lc-divider--vertical) {
+  inline-size: var(--lc-sys-border-width-thin);
+  block-size: auto;
+}
+
+@media (forced-colors: active) {
+  :host {
+    background: CanvasText;
+  }
+}
