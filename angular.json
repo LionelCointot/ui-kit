@@ -32,6 +32,38 @@
               "**/*.spec.ts"
             ]
           }
+        },
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "tsConfig": ".storybook/tsconfig.json",
+            "compodoc": false,
+            "styles": [
+              "packages/tokens/dist/css/lc-tokens.css",
+              "packages/tokens/dist/css/theme-default.css",
+              "packages/tokens/dist/css/theme-dark.css",
+              "packages/tokens/dist/css/base.css",
+              "packages/angular/styles/ui-angular.css"
+            ],
+            "port": 6006
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "tsConfig": ".storybook/tsconfig.json",
+            "compodoc": false,
+            "styles": [
+              "packages/tokens/dist/css/lc-tokens.css",
+              "packages/tokens/dist/css/theme-default.css",
+              "packages/tokens/dist/css/theme-dark.css",
+              "packages/tokens/dist/css/base.css",
+              "packages/angular/styles/ui-angular.css"
+            ],
+            "outputDir": "dist/storybook"
+          }
         }
       }
     }

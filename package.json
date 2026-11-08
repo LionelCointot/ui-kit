@@ -8,7 +8,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "tokens:build": "npm run build --workspace @lionelcointot/ui-tokens",
-    "build:lib": "ng build ui-angular"
+    "build:lib": "ng build ui-angular",
+    "storybook": "ng run ui-angular:storybook",
+    "build-storybook": "ng run ui-angular:build-storybook"
   },
   "private": true,
   "packageManager": "npm@11.19.1",
@@ -25,13 +27,19 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "^22.2.6",
     "@angular/build": "^22.2.6",
     "@angular/cli": "^22.2.6",
     "@angular/compiler-cli": "^22.2.0",
+    "@angular/platform-browser-dynamic": "^22.2.5",
+    "@storybook/addon-a11y": "10.6",
+    "@storybook/addon-docs": "10.6",
+    "@storybook/angular": "10.6",
     "jsdom": "^30.0.0",
     "lucide-static": "^1.70.0",
     "ng-packagr": "^22.2.0",
     "prettier": "^3.8.1",
+    "storybook": "10.6",
     "style-dictionary": "^5.8.0",
     "typescript": "~6.0.2",
     "vitest": "^5.0.0"
