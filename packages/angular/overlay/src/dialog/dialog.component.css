@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  height: 100%;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-dialog-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-dialog-background, var(--lc-sys-color-surface-raised));
+  box-shadow: var(--lc-sys-shadow-4);
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-3);
+  padding: var(--lc-sys-space-5) var(--lc-sys-space-6) var(--lc-sys-space-3);
+}
+
+.lc-dialog__title {
+  margin: 0;
+  font-size: var(--lc-sys-font-size-xl);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: var(--lc-sys-font-line-height-tight);
+}
+
+.lc-dialog__content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--lc-sys-space-6) var(--lc-sys-space-4);
+}
+
+.lc-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-6) var(--lc-sys-space-5);
+}
+
+.lc-dialog__actions:empty {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}

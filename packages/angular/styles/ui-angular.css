@@ -177,3 +177,40 @@ lc-form-field [lcSuffix] {
     appearance: auto;
   }
 }
+
+/* ---------- Surcouches CDK (dialogues, menus) : panneaux hors des composants, donc styles globaux ---------- */
+.cdk-overlay-container {
+  z-index: var(--lc-sys-z-overlay);
+}
+
+.lc-dialog-backdrop {
+  background: var(--lc-sys-color-backdrop);
+}
+
+.lc-dialog-panel {
+  width: calc(100vw - 2 * var(--lc-sys-space-4));
+  max-height: calc(100dvh - 2 * var(--lc-sys-space-4));
+}
+
+.lc-dialog-panel--small {
+  max-width: calc(var(--lc-sys-space-16) * 6);
+}
+
+.lc-dialog-panel--medium {
+  max-width: calc(var(--lc-sys-space-16) * 9);
+}
+
+.lc-dialog-panel--large {
+  max-width: calc(var(--lc-sys-space-16) * 14);
+}
+
+.lc-dialog-panel--fullscreen {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+}
+
+.lc-dialog-panel .cdk-dialog-container {
+  outline: none;
+}
