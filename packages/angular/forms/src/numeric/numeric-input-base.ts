@@ -152,7 +152,7 @@ export abstract class LcNumericInputBase implements FormValueControl<number | nu
       return;
     }
     this.draft.set(text);
-    const parsed = parseLocaleNumber(text);
+    const parsed = parseLocaleNumber(text, this.decimals());
     if (parsed === null) {
       this.value.set(null);
     } else if (!Number.isNaN(parsed)) {
@@ -162,7 +162,7 @@ export abstract class LcNumericInputBase implements FormValueControl<number | nu
 
   protected onPaste(event: ClipboardEvent): void {
     event.preventDefault();
-    const parsed = parseLocaleNumber(event.clipboardData?.getData('text') ?? '');
+    const parsed = parseLocaleNumber(event.clipboardData?.getData('text') ?? '', this.decimals());
     if (parsed === null || Number.isNaN(parsed)) return;
     this.value.set(parsed);
     this.draft.set(this.toEditText(parsed));

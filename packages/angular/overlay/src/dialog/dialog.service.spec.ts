@@ -48,6 +48,14 @@ describe('LcDialogService', () => {
     await expect(ref.closed).resolves.toBe('ok');
   });
 
+  it('déclare le dialogue modal (le focus est piégé)', async () => {
+    const service = TestBed.inject(LcDialogService);
+    service.open<RenameDialogComponent, { name: string }, string>(RenameDialogComponent, { data: { name: 'A' } });
+    await settle();
+
+    expect(overlay().querySelector('[role="dialog"]')!.getAttribute('aria-modal')).toBe('true');
+  });
+
   it('confirm() résout true sur confirmation et false sur annulation', async () => {
     const service = TestBed.inject(LcDialogService);
     const confirmed = service.confirm({ title: 'Supprimer ?', message: 'Action définitive.', destructive: true });

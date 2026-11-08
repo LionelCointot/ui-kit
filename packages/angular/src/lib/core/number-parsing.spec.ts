@@ -16,6 +16,33 @@ describe('parseLocaleNumber', () => {
     expect(parseLocaleNumber(text)).toBe(expected);
   });
 
+  describe('séparateur unique suivi de trois chiffres', () => {
+    it.each([
+      ['1.234', 2, 1234],
+      ['1.234', 0, 1234],
+      ['250.000', 2, 250000],
+      ['-1.234', 2, -1234],
+    ])('« %s » avec %d décimale(s) est un séparateur de milliers', (text, decimals, expected) => {
+      expect(parseLocaleNumber(text, decimals)).toBe(expected);
+    });
+
+    it.each([
+      ['3.123', 3, 3.123],
+      ['0,125', 3, 0.125],
+      ['10,005', 2, 10.005],
+      ['1,234', 2, 1.234],
+      ['1.23', 2, 1.23],
+      ['1.2345', 2, 1.2345],
+      ['1.234,5', 2, 1234.5],
+    ])('« %s » avec %d décimale(s) reste décimal', (text, decimals, expected) => {
+      expect(parseLocaleNumber(text, decimals)).toBe(expected);
+    });
+
+    it('sans nombre de décimales connu, garde l’interprétation décimale', () => {
+      expect(parseLocaleNumber('1.234')).toBe(1.234);
+    });
+  });
+
   it('renvoie null pour une saisie vide ou blanche', () => {
     expect(parseLocaleNumber('')).toBeNull();
     expect(parseLocaleNumber('   ')).toBeNull();

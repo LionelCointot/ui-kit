@@ -69,6 +69,30 @@ describe('LcMoneyInputComponent', () => {
     expect(fixture.componentInstance.amount()).toBeNull();
   });
 
+  it('reformate le texte à la sortie même quand la valeur saisie est identique à l’ancienne', async () => {
+    const { fixture, element, input } = await setup();
+    const rate = element.querySelector<HTMLInputElement>('lc-percent-input input')!;
+
+    rate.dispatchEvent(new Event('focus'));
+    await type(fixture, rate, '3.5');          // même valeur que 3,5
+    rate.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    expect(rate.value).toBe('3,500');
+
+    input.dispatchEvent(new Event('focus'));
+    await type(fixture, input, '250000,0');    // même valeur que 250 000
+    input.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    expect(input.value).toBe('250\u202f000');
+  });
+
+  it('lit « 1.234 » comme 1 234 quand le champ n’a que deux décimales', async () => {
+    const { fixture, input } = await setup();
+    input.dispatchEvent(new Event('focus'));
+    await type(fixture, input, '1.234');
+    expect(fixture.componentInstance.amount()).toBe(1234);
+  });
+
   it('refuse les lettres sans modifier la valeur', async () => {
     const { fixture, input } = await setup();
     input.dispatchEvent(new Event('focus'));

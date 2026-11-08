@@ -49,6 +49,7 @@ export class LcDialogService {
     let lcRef: LcDialogRef<R> | undefined;
     this.dialog.open<R, D, C>(component, {
       role,
+      ariaModal: true,
       data: config.data ?? null,
       ariaLabel: config.ariaLabel ?? null,
       ariaLabelledBy: config.ariaLabel ? null : context.titleId,
