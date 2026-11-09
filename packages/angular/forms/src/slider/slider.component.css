@@ -35,7 +35,6 @@
 :host(.lc-slider--invalid) {
   --_fill-color: var(--lc-sys-color-error);
   --_thumb-color: var(--lc-sys-color-error);
-  --_track-color: var(--lc-sys-color-error);
 }
 
 :host(.lc-slider--disabled) {

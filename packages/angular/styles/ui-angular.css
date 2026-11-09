@@ -218,6 +218,7 @@ lc-form-field [lcSuffix] {
 /* lc-combobox : le panneau (rôle listbox) vit dans la surcouche CDK, hors du composant. */
 .lc-combobox-panel {
   box-sizing: border-box;
+  inline-size: 100%;
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
   border-radius: var(--lc-sys-radius-md);
   background: var(--lc-sys-color-surface-raised);
