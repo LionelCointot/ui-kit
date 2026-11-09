@@ -68,6 +68,8 @@ export const ListeEtIndicateurs: Story = {
     template: `<div style="display:grid;gap:16px;max-width:30rem">
       <lc-kpi-card label="Mensualité" [value]="1159.92" format="money" hint="indicatif"
         [delta]="{ value: -2.5, format: 'percent', trend: 'down', sentiment: 'positive' }" />
+      <lc-kpi-card label="Point d'équilibre" valueText="7 ans et 4 mois" hint="Dès cette date, acheter devient plus avantageux" />
+      <lc-kpi-card label="Équilibre" valueText="Aucun" />
       <lc-description-list [items]="[
         { term: 'Capital emprunté', value: 250000, format: 'money' },
         { term: 'Taux', value: 3.5, format: 'percent', badge: 'estimation' },

@@ -22,7 +22,7 @@ const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as
     @if (loading()) {
       <lc-skeleton shape="text" width="60%" height="2rem" />
     } @else {
-      <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()">{{ valueText() }}</p>
+      <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()">{{ displayText() }}</p>
       @if (delta(); as change) {
         <p class="lc-kpi-card__delta" [class]="'lc-kpi-card__delta--' + change.sentiment">
           <lc-icon [name]="trendIcon()" />
@@ -37,7 +37,12 @@ const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as
   `,
   styleUrl: './kpi-card.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-kpi-card', '[attr.aria-busy]': "loading() ? 'true' : null" },
+  host: {
+    class: 'lc-kpi-card',
+    role: 'group',
+    '[attr.aria-label]': 'accessibleName()',
+    '[attr.aria-busy]': "loading() ? 'true' : null",
+  },
 })
 export class LcKpiCardComponent {
   private readonly formatService = inject(LcFormatService);
@@ -45,13 +50,20 @@ export class LcKpiCardComponent {
   readonly label = input.required<string>();
   readonly value = input<number | null>(null);
   readonly format = input<LcValueFormat>('number');
+  /**
+   * Texte affiché à la place de la valeur numérique formatée (ex. « 7 ans et 4 mois », « Dès l'achat », « Aucun ») ;
+   * il nomme aussi la carte pour les technologies d'assistance. `null` : la valeur est formatée selon `format`.
+   */
+  readonly valueText = input<string | null>(null);
   readonly delta = input<LcKpiDelta>();
   readonly hint = input<string>();
   readonly loading = input(false, { transform: booleanAttribute });
   /** Valeur atténuée pendant un recalcul. */
   readonly stale = input(false, { transform: booleanAttribute });
 
-  protected readonly valueText = computed(() => this.formatService.format(this.value(), this.format()));
+  protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value(), this.format()));
+  /** Nom du groupe : libellé et valeur affichée (le texte libre remplace le nombre). */
+  protected readonly accessibleName = computed(() => (this.loading() ? this.label() : `${this.label()} : ${this.displayText()}`));
   protected readonly trendIcon = computed(() => TREND_ICONS[this.delta()?.trend ?? 'flat']);
   protected readonly deltaText = computed(() => {
     const delta = this.delta();
