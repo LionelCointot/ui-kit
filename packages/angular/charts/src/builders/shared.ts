@@ -99,16 +99,64 @@ export function tooltipBase(theme: LcChartTheme): object {
   };
 }
 
-/** Axe des catégories commun : ligne de base `axis`, graduations en `ink.muted`. */
-export function categoryAxis(labels: readonly string[], theme: LcChartTheme, horizontalBars = false): object {
+/** Au-delà de ce nombre de catégories datées, l'axe n'étiquette plus chaque catégorie mais les années. */
+const ANNUAL_TICKS_MIN_CATEGORIES = 24;
+/** Nombre maximal d'étiquettes d'années sur l'axe. */
+const ANNUAL_TICKS_MAX_LABELS = 12;
+const YEAR_STEPS: readonly number[] = [1, 2, 5, 10, 20, 25, 50, 100];
+
+/**
+ * Graduations annuelles d'un axe de mois ou de dates nombreux (ex. 480 mois) : pour chaque catégorie, l'année à
+ * étiqueter (premier janvier rencontré, d'une année sur deux, cinq… selon la densité) ou `null`. Renvoie `null`
+ * quand le cas ne s'applique pas (autre type de catégorie, ≤ 24 catégories, moins de deux années repérables).
+ */
+export function annualTicks(categories: readonly string[], kind: LcCartesianData['categoryKind']): readonly (string | null)[] | null {
+  if ((kind !== 'month' && kind !== 'date') || categories.length <= ANNUAL_TICKS_MIN_CATEGORIES) return null;
+  const januaries: { index: number; year: number }[] = [];
+  let previous = '';
+  categories.forEach((category, index) => {
+    const parsed = /^(\d{4})-(\d{2})/.exec(category);
+    if (!parsed) return;
+    const month = `${parsed[1]}-${parsed[2]}`;
+    if (parsed[2] === '01' && month !== previous) januaries.push({ index, year: Number(parsed[1]) });
+    previous = month;
+  });
+  if (januaries.length < 2) return null;
+  const step = YEAR_STEPS.find((candidate) => Math.ceil(januaries.length / candidate) <= ANNUAL_TICKS_MAX_LABELS) ?? YEAR_STEPS[YEAR_STEPS.length - 1];
+  const aligned = januaries.filter(({ year }) => year % step === 0);
+  const chosen = aligned.length >= 2 ? aligned : januaries.filter((_, position) => position % step === 0);
+  const ticks: (string | null)[] = categories.map(() => null);
+  for (const { index, year } of chosen) ticks[index] = String(year);
+  return ticks;
+}
+
+/**
+ * Axe des catégories commun : ligne de base `axis`, graduations en `ink.muted`. Avec `ticks` (voir `annualTicks`),
+ * seules les catégories portant une année sont étiquetées et graduées.
+ */
+export function categoryAxis(
+  labels: readonly string[], theme: LcChartTheme, horizontalBars = false, ticks?: readonly (string | null)[] | null,
+): object {
+  const onTick = (index: number): boolean => ticks?.[index] != null;
   return {
     type: 'category',
     data: labels,
     boundaryGap: horizontalBars ? true : undefined,
     axisLine: { lineStyle: { color: theme.axis } },
-    axisTick: { show: false },
-    axisLabel: { ...textStyle(theme, theme.ink.muted), hideOverlap: true },
+    axisTick: ticks ? { show: true, interval: onTick, lineStyle: { color: theme.axis } } : { show: false },
+    axisLabel: ticks
+      ? { ...textStyle(theme, theme.ink.muted), hideOverlap: true, interval: onTick, formatter: (_value: string, index: number) => ticks[index] ?? '' }
+      : { ...textStyle(theme, theme.ink.muted), hideOverlap: true },
   };
+}
+
+/**
+ * Borne basse de l'axe : le `min` demandé s'il est compatible (un axe « depuis 0 » n'accepte qu'un `min` ≤ 0),
+ * sinon 0 ou la plus petite valeur négative, sinon automatique.
+ */
+export function axisMin(requested: number | undefined, fromZero: boolean): number | ((value: { min: number }) => number) | undefined {
+  if (requested !== undefined && !(fromZero && requested > 0)) return requested;
+  return fromZero ? (value: { min: number }) => Math.min(0, value.min) : undefined;
 }
 
 /** Axe unique des valeurs : filets horizontaux `gridline`, graduations compactes. */
@@ -118,7 +166,8 @@ export function valueAxis(options: { axis?: LcValueAxis; theme: LcChartTheme; fo
     type: 'value',
     name: axis?.label,
     nameTextStyle: textStyle(theme, theme.ink.muted),
-    min: fromZero ? (value: { min: number }) => Math.min(0, value.min) : undefined,
+    min: axisMin(axis?.min, fromZero),
+    max: axis?.max,
     axisLine: { show: false },
     axisTick: { show: false },
     splitLine: { show: true, lineStyle: { color: theme.gridline } },

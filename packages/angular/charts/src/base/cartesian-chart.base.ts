@@ -3,7 +3,7 @@ import { LC_LABELS, LcFormatService, LcValueFormat } from '@lionelcointot/ui-ang
 import type { EChartsCoreOption } from '../echarts-registry';
 import { prepareSeries } from '../builders/palette';
 import type { CartesianBuildArgs } from '../builders/line.builder';
-import { categoryLabels } from '../builders/shared';
+import { annualTicks, categoryLabels } from '../builders/shared';
 import type { ResolvedOverlays } from '../builders/annotations';
 import { buildSummary, describeOverlays } from '../builders/summary';
 import { buildCartesianTable, buildOverlayRows } from '../builders/table';
@@ -42,6 +42,8 @@ export abstract class LcCartesianChartBase {
   readonly yAxis = input<LcValueAxis>({});
   readonly pointSelect = output<LcChartPointSelect>();
 
+  /** Aires et barres : l'axe des valeurs part toujours de 0 (un `min` positif de `yAxis` est ignoré). */
+  protected readonly zeroBaseline: boolean = false;
   /** Forme des pastilles de la légende. */
   protected abstract readonly legendShape: 'line' | 'rect';
   protected abstract buildOption(args: CartesianBuildArgs): EChartsCoreOption;
@@ -59,6 +61,7 @@ export abstract class LcCartesianChartBase {
   protected readonly prepared = computed(() => {
     const data = this.data();
     this.warnAboutData(data);
+    this.warnAboutAxis();
     return prepareSeries(data.series, this.colorMemory, this.themeService.theme(), this.labels.other, this.hidden());
   });
 
@@ -102,6 +105,7 @@ export abstract class LcCartesianChartBase {
       seriesCount: all.length,
       directLabels: 'auto',
       overlays: this.overlays('visible'),
+      annualTicks: annualTicks(this.data().categories, this.data().categoryKind),
     });
   });
 
@@ -113,6 +117,13 @@ export abstract class LcCartesianChartBase {
       else if (next.size < this.prepared().all.length - 1) next.add(id); // au moins une série reste affichée
       return next;
     });
+  }
+
+  private warnAboutAxis(): void {
+    const min = this.yAxis().min;
+    if (isDevMode() && this.zeroBaseline && min !== undefined && min > 0) {
+      console.warn(`[lc-chart] yAxis.min (${min}) ignoré : l'axe des valeurs d'une aire ou de barres part toujours de 0.`);
+    }
   }
 
   private warnAboutData(data: LcCartesianData): void {

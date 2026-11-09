@@ -101,3 +101,25 @@ export const AireAvecRepere: Story = {
     template: `<lc-area-chart title="Répartition annuelle" [data]="data" [yAxis]="{ format: 'money' }" [markers]="markers" />`,
   }),
 };
+
+const months = Array.from({ length: 480 }, (_, index) => {
+  const date = new Date(Date.UTC(2026, 5 + index, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+});
+
+/** 480 mois (40 ans) : une graduation par année (ou moins si dense), jamais une étiquette par mois. */
+export const MensuelSurQuaranteAns: Story = {
+  render: () => ({
+    props: {
+      data: {
+        categories: months,
+        categoryKind: 'month',
+        series: [
+          { id: 'buy', label: 'Acheter', values: months.map((_, i) => 40000 + i * 650 + i * i * 2), symbol: 'diamond' },
+          { id: 'rent', label: 'Louer', values: months.map((_, i) => 60000 + i * 900), lineStyle: 'dashed' },
+        ],
+      } satisfies LcCartesianData,
+    },
+    template: `<lc-line-chart title="Patrimoine net sur 40 ans" [data]="data" [yAxis]="{ format: 'money' }" />`,
+  }),
+};

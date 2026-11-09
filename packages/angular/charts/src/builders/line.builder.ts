@@ -21,6 +21,8 @@ export interface CartesianBuildArgs {
   readonly directLabels: 'auto' | 'none';
   /** Repères verticaux et points annotés déjà validés (voir `resolveOverlays`) ; courbes et aires seulement. */
   readonly overlays?: Pick<ResolvedOverlays, 'markers' | 'annotations'>;
+  /** Années à étiqueter sur l'axe d'un grand nombre de mois ou de dates (voir `annualTicks`) ; courbes et aires. */
+  readonly annualTicks?: readonly (string | null)[] | null;
 }
 
 export interface LineBuildArgs extends CartesianBuildArgs {
@@ -54,7 +56,7 @@ export function buildLineOption(args: LineBuildArgs): EChartsCoreOption {
   const { categories, series, theme, format, yAxis } = args;
   const valueFormat: LcValueFormat = yAxis?.format ?? 'number';
   const area = args.area;
-  const truncated = !area && lineAxisIsTruncated(series);
+  const truncated = !area && (yAxis?.min !== undefined ? yAxis.min > 0 : lineAxisIsTruncated(series));
   const showPoints = !area && (args.showPoints === 'always' || (args.showPoints === 'auto' && categories.length <= MAX_POINTS_AUTO));
   const directLabels = showDirectLabels(args.directLabels, args.seriesCount);
   const hasMarkers = (args.overlays?.markers.length ?? 0) > 0;
@@ -71,7 +73,7 @@ export function buildLineOption(args: LineBuildArgs): EChartsCoreOption {
         return axisTooltip(first.dataIndex, args, valueFormat);
       },
     },
-    xAxis: { ...categoryAxis(categories, theme), boundaryGap: categories.length <= 1 },
+    xAxis: { ...categoryAxis(categories, theme, false, args.annualTicks), boundaryGap: categories.length <= 1 },
     yAxis: valueAxis({ axis: yAxis, theme, format, fromZero: !!area || !truncated }),
     graphic: truncated ? [axisBreak(theme)] : undefined,
     series: series.map((item, index) => lineSeries(item, args, showPoints, directLabels, index === 0)),

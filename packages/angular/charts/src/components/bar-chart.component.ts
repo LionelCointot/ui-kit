@@ -21,6 +21,7 @@ export class LcBarChartComponent extends LcCartesianChartBase {
   readonly totals = input(true, { transform: booleanAttribute });
 
   protected readonly legendShape = 'rect';
+  protected override readonly zeroBaseline = true;
 
   protected buildOption(args: CartesianBuildArgs): EChartsCoreOption {
     return buildBarOption({

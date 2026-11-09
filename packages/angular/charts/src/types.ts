@@ -60,6 +60,14 @@ export interface LcValueAxis {
   readonly compact?: boolean;
   /** Titre d'axe (optionnel, le titre du graphique suffit souvent). */
   readonly label?: string;
+  /**
+   * Borne basse imposée (ex. échelle commune à deux graphiques côte à côte). Sur une aire ou des barres, l'axe part
+   * toujours de 0 : un `min` supérieur à 0 est ignoré (avertissement en développement). Sur une courbe, un `min`
+   * supérieur à 0 tronque l'axe (rupture d'axe visible).
+   */
+  readonly min?: number;
+  /** Borne haute imposée (ex. échelle commune à deux graphiques côte à côte). */
+  readonly max?: number;
 }
 
 export interface LcChartsOptions {

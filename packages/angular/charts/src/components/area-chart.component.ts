@@ -23,6 +23,7 @@ export class LcAreaChartComponent extends LcTimelineChartBase {
   readonly directLabels = input<'auto' | 'none'>('auto');
 
   protected readonly legendShape = 'rect';
+  protected override readonly zeroBaseline = true;
 
   protected override isStacked(): boolean {
     return this.stacked();
