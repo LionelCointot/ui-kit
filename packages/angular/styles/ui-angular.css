@@ -215,6 +215,93 @@ lc-form-field [lcSuffix] {
   outline: none;
 }
 
+/* lc-combobox : le panneau (rôle listbox) vit dans la surcouche CDK, hors du composant. */
+.lc-combobox-panel {
+  box-sizing: border-box;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-sys-radius-md);
+  background: var(--lc-sys-color-surface-raised);
+  box-shadow: var(--lc-sys-shadow-3);
+  color: var(--lc-sys-color-on-surface);
+  font-size: var(--lc-sys-font-size-md);
+}
+
+.lc-combobox-panel__list {
+  max-block-size: var(--lc-combobox-panel-max-height, calc(var(--lc-sys-space-16) * 4));
+  margin: 0;
+  padding: var(--lc-sys-space-1);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.lc-combobox-panel__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-2);
+  min-block-size: var(--lc-sys-control-height-md);
+  padding-block: var(--lc-sys-space-1);
+  padding-inline: var(--lc-sys-space-3);
+  border-radius: var(--lc-sys-radius-sm);
+  cursor: pointer;
+}
+
+.lc-combobox-panel__option--active {
+  background: var(--lc-sys-color-primary-container);
+  color: var(--lc-sys-color-on-primary-container);
+}
+
+.lc-combobox-panel__option[aria-selected='true'] {
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-combobox-panel__option--retry {
+  color: var(--lc-sys-color-primary);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-combobox-panel__option--retry.lc-combobox-panel__option--active {
+  color: var(--lc-sys-color-on-primary-container);
+}
+
+.lc-combobox-panel__check {
+  flex: none;
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-combobox-panel__message {
+  margin: 0;
+  padding-block: var(--lc-sys-space-3);
+  padding-inline: var(--lc-sys-space-4);
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-combobox-panel__secondary {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-combobox-panel__option--active .lc-combobox-panel__secondary {
+  color: inherit;
+}
+
+@media (max-width: 767px) {
+  .lc-combobox-panel__option {
+    min-block-size: calc(var(--lc-sys-space-10) + var(--lc-sys-space-1));
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-combobox-panel {
+    border-color: CanvasText;
+  }
+
+  .lc-combobox-panel__option--active {
+    outline: var(--lc-sys-border-width-thin) solid Highlight;
+    outline-offset: calc(-1 * var(--lc-sys-border-width-thin));
+  }
+}
+
 /* Menu : le panneau vit dans la surcouche CDK, hors des composants. */
 .lc-menu-panel {
   display: flex;

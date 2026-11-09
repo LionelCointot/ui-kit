@@ -20,3 +20,5 @@ export * from './radio/radio-group.component';
 export * from './radio/radio.directive';
 export * from './combobox/search-text';
 export * from './combobox/highlight.component';
+export * from './combobox/combobox-option.directive';
+export * from './combobox/combobox.component';

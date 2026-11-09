@@ -1,0 +1,157 @@
+/*
+ * lc-combobox : l'hôte est un bloc, le cadre (`.lc-combobox__frame`) porte la bordure et le focus.
+ * Uniquement des variables CSS (--lc-input-* avec repli sur --lc-sys-*). Le panneau (surcouche CDK) est stylé
+ * par la feuille globale ui-angular.css (`.lc-combobox-panel`).
+ */
+:host {
+  --_border: var(--lc-input-border, var(--lc-sys-color-border-strong));
+  --_height: var(--lc-input-height, var(--lc-sys-control-height-md));
+  --_radius: var(--lc-input-radius, var(--lc-sys-radius-md));
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+
+  display: block;
+  width: 100%;
+  font-size: var(--lc-sys-font-size-md);
+}
+
+.lc-combobox__frame {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--_height);
+  border: var(--lc-sys-border-width-thin) solid var(--_border);
+  border-radius: var(--_radius);
+  background: var(--lc-input-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+  cursor: text;
+  transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+:host(:not(.lc-combobox--disabled):not(.lc-combobox--readonly)) .lc-combobox__frame:hover {
+  --_border: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-combobox__frame:focus-within {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: 0;
+}
+
+:host(.lc-combobox--invalid) .lc-combobox__frame {
+  --_border: var(--lc-input-border-invalid, var(--lc-sys-color-error));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_border);
+}
+
+:host(.lc-combobox--disabled) .lc-combobox__frame {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+:host(.lc-combobox--readonly) .lc-combobox__frame {
+  background: var(--lc-sys-color-surface-sunken);
+  cursor: default;
+}
+
+:host(.lc-combobox--small) {
+  --_height: var(--lc-sys-control-height-sm);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+:host(.lc-combobox--large) {
+  --_height: var(--lc-sys-control-height-lg);
+  --lc-icon-size: var(--lc-sys-icon-size-lg);
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+:host(.lc-combobox--outline) .lc-combobox__frame {
+  background: transparent;
+}
+
+:host(.lc-combobox--flat) .lc-combobox__frame {
+  border-color: transparent;
+  border-block-end-color: var(--_border);
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+:host(.lc-combobox--rounded-none) {
+  --_radius: var(--lc-sys-radius-none);
+}
+
+:host(.lc-combobox--rounded-small) {
+  --_radius: var(--lc-sys-radius-sm);
+}
+
+:host(.lc-combobox--rounded-large) {
+  --_radius: var(--lc-sys-radius-lg);
+}
+
+:host(.lc-combobox--rounded-full) {
+  --_radius: var(--lc-sys-radius-full);
+}
+
+.lc-combobox__input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: var(--lc-sys-space-3);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: var(--lc-sys-font-line-height-normal);
+  text-overflow: ellipsis;
+}
+
+.lc-combobox__input:focus {
+  outline: none;
+}
+
+.lc-combobox__input:disabled {
+  cursor: not-allowed;
+}
+
+.lc-combobox__input::placeholder {
+  color: var(--lc-sys-color-on-surface-subtle);
+  opacity: 1;
+}
+
+.lc-combobox__clear {
+  flex: none;
+  margin-inline-end: var(--lc-sys-space-1);
+}
+
+.lc-combobox__chevron {
+  flex: none;
+  margin-inline-end: var(--lc-sys-space-3);
+  color: var(--lc-sys-color-on-surface-muted);
+  pointer-events: none;
+  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+:host(.lc-combobox--open) .lc-combobox__chevron {
+  transform: rotate(180deg);
+}
+
+.lc-combobox__hint {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  margin: var(--lc-sys-space-1) 0 0;
+  color: var(--lc-sys-color-error);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-combobox__chevron,
+  .lc-combobox__frame {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-combobox__frame {
+    border-color: CanvasText;
+  }
+}
