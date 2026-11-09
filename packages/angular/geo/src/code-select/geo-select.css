@@ -1,0 +1,29 @@
+/* Champs géographiques : le cadre est celui de lc-combobox ; ici, la mise en page des options et de l'aide. */
+:host {
+  display: block;
+  width: 100%;
+}
+
+.lc-geo-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--lc-sys-space-2);
+  min-width: 0;
+}
+
+.lc-geo-option__code {
+  min-width: var(--lc-sys-space-8);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-geo-option__secondary {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-geo__hint {
+  margin: var(--lc-sys-space-1) 0 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}

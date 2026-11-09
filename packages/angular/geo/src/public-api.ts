@@ -8,3 +8,7 @@ export * from './geo-data-source';
 export * from './geo-options';
 export * from './gouv-geo-data-source';
 export * from './provide-lc-geo';
+export { LcCodeSelectBase } from './code-select/code-select-base';
+export type { LcCodedItem } from './code-select/code-select-base';
+export * from './code-select/region-select.component';
+export * from './code-select/department-select.component';

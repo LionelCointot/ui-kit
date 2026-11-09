@@ -31,7 +31,13 @@ class FakeSearch {
   `,
 })
 class AsyncHostComponent {
-  readonly source = new FakeSearch();
+  private readonly current = signal(new FakeSearch());
+  get source(): FakeSearch {
+    return this.current();
+  }
+  replaceSource(next: FakeSearch): void {
+    this.current.set(next);
+  }
   readonly debounce = signal(0);
   readonly value = signal<City | null>(null);
   readonly changes: (City | null)[] = [];
@@ -222,5 +228,17 @@ describe('LcComboboxComponent (mode asynchrone)', () => {
     await fixture.whenStable();
     expect(host.source.calls[0].signal.aborted).toBe(true);
     expect(input.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('une nouvelle fonction search invalide les résultats et relance la recherche si le panneau est ouvert', async () => {
+    input.focus();
+    await type('ly');
+    host.source.calls[0].resolve([LYON]);
+    await flush();
+    expect(options()).toHaveLength(1);
+    const next = new FakeSearch();
+    host.replaceSource(next);
+    await flush();
+    expect(next.calls.map((call) => call.text)).toEqual(['ly']);
   });
 });

@@ -193,6 +193,8 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   readonly maxResults = input(50);
   /** Ouvre la liste à la prise de focus (défaut : oui en local, non en asynchrone). */
   readonly openOnFocus = input<boolean | undefined>(undefined);
+  /** Identifiants supplémentaires ajoutés à `aria-describedby` (aide fournie par un composant parent). */
+  readonly extraDescribedBy = input<string | null>(null);
   /** Bouton « Effacer ». */
   readonly clearable = input(true, { transform: booleanAttribute });
   readonly placeholder = input('');
@@ -305,7 +307,7 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   protected readonly showInvalid = computed(() =>
     this.field ? this.field.showInvalid() : this.invalid() && (this.touched() || this.blurred()));
   protected readonly isRequired = computed(() => this.required() || (this.field?.isRequired() ?? false));
-  protected readonly describedBy = computed(() => joinIds(this.showHint() ? this.hintId : null, this.field?.describedBy()));
+  protected readonly describedBy = computed(() => joinIds(this.showHint() ? this.hintId : null, this.extraDescribedBy(), this.field?.describedBy()));
   protected readonly frameClasses = computed(() => {
     const size = this.size() ?? this.defaults.size;
     const fillMode = this.fillMode() ?? this.defaults.fillMode;
@@ -327,6 +329,11 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
       clearTimeout(this.announceTimer);
       this.keyManager.destroy();
       this.overlayRef?.dispose();
+    });
+    // Une nouvelle fonction `search` (ex. filtre du parent modifié) rend les résultats précédents caducs.
+    effect(() => {
+      this.search();
+      untracked(() => this.resetResults());
     });
     effect(() => {
       const index = this.activeIndex();
@@ -553,6 +560,14 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     const delay = immediate ? 0 : this.debounceMs();
     if (delay > 0) this.debounceTimer = setTimeout(() => void execute(), delay);
     else void execute();
+  }
+
+  private resetResults(): void {
+    if (this.status() === 'idle' && this.remoteItems().length === 0) return;
+    this.cancelPending();
+    this.remoteItems.set([]);
+    this.status.set('idle');
+    if (this.open()) this.runSearch(true);
   }
 
   private cancelPending(): void {
