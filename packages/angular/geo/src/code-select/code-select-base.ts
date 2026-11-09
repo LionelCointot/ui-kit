@@ -1,24 +1,8 @@
-import {
-  Directive,
-  DestroyRef,
-  Signal,
-  booleanAttribute,
-  computed,
-  effect,
-  inject,
-  input,
-  isDevMode,
-  model,
-  output,
-  signal,
-  untracked,
-  viewChild,
-} from '@angular/core';
-import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { LC_LABELS, LcFillMode, LcRounded, LcSize, lcUniqueId } from '@lionelcointot/ui-angular';
-import { LcComboboxComponent, lcFilterOptions } from '@lionelcointot/ui-angular/forms';
-import type { LcFormFieldControl } from '@lionelcointot/ui-angular/forms';
+import { DestroyRef, Directive, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
+import { lcUniqueId } from '@lionelcointot/ui-angular';
+import { lcFilterOptions } from '@lionelcointot/ui-angular/forms';
 import { LcGeoDataSource } from '../geo-data-source';
+import { LcGeoFieldBase } from '../geo-field-base';
 
 /** Élément identifié par un code officiel (région ou département). */
 export interface LcCodedItem {
@@ -33,49 +17,23 @@ export interface LcCodedItem {
  * tant qu'il n'a pas abouti (ou s'il échoue), la valeur s'affiche par son code brut.
  */
 @Directive()
-export abstract class LcCodeSelectBase<T extends LcCodedItem> implements FormValueControl<string | null>, LcFormFieldControl {
-  private readonly source = inject(LcGeoDataSource, { optional: true });
-  protected readonly labels = inject(LC_LABELS);
-
-  /** Code officiel sélectionné (`null` : aucun). */
-  readonly value = model<string | null>(null);
-  readonly placeholder = input('');
-  /** Identifiant du champ interne (généré), relié au libellé de `lc-form-field`. */
-  readonly inputId = input<string>(lcUniqueId('geo'));
-  /** Nom accessible quand le contrôle est utilisé hors de `lc-form-field`. */
-  readonly ariaLabel = input<string>();
-  readonly size = input<LcSize | undefined>(undefined);
-  readonly fillMode = input<LcFillMode | undefined>(undefined);
-  readonly rounded = input<LcRounded | undefined>(undefined);
-  readonly disabled = input(false, { transform: booleanAttribute });
-  readonly readonly = input(false, { transform: booleanAttribute });
-  readonly invalid = input(false, { transform: booleanAttribute });
-  readonly touched = input(false, { transform: booleanAttribute });
-  readonly required = input(false, { transform: booleanAttribute });
-  readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  /** Sélection faite par l'utilisateur (ou valeur retirée parce qu'elle sort du filtre), avec l'objet complet. */
-  readonly selectionChange = output<T | null>();
-  /** Émis quand le focus quitte le champ (champ « touché » pour Signal Forms). */
-  readonly touch = output<void>();
-
-  readonly controlId = computed(() => this.inputId());
-  readonly labelable = true;
-
+export abstract class LcCodeSelectBase<T extends LcCodedItem> extends LcGeoFieldBase<string, T> {
   protected readonly unknownCodeId = lcUniqueId('geo-unknown');
-  private readonly combobox = viewChild.required(LcComboboxComponent);
   private readonly loadedItems = signal<readonly T[] | null>(null);
-  protected readonly ready = computed(() => this.loadedItems() !== null);
 
-  /** Chargement de la liste complète (le premier échec n'est pas définitif : un nouvel appel relance la requête). */
+  /** Chargement de la liste complète (un échec n'est pas définitif : un nouvel appel relance la requête). */
   protected abstract load(source: LcGeoDataSource, signal: AbortSignal): Promise<readonly T[]>;
   /** Éléments proposés parmi la liste complète (ex. département restreint à une région). */
   protected abstract available(all: readonly T[]): readonly T[];
+  protected abstract placeholderItem(code: string): T;
+  /** Signal lu par `searchFn` : quand il change, la recherche du combobox est refaite. */
+  protected abstract readonly filterSignature: Signal<unknown>;
+
   /** Textes comparés au texte saisi. */
   protected readonly filterKeys = (item: T): readonly string[] => [item.code, item.name, `${item.code} ${item.name}`];
   protected readonly trackBy = (item: T): string => item.code;
   /** Texte du champ : « 69 – Rhône », ou le code seul quand le libellé est inconnu. */
   protected readonly display = (item: T): string => (item.name ? `${item.code} – ${item.name}` : item.code);
-  protected abstract placeholderItem(code: string): T;
 
   /** Fonction de recherche du combobox ; elle change d'identité quand le filtre du parent change. */
   protected readonly searchFn = computed(() => {
@@ -98,26 +56,17 @@ export abstract class LcCodeSelectBase<T extends LcCodedItem> implements FormVal
     const items = this.loadedItems();
     return code !== null && items !== null && !items.some((item) => item.code === code) ? code : null;
   });
-  protected readonly unavailable = computed(() => this.source === null);
-
-  /** Signal dont la lecture rend `searchFn` dépendante du filtre du parent. */
-  protected abstract readonly filterSignature: Signal<unknown>;
 
   constructor() {
+    super();
+    if (this.source === null) return;
     const controller = new AbortController();
     inject(DestroyRef).onDestroy(() => controller.abort());
-    if (this.source === null) {
-      if (isDevMode()) console.error('[lc-geo] LcGeoDataSource est absent : ajoutez provideLcGeo() aux fournisseurs de l\'application.');
-      return;
-    }
+    // Les membres abstraits sont posés par la classe dérivée : le chargement part après sa construction.
     queueMicrotask(() => {
       if (!controller.signal.aborted) void this.ensureLoaded(controller.signal).catch(() => undefined);
     });
     effect(() => this.dropValueOutsideFilter());
-  }
-
-  focus(options?: FocusOptions): void {
-    this.combobox().focus(options);
   }
 
   protected onSelect(item: T | null): void {

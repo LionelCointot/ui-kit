@@ -111,7 +111,9 @@ const NO_STYLES = { setActiveStyles: () => undefined, setInactiveStyles: () => u
           class="lc-combobox__clear" tabindex="-1" [attr.aria-label]="labels.comboboxClear"
           (mousedown)="$event.preventDefault()" (click)="clear(); $event.stopPropagation()"><lc-icon name="x" /></button>
       }
-      <lc-icon class="lc-combobox__chevron" name="chevron-down" aria-hidden="true" />
+      @if (openOnFocusResolved()) {
+        <lc-icon class="lc-combobox__chevron" name="chevron-down" aria-hidden="true" />
+      }
     </div>
     @if (showHint()) {
       <p class="lc-combobox__hint" [id]="hintId"><lc-icon name="circle-alert" />{{ labels.comboboxChooseProposal }}</p>

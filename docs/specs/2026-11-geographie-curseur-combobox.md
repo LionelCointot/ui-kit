@@ -328,7 +328,7 @@ Icône ajoutée aux icônes par défaut : `scale` (Lucide, licence ISC), pour le
 - [x] T4 : `lc-slider` (+ `showValue: 'input'`, `marks`, tokens) + stories + tests (M)
 - [x] T5 : point d'entrée `geo` : `LcGeoDataSource`, `LcGouvGeoDataSource` (listes partagées, recherches, validation des réponses, cache), `provideLcGeo` + tests (M)
 - [x] T6 : `lc-region-select`, `lc-department-select` + stories + tests (S)
-- [ ] T7 : `lc-commune-input`, `lc-address-input` + stories (source factice et API réelle) + tests (M)
+- [x] T7 : `lc-commune-input`, `lc-address-input` + stories (source factice et API réelle) + tests (M)
 - [ ] T8 : graphiques : `lineStyle`, `symbol`, `markers`, `annotations` (builders purs, a11y, vue tableau) + icône `scale` (S)
 - [ ] T9 : catalogue (lignes 45 et nouvelles), README `geo` (vie privée, CSP), CLAUDE.md (exception d'import), version mineure (S)
 

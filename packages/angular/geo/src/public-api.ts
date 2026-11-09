@@ -12,3 +12,6 @@ export { LcCodeSelectBase } from './code-select/code-select-base';
 export type { LcCodedItem } from './code-select/code-select-base';
 export * from './code-select/region-select.component';
 export * from './code-select/department-select.component';
+export * from './commune-input/commune-input.component';
+export * from './address-input/address-input.component';
+export { LcGeoFieldBase } from './geo-field-base';

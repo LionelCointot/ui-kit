@@ -22,7 +22,7 @@ import { LcCodeSelectBase } from './code-select-base';
       [touched]="touched()" [required]="required()" [errors]="errors()" [extraDescribedBy]="unknownCode() ? unknownCodeId : null">
       <ng-template lcComboboxOption [lcComboboxOptionOf]="regionHint" let-region let-text="text">
         <span class="lc-geo-option">
-          <span class="lc-geo-option__code" [lcHighlight]="region.code" [lcHighlightTerm]="text"></span>
+          <span class="lc-geo-option__code" [lcHighlight]="region.code" [lcHighlightTerm]="text"></span>&ngsp;
           <span [lcHighlight]="region.name" [lcHighlightTerm]="text"></span>
         </span>
       </ng-template>

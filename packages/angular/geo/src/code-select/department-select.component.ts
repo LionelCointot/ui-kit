@@ -24,8 +24,8 @@ import { LcCodeSelectBase } from './code-select-base';
       [touched]="touched()" [required]="required()" [errors]="errors()" [extraDescribedBy]="unknownCode() ? unknownCodeId : null">
       <ng-template lcComboboxOption [lcComboboxOptionOf]="departmentHint" let-department let-text="text">
         <span class="lc-geo-option">
-          <span class="lc-geo-option__code" [lcHighlight]="department.code" [lcHighlightTerm]="text"></span>
-          <span [lcHighlight]="department.name" [lcHighlightTerm]="text"></span>
+          <span class="lc-geo-option__code" [lcHighlight]="department.code" [lcHighlightTerm]="text"></span>&ngsp;
+          <span [lcHighlight]="department.name" [lcHighlightTerm]="text"></span>&ngsp;
           @if (regionNames().get(department.regionCode); as regionName) {
             <span class="lc-geo-option__secondary">{{ regionName }}</span>
           }
