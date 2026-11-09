@@ -264,6 +264,12 @@ lc-form-field [lcSuffix] {
   color: var(--lc-sys-color-on-primary-container);
 }
 
+.lc-combobox-panel__retry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+}
+
 .lc-combobox-panel__check {
   flex: none;
   --lc-icon-size: var(--lc-sys-icon-size-sm);

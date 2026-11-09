@@ -117,6 +117,11 @@
   opacity: 1;
 }
 
+.lc-combobox__spinner {
+  flex: none;
+  margin-inline-end: var(--lc-sys-space-1);
+}
+
 .lc-combobox__clear {
   flex: none;
   margin-inline-end: var(--lc-sys-space-1);

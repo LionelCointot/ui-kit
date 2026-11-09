@@ -35,6 +35,7 @@ import {
   LcIconComponent,
   LcRounded,
   LcSize,
+  LcSpinnerComponent,
   joinIds,
   lcUniqueId,
 } from '@lionelcointot/ui-angular';
@@ -62,6 +63,21 @@ interface RetryEntry extends EntryBase {
   readonly kind: 'retry';
 }
 
+/** Fonction de recherche asynchrone : doit honorer `signal` (annulation) et renvoyer la liste complète des propositions. */
+export type LcComboboxSearch<T> = (text: string, signal: AbortSignal) => Promise<readonly T[]>;
+
+type SearchStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+const ANNOUNCE_DELAY_MS = 500;
+const ASYNC_MIN_LENGTH = 2;
+
+/** Erreur « trop de requêtes » : reconnue par `status === 429` ou `kind === 'rate-limited'` (sans dépendre d'un type précis). */
+function isRateLimited(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const candidate = error as { status?: unknown; kind?: unknown };
+  return candidate.status === 429 || candidate.kind === 'rate-limited';
+}
+
 /** Les styles actifs sont portés par le gabarit (`activeIndex`) : le gestionnaire n'a rien à appliquer. */
 const NO_STYLES = { setActiveStyles: () => undefined, setInactiveStyles: () => undefined };
 
@@ -77,7 +93,7 @@ const NO_STYLES = { setActiveStyles: () => undefined, setInactiveStyles: () => u
  */
 @Component({
   selector: 'lc-combobox',
-  imports: [LcButtonComponent, LcIconComponent, LcHighlightComponent, NgTemplateOutlet],
+  imports: [LcButtonComponent, LcIconComponent, LcSpinnerComponent, LcHighlightComponent, NgTemplateOutlet],
   template: `
     <div #frame class="lc-combobox__frame" (click)="focus()">
       <input #input class="lc-combobox__input" type="text" role="combobox" autocomplete="off" autocapitalize="off"
@@ -87,6 +103,9 @@ const NO_STYLES = { setActiveStyles: () => undefined, setInactiveStyles: () => u
         [attr.aria-invalid]="showInvalid() ? 'true' : null" [attr.aria-required]="isRequired() ? 'true' : null"
         [attr.aria-describedby]="describedBy()" [attr.aria-readonly]="readonly() ? 'true' : null"
         (input)="onInput($event)" (focus)="onFocus()" (blur)="onBlur()" (keydown)="onKeydown($event)" (click)="onInputClick()" />
+      @if (status() === 'loading') {
+        <lc-spinner class="lc-combobox__spinner" size="small" [label]="labels.comboboxSearching" />
+      }
       @if (showClear()) {
         <button lcButton type="button" iconOnly fillMode="flat" themeColor="neutral" rounded="full" size="small"
           class="lc-combobox__clear" tabindex="-1" [attr.aria-label]="labels.comboboxClear"
@@ -98,33 +117,39 @@ const NO_STYLES = { setActiveStyles: () => undefined, setInactiveStyles: () => u
       <p class="lc-combobox__hint" [id]="hintId"><lc-icon name="circle-alert" />{{ labels.comboboxChooseProposal }}</p>
     }
     <ng-template #panel>
-      <div class="lc-combobox-panel" (mousedown)="$event.preventDefault()">
-        @if (entries().length > 0) {
-          <ul class="lc-combobox-panel__list" role="listbox" [id]="listId" [attr.aria-label]="ariaLabel() || null"
-            [attr.aria-labelledby]="ariaLabel() ? null : (field?.labelId ?? null)">
-            @for (entry of entries(); track entry.id; let index = $index) {
-              <li role="option" class="lc-combobox-panel__option" [id]="entry.id"
-                [class.lc-combobox-panel__option--active]="index === activeIndex()"
-                [attr.aria-selected]="entry.kind === 'option' ? entry.key === selectedKey() : null"
-                (click)="activate(index)" (mousemove)="hover(index)">
-                @if (entry.kind === 'option') {
-                  @if (optionTemplate(); as option) {
-                    <ng-container [ngTemplateOutlet]="option.template"
-                      [ngTemplateOutletContext]="{ $implicit: entry.item, text: query(), selected: entry.key === selectedKey() }" />
+      @if (entries().length > 0 || panelMessage()) {
+        <div class="lc-combobox-panel" (mousedown)="$event.preventDefault()">
+          @if (panelMessage(); as message) {
+            <p class="lc-combobox-panel__message">{{ message }}</p>
+          }
+          @if (entries().length > 0) {
+            <ul class="lc-combobox-panel__list" role="listbox" [id]="listId" [attr.aria-busy]="status() === 'loading' ? 'true' : null"
+              [attr.aria-label]="ariaLabel() || null" [attr.aria-labelledby]="ariaLabel() ? null : (field?.labelId ?? null)">
+              @for (entry of entries(); track entry.id; let index = $index) {
+                <li role="option" class="lc-combobox-panel__option" [id]="entry.id"
+                  [class.lc-combobox-panel__option--active]="index === activeIndex()"
+                  [class.lc-combobox-panel__option--retry]="entry.kind === 'retry'"
+                  [attr.aria-selected]="entry.kind === 'option' ? entry.key === selectedKey() : null"
+                  (click)="activate(index)" (mousemove)="hover(index)">
+                  @if (entry.kind === 'option') {
+                    @if (optionTemplate(); as option) {
+                      <ng-container [ngTemplateOutlet]="option.template"
+                        [ngTemplateOutletContext]="{ $implicit: entry.item, text: query(), selected: entry.key === selectedKey() }" />
+                    } @else {
+                      <span [lcHighlight]="entry.label" [lcHighlightTerm]="query()"></span>
+                    }
+                    @if (entry.key === selectedKey()) {
+                      <lc-icon class="lc-combobox-panel__check" name="check" />
+                    }
                   } @else {
-                    <span [lcHighlight]="entry.label" [lcHighlightTerm]="query()"></span>
+                    <span class="lc-combobox-panel__retry"><lc-icon name="rotate-ccw" />{{ labels.comboboxRetry }}</span>
                   }
-                  @if (entry.key === selectedKey()) {
-                    <lc-icon class="lc-combobox-panel__check" name="check" />
-                  }
-                }
-              </li>
-            }
-          </ul>
-        } @else {
-          <p class="lc-combobox-panel__message">{{ labels.comboboxNoResults }}</p>
-        }
-      </div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
     </ng-template>
     <span class="lc-visually-hidden" aria-live="polite">{{ announcement() }}</span>
   `,
@@ -152,17 +177,21 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   readonly value = model<T | null>(null);
   /** Mode local : éléments proposés, filtrés en mémoire. */
   readonly options = input<readonly T[] | null>(null);
+  /** Mode asynchrone (exclusif avec `options`) : recherche du texte saisi, annulée par la recherche suivante. */
+  readonly search = input<LcComboboxSearch<T> | null>(null);
   /** Texte du champ après sélection (obligatoire). */
   readonly displayWith = input.required<(item: T) => string>();
   /** Clé stable d'un élément : égalité de valeur et identifiants d'options (obligatoire). */
   readonly trackBy = input.required<(item: T) => string>();
   /** Textes comparés au texte saisi en mode local (défaut : `displayWith`). */
   readonly filterKeys = input<((item: T) => readonly string[]) | undefined>(undefined);
-  /** Caractères saisis avant d'afficher des propositions (défaut 0). */
+  /** Caractères saisis avant de chercher ou d'afficher des propositions (défaut : 0 en local, 2 en asynchrone). */
   readonly minLength = input<number | undefined>(undefined);
+  /** Anti-rebond de la recherche asynchrone, en millisecondes. */
+  readonly debounceMs = input(200);
   /** Nombre maximal de propositions affichées en mode local. */
   readonly maxResults = input(50);
-  /** Ouvre la liste à la prise de focus (défaut : oui). */
+  /** Ouvre la liste à la prise de focus (défaut : oui en local, non en asynchrone). */
   readonly openOnFocus = input<boolean | undefined>(undefined);
   /** Bouton « Effacer ». */
   readonly clearable = input(true, { transform: booleanAttribute });
@@ -183,6 +212,8 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   /** Sélection faite par l'utilisateur (jamais lors d'une valeur posée par le code). */
   readonly selectionChange = output<T | null>();
+  /** Erreur de la fonction `search` (le panneau affiche alors l'état d'erreur et « Réessayer »). */
+  readonly searchFailed = output<unknown>();
   /** Émis quand le focus quitte le champ (champ « touché » pour Signal Forms). */
   readonly touch = output<void>();
 
@@ -198,6 +229,9 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   private readonly panelRef = viewChild.required<TemplateRef<unknown>>('panel');
 
   protected readonly open = signal(false);
+  protected readonly status = signal<SearchStatus>('idle');
+  private readonly errorKind = signal<'unavailable' | 'rate-limited'>('unavailable');
+  private readonly remoteItems = signal<readonly T[]>([]);
   protected readonly announcement = signal('');
   protected readonly activeIndex = signal(-1);
   /** Texte saisi par l'utilisateur et servant au filtre (vide après une sélection). */
@@ -223,15 +257,40 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     return filterKeys ?? ((item: T) => [displayWith(item)]);
   });
 
-  private readonly items = computed<readonly T[]>(() =>
-    lcFilterOptions(this.options() ?? [], this.query(), this.keys(), this.maxResults()));
+  private readonly mode = computed<'local' | 'async' | 'none'>(() =>
+    this.options() !== null ? 'local' : this.search() !== null ? 'async' : 'none');
+  protected readonly minLengthResolved = computed(() => this.minLength() ?? (this.mode() === 'async' ? ASYNC_MIN_LENGTH : 0));
+  protected readonly openOnFocusResolved = computed(() => this.openOnFocus() ?? this.mode() !== 'async');
+  private readonly belowMinLength = computed(() => this.query().trim().length < this.minLengthResolved());
+
+  private readonly items = computed<readonly T[]>(() => {
+    if (this.belowMinLength()) return [];
+    return this.mode() === 'async'
+      ? this.remoteItems()
+      : lcFilterOptions(this.options() ?? [], this.query(), this.keys(), this.maxResults());
+  });
 
   protected readonly entries = computed<readonly ComboboxEntry<T>[]>(() => {
+    if (this.mode() === 'async' && this.status() === 'error' && !this.belowMinLength()) {
+      return [{ kind: 'retry', id: `${this.listId}-retry`, disabled: false, ...NO_STYLES }];
+    }
     const trackBy = this.trackBy();
     const displayWith = this.displayWith();
     return this.items().map((item, index): ComboboxEntry<T> => ({
       kind: 'option', id: `${this.listId}-${index}`, disabled: false, item, key: trackBy(item), label: displayWith(item), ...NO_STYLES,
     }));
+  });
+
+  /** Texte d'état au-dessus (ou à la place) de la liste : erreur, recherche, texte trop court, aucun résultat. */
+  protected readonly panelMessage = computed<string | null>(() => {
+    if (this.belowMinLength()) return this.labels.comboboxMinLength(this.minLengthResolved());
+    if (this.mode() === 'async') {
+      const status = this.status();
+      if (status === 'error') return this.errorKind() === 'rate-limited' ? this.labels.comboboxTooManyRequests : this.labels.comboboxSearchUnavailable;
+      if (status === 'loading' && this.entries().length === 0) return this.labels.comboboxSearching;
+      if (status === 'idle') return null;
+    }
+    return this.entries().length === 0 ? this.labels.comboboxNoResults : null;
   });
 
   protected readonly selectedKey = computed(() => {
@@ -255,12 +314,17 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   });
 
   private overlayRef?: OverlayRef;
+  private abortController?: AbortController;
+  private debounceTimer?: ReturnType<typeof setTimeout>;
+  private announceTimer?: ReturnType<typeof setTimeout>;
   private readonly keyManager = new ActiveDescendantKeyManager<ComboboxEntry<T>>(this.entries, this.injector).withWrap();
 
   constructor() {
     this.keyManager.change.subscribe((index) => this.activeIndex.set(index));
     const destroyRef = inject(DestroyRef);
     destroyRef.onDestroy(() => {
+      this.cancelPending();
+      clearTimeout(this.announceTimer);
       this.keyManager.destroy();
       this.overlayRef?.dispose();
     });
@@ -271,8 +335,10 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     });
     if (isDevMode()) {
       afterNextRender(() => {
-        if (this.options() === null) {
-          console.warn('[lc-combobox] `options` est obligatoire (mode local).');
+        if (this.options() !== null && this.search() !== null) {
+          console.warn('[lc-combobox] `options` et `search` fournis ensemble : `search` est ignoré.');
+        } else if (this.mode() === 'none') {
+          console.warn('[lc-combobox] fournir `options` (mode local) ou `search` (mode asynchrone).');
         }
       });
     }
@@ -308,8 +374,8 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
       this.value.set(null);
       this.selectionChange.emit(null);
     }
-    this.openPanel();
-    this.keyManager.setActiveItem(this.initialActiveIndex());
+    if (!this.open()) this.attachPanel();
+    this.refreshResults();
   }
 
   protected onKeydown(event: KeyboardEvent): void {
@@ -336,6 +402,7 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   protected activate(index: number): void {
     const entry = this.entries()[index];
     if (entry?.kind === 'option') this.select(entry.item);
+    else if (entry?.kind === 'retry') this.runSearch(true);
   }
 
   protected hover(index: number): void {
@@ -352,10 +419,6 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     }
     this.focus();
     if (this.openOnFocusResolved()) this.openPanel();
-  }
-
-  protected openOnFocusResolved(): boolean {
-    return this.openOnFocus() ?? true;
   }
 
   private onArrow(event: KeyboardEvent): void {
@@ -405,12 +468,20 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     const typed = lcNormalizeSearchText(this.text());
     if (!typed || this.value() !== null) return;
     const displayWith = this.displayWith();
-    const matches = (this.options() ?? []).filter((item) => lcNormalizeSearchText(displayWith(item)) === typed);
+    const candidates = this.mode() === 'local' ? (this.options() ?? []) : this.remoteItems();
+    const matches = candidates.filter((item) => lcNormalizeSearchText(displayWith(item)) === typed);
     if (matches.length === 1) this.select(matches[0]);
   }
 
   private openPanel(): void {
     if (this.open() || this.readonly() || this.disabled()) return;
+    this.attachPanel();
+    if (this.mode() === 'async' && (this.status() === 'idle' || this.status() === 'error')) this.runSearch(true);
+    else this.keyManager.setActiveItem(this.initialActiveIndex());
+  }
+
+  private attachPanel(): void {
+    if (this.readonly() || this.disabled()) return;
     const frame = this.frameRef().nativeElement;
     this.overlayRef ??= this.overlay.create({
       positionStrategy: this.overlay.position().flexibleConnectedTo(frame).withFlexibleDimensions(true).withViewportMargin(8)
@@ -424,7 +495,6 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     this.overlayRef.updateSize({ width: frame.getBoundingClientRect().width });
     this.overlayRef.attach(new TemplatePortal(this.panelRef(), this.viewContainerRef));
     this.open.set(true);
-    this.keyManager.setActiveItem(this.initialActiveIndex());
   }
 
   private closePanel(): void {
@@ -432,6 +502,74 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     this.overlayRef?.detach();
     this.open.set(false);
     this.keyManager.setActiveItem(-1);
+    if (this.status() === 'loading') {
+      this.cancelPending();
+      this.status.set('idle');
+    }
+  }
+
+  /** Après une saisie : recherche asynchrone, ou nouveau filtre local avec annonce du nombre de résultats. */
+  private refreshResults(): void {
+    if (this.mode() === 'async') {
+      this.runSearch(false);
+      return;
+    }
+    this.keyManager.setActiveItem(this.initialActiveIndex());
+    this.scheduleAnnouncement();
+  }
+
+  /** Lance la recherche du texte saisi ; la précédente est annulée, seul le dernier résultat est affiché. */
+  private runSearch(immediate: boolean): void {
+    this.cancelPending();
+    const search = this.search();
+    const text = this.query().trim();
+    if (!search || this.belowMinLength()) {
+      this.remoteItems.set([]);
+      this.status.set('idle');
+      this.keyManager.setActiveItem(-1);
+      return;
+    }
+    const controller = new AbortController();
+    this.abortController = controller;
+    this.status.set('loading');
+    this.keyManager.setActiveItem(-1);
+    const execute = async (): Promise<void> => {
+      try {
+        const result = await search(text, controller.signal);
+        if (controller.signal.aborted) return;
+        this.remoteItems.set(result);
+        this.status.set('ready');
+        this.keyManager.setActiveItem(this.initialActiveIndex());
+        this.scheduleAnnouncement();
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        this.errorKind.set(isRateLimited(error) ? 'rate-limited' : 'unavailable');
+        this.remoteItems.set([]);
+        this.status.set('error');
+        this.keyManager.setActiveItem(0);
+        this.searchFailed.emit(error);
+      }
+    };
+    const delay = immediate ? 0 : this.debounceMs();
+    if (delay > 0) this.debounceTimer = setTimeout(() => void execute(), delay);
+    else void execute();
+  }
+
+  private cancelPending(): void {
+    clearTimeout(this.debounceTimer);
+    this.abortController?.abort();
+    this.abortController = undefined;
+  }
+
+  /** Une annonce `aria-live` par recherche, 500 ms après la fin : nombre de propositions ou « Aucun résultat ». */
+  private scheduleAnnouncement(): void {
+    clearTimeout(this.announceTimer);
+    this.announcement.set('');
+    this.announceTimer = setTimeout(() => {
+      if (!this.open() || this.belowMinLength()) return;
+      const count = this.items().length;
+      this.announcement.set(count === 0 ? this.labels.comboboxNoResults : this.labels.comboboxResultsCount(count));
+    }, ANNOUNCE_DELAY_MS);
   }
 
   /** Avec une saisie : première proposition ; sinon l'élément sélectionné. */

@@ -88,3 +88,58 @@ export const Etats: Story = {
       </div>`,
   }),
 };
+
+type RemoteMode = 'ok' | 'empty' | 'error';
+
+/** Faux serveur de 300 ms : annulable, avec un mode vide et un mode erreur. */
+function fakeSearch(mode: () => RemoteMode): (text: string, signal: AbortSignal) => Promise<readonly City[]> {
+  return (text, signal) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (mode() === 'error') return reject(new Error('Réseau indisponible'));
+        if (mode() === 'empty') return resolve([]);
+        const needle = text.toLowerCase();
+        resolve(CITIES.filter((city) => city.name.toLowerCase().includes(needle)));
+      }, 300);
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new DOMException('Annulée', 'AbortError'));
+      });
+    });
+}
+
+/** Mode asynchrone : anti-rebond de 200 ms, annulation de la recherche précédente, annonce du nombre de résultats. */
+export const Asynchrone: Story = {
+  render: () => ({
+    props: { display, trackBy, city: signal<City | null>(null), search: fakeSearch(() => 'ok') },
+    template: `
+      <div style="max-width:24rem">
+        <lc-form-field label="Ville (recherche distante)" hint="Tapez au moins 2 lettres, par exemple « ro ».">
+          <lc-combobox [search]="search" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" placeholder="Rechercher une ville" />
+        </lc-form-field>
+        <p style="margin-top:1rem">Valeur : {{ city()?.name ?? 'aucune' }}</p>
+      </div>`,
+  }),
+};
+
+export const AsynchroneVide: Story = {
+  render: () => ({
+    props: { display, trackBy, city: signal<City | null>(null), search: fakeSearch(() => 'empty') },
+    template: `
+      <div style="max-width:24rem">
+        <lc-form-field label="Ville"><lc-combobox [search]="search" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" /></lc-form-field>
+      </div>`,
+  }),
+};
+
+export const AsynchroneErreur: Story = {
+  render: () => ({
+    props: { display, trackBy, city: signal<City | null>(null), search: fakeSearch(() => 'error') },
+    template: `
+      <div style="max-width:24rem">
+        <lc-form-field label="Ville" hint="La recherche échoue : état d'erreur et « Réessayer ».">
+          <lc-combobox [search]="search" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" />
+        </lc-form-field>
+      </div>`,
+  }),
+};
