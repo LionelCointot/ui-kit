@@ -18,3 +18,5 @@ export * from './password-input/password-input.component';
 export * from './segmented-control/segmented-control.component';
 export * from './radio/radio-group.component';
 export * from './radio/radio.directive';
+export * from './combobox/search-text';
+export * from './combobox/highlight.component';

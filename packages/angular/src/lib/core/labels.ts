@@ -27,6 +27,17 @@ export interface LcLabels {
   readonly hidePassword: string;
   readonly unallocated: string;
   readonly truncatedRows: (count: number) => string;
+  /** Liste filtrable (`lc-combobox`) et champs géographiques. */
+  readonly comboboxNoResults: string;
+  readonly comboboxResultsCount: (count: number) => string;
+  readonly comboboxSearching: string;
+  readonly comboboxSearchUnavailable: string;
+  readonly comboboxTooManyRequests: string;
+  readonly comboboxRetry: string;
+  readonly comboboxChooseProposal: string;
+  readonly comboboxClear: string;
+  readonly comboboxMinLength: (count: number) => string;
+  readonly geoUnknownCode: (code: string) => string;
   /** En-tête de la première colonne de la vue tableau d'un graphique (catégories). */
   readonly category: string;
   /** En-tête de la colonne des éléments d'une barre segmentée. */
@@ -289,6 +300,16 @@ export const LC_LABELS_FR: LcLabels = {
   hidePassword: 'Masquer le mot de passe',
   unallocated: 'Non réparti',
   truncatedRows: (count) => `${count} premières lignes affichées`,
+  comboboxNoResults: 'Aucun résultat',
+  comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
+  comboboxSearching: 'Recherche en cours',
+  comboboxSearchUnavailable: 'Recherche indisponible pour le moment',
+  comboboxTooManyRequests: 'Trop de recherches, réessayez dans un instant',
+  comboboxRetry: 'Réessayer',
+  comboboxChooseProposal: 'Choisissez une proposition dans la liste',
+  comboboxClear: 'Effacer',
+  comboboxMinLength: (count) => `Saisissez au moins ${count} caractères`,
+  geoUnknownCode: (code) => `Code inconnu : ${code}`,
   category: 'Catégorie',
   part: 'Élément',
   value: 'Valeur',
@@ -407,6 +428,16 @@ export const LC_LABELS_EN: LcLabels = {
   hidePassword: 'Hide password',
   unallocated: 'Unallocated',
   truncatedRows: (count) => `First ${count} rows shown`,
+  comboboxNoResults: 'No results',
+  comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
+  comboboxSearching: 'Searching',
+  comboboxSearchUnavailable: 'Search is unavailable at the moment',
+  comboboxTooManyRequests: 'Too many searches, try again in a moment',
+  comboboxRetry: 'Retry',
+  comboboxChooseProposal: 'Choose a suggestion from the list',
+  comboboxClear: 'Clear',
+  comboboxMinLength: (count) => `Enter at least ${count} characters`,
+  geoUnknownCode: (code) => `Unknown code: ${code}`,
   category: 'Category',
   part: 'Item',
   value: 'Value',

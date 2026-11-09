@@ -322,7 +322,7 @@ Icône ajoutée aux icônes par défaut : `scale` (Lucide, licence ISC), pour le
 
 ## 11. Découpage en tâches
 
-- [ ] T1 : ADR 0007 (déjà rédigé), libellés `LcLabels` FR/EN, `lcNormalizeSearchText`, directive `lcHighlight` + tests (S)
+- [x] T1 : ADR 0007 (déjà rédigé), libellés `LcLabels` FR/EN, `lcNormalizeSearchText`, directive `lcHighlight` + tests (S)
 - [ ] T2 : `lc-combobox` local (panneau CDK, clavier, ARIA, états) + stories + tests (M)
 - [ ] T3 : `lc-combobox` asynchrone (anti-rebond, annulation, erreur, réessai, annonce) + tests (M)
 - [ ] T4 : `lc-slider` (+ `showValue: 'input'`, `marks`, tokens) + stories + tests (M)
