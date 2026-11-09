@@ -1,0 +1,91 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-4);
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: var(--lc-sys-space-4);
+  background: var(--lc-sys-color-background);
+  color: var(--lc-sys-color-on-surface);
+  font-family: var(--lc-sys-font-family-base);
+}
+
+.lc-theme-builder__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-4);
+  padding-block-end: var(--lc-sys-space-4);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-theme-builder__heading {
+  margin: 0;
+  align-self: center;
+  font-size: var(--lc-sys-font-size-xl);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-theme-builder__name {
+  min-width: 16rem;
+}
+
+.lc-theme-builder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  margin-inline-start: auto;
+  align-self: center;
+}
+
+/* Le champ fichier natif est déclenché par le bouton « Importer » ; il reste hors écran mais atteignable par programme. */
+.lc-theme-builder__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.lc-theme-builder__blocked {
+  margin: 0;
+  color: var(--lc-sys-color-on-error-container);
+}
+
+.lc-theme-builder__notice:empty {
+  display: none;
+}
+
+.lc-theme-builder__details {
+  margin: var(--lc-sys-space-1) 0 0;
+  padding-inline-start: var(--lc-sys-space-5);
+}
+
+.lc-theme-builder__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lc-sys-space-6);
+}
+
+.lc-theme-builder__settings,
+.lc-theme-builder__preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-4);
+  min-width: 0;
+}
+
+.lc-theme-builder__preview {
+  padding: var(--lc-sys-space-4);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-sys-radius-lg);
+  background: var(--lc-sys-color-surface);
+}
+
+@media (min-width: 1024px) {
+  .lc-theme-builder__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}

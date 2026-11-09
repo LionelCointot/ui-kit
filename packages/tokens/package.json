@@ -12,17 +12,23 @@
     "./json/*": "./dist/json/*",
     "./scss/*": "./dist/scss/*",
     "./breakpoints": "./dist/js/breakpoints.js",
+    "./theme": {
+      "types": "./theme/index.d.ts",
+      "default": "./theme/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "bin",
     "lib",
+    "theme",
     "src",
-    "dist"
+    "dist",
+    "!**/*.test.mjs"
   ],
   "scripts": {
-    "build": "node lib/build-all.mjs",
-    "test": "node --test \"lib/*.test.mjs\""
+    "build": "node lib/generate-theme-data.mjs && node lib/build-all.mjs",
+    "test": "node --test \"lib/*.test.mjs\" \"theme/*.test.mjs\""
   },
   "dependencies": {
     "style-dictionary": "^5.8.0"

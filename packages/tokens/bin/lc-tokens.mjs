@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // CLI des thèmes produit : lc-tokens build | check --theme <fichier.tokens.json> [--name <nom>] [--extends default|dark] [--out <fichier.css>]
 import path from 'node:path';
-import { buildCss, checkTheme, productThemeFilter } from '../lib/tokens.mjs';
+import { buildCss, productThemeFilter } from '../lib/tokens.mjs';
+import { checkTheme } from '../lib/check.mjs';
+import { THEME_NAME_PATTERN } from '../theme/index.js';
 
 const USAGE = `Usage :
   lc-tokens check --theme <fichier.tokens.json> [--extends default|dark]
@@ -32,7 +34,9 @@ try {
   }
   if (command === 'build') {
     if (!options.name || !options.out) throw new Error(USAGE);
-    if (!/^[a-z][a-z0-9-]*$/.test(options.name)) throw new Error('Le nom du thème doit être en minuscules (lettres, chiffres, tirets).');
+    if (!THEME_NAME_PATTERN.test(options.name) || ['default', 'dark'].includes(options.name)) {
+      throw new Error('Le nom du thème doit commencer par une lettre minuscule, puis lettres minuscules, chiffres ou tirets (48 caractères au plus), hors « default » et « dark ».');
+    }
     const out = path.resolve(options.out);
     await buildCss({
       baseTheme: options.extends,

@@ -1,0 +1,28 @@
+:host {
+  display: block;
+}
+
+.lc-theme-editor__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--lc-sys-space-4);
+  padding-block: var(--lc-sys-space-4);
+}
+
+.lc-theme-editor__density {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  grid-column: 1 / -1;
+}
+
+.lc-theme-editor__density-label {
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-theme-editor__empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+}

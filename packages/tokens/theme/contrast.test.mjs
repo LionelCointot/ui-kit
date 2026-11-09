@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contrastRatio, parseColor } from './contrast.mjs';
+import { contrastRatio, parseColor } from './contrast.js';
 
 test('noir sur blanc = 21:1', () => {
   assert.equal(Math.round(contrastRatio('#000000', '#ffffff') * 100) / 100, 21);

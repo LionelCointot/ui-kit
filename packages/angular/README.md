@@ -53,6 +53,7 @@ bootstrapApplication(AppComponent, {
 | `…/navigation` | `lc-tabs` + `lc-tab` (`lcTabContent`), `lc-nav-list`, `a[lcNavItem]`, `lc-menu`, `[lcMenuTriggerFor]`, `button[lcMenuItem]` |
 | `…/data` | `lc-table` (+ `lcCell`), `lc-description-list`, `lc-kpi-card` |
 | `…/charts` | `lc-line-chart`, `lc-area-chart`, `lc-bar-chart`, `lc-segmented-bar`, `lc-sparkline`, `lc-chart`, `provideLcCharts`, `LcChartThemeService` (ECharts 6, dépendance pair optionnelle `echarts`) |
+| `…/theme-builder` | `lc-theme-builder`, `lc-theme-editor`, `lc-theme-contrast-report`, `lc-theme-preview` (éditeur de thème en direct, export `.tokens.json` / `.css` ; à charger à la demande ; requiert `echarts`) |
 
 L'API détaillée est dans `docs/specs/2026-11-catalogue-composants.md` et `docs/specs/2026-11-graphiques.md`.
 

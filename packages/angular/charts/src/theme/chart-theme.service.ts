@@ -42,7 +42,7 @@ function toPixels(value: string): number {
 
 /**
  * Thème des graphiques : relit les tokens CSS (ECharts ne voit pas les variables CSS) à chaque changement
- * de thème (`LcThemeService`, attribut `data-theme`) et de préférence d'accessibilité (mouvement réduit,
+ * de thème (`LcThemeService` : `revision`, attribut `data-theme` et variables inline) et de préférence d'accessibilité (mouvement réduit,
  * contraste élevé, couleurs forcées, impression).
  */
 @Injectable({ providedIn: 'root' })
@@ -55,6 +55,7 @@ export class LcChartThemeService {
   readonly theme: Signal<LcChartTheme> = computed(() => {
     this.version();
     this.themes.resolvedScheme();
+    this.themes.revision();
     const root = this.document.documentElement;
     return readChartTheme(this.document.defaultView?.getComputedStyle(root) ?? root.style, {
       reducedMotion: this.matches('(prefers-reduced-motion: reduce)'),

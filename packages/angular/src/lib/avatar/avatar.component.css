@@ -1,0 +1,70 @@
+/*
+ * Avatar : uniquement des variables CSS (--lc-avatar-* avec repli sur --lc-sys-*).
+ * Couleur : la teinte vient de la palette catégorielle (--lc-sys-chart-categorical-1 à 8). Ces teintes de graphique
+ * n'ont pas de couleur « sur » associée et certaines (jaune, vert clair, rose) n'atteignent pas 4,5:1 avec un texte
+ * clair ou foncé. Le fond est donc une teinte légère (mélange avec la surface) et le texte reste --lc-sys-color-on-surface :
+ * contraste élevé dans les deux thèmes, quelle que soit la teinte.
+ * Variables privées : --_size (diamètre), --_accent (teinte catégorielle).
+ */
+:host {
+  --_size: var(--lc-avatar-size-md, var(--lc-sys-space-10));
+  --_font-size: var(--lc-sys-font-size-sm);
+  --_accent: var(--lc-sys-chart-categorical-1);
+  --lc-icon-size: calc(var(--_size) / 2);
+
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--_size);
+  height: var(--_size);
+  overflow: hidden;
+  border-radius: var(--lc-avatar-radius, var(--lc-sys-radius-full));
+  background: var(
+    --lc-avatar-background,
+    color-mix(in srgb, var(--_accent) var(--lc-avatar-tint, 28%), var(--lc-sys-color-surface-raised))
+  );
+  color: var(--lc-avatar-color, var(--lc-sys-color-on-surface));
+  font-size: var(--_font-size);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: 1;
+  vertical-align: middle;
+  user-select: none;
+}
+
+:host(.lc-avatar--small) {
+  --_size: var(--lc-avatar-size-sm, var(--lc-sys-space-8));
+  --_font-size: var(--lc-sys-font-size-xs);
+}
+
+:host(.lc-avatar--large) {
+  --_size: var(--lc-avatar-size-lg, var(--lc-sys-space-12));
+  --_font-size: var(--lc-sys-font-size-md);
+}
+
+:host(.lc-avatar--tone-1) { --_accent: var(--lc-sys-chart-categorical-1); }
+:host(.lc-avatar--tone-2) { --_accent: var(--lc-sys-chart-categorical-2); }
+:host(.lc-avatar--tone-3) { --_accent: var(--lc-sys-chart-categorical-3); }
+:host(.lc-avatar--tone-4) { --_accent: var(--lc-sys-chart-categorical-4); }
+:host(.lc-avatar--tone-5) { --_accent: var(--lc-sys-chart-categorical-5); }
+:host(.lc-avatar--tone-6) { --_accent: var(--lc-sys-chart-categorical-6); }
+:host(.lc-avatar--tone-7) { --_accent: var(--lc-sys-chart-categorical-7); }
+:host(.lc-avatar--tone-8) { --_accent: var(--lc-sys-chart-categorical-8); }
+
+.lc-avatar__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lc-avatar__initials {
+  letter-spacing: 0.02em;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
+}

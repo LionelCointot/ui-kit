@@ -1,7 +1,8 @@
-// Build du paquet : CSS (référence + composants, thèmes default et dark), JSON résolus, points de rupture, base.css.
+// Build du paquet (après generate-theme-data.mjs) : CSS (référence + composants, thèmes default et dark), JSON résolus, points de rupture, base.css.
 import { mkdir, writeFile, copyFile } from 'node:fs/promises';
 import path from 'node:path';
-import { BASE_THEMES, PACKAGE_ROOT, buildCss, checkTheme, isBaseToken, isSystemToken, resolvedTokens } from './tokens.mjs';
+import { BASE_THEMES, PACKAGE_ROOT, buildCss, isBaseToken, isSystemToken, resolvedTokens } from './tokens.mjs';
+import { checkTheme } from './check.mjs';
 
 const DIST = path.join(PACKAGE_ROOT, 'dist');
 const BREAKPOINTS = { sm: 360, md: 768, lg: 1024, xl: 1280 };

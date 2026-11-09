@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LcIconComponent } from './icon.component';
+import { LC_DEFAULT_ICONS } from './default-icons';
 import { provideLcIcons } from './icons';
 
 @Component({
@@ -22,6 +23,13 @@ describe('LcIconComponent', () => {
     expect(icon.getAttribute('role')).toBeNull();
     expect(icon.classList).toContain('lc-icon--large');
   });
+
+  it.each(['user', 'users', 'user-plus', 'user-pen', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check'])(
+    'fournit l\'icône de profil « %s » dans le jeu par défaut',
+    (name) => {
+      expect(LC_DEFAULT_ICONS[name]).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*>.+<\/svg>$/);
+    },
+  );
 
   it('porte role="img" et aria-label avec un libellé', async () => {
     const fixture = TestBed.createComponent(IconHostComponent);

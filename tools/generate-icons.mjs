@@ -17,6 +17,8 @@ const ICONS = [
   'table', 'chart-line', 'eye', 'eye-off', 'external-link', 'rotate-ccw', 'house', 'landmark', 'calculator',
   // Ajouts internes : indicateurs de tri du tableau et tendances des cartes indicateurs.
   'arrow-up', 'arrow-down', 'arrow-up-down', 'arrow-right', 'trending-up', 'trending-down',
+  // Ajouts : profils et authentification (avatar, connexion, mot de passe).
+  'user', 'users', 'user-plus', 'user-pen', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */

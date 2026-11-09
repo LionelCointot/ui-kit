@@ -78,6 +78,7 @@ Le socle définit les tokens et l'API commune. Il reste à spécifier **chaque c
 | 36 | Liste de définitions | `lc-description-list` | `data` | `dl` natif | P3 |
 | 37 | Carte indicateur (KPI) | `lc-kpi-card` | `data` | — | P3 |
 | 38 à 43 | Graphiques | `lc-chart`, `lc-line-chart`, `lc-area-chart`, `lc-bar-chart`, `lc-segmented-bar`, `lc-sparkline` | `charts` | ECharts 6 | **P4** ([spec](2026-11-graphiques.md)) |
+| 44 | Éditeur de thème, rapport de contraste, aperçu, builder | `lc-theme-editor`, `lc-theme-contrast-report`, `lc-theme-preview`, `lc-theme-builder` | `theme-builder` | composants du ui-kit + `@lionelcointot/ui-tokens/theme` | Outil ([spec](2026-11-theme-builder.md)) |
 | 44 | Grille de données | `lc-data-grid` | `data-grid` | AG Grid Community | P5 (à la demande) |
 | 45 | Liste filtrable | `lc-combobox` | `forms` | Angular Aria combobox | P5 (à la demande) |
 | 46 | Sélection multiple | `lc-multi-select` | `forms` | CDK listbox | P5 (à la demande) |
@@ -158,7 +159,9 @@ Conventions de lecture :
 
 **`provideLcIcons(icons: Readonly<Record<string, string>>)`** ajoute ou remplace des icônes (chaînes SVG constantes).
 
-Jeu par défaut (Lucide, ISC) : `check`, `x`, `chevron-down`, `chevron-up`, `chevron-left`, `chevron-right`, `plus`, `minus`, `pencil`, `copy`, `trash-2`, `save`, `folder-open`, `download`, `upload`, `search`, `info`, `circle-check`, `circle-alert`, `triangle-alert`, `circle-x`, `menu`, `ellipsis-vertical`, `settings`, `sun`, `moon`, `monitor`, `calendar`, `table`, `chart-line`, `eye`, `eye-off`, `external-link`, `rotate-ccw`, `house`, `landmark`, `calculator`.
+Jeu par défaut (Lucide, ISC) : `check`, `x`, `chevron-down`, `chevron-up`, `chevron-left`, `chevron-right`, `plus`, `minus`, `pencil`, `copy`, `trash-2`, `save`, `folder-open`, `download`, `upload`, `search`, `info`, `circle-check`, `circle-alert`, `triangle-alert`, `circle-x`, `menu`, `ellipsis-vertical`, `settings`, `sun`, `moon`, `monitor`, `calendar`, `table`, `chart-line`, `eye`, `eye-off`, `external-link`, `rotate-ccw`, `house`, `landmark`, `calculator`, puis `user`, `users`, `user-plus`, `user-pen`, `log-in`, `log-out`, `lock`, `lock-open`, `key-round`, `shield-check` (profils et authentification).
+
+**`lc-avatar`** (point d'entrée principal, à côté de `lc-icon`) : entrées `name: string` (obligatoire ; deux initiales au plus, majuscules, accents conservés, noms composés gérés), `src?: string` (photo ; initiales si absente ou en échec de chargement ; icône `user` sans initiales), `size: LcSize` (défaut `medium`), `colorSeed?: string` (défaut `name`), `label?: string`. Sans `label`, l'avatar est décoratif (`aria-hidden="true"`) ; avec un `label`, il porte `role="img"` et `aria-label`. Teinte déterministe (hachage FNV-1a de la graine, modulo 8) choisie dans `--lc-sys-chart-categorical-1` à `-8`. Ces teintes n'ont pas de couleur « sur » associée : le fond est un mélange à 28 % de la teinte avec `--lc-sys-color-surface-raised` et le texte reste `--lc-sys-color-on-surface` (contraste ≥ 8:1 dans les deux thèmes pour les 8 teintes).
 
 #### 5.3.2 Formulaires
 
@@ -202,6 +205,8 @@ Comportement commun :
 - flèches haut et bas = ± `step` (`number` et `percent`).
 
 **`lc-date-input`** : valeur (model) `string | null` au **format ISO `AAAA-MM-JJ`** (aucun objet `Date`, donc aucun décalage de fuseau, cohérent avec `DateOnly` côté .NET). Entrées `min`, `max` (ISO). S'appuie sur `input[type=date]`, natif et accessible. Le calendrier personnalisé est reporté à `lc-date-picker` (P5).
+
+**`lc-password-input`** : `FormValueControl<string>` (model `value`) sur un `input` natif dont le `type` bascule entre `password` et `text` par un bouton `lcButton` icône seule (`eye` / `eye-off`, `aria-pressed`, `aria-controls` = champ, nom `LC_LABELS.showPassword` / `hidePassword`). Entrées : `autocomplete: 'current-password' | 'new-password'` (défaut `current-password`), `placeholder`, `inputId`, `ariaLabel`, plus les entrées communes. Le mot de passe est masqué à chaque nouvelle instance ; le bouton reste actif en lecture seule.
 
 **`select[lcSelect]`** : liste native stylée, pour les listes courtes et fixes (`<option>` natives). Entrées `size`, `invalid`.
 
@@ -381,6 +386,10 @@ Au plus 3 toasts visibles. Le minuteur se met en pause au survol et au focus. An
 
 Voir la [spec graphiques](2026-11-graphiques.md) : `lc-chart` (porte de sortie ECharts), `lc-line-chart`, `lc-area-chart`, `lc-bar-chart`, `lc-segmented-bar` (part d'un tout, à la place du donut), `lc-sparkline`.
 
+#### 5.3.8 bis Theme builder
+
+Voir la [spec Theme builder](2026-11-theme-builder.md) : point d'entrée `@lionelcointot/ui-angular/theme-builder` (à charger à la demande) avec `lc-theme-editor` (`[(theme)]`, `mode: 'simple' | 'advanced'`), `lc-theme-contrast-report` (`resolved`), `lc-theme-preview` (sans entrée) et `lc-theme-builder` (`[(theme)]`, export `.tokens.json` et `.css`, copie, import DTCG). `LcThemeService` gagne `registerThemes`, `customTheme`, `setCustomTheme`, `preview` et `revision`.
+
 #### 5.3.9 Phase 5 (à la demande, spec dédiée le moment venu)
 
 | Élément | Esquisse |
@@ -507,3 +516,5 @@ Pour chaque composant :
 | Libellés | `LC_LABELS` | clés ajoutées : `category`, `part`, `value`, `share`, `chartSummary` | vue tableau et résumé des graphiques |
 | `lc-description-list` | — | utilise `lc-badge` du point d'entrée `feedback` | seconde exception « data → feedback » (en plus de la règle générale) |
 | Node.js | 24 | **≥ 24.15** requis (Angular CLI 22 refuse le 24.9) | contrainte d'Angular CLI |
+| Theme builder | — | nouveau point d'entrée secondaire `theme-builder` ; il **compose** `forms`, `navigation`, `feedback`, `data`, `layout` et `charts` | exception à « pas d'import entre points d'entrée », documentée dans `CLAUDE.md` (outil d'assemblage, aucun composant des autres points d'entrée ne l'importe) |
+| Libellés | `LC_LABELS` | clé `themeBuilder` (groupe imbriqué `LcThemeBuilderLabels`, avec `previewSamples`) en français et en anglais | une seule clé requise de plus dans `LcLabels` |

@@ -9,7 +9,7 @@ Bibliothèque de composants Angular et de design tokens, **générique** et réu
 | Paquet | Contenu |
 |---|---|
 | `@lionelcointot/ui-tokens` | Tokens au format DTCG, CSS des thèmes `default` et `dark`, CLI `lc-tokens` (thèmes produit, contrôles de contraste et de palette). Sans Angular |
-| `@lionelcointot/ui-angular` | Composants Angular 22, avec un point d'entrée secondaire par famille : `button`, `forms`, `layout`, `navigation`, `overlay`, `feedback`, `data`, `charts` (ECharts 6, optionnel), `data-grid` (AG Grid Community, phase 5) |
+| `@lionelcointot/ui-angular` | Composants Angular 22, avec un point d'entrée secondaire par famille : `button`, `forms`, `layout`, `navigation`, `overlay`, `feedback`, `data`, `charts` (ECharts 6, optionnel), `theme-builder`, `data-grid` (AG Grid Community, phase 5) |
 
 ## Utilisation (cible)
 
