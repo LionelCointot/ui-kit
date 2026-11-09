@@ -46,7 +46,8 @@ bootstrapApplication(AppComponent, {
 | Point d'entrée | Contenu |
 |---|---|
 | `@lionelcointot/ui-angular` | types communs, `provideLcUiKit`, `LC_LABELS`, `LcFormatService`, pipes, `LcThemeService`, `button[lcButton]`, `a[lcButton]`, `lc-button-group`, `lc-icon`, `provideLcIcons`, `lc-spinner`, `lc-skeleton` |
-| `…/forms` | `lc-form-field`, `input[lcInput]`, `textarea[lcInput]`, `select[lcSelect]`, `input[type=checkbox][lcCheckbox]`, `lc-radio-group` + `input[type=radio][lcRadio]`, `button[lcSwitch]`, `lc-money-input`, `lc-percent-input`, `lc-number-input`, `lc-date-input`, `lc-segmented-control` |
+| `…/forms` | `lc-form-field`, `input[lcInput]`, `textarea[lcInput]`, `select[lcSelect]`, `input[type=checkbox][lcCheckbox]`, `lc-radio-group` + `input[type=radio][lcRadio]`, `button[lcSwitch]`, `lc-money-input`, `lc-percent-input`, `lc-number-input`, `lc-date-input`, `lc-password-input`, `lc-segmented-control`, `lc-combobox` (+ `[lcComboboxOption]`, `lcHighlight`, `lcFilterOptions`), `lc-slider` |
+| `…/geo` | `provideLcGeo`, `LcGeoDataSource`, `lc-region-select`, `lc-department-select`, `lc-commune-input`, `lc-address-input` (régions, départements, communes et adresses françaises depuis les API officielles ; importe `forms` ; [README](geo/README.md)) |
 | `…/feedback` | `lc-alert`, `LcToastService` + `lc-toast-outlet`, `lc-badge`, `lc-progress-bar`, `lc-empty-state`, `lc-error-state` |
 | `…/overlay` | `LcDialogService`, `lc-dialog`, `LC_DIALOG_DATA`, `LcDialogRef`, `[lcTooltip]` |
 | `…/layout` | `lc-app-shell`, `lc-page`, `lc-stack`, `lc-grid` + `lc-grid-item`, `lc-card` + `lc-card-header`, `lc-divider` |

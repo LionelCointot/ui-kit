@@ -80,7 +80,9 @@ Le socle définit les tokens et l'API commune. Il reste à spécifier **chaque c
 | 38 à 43 | Graphiques | `lc-chart`, `lc-line-chart`, `lc-area-chart`, `lc-bar-chart`, `lc-segmented-bar`, `lc-sparkline` | `charts` | ECharts 6 | **P4** ([spec](2026-11-graphiques.md)) |
 | 44 | Éditeur de thème, rapport de contraste, aperçu, builder | `lc-theme-editor`, `lc-theme-contrast-report`, `lc-theme-preview`, `lc-theme-builder` | `theme-builder` | composants du ui-kit + `@lionelcointot/ui-tokens/theme` | Outil ([spec](2026-11-theme-builder.md)) |
 | 44 | Grille de données | `lc-data-grid` | `data-grid` | AG Grid Community | P5 (à la demande) |
-| 45 | Liste filtrable | `lc-combobox` | `forms` | Angular Aria combobox | P5 (à la demande) |
+| 45 | Liste filtrable | `lc-combobox` (+ `[lcComboboxOption]`, `lcHighlight`, `lcFilterOptions`) | `forms` | CDK Overlay + `ActiveDescendantKeyManager` | **Livré** ([spec géographie, curseur, combobox](2026-11-geographie-curseur-combobox.md)) |
+| 48 | Curseur | `lc-slider` | `forms` | `input[type=range]` natif | **Livré** (même spec) |
+| 49 | Régions, départements, communes, adresses | `lc-region-select`, `lc-department-select`, `lc-commune-input`, `lc-address-input`, `provideLcGeo` | `geo` (importe `forms`) | `lc-combobox` + API officielles ([ADR 0007](../adr/0007-donnees-geographiques-francaises.md)) | **Livré** (même spec) |
 | 46 | Sélection multiple | `lc-multi-select` | `forms` | CDK listbox | P5 (à la demande) |
 | 47 | Calendrier | `lc-date-picker` | `forms` | CDK Overlay + grille | P5 (à la demande) |
 
@@ -395,7 +397,7 @@ Voir la [spec Theme builder](2026-11-theme-builder.md) : point d'entrée `@lione
 | Élément | Esquisse |
 |---|---|
 | `lc-data-grid` | Enveloppe AG Grid Community : entrées `rowData`, `columnDefs` (types AG Grid), `theme` dérivé des tokens ; filtres, redimensionnement, virtualisation, export CSV |
-| `lc-combobox` | Liste filtrable (Angular Aria combobox) ; filtrage local ou par fonction asynchrone |
+| `lc-combobox` | **Livré** (voir la [spec géographie, curseur, combobox](2026-11-geographie-curseur-combobox.md)) : CDK Overlay, filtrage local ou fonction asynchrone |
 | `lc-multi-select` | Sélection multiple avec puces ; CDK listbox `multiple` |
 | `lc-date-picker` | Calendrier dans une surcouche, grille de jours (navigation clavier), valeur ISO |
 
@@ -518,3 +520,4 @@ Pour chaque composant :
 | Node.js | 24 | **≥ 24.15** requis (Angular CLI 22 refuse le 24.9) | contrainte d'Angular CLI |
 | Theme builder | — | nouveau point d'entrée secondaire `theme-builder` ; il **compose** `forms`, `navigation`, `feedback`, `data`, `layout` et `charts` | exception à « pas d'import entre points d'entrée », documentée dans `CLAUDE.md` (outil d'assemblage, aucun composant des autres points d'entrée ne l'importe) |
 | Libellés | `LC_LABELS` | clé `themeBuilder` (groupe imbriqué `LcThemeBuilderLabels`, avec `previewSamples`) en français et en anglais | une seule clé requise de plus dans `LcLabels` |
+| `lc-combobox`, `lc-slider`, point d'entrée `geo` | P5 « à la demande » | **livrés** (consommateurs : module Crédit, module Acheter ou louer) | spec [géographie, curseur, combobox](2026-11-geographie-curseur-combobox.md) ; `lc-combobox` s'appuie sur le CDK (et non Angular Aria) ; le point d'entrée `geo` importe `forms` (exception consignée dans `CLAUDE.md` et l'ADR 0007) |

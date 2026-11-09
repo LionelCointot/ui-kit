@@ -23,8 +23,8 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
 
 ## Documentation
-- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md` (chacune se termine par ses écarts constatés à l'implémentation)
-- ADR : `docs/adr/0001` (tokens) à `0006` (thèmes à l'exécution)
+- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md` (chacune se termine par ses écarts constatés à l'implémentation)
+- ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
 - Direction visuelle : `PRODUCT.md` et `DESIGN.md` (créés par `/impeccable init` et `/impeccable document`, tâche T2)
 
@@ -45,16 +45,17 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - API commune : `themeColor`, `fillMode`, `size`, `rounded`, `disabled` ; `input()`, `output()`, `model()` ; OnPush ; `host: {}`.
 - Contrôles de formulaire : `FormValueControl<T>` (Signal Forms) ; `ControlValueAccessor` seulement à la demande.
 - Comportement : CDK uniquement (Angular Aria non retenu). Styles `.css` (pas de SCSS) ; les directives sur éléments natifs et les panneaux CDK sont stylés par la feuille globale `styles/ui-angular.css`.
-- Structure : `packages/tokens` ; `packages/angular/src` (principal : cœur, bouton, icône, spinner, squelette) et `packages/angular/<forms|feedback|overlay|layout|navigation|data|charts|theme-builder>/src/<composant>/` (`.component.ts`, `.component.css`, `.spec.ts`, `public-api.ts` par point d'entrée) ; config Storybook dans `.storybook/`, stories `*.stories.ts` à côté des composants.
+- Structure : `packages/tokens` ; `packages/angular/src` (principal : cœur, bouton, icône, spinner, squelette) et `packages/angular/<forms|feedback|overlay|layout|navigation|data|charts|geo|theme-builder>/src/<composant>/` (`.component.ts`, `.component.css`, `.spec.ts`, `public-api.ts` par point d'entrée) ; config Storybook dans `.storybook/`, stories `*.stories.ts` à côté des composants.
 - Gestion d'erreurs : avertissements console en développement seulement (`isDevMode()`), jamais d'exception visible pour un usage incorrect non bloquant.
 
 ## À ne pas faire
 - Ne pas écrire de couleur, taille ou durée en dur dans un composant ; ne pas utiliser `--lc-ref-*` hors des thèmes.
 - Ne pas utiliser `innerHTML` (exception : SVG d'icônes enregistrés par le code ; info-bulles de graphiques échappées).
-- Ne pas importer un point d'entrée secondaire depuis un autre (exceptions : `data` → `feedback` ; `theme-builder` → `forms`, `navigation`, `feedback`, `data`, `layout`, `charts`, car il compose l'aperçu et l'éditeur de thème avec ces composants, et aucun autre point d'entrée ne l'importe).
+- Ne pas importer un point d'entrée secondaire depuis un autre (exceptions : `data` → `feedback` ; `theme-builder` → `forms`, `navigation`, `feedback`, `data`, `layout`, `charts`, car il compose l'aperçu et l'éditeur de thème avec ces composants, et aucun autre point d'entrée ne l'importe ; `geo` → `forms`, car il compose `lc-combobox`, ADR 0007, et aucun autre point d'entrée n'importe `geo`).
+- Aucune liste de régions, départements ou communes dans le code : `geo` lit les API officielles (tests : `fetch` simulé ou source factice, jamais le réseau).
 - Ne pas ajouter de vocabulaire métier (finance, prêt…) ni de composant sans consommateur identifié.
 - Ne pas utiliser de fonctionnalité CSS hors Baseline 2024 (pas d'*anchor positioning*).
-- Limites connues : le contrôle de palette de `lc-tokens` ne vérifie que le contraste (pas la distinction pour daltoniens) ; `charts` pèse ~563 Kio minifiés (objectif 350 non tenu, ECharts 6) ; pas de `lc-dropdown-list` ni de phase 5.
+- Limites connues : le contrôle de palette de `lc-tokens` ne vérifie que le contraste (pas la distinction pour daltoniens) ; `charts` pèse ~563 Kio minifiés (objectif 350 non tenu, ECharts 6) ; pas de `lc-dropdown-list` ni de phase 5 (hors `lc-combobox`).
 - Ne pas commiter de secrets ; ne pas ajouter de dépendance sans la justifier ; ne pas modifier du code hors périmètre.
 
 ## Skills (`.claude/skills/`)
