@@ -14,6 +14,28 @@ export interface LcChartSeries {
   readonly colorSlot?: LcColorSlot;
   /** Groupe d'empilement. */
   readonly stack?: string;
+  /** Style du trait (courbes) : plein (défaut) ou tirets, pour distinguer une série sans la couleur seule. */
+  readonly lineStyle?: 'solid' | 'dashed';
+  /** Forme des points et de la légende (courbes) : permet de distinguer les séries sans la couleur seule. */
+  readonly symbol?: 'circle' | 'square' | 'triangle' | 'diamond';
+}
+
+/** Repère vertical sur l'axe des catégories (ex. un point d'équilibre) : ligne fine et étiquette. */
+export interface LcChartMarker {
+  readonly id: string;
+  /** Position sur l'axe des catégories. */
+  readonly categoryIndex: number;
+  /** Texte affiché ; aussi dans la vue tableau et la description accessible. */
+  readonly label: string;
+}
+
+/** Point annoté d'une série. */
+export interface LcChartPointAnnotation {
+  readonly seriesId: string;
+  readonly categoryIndex: number;
+  readonly label: string;
+  /** `primary` : point plein d'au moins 8 px et étiquette ; `secondary` : rond creux discret. */
+  readonly emphasis: 'primary' | 'secondary';
 }
 
 export interface LcCartesianData {
@@ -69,6 +91,8 @@ export interface LcChartTheme {
   readonly gridline: string;
   readonly axis: string;
   readonly ink: { readonly primary: string; readonly secondary: string; readonly muted: string };
+  /** Couleur des repères verticaux (token `--lc-chart-marker-color`, repli sur l'encre atténuée). */
+  readonly markerColor: string;
   readonly fontFamily: string;
   readonly fontSize: number;
   readonly reducedMotion: boolean;
@@ -85,6 +109,8 @@ export interface LcResolvedSeries {
   /** Rang d'affichage (pour alterner les motifs). */
   readonly patternIndex: number;
   readonly stack?: string;
+  readonly lineStyle?: 'solid' | 'dashed';
+  readonly symbol?: LcChartSeries['symbol'];
 }
 
 export interface LcLegendItem {
@@ -93,4 +119,6 @@ export interface LcLegendItem {
   readonly color: string;
   readonly shape: 'line' | 'rect';
   readonly hidden: boolean;
+  readonly dashed?: boolean;
+  readonly symbol?: LcChartSeries['symbol'];
 }

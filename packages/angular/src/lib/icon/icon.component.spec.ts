@@ -67,4 +67,12 @@ describe('LcIconComponent', () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it('fournit l\'icône « scale » (balance, menu du module Acheter ou louer)', async () => {
+    const fixture = TestBed.createComponent(IconHostComponent);
+    fixture.componentInstance.name.set('scale');
+    await fixture.whenStable();
+    expect(LC_DEFAULT_ICONS['scale']).toContain('<svg');
+    expect((fixture.nativeElement as HTMLElement).querySelector('lc-icon svg')).not.toBeNull();
+  });
 });

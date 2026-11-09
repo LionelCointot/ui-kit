@@ -44,6 +44,9 @@ export interface LcLabels {
   readonly part: string;
   readonly value: string;
   readonly share: string;
+  /** Libellés des repères verticaux et points annotés d'un graphique (vue tableau, description accessible). */
+  readonly chartMarker: string;
+  readonly chartAnnotation: string;
   /** Résumé lu par les technologies d'assistance pour un graphique. */
   readonly chartSummary: (info: LcChartSummaryInfo) => string;
   readonly themeBuilder: LcThemeBuilderLabels;
@@ -314,6 +317,8 @@ export const LC_LABELS_FR: LcLabels = {
   part: 'Élément',
   value: 'Valeur',
   share: 'Part',
+  chartMarker: 'Repère',
+  chartAnnotation: 'Point annoté',
   chartSummary: summaryFr,
   themeBuilder: THEME_BUILDER_FR,
 };
@@ -442,6 +447,8 @@ export const LC_LABELS_EN: LcLabels = {
   part: 'Item',
   value: 'Value',
   share: 'Share',
+  chartMarker: 'Marker',
+  chartAnnotation: 'Annotated point',
   chartSummary: summaryEn,
   themeBuilder: THEME_BUILDER_EN,
 };

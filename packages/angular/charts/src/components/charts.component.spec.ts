@@ -187,4 +187,47 @@ describe('graphiques', () => {
     expect(frame.querySelectorAll('.lc-chart-frame__legend li').length).toBe(2);
     expect(frame.querySelector('.lc-chart-frame__data-toggle')).not.toBeNull();
   });
+
+  it('un repère s\'affiche sur la courbe et la vue tableau contient la ligne « Repère »', async () => {
+    @Component({
+      imports: [LcLineChartComponent],
+      template: `<lc-line-chart title="Patrimoine" [data]="data" [markers]="markers" [(showDataTable)]="showTable" />`,
+    })
+    class MarkerHostComponent {
+      readonly data = data;
+      readonly showTable = signal(true);
+      readonly markers = [{ id: 'eq', categoryIndex: 1, label: 'Point d\'équilibre' }];
+    }
+    const fixture = TestBed.createComponent(MarkerHostComponent);
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+    const option = charts.at(-1)!.setOption.mock.calls[0][0];
+    expect(option.series[0].markLine.data[0].xAxis).toBe(1);
+    expect(option.aria.label.description).toContain('Repère : Point d\'équilibre (2027).');
+    const rows = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).map((row) => row.textContent);
+    expect(rows.some((text) => text?.includes('Repère : Point d\'équilibre (2027)'))).toBe(true);
+  });
+
+  it('la légende reflète le style de trait et le symbole de la série', async () => {
+    @Component({
+      imports: [LcLineChartComponent],
+      template: `<lc-line-chart title="Courbes" [data]="styled" />`,
+    })
+    class StyledHostComponent {
+      readonly styled: LcCartesianData = {
+        categories: ['a', 'b'],
+        series: [
+          { id: 'x', label: 'X', values: [1, 2], lineStyle: 'dashed', symbol: 'triangle' },
+          { id: 'y', label: 'Y', values: [2, 3] },
+        ],
+      };
+    }
+    const fixture = TestBed.createComponent(StyledHostComponent);
+    await fixture.whenStable();
+    const swatches = (fixture.nativeElement as HTMLElement).querySelectorAll('.lc-chart-frame__swatch');
+    expect(swatches[0].classList).toContain('lc-chart-frame__swatch--dashed');
+    expect(swatches[0].querySelector('.lc-chart-frame__symbol--triangle')).not.toBeNull();
+    expect(swatches[1].classList).not.toContain('lc-chart-frame__swatch--dashed');
+  });
 });

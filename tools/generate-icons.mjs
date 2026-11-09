@@ -19,6 +19,8 @@ const ICONS = [
   'arrow-up', 'arrow-down', 'arrow-up-down', 'arrow-right', 'trending-up', 'trending-down',
   // Ajouts : profils et authentification (avatar, connexion, mot de passe).
   'user', 'users', 'user-plus', 'user-pen', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check',
+  // Ajout : comparaison (module « Acheter ou louer »).
+  'scale',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */

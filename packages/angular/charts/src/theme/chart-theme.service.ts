@@ -26,6 +26,7 @@ export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValu
     gridline: token('gridline'),
     axis: token('axis'),
     ink: { primary: token('ink-primary'), secondary: token('ink-secondary'), muted: token('ink-muted') },
+    markerColor: read('--lc-chart-marker-color', token('ink-muted')),
     fontFamily: read('--lc-sys-font-family-base', 'sans-serif'),
     fontSize,
     reducedMotion: flags.reducedMotion,

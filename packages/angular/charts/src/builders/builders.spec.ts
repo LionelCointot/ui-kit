@@ -15,7 +15,7 @@ const theme: LcChartTheme = {
   sequential: [], diverging: { negative: '', neutral: '', positive: '' },
   status: { good: '', warning: '', serious: '', critical: '' },
   surface: '#fcfcfb', gridline: '#e1e0d9', axis: '#c3c2b7',
-  ink: { primary: '#0b0b0b', secondary: '#52514e', muted: '#898781' },
+  ink: { primary: '#0b0b0b', secondary: '#52514e', muted: '#898781' }, markerColor: '#898781',
   fontFamily: 'sans-serif', fontSize: 14, reducedMotion: false, patterns: false,
 };
 

@@ -1,0 +1,8 @@
+{
+  "chart": {
+    "marker-color": {
+      "$value": "{sys.chart.ink-muted}",
+      "$type": "color"
+    }
+  }
+}

@@ -4,8 +4,9 @@ import type { EChartsCoreOption } from '../echarts-registry';
 import { prepareSeries } from '../builders/palette';
 import type { CartesianBuildArgs } from '../builders/line.builder';
 import { categoryLabels } from '../builders/shared';
-import { buildSummary } from '../builders/summary';
-import { buildCartesianTable } from '../builders/table';
+import type { ResolvedOverlays } from '../builders/annotations';
+import { buildSummary, describeOverlays } from '../builders/summary';
+import { buildCartesianTable, buildOverlayRows } from '../builders/table';
 import { LcChartThemeService } from '../theme/chart-theme.service';
 import type { LcCartesianData, LcChartPointSelect, LcColorSlot, LcLegendItem, LcValueAxis } from '../types';
 
@@ -44,6 +45,10 @@ export abstract class LcCartesianChartBase {
   /** Forme des pastilles de la légende. */
   protected abstract readonly legendShape: 'line' | 'rect';
   protected abstract buildOption(args: CartesianBuildArgs): EChartsCoreOption;
+  /** Repères et annotations validés pour les séries `all` (texte, tableau) ou `visible` (tracé) ; vides par défaut. */
+  protected overlays(_scope: 'all' | 'visible'): Pick<ResolvedOverlays, 'markers' | 'annotations'> | undefined {
+    return undefined;
+  }
 
   /** Emplacements de couleur mémorisés pour cette instance. */
   private readonly colorMemory = new Map<string, LcColorSlot>();
@@ -66,10 +71,17 @@ export abstract class LcCartesianChartBase {
   protected readonly legend = computed<readonly LcLegendItem[]>(() =>
     this.prepared().all.map((item) => ({
       id: item.id, label: item.label, color: item.color, shape: this.legendShape, hidden: this.hidden().has(item.id),
+      dashed: item.lineStyle === 'dashed', symbol: item.symbol,
     })));
 
-  protected readonly table = computed(() =>
-    buildCartesianTable(this.categories(), this.prepared().all, this.valueFormat(), this.formatService, this.labels));
+  protected readonly table = computed(() => {
+    const { all } = this.prepared();
+    const table = buildCartesianTable(this.categories(), all, this.valueFormat(), this.formatService, this.labels);
+    const overlays = this.overlays('all');
+    if (!overlays) return table;
+    const extra = buildOverlayRows(overlays, this.categories(), all, this.valueFormat(), this.formatService, this.labels);
+    return { ...table, rows: [...table.rows, ...extra] };
+  });
 
   protected readonly navigation = computed(() => this.prepared().visible.map((item) => ({ id: item.id, values: item.values })));
 
@@ -78,15 +90,18 @@ export abstract class LcCartesianChartBase {
     const { all, visible } = this.prepared();
     const categories = this.categories();
     const valueFormat = this.valueFormat();
+    const overlays = this.overlays('all');
     return this.buildOption({
       categories,
       series: visible,
       yAxis: this.yAxis(),
-      summary: buildSummary(this.title(), categories, visible, valueFormat, this.formatService, this.labels),
+      summary: buildSummary(this.title(), categories, visible, valueFormat, this.formatService, this.labels)
+        + (overlays ? describeOverlays(overlays, categories, this.labels) : ''),
       theme: this.themeService.theme(),
       format: this.formatService,
       seriesCount: all.length,
       directLabels: 'auto',
+      overlays: this.overlays('visible'),
     });
   });
 

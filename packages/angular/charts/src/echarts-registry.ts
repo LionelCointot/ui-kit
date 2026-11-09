@@ -1,13 +1,13 @@
 import { InjectionToken } from '@angular/core';
 import { BarChart, LineChart } from 'echarts/charts';
-import { AriaComponent, GraphicComponent, GridComponent, TooltipComponent } from 'echarts/components';
+import { AriaComponent, GraphicComponent, GridComponent, MarkLineComponent, MarkPointComponent, TooltipComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { LabelLayout } from 'echarts/features';
 import type { ECharts, EChartsCoreOption } from 'echarts/core';
 import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 
 // Import fin : uniquement les séries, composants, fonctionnalités et moteurs de rendu utilisés par le point d'entrée.
-// GraphicComponent : option `graphic` (rupture d'axe) ; LabelLayout : `labelLayout.moveOverlap` des étiquettes directes.
+// GraphicComponent : option `graphic` (rupture d'axe) ; MarkLine/MarkPoint : repères verticaux et points annotés ; LabelLayout : `labelLayout.moveOverlap` des étiquettes directes.
 echarts.use([
   LineChart,
   BarChart,
@@ -15,6 +15,8 @@ echarts.use([
   TooltipComponent,
   AriaComponent,
   GraphicComponent,
+  MarkLineComponent,
+  MarkPointComponent,
   LabelLayout,
   SVGRenderer,
   CanvasRenderer,

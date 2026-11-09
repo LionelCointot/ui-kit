@@ -69,3 +69,35 @@ export const Rafraichissement: Story = {
     template: `<lc-line-chart title="Recalcul en cours" [stale]="true" [data]="data" [yAxis]="{ format: 'money' }" />`,
   }),
 };
+
+const patrimony: LcCartesianData = {
+  categories: years,
+  categoryKind: 'year',
+  series: [
+    { id: 'buy', label: 'Acheter', values: years.map((_, i) => 40000 + i * i * 900), symbol: 'diamond' },
+    { id: 'rent', label: 'Louer', values: years.map((_, i) => 60000 + i * 14000), lineStyle: 'dashed', symbol: 'square' },
+  ],
+};
+
+/** Repère vertical (3 au plus) et point annoté ; `lineStyle` et `symbol` distinguent les séries sans la couleur seule. */
+export const RepereEtAnnotations: Story = {
+  render: () => ({
+    props: {
+      data: patrimony,
+      markers: [{ id: 'equilibrium', categoryIndex: 10, label: 'Point d\'équilibre' }],
+      annotations: [
+        { seriesId: 'buy', categoryIndex: 10, label: 'Achat rattrape la location', emphasis: 'primary' },
+        { seriesId: 'rent', categoryIndex: 3, label: 'Année 4', emphasis: 'secondary' },
+      ],
+    },
+    template: `<lc-line-chart title="Patrimoine net" description="Un repère et deux points annotés" [data]="data" [yAxis]="{ format: 'money' }"
+      [markers]="markers" [annotations]="annotations" [showDataTable]="true" />`,
+  }),
+};
+
+export const AireAvecRepere: Story = {
+  render: () => ({
+    props: { data: cartesian, markers: [{ id: 'mid', categoryIndex: 9, label: 'Mi-parcours' }] },
+    template: `<lc-area-chart title="Répartition annuelle" [data]="data" [yAxis]="{ format: 'money' }" [markers]="markers" />`,
+  }),
+};

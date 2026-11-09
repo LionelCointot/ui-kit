@@ -80,6 +80,8 @@ export function prepareSeries(
       slot,
       patternIndex: index,
       stack: item.stack,
+      lineStyle: item.lineStyle,
+      symbol: item.symbol,
     };
   });
   return { all, visible: all.filter((item) => !hidden.has(item.id)) };

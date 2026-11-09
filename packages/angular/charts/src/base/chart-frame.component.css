@@ -81,12 +81,46 @@ button.lc-chart-frame__legend-item:focus-visible,
   inline-size: var(--lc-sys-space-3);
   block-size: var(--lc-sys-space-3);
   border-radius: var(--lc-sys-radius-sm);
+  background: var(--lc-swatch-color);
 }
 
 .lc-chart-frame__swatch--line {
-  inline-size: var(--lc-sys-space-4);
+  position: relative;
+  inline-size: var(--lc-sys-space-5);
   block-size: var(--lc-sys-border-width-thick);
   border-radius: 0;
+}
+
+/* Trait en tirets : même rythme que le tracé (6 px de trait, 4 px de vide). */
+.lc-chart-frame__swatch--dashed {
+  background: repeating-linear-gradient(
+    to right,
+    var(--lc-swatch-color) 0 var(--lc-sys-space-1),
+    transparent var(--lc-sys-space-1) calc(var(--lc-sys-space-1) * 1.75)
+  );
+}
+
+/* Forme des points, centrée sur le trait. */
+.lc-chart-frame__symbol {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: var(--lc-sys-space-2);
+  block-size: var(--lc-sys-space-2);
+  background: var(--lc-swatch-color);
+  transform: translate(-50%, -50%);
+}
+
+.lc-chart-frame__symbol--circle {
+  border-radius: var(--lc-sys-radius-full);
+}
+
+.lc-chart-frame__symbol--triangle {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.lc-chart-frame__symbol--diamond {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 
 .lc-chart-frame__plot {
