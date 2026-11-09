@@ -325,7 +325,7 @@ Icône ajoutée aux icônes par défaut : `scale` (Lucide, licence ISC), pour le
 - [x] T1 : ADR 0007 (déjà rédigé), libellés `LcLabels` FR/EN, `lcNormalizeSearchText`, directive `lcHighlight` + tests (S)
 - [x] T2 : `lc-combobox` local (panneau CDK, clavier, ARIA, états) + stories + tests (M)
 - [x] T3 : `lc-combobox` asynchrone (anti-rebond, annulation, erreur, réessai, annonce) + tests (M)
-- [ ] T4 : `lc-slider` (+ `showValue: 'input'`, `marks`, tokens) + stories + tests (M)
+- [x] T4 : `lc-slider` (+ `showValue: 'input'`, `marks`, tokens) + stories + tests (M)
 - [ ] T5 : point d'entrée `geo` : `LcGeoDataSource`, `LcGouvGeoDataSource` (listes partagées, recherches, validation des réponses, cache), `provideLcGeo` + tests (M)
 - [ ] T6 : `lc-region-select`, `lc-department-select` + stories + tests (S)
 - [ ] T7 : `lc-commune-input`, `lc-address-input` + stories (source factice et API réelle) + tests (M)

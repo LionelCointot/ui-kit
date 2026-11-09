@@ -22,3 +22,4 @@ export * from './combobox/search-text';
 export * from './combobox/highlight.component';
 export * from './combobox/combobox-option.directive';
 export * from './combobox/combobox.component';
+export * from './slider/slider.component';

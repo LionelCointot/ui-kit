@@ -1,0 +1,204 @@
+/*
+ * lc-slider : piste et poignée d'un input[type=range] stylés par variables CSS (tokens --lc-slider-* avec repli sur --lc-sys-*).
+ * --lc-slider-fill (pourcentage) et --lc-slider-ratio (0..1) sont posés par le composant.
+ */
+:host {
+  --_track-height: var(--lc-slider-track-height, var(--lc-sys-space-2));
+  --_thumb: var(--lc-slider-thumb-size, var(--lc-sys-space-6));
+  --_track-color: var(--lc-slider-track-color, var(--lc-sys-color-border-strong));
+  --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-primary));
+  --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-primary));
+  --_stop: calc(var(--lc-slider-ratio, 0) * (100% - var(--_thumb)) + var(--_thumb) / 2);
+
+  display: block;
+  width: 100%;
+  color: var(--lc-sys-color-on-surface);
+  font-size: var(--lc-sys-font-size-md);
+}
+
+:host(.lc-slider--secondary) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-secondary)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-secondary)); }
+:host(.lc-slider--success) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-success)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-success)); }
+:host(.lc-slider--warning) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-warning)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-warning)); }
+:host(.lc-slider--error) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-error)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-error)); }
+:host(.lc-slider--neutral) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-neutral)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-neutral)); }
+
+:host(.lc-slider--small) {
+  --_thumb: var(--lc-slider-thumb-size, var(--lc-sys-space-5));
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+:host(.lc-slider--large) {
+  --_track-height: var(--lc-slider-track-height, var(--lc-sys-space-3));
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+:host(.lc-slider--invalid) {
+  --_fill-color: var(--lc-sys-color-error);
+  --_thumb-color: var(--lc-sys-color-error);
+  --_track-color: var(--lc-sys-color-error);
+}
+
+:host(.lc-slider--disabled) {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-slider__control {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-4);
+}
+
+.lc-slider__track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.lc-slider__input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--_thumb);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  touch-action: pan-y;
+}
+
+:host(.lc-slider--disabled) .lc-slider__input {
+  cursor: not-allowed;
+}
+
+:host(.lc-slider--readonly) .lc-slider__input {
+  cursor: default;
+}
+
+.lc-slider__input:focus {
+  outline: none;
+}
+
+.lc-slider__input:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+  border-radius: var(--lc-sys-radius-full);
+}
+
+/* Piste : remplissage jusqu'à la poignée (--_stop tient compte de la largeur de la poignée). */
+.lc-slider__input::-webkit-slider-runnable-track {
+  height: var(--_track-height);
+  border-radius: var(--lc-sys-radius-full);
+  background: linear-gradient(to right, var(--_fill-color) 0 var(--_stop), var(--_track-color) var(--_stop) 100%);
+}
+
+.lc-slider__input::-moz-range-track {
+  height: var(--_track-height);
+  border-radius: var(--lc-sys-radius-full);
+  background: linear-gradient(to right, var(--_fill-color) 0 var(--_stop), var(--_track-color) var(--_stop) 100%);
+}
+
+.lc-slider__input::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: var(--_thumb);
+  height: var(--_thumb);
+  margin-top: calc((var(--_track-height) - var(--_thumb)) / 2);
+  border: var(--lc-sys-border-width-thick) solid var(--lc-sys-color-surface-raised);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--_thumb-color);
+  box-shadow: var(--lc-sys-shadow-1);
+  appearance: none;
+  -webkit-appearance: none;
+  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+.lc-slider__input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--_thumb);
+  height: var(--_thumb);
+  border: var(--lc-sys-border-width-thick) solid var(--lc-sys-color-surface-raised);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--_thumb-color);
+  box-shadow: var(--lc-sys-shadow-1);
+  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+:host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:hover::-webkit-slider-thumb,
+:host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:active::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+:host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:hover::-moz-range-thumb,
+:host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:active::-moz-range-thumb {
+  transform: scale(1.1);
+}
+
+.lc-slider__value {
+  flex: none;
+  min-width: calc(var(--lc-sys-space-16) + var(--lc-sys-space-2));
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+  text-align: end;
+}
+
+.lc-slider__number {
+  flex: none;
+  width: calc(var(--lc-sys-space-16) * 2);
+}
+
+/* Graduations : positionnées comme le centre de la poignée. */
+.lc-slider__marks {
+  position: relative;
+  height: var(--lc-sys-space-1);
+  margin-top: var(--lc-sys-space-1);
+}
+
+:host(.lc-slider--has-marks-labels) .lc-slider__marks {
+  height: calc(var(--lc-sys-space-1) + var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal) + var(--lc-sys-space-1));
+}
+
+.lc-slider__mark {
+  position: absolute;
+  inset-inline-start: calc(var(--lc-slider-mark-ratio) * (100% - var(--_thumb)) + var(--_thumb) / 2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.lc-slider__tick {
+  width: var(--lc-sys-border-width-thin);
+  height: var(--lc-sys-space-1);
+  background: var(--_track-color);
+}
+
+.lc-slider__mark-label {
+  margin-top: var(--lc-sys-space-1);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-slider__input::-webkit-slider-thumb,
+  .lc-slider__input::-moz-range-thumb {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-slider__input::-webkit-slider-thumb {
+    background: Highlight;
+  }
+
+  .lc-slider__input::-moz-range-thumb {
+    background: Highlight;
+  }
+
+  .lc-slider__input::-webkit-slider-runnable-track,
+  .lc-slider__input::-moz-range-track {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
+}
