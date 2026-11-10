@@ -210,7 +210,7 @@ export class LcGeoRequestError extends Error { readonly status: number | null; r
 | Composant | Valeur (`model`) | Entrées propres | Affichage |
 |---|---|---|---|
 | `lc-region-select` | `string \| null` (code région) | — | « Auvergne-Rhône-Alpes » ; recherche locale par nom ou code dans la liste chargée |
-| `lc-department-select` | `string \| null` (code département) | `regionCode: string \| null` (restreint la liste) | champ « 69 – Rhône » ; option : code en chiffres tabulaires, nom, région en texte secondaire ; recherche par numéro (« 69 », « 2a », « 974 ») ou nom (« rhone ») |
+| `lc-department-select` | `string \| null` (code département) | `regionCode: string \| null` (restreint la liste) | champ « 69 – Rhône » ; option : code en chiffres tabulaires et nom (pas de région : voir §13, QA-07) ; recherche par numéro (« 69 », « 2a », « 974 ») ou nom (« rhone ») |
 | `lc-commune-input` | `LcCommune \| null` | `departmentCode: string \| null` | champ « Lyon (69) » ou « Lyon · 69003 » ; option : nom, codes postaux (3 au plus, puis « … »), département |
 | `lc-address-input` | `LcAddress \| null` | `kind`, `postalCode`, `cityCode` | champ = `label` ; option : libellé surligné, ville en secondaire |
 
@@ -350,7 +350,7 @@ Ordre conseillé : T1 → T2 → T3 → T4 (parallélisable avec T5) → T6 → 
 | Styles du panneau | — | `.lc-combobox-panel*` dans la feuille globale `ui-angular.css` (comme le menu) ; seuil mobile 767 px écrit en dur (une requête média n'accepte pas de variable) | panneau en surcouche CDK |
 | API ajoutée à `lc-combobox` | — | `extraDescribedBy`, type `LcComboboxSearch<T>`, `lcComboboxOptionOf` (indice de typage de `let-item`) ; la fonction `search` qui change d'identité invalide les résultats et relance la recherche si le panneau est ouvert ; erreur 429 reconnue par `status === 429` ou `kind === 'rate-limited'` (sans importer `geo`) ; chevron masqué en asynchrone sans `openOnFocus` | filtres dynamiques des champs `geo` (région, département) |
 | `lc-slider` | `min`, `max` `number` | `min` et `max` sont `number \| undefined` (défauts 0 et 100) | contrat `FormValueControl` (Signal Forms les alimente) ; le champ couplé est nommé par le libellé de `lc-form-field` |
-| `lc-department-select` | — | charge aussi `/regions` pour le texte secondaire des options (échec sans conséquence) | « région en texte secondaire » |
+| `lc-department-select` | — | **corrigé (QA-07)** : ne charge plus `/regions` ; le nom de la région n'est plus affiché en texte secondaire | seule `GET /departements` doit partir |
 | Source `geo` | — | exports supplémentaires : `LC_GEO_OPTIONS`, `LC_GEO_DEFAULTS`, `LcGeoOptions`, `LcGeoFieldBase`, `LcCodeSelectBase`, `LcCodedItem` ; `debounceMs` sur `lc-commune-input` et `lc-address-input` ; tri « 2A/2B entre 19 et 21 » par règle générale (un chiffre suivi d'une lettre prend un zéro intercalé), sans table | tri exigé par la spec sans liste en dur |
 | Sans `provideLcGeo` | « erreur explicite en développement » | `console.error` en développement (pas d'exception), champ désactivé | règle « jamais d'exception visible » de CLAUDE.md |
 | Données de test | « aucune liste » | 5 départements, 3 régions et quelques communes d'exemple dans `geo/src/testing` et les stories (non exportés, non publiés) | tests et stories sans réseau |
@@ -375,6 +375,7 @@ Ordre conseillé : T1 → T2 → T3 → T4 (parallélisable avec T5) → T6 → 
 | Id | Constat | Correction |
 |---|---|---|
 | QA-01 | `lc-money-input`, `lc-percent-input`, `lc-number-input` (donc aussi `lc-slider showValue="input"`) : au focus le texte passe de « 250 000 » à « 250000 » ; la mise à jour du gabarit, plus tardive, réécrivait le champ et reportait le curseur en fin. Arrivé par Tab, on tapait à la suite de l'ancienne valeur (« 250000300000 »). | `LcNumericInputBase.onFocus` écrit tout de suite le texte éditable dans le champ puis le sélectionne en entier ; pour un clic, le `mouseup` du clic qui a donné le focus est neutralisé (une fois) afin de conserver la sélection. Saisie au milieu du texte, collage et flèches inchangés. Tests : focus programmatique puis frappe (monétaire, pourcentage, nombre, curseur couplé), saisie au milieu, collage, clic. |
+| QA-07 | `lc-department-select` appelait aussi `GET /regions` pour afficher la région en texte secondaire : le critère « seule requête tierce : `GET /departements` » n'était pas tenu à la lettre. | Appel `/regions` supprimé et région retirée du texte secondaire des options (code, nom et recherche inchangés ; `regionCode` filtre toujours via `codeRegion` de `/departements`). `lc-region-select` garde `/regions`. Tests : un `fetch` espion ne voit que `/departements` ; l'option n'affiche plus la région. README `geo` mis à jour. |
 
 ### Correctif : champs `geo` comme hôtes de `[formField]` (Signal Forms)
 

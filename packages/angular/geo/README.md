@@ -27,8 +27,8 @@ Sans `provideLcGeo()`, les champs restent désactivés et une erreur explicite s
 
 ## Vie privée
 
-- **Régions et départements** : une requête de **liste complète** par session (`GET /regions`, `GET /departements`),
-  partagée entre tous les champs, puis filtrage **local**. **Aucun texte saisi n'est envoyé.**
+- **Régions et départements** : une requête de **liste complète** par session (`GET /regions` pour `lc-region-select`,
+  `GET /departements` seule pour `lc-department-select`), partagée entre tous les champs, puis filtrage **local**. **Aucun texte saisi n'est envoyé.**
 - **Communes et adresses** : le **texte tapé est envoyé** à des services publics (API Découpage administratif de la DINUM,
   API Adresse de la Géoplateforme de l'IGN), après 200 ms de pause dans la frappe. À signaler dans la politique de
   confidentialité de l'application.

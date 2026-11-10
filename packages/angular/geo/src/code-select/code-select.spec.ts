@@ -85,11 +85,13 @@ describe('champs géographiques (code officiel)', () => {
     expect(options()[0]).toContain('La Réunion');
   });
 
-  it('l\'option de département montre le nom de la région en texte secondaire', async () => {
+  it('l\'option de département montre le code et le nom, sans région', async () => {
     await setup();
     input('Département').focus();
     await type('Département', 'rho');
-    expect(options()[0]).toContain('Auvergne-Rhône-Alpes');
+    expect(options()[0]).toContain('69');
+    expect(options()[0]).toContain('Rhône');
+    expect(options()[0]).not.toContain('Auvergne-Rhône-Alpes');
   });
 
   it('une valeur existante s\'affiche par son code puis par « 69 – Rhône » une fois la liste reçue', async () => {
@@ -195,10 +197,7 @@ describe('chargement partagé entre champs (source officielle)', () => {
     const urls: string[] = [];
     vi.stubGlobal('fetch', async (input: string) => {
       urls.push(input);
-      const body = input.includes('/regions')
-        ? [{ code: '84', nom: 'Auvergne-Rhône-Alpes' }]
-        : [{ code: '69', nom: 'Rhône', codeRegion: '84' }];
-      return new Response(JSON.stringify(body), { status: 200 });
+      return new Response(JSON.stringify([{ code: '69', nom: 'Rhône', codeRegion: '84' }]), { status: 200 });
     });
     @Component({
       imports: [LcDepartmentSelectComponent],
@@ -214,7 +213,8 @@ describe('chargement partagé entre champs (source officielle)', () => {
     first.dispatchEvent(new Event('input', { bubbles: true }));
     await fixture.whenStable();
     for (let i = 0; i < 10; i++) await Promise.resolve();
-    expect(urls.filter((url) => url.includes('/departements'))).toHaveLength(1);
+    expect(urls).toHaveLength(1);
+    expect(new URL(urls[0]).pathname).toBe('/departements');
     expect(urls.every((url) => !/rho/i.test(url))).toBe(true);
     fixture.destroy();
     document.querySelectorAll('.cdk-overlay-container').forEach((container) => (container.innerHTML = ''));
