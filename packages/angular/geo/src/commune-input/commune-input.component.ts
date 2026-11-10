@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, forwardRef, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, model } from '@angular/core';
 import { LC_FORM_FIELD_CONTROL, LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent } from '@lionelcointot/ui-angular/forms';
 import { LcGeoFieldBase } from '../geo-field-base';
 import type { LcCommune } from '../geo.types';
@@ -36,6 +36,9 @@ const MAX_POSTAL_CODES = 3;
   host: { class: 'lc-commune-input' },
 })
 export class LcCommuneInputComponent extends LcGeoFieldBase<LcCommune, LcCommune> {
+  /** Valeur du champ (déclarée ici : voir `LcGeoFieldBase.value`). */
+  override readonly value = model<LcCommune | null>(null);
+
   /** Restreint la recherche aux communes d'un département (code officiel) ; `null` : toute la France. */
   readonly departmentCode = input<string | null>(null);
 

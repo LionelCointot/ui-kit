@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, forwardRef, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, model } from '@angular/core';
 import { LC_FORM_FIELD_CONTROL, LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent } from '@lionelcointot/ui-angular/forms';
 import { LcGeoFieldBase } from '../geo-field-base';
 import type { LcAddress } from '../geo.types';
@@ -36,6 +36,9 @@ const ADDRESS_MIN_LENGTH = 3;
   host: { class: 'lc-address-input' },
 })
 export class LcAddressInputComponent extends LcGeoFieldBase<LcAddress, LcAddress> {
+  /** Valeur du champ (déclarée ici : voir `LcGeoFieldBase.value`). */
+  override readonly value = model<LcAddress | null>(null);
+
   /** Type d'adresse recherché (`housenumber` : numéro dans la voie, `street` : voie…) ; `null` : tous. */
   readonly kind = input<LcAddress['kind'] | null>(null);
   /** Restreint la recherche à un code postal. */

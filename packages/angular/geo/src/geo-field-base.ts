@@ -1,4 +1,4 @@
-import { Directive, booleanAttribute, computed, inject, input, isDevMode, model, output, viewChild } from '@angular/core';
+import { Directive, ModelSignal, booleanAttribute, computed, inject, input, isDevMode, output, viewChild } from '@angular/core';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { LC_LABELS, LcFillMode, LcRounded, LcSize, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcComboboxComponent } from '@lionelcointot/ui-angular/forms';
@@ -16,7 +16,12 @@ export abstract class LcGeoFieldBase<V, T> implements FormValueControl<V | null>
   protected readonly source = inject(LcGeoDataSource, { optional: true });
   protected readonly labels = inject(LC_LABELS);
 
-  readonly value = model<V | null>(null);
+  /**
+   * Valeur du champ. Chaque composant concret la déclare lui-même avec `model()` : Signal Forms reconnaît un contrôle
+   * personnalisé à l'entrée `value` et à la sortie `valueChange` de la définition du composant, qui doivent donc y figurer
+   * directement et non reposer sur l'héritage d'une classe de base.
+   */
+  abstract readonly value: ModelSignal<V | null>;
   readonly placeholder = input('');
   /** Identifiant du champ interne (généré), relié au libellé de `lc-form-field`. */
   readonly inputId = input<string>(lcUniqueId('geo'));

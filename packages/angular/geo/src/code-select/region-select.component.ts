@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, forwardRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, model } from '@angular/core';
 import { LC_FORM_FIELD_CONTROL, LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent } from '@lionelcointot/ui-angular/forms';
 import { LcGeoDataSource } from '../geo-data-source';
 import type { LcRegion } from '../geo.types';
@@ -37,6 +37,9 @@ import { LcCodeSelectBase } from './code-select-base';
   host: { class: 'lc-region-select' },
 })
 export class LcRegionSelectComponent extends LcCodeSelectBase<LcRegion> {
+  /** Valeur du champ (déclarée ici : voir `LcGeoFieldBase.value`). */
+  override readonly value = model<string | null>(null);
+
   /** Indice de type pour le gabarit d'option. */
   protected readonly regionHint: LcRegion | null = null;
   protected readonly filterSignature = computed(() => null);

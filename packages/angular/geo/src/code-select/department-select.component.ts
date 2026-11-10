@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, forwardRef, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, model, signal } from '@angular/core';
 import { LC_FORM_FIELD_CONTROL, LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent } from '@lionelcointot/ui-angular/forms';
 import { LcGeoDataSource } from '../geo-data-source';
 import type { LcDepartment } from '../geo.types';
@@ -42,6 +42,9 @@ import { LcCodeSelectBase } from './code-select-base';
   host: { class: 'lc-department-select' },
 })
 export class LcDepartmentSelectComponent extends LcCodeSelectBase<LcDepartment> {
+  /** Valeur du champ (déclarée ici : voir `LcGeoFieldBase.value`). */
+  override readonly value = model<string | null>(null);
+
   /** Restreint la liste aux départements d'une région (code officiel) ; `null` : tous. */
   readonly regionCode = input<string | null>(null);
 
