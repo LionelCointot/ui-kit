@@ -307,18 +307,18 @@ Icône ajoutée aux icônes par défaut : `scale` (Lucide, licence ISC), pour le
 
 ## 10. Critères d'acceptation
 
-- [ ] Taper « rho » dans `lc-department-select` propose « 69 – Rhône » en première position ; Entrée pose `"69"` dans le formulaire.
-- [ ] Taper « 2a » propose « 2A – Corse-du-Sud » ; « 974 » propose « 974 – La Réunion ».
-- [ ] La liste des départements vient de `GET https://geo.api.gouv.fr/departements` : une seule requête par session pour plusieurs champs, et aucun texte saisi n'est envoyé (vérifié par un `fetch` espion).
-- [ ] Le code ne contient aucune liste de régions ni de départements (revue du diff).
-- [ ] Réseau coupé : le champ affiche la valeur existante par son code, l'ouverture montre l'état d'erreur, « Réessayer » relance la requête.
-- [ ] `lc-commune-input` : « 69003 » produit une valeur avec `code: "69123"`, `postalCode: "69003"`, `departmentCode: "69"` (faux de source).
-- [ ] Deux frappes rapides : seule la réponse de la dernière est affichée, la précédente est annulée (`AbortSignal.aborted === true`).
-- [ ] Panneau, clavier et ARIA conformes au tableau §5.3.1 (tests unitaires) ; contrôle a11y Storybook sans violation.
-- [ ] `lc-slider` avec `unit="%"` et la valeur 60 : `aria-valuetext` vaut « 60 % » ; avec `unit="€"` et 1500 : « 1 500 € » ; en `showValue: 'input'`, taper 42 dans le champ couplé met le curseur à 42.
-- [ ] `lc-line-chart` avec un `marker` affiche la ligne et son étiquette, et la vue tableau contient la ligne « Repère ».
-- [ ] Aucun `innerHTML` ajouté (vérification par recherche dans le diff) ; aucune couleur en dur (stylelint).
-- [ ] Build, tests, Storybook statique et a11y passent ; taille du point d'entrée `geo` < 10 Kio minifiés.
+- [x] Taper « rho » dans `lc-department-select` propose « 69 – Rhône » en première position ; Entrée pose `"69"` dans le formulaire.
+- [x] Taper « 2a » propose « 2A – Corse-du-Sud » ; « 974 » propose « 974 – La Réunion ».
+- [x] La liste des départements vient de `GET https://geo.api.gouv.fr/departements` : une seule requête par session pour plusieurs champs, et aucun texte saisi n'est envoyé (vérifié par un `fetch` espion).
+- [x] Le code ne contient aucune liste de régions ni de départements (revue du diff).
+- [x] Réseau coupé : le champ affiche la valeur existante par son code, l'ouverture montre l'état d'erreur, « Réessayer » relance la requête.
+- [x] `lc-commune-input` : « 69003 » produit une valeur avec `code: "69123"`, `postalCode: "69003"`, `departmentCode: "69"` (faux de source).
+- [x] Deux frappes rapides : seule la réponse de la dernière est affichée, la précédente est annulée (`AbortSignal.aborted === true`).
+- [x] Panneau, clavier et ARIA conformes au tableau §5.3.1 (tests unitaires) ; contrôle a11y Storybook sans violation.
+- [x] `lc-slider` avec `unit="%"` et la valeur 60 : `aria-valuetext` vaut « 60 % » ; avec `unit="€"` et 1500 : « 1 500 € » ; en `showValue: 'input'`, taper 42 dans le champ couplé met le curseur à 42.
+- [x] `lc-line-chart` avec un `marker` affiche la ligne et son étiquette, et la vue tableau contient la ligne « Repère ».
+- [x] Aucun `innerHTML` ajouté (vérification par recherche dans le diff) ; aucune couleur en dur (stylelint).
+- [x] Build, tests, Storybook statique et a11y passent ; taille du point d'entrée `geo` < 10 Kio minifiés (**non tenu en minifié brut**, voir §13).
 
 ## 11. Découpage en tâches
 
@@ -339,3 +339,33 @@ Ordre conseillé : T1 → T2 → T3 → T4 (parallélisable avec T5) → T6 → 
 - **Disponibilité des API publiques** : pas de SLA ni de quota documenté précisément. Sans réseau, on ne peut pas **changer** de département (la valeur existante reste). Atténuation : une requête de liste par session, cache, anti-rebond, « Réessayer », source remplaçable (proxy).
 - **Migration de l'API Adresse** : l'ancien domaine `api-adresse.data.gouv.fr` a été annoncé décommissionné fin janvier 2026 ; la spec n'utilise que `data.geopf.fr/geocodage`. À revérifier au moment de T7.
 - **Contenu de la liste** : `lc-department-select` propose exactement ce que renvoie l'API (aujourd'hui les 101 départements, sans les collectivités 975, 977, 978). Aucun filtrage ni ajout côté ui-kit.
+
+## 13. Écarts constatés à l'implémentation (2026-11-09)
+
+| Sujet | Spec | Réalisé | Raison |
+|---|---|---|---|
+| `lcHighlight` | « directive » | **composant à sélecteur d'attribut** `[lcHighlight]` (`LcHighlightComponent`, entrées `lcHighlight` et `lcHighlightTerm`) + fonction pure `lcHighlightSegments` | une directive ne porte pas de gabarit `<mark>` |
+| Libellés `LcLabels` | chaînes avec `{count}`, `{code}` | **fonctions** `comboboxResultsCount(count)`, `comboboxMinLength(count)`, `geoUnknownCode(code)` ; singulier « 1 résultat disponible » ; clés ajoutées `chartMarker`, `chartAnnotation` | cohérence avec `truncatedRows` ; repères de graphique |
+| Tokens de composant | `--lc-combobox-panel-max-height`, `--lc-slider-*` | variables **avec repli sur `--lc-sys-*` dans le CSS**, non déclarées dans `packages/tokens` ; seul `--lc-chart-marker-color` est déclaré (`components/chart.tokens.json`) | même pratique que l'info-bulle ; surcharge possible par thème |
+| Styles du panneau | — | `.lc-combobox-panel*` dans la feuille globale `ui-angular.css` (comme le menu) ; seuil mobile 767 px écrit en dur (une requête média n'accepte pas de variable) | panneau en surcouche CDK |
+| API ajoutée à `lc-combobox` | — | `extraDescribedBy`, type `LcComboboxSearch<T>`, `lcComboboxOptionOf` (indice de typage de `let-item`) ; la fonction `search` qui change d'identité invalide les résultats et relance la recherche si le panneau est ouvert ; erreur 429 reconnue par `status === 429` ou `kind === 'rate-limited'` (sans importer `geo`) ; chevron masqué en asynchrone sans `openOnFocus` | filtres dynamiques des champs `geo` (région, département) |
+| `lc-slider` | `min`, `max` `number` | `min` et `max` sont `number \| undefined` (défauts 0 et 100) | contrat `FormValueControl` (Signal Forms les alimente) ; le champ couplé est nommé par le libellé de `lc-form-field` |
+| `lc-department-select` | — | charge aussi `/regions` pour le texte secondaire des options (échec sans conséquence) | « région en texte secondaire » |
+| Source `geo` | — | exports supplémentaires : `LC_GEO_OPTIONS`, `LC_GEO_DEFAULTS`, `LcGeoOptions`, `LcGeoFieldBase`, `LcCodeSelectBase`, `LcCodedItem` ; `debounceMs` sur `lc-commune-input` et `lc-address-input` ; tri « 2A/2B entre 19 et 21 » par règle générale (un chiffre suivi d'une lettre prend un zéro intercalé), sans table | tri exigé par la spec sans liste en dur |
+| Sans `provideLcGeo` | « erreur explicite en développement » | `console.error` en développement (pas d'exception), champ désactivé | règle « jamais d'exception visible » de CLAUDE.md |
+| Données de test | « aucune liste » | 5 départements, 3 régions et quelques communes d'exemple dans `geo/src/testing` et les stories (non exportés, non publiés) | tests et stories sans réseau |
+| Taille de `geo` | < 10 Kio minifiés | **34 Kio minifiés, 6,3 Kio gzip** (sortie partielle ng-packagr, gabarits inclus ; 6 composants) | critère tenu seulement en gzip ; à remesurer sur un build d'application AOT |
+| Stories « API réelle » | contrat réel manuel | stories `ApiReelle` (région/département, commune/adresse) étiquetées `!test` ; **non exécutées** ici (aucun appel réseau réel fait) | non bloquant en CI |
+| a11y Storybook | vert pour chaque story | stories du lot : 0 violation (essai avec `a11y.test: 'error'`, non commité) ; 2 échecs **préexistants** hors périmètre (`theme-builder` : « Rapport de contraste », « Theme builder ») | `parameters.a11y.test` reste `todo` |
+| Graphiques | — | `LcChartTheme.markerColor` (obligatoire, lu sur `--lc-chart-marker-color`) ; repères par `markLine` portée par la première série visible, annotations par `markPoint` (ordonnée = sommet de bande en aire empilée) ; lignes « Repère : … » / « Point annoté : … » ajoutées à la vue tableau et à la description | rendu ECharts natif |
+| Version | version mineure | **non modifiée** (release-please) | consigne |
+| ADR 0007 | Proposé | statut inchangé | décision du propriétaire |
+
+### Lot complémentaire (maquette UX du module Acheter ou louer)
+
+| Id | Demande | Réalisé |
+|---|---|---|
+| M1 | `lc-kpi-card` : `valueText` | entrée `valueText: string \| null` affichée à la place du nombre ; la carte devient `role="group"` nommée « libellé : valeur affichée » (ajout compatible) |
+| M2 | `LcValueAxis.min` / `max` | ajoutés ; sur aire et barres un `min` > 0 est ignoré (avertissement en développement, `zeroBaseline`) ; sur une courbe un `min` > 0 tronque l'axe avec rupture d'axe visible ; un `min` ≤ 0 est respecté |
+| M4 | 480 mois lisibles | **constat** : l'axe auto d'ECharts étiquetait « décembre 2030 » tous les ~108 mois, sans repère annuel ; **corrigé** : au-delà de 24 mois ou dates ISO, `annualTicks` n'étiquette que les années (premier janvier, une année sur 1, 2, 5, 10… selon la densité, 12 étiquettes au plus) avec graduations ; autres types de catégories inchangés |
+| M3 | seconde rampe séquentielle | **partiel (tokens seulement)** : `ref.color.orange` (7 pas), `sys.chart.sequential-warm.100…700` (ordre inversé en sombre), `LcChartTheme.sequentialWarm`, 2 paires de contraste ajoutées à l'outil (26 paires, thèmes clair et sombre verts). **Pas d'API de série** pour colorer des aires empilées avec la rampe (les séries n'acceptent que les 8 emplacements catégoriels) : à spécifier si besoin |
