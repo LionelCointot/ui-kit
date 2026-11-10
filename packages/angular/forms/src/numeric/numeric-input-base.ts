@@ -40,7 +40,7 @@ export const NUMERIC_INPUT_TEMPLATE = `
     [attr.placeholder]="placeholder() || null" [attr.aria-label]="ariaLabel() || null"
     [attr.aria-invalid]="showInvalid() ? 'true' : null" [attr.aria-required]="isRequired() ? 'true' : null"
     [attr.aria-describedby]="describedBy()"
-    (focus)="onFocus()" (blur)="onBlur()" (input)="onInput($event)" (paste)="onPaste($event)" (keydown)="onKeydown($event)" />
+    (mousedown)="onMouseDown()" (mouseup)="onMouseUp($event)" (focus)="onFocus()" (blur)="onBlur()" (input)="onInput($event)" (paste)="onPaste($event)" (keydown)="onKeydown($event)" />
   @if (unitText(); as unit) {
     <span class="lc-field__unit" [id]="unitId" aria-hidden="true">{{ unit }}</span>
   }
@@ -108,6 +108,8 @@ export abstract class LcNumericInputBase implements FormValueControl<number | nu
   private readonly focused = signal(false);
   private readonly draft = signal('');
   private readonly blurred = signal(false);
+  /** Vrai entre le `mousedown` qui donne le focus et le `mouseup` suivant (voir `onMouseUp`). */
+  private pointerFocusing = false;
 
   protected readonly displayText = computed(() => (this.focused() ? this.draft() : this.formatForDisplay(this.value())));
   protected readonly inputMode = computed(() => (this.decimals() > 0 ? 'decimal' : 'numeric'));
@@ -128,9 +130,29 @@ export abstract class LcNumericInputBase implements FormValueControl<number | nu
     this.inputRef().nativeElement.focus(options);
   }
 
+  /**
+   * Le texte passe de la forme affichée (« 250 000 ») à la forme éditable (« 250000 »). Le texte est donc écrit
+   * tout de suite dans le champ, puis sélectionné en entier : sans cela, la mise à jour du gabarit, plus tardive,
+   * remplace le texte et reporte le curseur en fin, et la frappe s'ajouterait à l'ancienne valeur (arrivée par Tab).
+   */
   protected onFocus(): void {
-    this.draft.set(this.toEditText(this.value()));
+    const text = this.toEditText(this.value());
+    this.draft.set(text);
     this.focused.set(true);
+    const element = this.inputRef().nativeElement;
+    element.value = text;
+    element.select();
+  }
+
+  protected onMouseDown(): void {
+    this.pointerFocusing = !this.focused();
+  }
+
+  /** Le `mouseup` du clic qui a donné le focus effacerait la sélection : il est neutralisé, une seule fois. */
+  protected onMouseUp(event: MouseEvent): void {
+    if (!this.pointerFocusing) return;
+    this.pointerFocusing = false;
+    event.preventDefault();
   }
 
   protected onBlur(): void {

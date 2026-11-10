@@ -146,6 +146,21 @@ describe('LcSliderComponent', () => {
     expect(number.value).toBe('10');
   });
 
+  it('showValue input : au focus du champ couplé, tout le texte est sélectionné et la frappe remplace la valeur', async () => {
+    const { fixture, host, element, range } = await setup();
+    host.showValue.set('input');
+    await fixture.whenStable();
+    const number = element.querySelector<HTMLInputElement>('lc-number-input input')!;
+    number.focus();
+    await fixture.whenStable();
+    expect([number.selectionStart, number.selectionEnd]).toEqual([0, 2]);
+    number.setRangeText('85', 0, 2, 'end');
+    number.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(host.value()).toBe(85);
+    expect(range().value).toBe('85');
+  });
+
   it('showValue none : rien à côté de la piste', async () => {
     const { fixture, host, element } = await setup();
     host.showValue.set('none');

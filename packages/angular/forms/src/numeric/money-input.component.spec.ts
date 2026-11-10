@@ -149,4 +149,78 @@ describe('LcMoneyInputComponent', () => {
     expect(fixture.componentInstance.months()).toBe(1);
     expect(decrease.disabled).toBe(true);
   });
+
+  describe('sélection au focus (QA-01)', () => {
+    /** Simule la frappe d'un utilisateur : remplace la sélection courante par `text`, puis émet `input`. */
+    async function typeOverSelection(fixture: { whenStable(): Promise<unknown> }, input: HTMLInputElement, text: string) {
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? input.value.length;
+      input.setRangeText(text, start, end, 'end');
+      input.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+    }
+
+    it('arrivée par focus (Tab simulé) : tout le texte reformaté est sélectionné, la frappe remplace la valeur', async () => {
+      const { fixture, input } = await setup();
+      input.focus();
+      await fixture.whenStable();
+      expect(input.value).toBe('250000');
+      expect([input.selectionStart, input.selectionEnd]).toEqual([0, 6]);
+      await typeOverSelection(fixture, input, '300000');
+      expect(input.value).toBe('300000');
+      expect(fixture.componentInstance.amount()).toBe(300000);
+    });
+
+    it('pourcentage : le texte « 3,500 » devient « 3,5 » au focus et reste entièrement sélectionné', async () => {
+      const { fixture, element } = await setup();
+      const rate = element.querySelector<HTMLInputElement>('lc-percent-input input')!;
+      rate.focus();
+      await fixture.whenStable();
+      expect(rate.value).toBe('3,5');
+      expect([rate.selectionStart, rate.selectionEnd]).toEqual([0, 3]);
+      await typeOverSelection(fixture, rate, '25');
+      expect(fixture.componentInstance.rate()).toBe(25);
+    });
+
+    it('nombre : même comportement', async () => {
+      const { fixture, element } = await setup();
+      const months = element.querySelector<HTMLInputElement>('lc-number-input input')!;
+      months.focus();
+      await fixture.whenStable();
+      expect([months.selectionStart, months.selectionEnd]).toEqual([0, months.value.length]);
+    });
+
+    it('une fois focalisé, la saisie au milieu du texte et le collage fonctionnent toujours', async () => {
+      const { fixture, input } = await setup();
+      input.focus();
+      await fixture.whenStable();
+      input.setSelectionRange(3, 3);
+      await typeOverSelection(fixture, input, '9');
+      expect(input.value).toBe('2509000');
+      expect(fixture.componentInstance.amount()).toBe(2509000);
+      expect(input.selectionStart).toBe(4);
+      input.select();
+      const event = new Event('paste', { cancelable: true }) as Event & { clipboardData: { getData(): string } };
+      Object.defineProperty(event, 'clipboardData', { value: { getData: () => '1 200' } });
+      input.dispatchEvent(event);
+      await fixture.whenStable();
+      expect(fixture.componentInstance.amount()).toBe(1200);
+      expect(input.value).toBe('1200');
+    });
+
+    it('un clic qui donne le focus garde la sélection ; un clic suivant place le curseur', async () => {
+      const { fixture, input } = await setup();
+      input.dispatchEvent(new MouseEvent('mousedown', { cancelable: true }));
+      input.focus();
+      await fixture.whenStable();
+      const first = new MouseEvent('mouseup', { cancelable: true });
+      input.dispatchEvent(first);
+      expect(first.defaultPrevented).toBe(true);
+      expect([input.selectionStart, input.selectionEnd]).toEqual([0, 6]);
+      input.dispatchEvent(new MouseEvent('mousedown', { cancelable: true }));
+      const second = new MouseEvent('mouseup', { cancelable: true });
+      input.dispatchEvent(second);
+      expect(second.defaultPrevented).toBe(false);
+    });
+  });
 });

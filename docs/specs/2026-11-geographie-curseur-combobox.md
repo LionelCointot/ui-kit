@@ -370,6 +370,12 @@ Ordre conseillé : T1 → T2 → T3 → T4 (parallélisable avec T5) → T6 → 
 | M4 | 480 mois lisibles | **constat** : l'axe auto d'ECharts étiquetait « décembre 2030 » tous les ~108 mois, sans repère annuel ; **corrigé** : au-delà de 24 mois ou dates ISO, `annualTicks` n'étiquette que les années (premier janvier, une année sur 1, 2, 5, 10… selon la densité, 12 étiquettes au plus) avec graduations ; autres types de catégories inchangés |
 | M3 | seconde rampe séquentielle | **partiel (tokens seulement)** : `ref.color.orange` (7 pas), `sys.chart.sequential-warm.100…700` (ordre inversé en sombre), `LcChartTheme.sequentialWarm`, 2 paires de contraste ajoutées à l'outil (26 paires, thèmes clair et sombre verts). **Pas d'API de série** pour colorer des aires empilées avec la rampe (les séries n'acceptent que les 8 emplacements catégoriels) : à spécifier si besoin |
 
+### Correctifs QA « Acheter ou louer » (2026-11-10)
+
+| Id | Constat | Correction |
+|---|---|---|
+| QA-01 | `lc-money-input`, `lc-percent-input`, `lc-number-input` (donc aussi `lc-slider showValue="input"`) : au focus le texte passe de « 250 000 » à « 250000 » ; la mise à jour du gabarit, plus tardive, réécrivait le champ et reportait le curseur en fin. Arrivé par Tab, on tapait à la suite de l'ancienne valeur (« 250000300000 »). | `LcNumericInputBase.onFocus` écrit tout de suite le texte éditable dans le champ puis le sélectionne en entier ; pour un clic, le `mouseup` du clic qui a donné le focus est neutralisé (une fois) afin de conserver la sélection. Saisie au milieu du texte, collage et flèches inchangés. Tests : focus programmatique puis frappe (monétaire, pourcentage, nombre, curseur couplé), saisie au milieu, collage, clic. |
+
 ### Correctif : champs `geo` comme hôtes de `[formField]` (Signal Forms)
 
 | Constat | Détail |
