@@ -274,6 +274,36 @@
           "$value": "#383835",
           "$type": "color"
         }
+      },
+      "orange": {
+        "100": {
+          "$value": "#f1ded7",
+          "$type": "color"
+        },
+        "200": {
+          "$value": "#e6bdac",
+          "$type": "color"
+        },
+        "300": {
+          "$value": "#dc987d",
+          "$type": "color"
+        },
+        "400": {
+          "$value": "#d4714a",
+          "$type": "color"
+        },
+        "500": {
+          "$value": "#cb4c19",
+          "$type": "color"
+        },
+        "600": {
+          "$value": "#9a3913",
+          "$type": "color"
+        },
+        "700": {
+          "$value": "#6b280d",
+          "$type": "color"
+        }
       }
     }
   }

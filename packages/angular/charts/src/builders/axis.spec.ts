@@ -7,7 +7,7 @@ import { buildLineOption } from './line.builder';
 import { annualTicks, axisMin } from './shared';
 
 const theme: LcChartTheme = {
-  categorical: ['#2a78d6'], sequential: [], diverging: { negative: '', neutral: '', positive: '' },
+  categorical: ['#2a78d6'], sequential: [], sequentialWarm: [], diverging: { negative: '', neutral: '', positive: '' },
   status: { good: '', warning: '', serious: '', critical: '' },
   surface: '#fcfcfb', gridline: '#e1e0d9', axis: '#c3c2b7',
   ink: { primary: '#0b0b0b', secondary: '#52514e', muted: '#898781' }, markerColor: '#777777',

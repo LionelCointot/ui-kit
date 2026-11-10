@@ -20,6 +20,7 @@ export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValu
   return {
     categorical: [1, 2, 3, 4, 5, 6, 7, 8].map((index) => token(`categorical-${index}`)),
     sequential: [100, 200, 300, 400, 500, 600, 700].map((step) => token(`sequential-${step}`)),
+    sequentialWarm: [100, 200, 300, 400, 500, 600, 700].map((step) => token(`sequential-warm-${step}`)),
     diverging: { negative: token('diverging-negative'), neutral: token('diverging-neutral'), positive: token('diverging-positive') },
     status: { good: token('status-good'), warning: token('status-warning'), serious: token('status-serious'), critical: token('status-critical') },
     surface: token('surface'),

@@ -120,11 +120,11 @@ test('un thème sans surcharge est accepté et identique à sa base', () => {
   for (const [path, value] of Object.entries(baseValues('default'))) assert.equal(resolved[cssVarOf(path)], value);
 });
 
-test('contraste : ratios connus et 24 paires des thèmes de base', () => {
+test('contraste : ratios connus et 26 paires des thèmes de base', () => {
   assert.equal(Math.round(contrastRatio('#000000', '#ffffff') * 100) / 100, 21);
   for (const base of ['default', 'dark']) {
     const results = checkContrast(resolveTheme(theme({}, { extends: base })));
-    assert.equal(results.length, 24);
+    assert.equal(results.length, 26);
     assert.ok(results.every((result) => result.pass), `${base} : ${results.filter((r) => !r.pass).map((r) => r.fg)}`);
   }
   const weak = checkContrast(resolveTheme(theme({ 'color.on-primary': '#ffffff', 'color.primary': '#aaaaaa' })));
@@ -137,7 +137,7 @@ test('contraste : ratios connus et 24 paires des thèmes de base', () => {
 
 test('contraste : une couleur translucide est ignorée', () => {
   const resolved = resolveTheme(theme({ 'color.primary': '#0b5f5acc' }));
-  assert.equal(checkContrast(resolved).length, 22, "primary figure dans deux paires");
+  assert.equal(checkContrast(resolved).length, 24, "primary figure dans deux paires");
 });
 
 test('DTCG : export, aller-retour et refus des jetons non éditables', () => {

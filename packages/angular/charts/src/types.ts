@@ -93,6 +93,8 @@ export interface LcChartTheme {
   readonly categorical: readonly string[];
   /** 7 pas. */
   readonly sequential: readonly string[];
+  /** 7 pas de la rampe chaude (famille de l'emplacement de couleur 2) ; un pas élevé contraste davantage avec la surface. */
+  readonly sequentialWarm: readonly string[];
   readonly diverging: { readonly negative: string; readonly neutral: string; readonly positive: string };
   readonly status: { readonly good: string; readonly warning: string; readonly serious: string; readonly critical: string };
   readonly surface: string;

@@ -121,6 +121,13 @@ export const THEME_SCHEMA = [
   {"path":"chart.ink-primary","cssVar":"--lc-sys-chart-ink-primary","type":"color","group":"charts","label":"Chart ink primary"},
   {"path":"chart.ink-secondary","cssVar":"--lc-sys-chart-ink-secondary","type":"color","group":"charts","label":"Chart ink secondary"},
   {"path":"chart.ink-muted","cssVar":"--lc-sys-chart-ink-muted","type":"color","group":"charts","label":"Chart ink muted"},
+  {"path":"chart.sequential-warm.100","cssVar":"--lc-sys-chart-sequential-warm-100","type":"color","group":"charts","label":"Chart sequential warm 100"},
+  {"path":"chart.sequential-warm.200","cssVar":"--lc-sys-chart-sequential-warm-200","type":"color","group":"charts","label":"Chart sequential warm 200"},
+  {"path":"chart.sequential-warm.300","cssVar":"--lc-sys-chart-sequential-warm-300","type":"color","group":"charts","label":"Chart sequential warm 300"},
+  {"path":"chart.sequential-warm.400","cssVar":"--lc-sys-chart-sequential-warm-400","type":"color","group":"charts","label":"Chart sequential warm 400"},
+  {"path":"chart.sequential-warm.500","cssVar":"--lc-sys-chart-sequential-warm-500","type":"color","group":"charts","label":"Chart sequential warm 500"},
+  {"path":"chart.sequential-warm.600","cssVar":"--lc-sys-chart-sequential-warm-600","type":"color","group":"charts","label":"Chart sequential warm 600"},
+  {"path":"chart.sequential-warm.700","cssVar":"--lc-sys-chart-sequential-warm-700","type":"color","group":"charts","label":"Chart sequential warm 700"},
   {"path":"border.width.thin","cssVar":"--lc-sys-border-width-thin","type":"dimension","group":"shape","label":"Border width thin"},
   {"path":"border.width.thick","cssVar":"--lc-sys-border-width-thick","type":"dimension","group":"shape","label":"Border width thick"}
 ];
@@ -252,6 +259,13 @@ export const BASE_VALUES = {
     "chart.ink-primary": "#0b0b0b",
     "chart.ink-secondary": "#52514e",
     "chart.ink-muted": "#898781",
+    "chart.sequential-warm.100": "#f1ded7",
+    "chart.sequential-warm.200": "#e6bdac",
+    "chart.sequential-warm.300": "#dc987d",
+    "chart.sequential-warm.400": "#d4714a",
+    "chart.sequential-warm.500": "#cb4c19",
+    "chart.sequential-warm.600": "#9a3913",
+    "chart.sequential-warm.700": "#6b280d",
     "border.width.thin": "1px",
     "border.width.thick": "2px"
   },
@@ -381,6 +395,13 @@ export const BASE_VALUES = {
     "chart.ink-primary": "#f0efec",
     "chart.ink-secondary": "#c3c2b7",
     "chart.ink-muted": "#898781",
+    "chart.sequential-warm.100": "#6b280d",
+    "chart.sequential-warm.200": "#9a3913",
+    "chart.sequential-warm.300": "#cb4c19",
+    "chart.sequential-warm.400": "#d4714a",
+    "chart.sequential-warm.500": "#dc987d",
+    "chart.sequential-warm.600": "#e6bdac",
+    "chart.sequential-warm.700": "#f1ded7",
     "border.width.thin": "1px",
     "border.width.thick": "2px"
   }
@@ -410,5 +431,7 @@ export const CONTRAST_PAIRS = [
   ["sys.color.focus-ring","sys.color.surface",3],
   ["sys.color.primary","sys.color.surface",3],
   ["sys.chart.ink-primary","sys.chart.surface",4.5],
-  ["sys.chart.ink-secondary","sys.chart.surface",4.5]
+  ["sys.chart.ink-secondary","sys.chart.surface",4.5],
+  ["sys.chart.sequential-warm.600","sys.chart.surface",3],
+  ["sys.chart.sequential-warm.700","sys.chart.surface",3]
 ];

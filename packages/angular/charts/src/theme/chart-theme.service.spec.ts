@@ -17,6 +17,7 @@ describe('readChartTheme', () => {
     expect(theme.categorical[0]).toBe('#2a78d6');
     expect(theme.categorical.length).toBe(8);
     expect(theme.sequential.length).toBe(7);
+    expect(theme.sequentialWarm.length).toBe(7);
     expect(theme.surface).toBe('#fcfcfb');
     expect(theme.fontSize).toBe(14);
     expect(theme.fontFamily).toBe('Inter, sans-serif');
