@@ -6,3 +6,5 @@ export * from './table/cell.directive';
 export * from './table/table.component';
 export * from './description-list/description-list.component';
 export * from './kpi-card/kpi-card.component';
+export * from './paginator/page-slice';
+export * from './paginator/paginator.component';
