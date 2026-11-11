@@ -10,13 +10,22 @@ suites:
     name: Composants Angular ui-angular (Vitest via ng test)
     kind: unit
     tools: [angular, vitest]
-    run: >-
-      npx ng test ui-angular --watch=false
-      --reporters=default --reporters=junit
-      --output-file="$QA_REPORTS_DIR/junit.xml"
+    # Le builder `unit-test` n'a pas d'option pour le dossier du rapport de couverture (défaut : coverage/<projet>
+    # dans le repo) : un fichier de configuration Vitest minimal, écrit dans $QA_REPORTS_DIR, le redirige.
+    run: |
+      printf 'export default { test: { coverage: { reportsDirectory: "%s/coverage" } } };\n' "$QA_REPORTS_DIR" > "$QA_REPORTS_DIR/vitest-qa.config.mjs"
+      npx ng test ui-angular --watch=false \
+        --reporters=default --reporters=junit \
+        --output-file="$QA_REPORTS_DIR/junit.xml" \
+        --coverage --coverage-reporters=lcovonly \
+        --coverage-include="packages/angular/**/*.ts" \
+        --coverage-exclude="**/*.spec.ts" --coverage-exclude="**/*.stories.ts" --coverage-exclude="**/testing/**" \
+        --runner-config="$QA_REPORTS_DIR/vitest-qa.config.mjs"
     reports:
       tests:
         - { format: junit, path: junit.xml }
+      coverage:
+        - { format: lcov, path: coverage/lcov.info, component: angular, language: typescript }
 
   - id: tokens-unit
     name: Design tokens ui-tokens (node --test)
@@ -36,13 +45,15 @@ suites:
         - { format: lcov, path: lcov.info, component: tokens, language: javascript }
 
 coverage:
-  exclude: ["**/*.test.mjs"]
+  exclude: ["**/*.test.mjs", "**/*.spec.ts", "**/*.stories.ts", "**/testing/**"]
 
 policy:
   mode: enforce
   tests:
     minPassRate: 100
-  # Seuil posé sous la mesure initiale (tokens 96 % de lignes) ; maxDrop : pas de recul > 2 points.
+  # Seuils posés sous les mesures initiales (tokens 96 %, angular 93 % de lignes) ; maxDrop : pas de recul > 2 points.
   components:
     tokens:
       lines: { min: 90, maxDrop: 2 }
+    angular:
+      lines: { min: 88, maxDrop: 2 }
