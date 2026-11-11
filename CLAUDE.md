@@ -23,7 +23,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
 
 ## Documentation
-- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md` (chacune se termine par ses écarts constatés à l'implémentation)
+- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md` (chacune se termine par ses écarts constatés à l'implémentation)
 - ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
 - Direction visuelle : `PRODUCT.md` et `DESIGN.md` (créés par `/impeccable init` et `/impeccable document`, tâche T2)
