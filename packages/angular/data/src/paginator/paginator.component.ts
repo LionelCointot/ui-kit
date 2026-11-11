@@ -25,7 +25,7 @@ const DEFAULT_PAGE_SIZE = 25;
           </select>
         </label>
       }
-      <p class="lc-paginator__range">{{ labels.pageRange(firstItem(), lastItem(), total()) }}</p>
+      <p class="lc-paginator__range">{{ labels.pageRange(firstItem(), lastItem(), safeTotal()) }}</p>
       <button #previous lcButton type="button" fillMode="flat" themeColor="neutral" [disabled]="isFirst()" (click)="goTo(currentPage() - 1)">
         <lc-icon name="chevron-left" />
         {{ labels.previousPage }}
@@ -54,8 +54,8 @@ export class LcPaginatorComponent {
   /** Nom de la navigation ; défaut : `LC_LABELS.pagination`. */
   readonly ariaLabel = input<string>();
 
-  private readonly previousButton = viewChild<ElementRef<HTMLButtonElement>>('previous');
-  private readonly nextButton = viewChild<ElementRef<HTMLButtonElement>>('next');
+  private readonly previousButton = viewChild.required('previous', { read: ElementRef<HTMLButtonElement> });
+  private readonly nextButton = viewChild.required('next', { read: ElementRef<HTMLButtonElement> });
 
   protected readonly effectivePageSize = computed(() => {
     const size = Math.floor(this.pageSize());
@@ -86,8 +86,8 @@ export class LcPaginatorComponent {
     const target = Math.min(this.pageCount(), Math.max(1, page));
     if (target === this.currentPage()) return;
     // Le bouton cliqué va être désactivé à la borne : le focus passe à l'autre bouton plutôt que d'être perdu.
-    if (target === 1) this.nextButton()?.nativeElement.focus();
-    else if (target === this.pageCount()) this.previousButton()?.nativeElement.focus();
+    if (target === 1) this.nextButton().nativeElement.focus();
+    else if (target === this.pageCount()) this.previousButton().nativeElement.focus();
     this.page.set(target);
   }
 
