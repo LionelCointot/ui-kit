@@ -21,6 +21,8 @@ const ICONS = [
   'user', 'users', 'user-plus', 'user-pen', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check',
   // Ajout : comparaison (module « Acheter ou louer »).
   'scale',
+  // Ajouts : contrôle de version, activité et rafraîchissement (composants génériques de suivi).
+  'git-branch', 'git-commit-horizontal', 'activity', 'refresh-cw',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */
