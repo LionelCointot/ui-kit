@@ -12,6 +12,7 @@ description: Rédige la description d'une pull request et les messages de commit
    - **Changements principaux** : 3 à 7 puces.
    - **Risques** : migrations, rupture de compatibilité, perf, sécurité.
    - **Plan de test** : commandes et étapes manuelles réalisables.
+   - **Vérifications** : verdict `qa-engineer` (GO, commandes et résultats, `CA-n` prouvés) et verdict `ui-ux-designer` (« pas d'impact UI » ou conformité impeccable). Sans GO QA, pas de PR prête à merger : l'ouvrir en brouillon.
    - Liens vers spec/ADR/issue.
 4. Une PR = un sujet. Si le diff mélange plusieurs sujets, propose de le découper.
 5. Ne mentionne rien qui n'est pas dans le diff.

@@ -30,5 +30,13 @@ description: Définit la stratégie de tests et écrit des tests (xUnit pour .NE
 
 Exemples : `dotnet-best-practices/examples/Tests/` et `angular-best-practices/examples/products/*.spec.ts`.
 
+## Qui teste quoi (workflow `delivery-workflow`)
+- `senior-developer` : tests unitaires et d'intégration écrits **avec** le code ; chaque `CA-n` visé a un test, nommé ou commenté avec son identifiant quand le lien n'est pas évident.
+- `qa-engineer` : vérifie, ne corrige pas. Matrice `CA-n` → test → résultat ; ajoute au besoin un test d'acceptation ou E2E manquant (fichiers de test seulement) ; régressions via `graphify affected "<symbole>"` sur les zones modifiées.
+
+## Interdits (tous rôles)
+- Désactiver, ignorer ou assouplir un test pour passer au vert : `skip`, `.only`, `xit`, `[Fact(Skip = ...)]`, assertion supprimée ou élargie, seuil de couverture baissé, valeur de référence recopiée depuis la sortie du code testé.
+- Test instable : c'est un défaut à corriger (horloge, ordre, attente réseau), pas une relance jusqu'au vert.
+
 ## Processus d'exécution
-Lancer les commandes de test de `CLAUDE.md`, corriger les échecs, puis rapporter : tests ajoutés, résultat réel (sortie), zones non couvertes.
+Lancer les commandes de test de `CLAUDE.md`, corriger les échecs, puis rapporter : tests ajoutés, résultat réel (sortie : nombre passés/échoués), zones non couvertes.

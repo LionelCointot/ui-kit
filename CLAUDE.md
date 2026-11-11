@@ -28,13 +28,18 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
 - Direction visuelle : `PRODUCT.md` et `DESIGN.md` (créés par `/impeccable init` et `/impeccable document`, tâche T2)
 
-## Workflow (spec d'abord, code ensuite)
-1. Toute feature non triviale commence par une spec dans `docs/specs/` (skill `spec-writer`), validée avant de coder.
-2. Chaque choix d'architecture notable est consigné dans `docs/adr/` (skill `adr`).
-3. Une branche par tâche : `feat/...`, `fix/...`, `chore/...`.
-4. En écrivant du code : `clean-code` + `angular-best-practices` ; rendu visuel : `impeccable` (`shape` avant, `critique` et `audit` après).
-5. Avant de déclarer une tâche finie : build, tests, lint et a11y Storybook passent.
-6. PR décrite avec `pr-description`, revue avec `review-checklist` (et `/code-review` pour la chasse aux bugs).
+## Workflow (spec d'abord, code ensuite : skill `delivery-workflow`)
+La session principale orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (opus : conception, code complexe ; sonnet : exécution cadrée, QA, design ; haiku : recherche, tâches mécaniques).
+1. Cadrage, puis spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), validée par l'utilisateur avant de coder ; choix d'architecture dans `docs/adr/` (skill `adr`).
+2. Design : `ui-ux-designer` conçoit avec `impeccable` (`shape` avant, `critique` et `audit` après) ou déclare « pas d'impact UI ».
+3. Implémentation : `senior-developer`, une tâche de la spec par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
+4. QA : `qa-engineer` rend GO / NO-GO avec preuves (build, tests, lint et a11y Storybook, `CA-n`, `review-checklist`) ; NO-GO = retour au développeur.
+5. Revue `/code-review`, puis PR décrite avec `pr-description`.
+6. Correctif trivial : workflow allégé (développeur + QA, le designer déclare « pas d'impact UI »).
+
+## Agents (`.claude/agents/`)
+- Livraison : `senior-developer` (opus), `ui-ux-designer` (sonnet, `impeccable`), `qa-engineer` (sonnet).
+- Design : `impeccable-*` (lancés par la session principale à la demande du playbook impeccable).
 
 ## Conventions
 - Commits : Conventional Commits. SemVer : les tokens (noms et rôles), sélecteurs, entrées et sorties sont le **contrat public** (renommer = version majeure, alias déprécié pendant au moins une mineure).
@@ -58,7 +63,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Ne pas commiter de secrets ; ne pas ajouter de dépendance sans la justifier ; ne pas modifier du code hors périmètre.
 
 ## Skills (`.claude/skills/`)
-- Processus : `project-init`, `spec-writer`, `adr`, `pr-description`
+- Processus : `delivery-workflow`, `project-init`, `spec-writer`, `adr`, `pr-description`
 - Conception : `web-architecture`, `api-design`, `frontend-guidelines`
 - Code : `clean-code`, `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici)
 - Qualité : `review-checklist`, `security-checklist`, `test-strategy`
