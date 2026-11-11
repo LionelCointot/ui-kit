@@ -29,16 +29,16 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Direction visuelle : `PRODUCT.md` et `DESIGN.md` (créés par `/impeccable init` et `/impeccable document`, tâche T2)
 
 ## Workflow (spec d'abord, code ensuite : skill `delivery-workflow`)
-La session principale orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (opus : conception, code complexe ; sonnet : exécution cadrée, QA, design ; haiku : recherche, tâches mécaniques).
+La session principale orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (sonnet par défaut ; haiku : recherche, tâches mécaniques ; opus seulement sur accord de l'utilisateur).
 1. Cadrage, puis spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), validée par l'utilisateur avant de coder ; choix d'architecture dans `docs/adr/` (skill `adr`).
 2. Design : `ui-ux-designer` conçoit avec `impeccable` (`shape` avant, `critique` et `audit` après) ou déclare « pas d'impact UI ».
-3. Implémentation : `senior-developer`, une tâche de la spec par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
-4. QA : `qa-engineer` rend GO / NO-GO avec preuves (build, tests, lint et a11y Storybook, `CA-n`, `review-checklist`) ; NO-GO = retour au développeur.
+3. Implémentation : `senior-developer` (code de production, aucun test), une tâche de la spec par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
+4. Tests et QA : `qa-engineer` écrit les tests, puis rend GO / NO-GO avec preuves (build, tests, lint et a11y Storybook, `CA-n`, `review-checklist`) ; NO-GO = retour au développeur.
 5. Revue `/code-review`, puis PR décrite avec `pr-description`.
 6. Correctif trivial : workflow allégé (développeur + QA, le designer déclare « pas d'impact UI »).
 
 ## Agents (`.claude/agents/`)
-- Livraison : `senior-developer` (opus), `ui-ux-designer` (sonnet, `impeccable`), `qa-engineer` (sonnet).
+- Livraison : `senior-developer` (sonnet), `ui-ux-designer` (sonnet, `impeccable`), `qa-engineer` (sonnet).
 - Design : `impeccable-*` (lancés par la session principale à la demande du playbook impeccable).
 
 ## Conventions

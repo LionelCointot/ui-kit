@@ -1,7 +1,7 @@
 ---
 name: senior-developer
 description: Développeur senior du workflow de livraison. À utiliser pour implémenter une tâche cadrée (Tn d'une spec validée ou correctif), corriger les constats d'un NO-GO QA ou d'une revue, rédiger un brouillon de spec ou d'ADR, ou investiguer un bug difficile. Code de production et tests unitaires/intégration, dans le périmètre de la fiche de tâche.
-model: opus
+model: sonnet
 skills:
   - clean-code
   - test-strategy

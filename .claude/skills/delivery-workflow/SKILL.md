@@ -11,13 +11,13 @@ La session principale est un **orchestrateur et vérificateur léger** : elle ca
 
 | Rôle | Modèle | Fait | Ne fait pas |
 |---|---|---|---|
-| `senior-developer` | opus | code de production + tests unitaires/intégration, ADR proposés, brouillon de spec | valider sa propre livraison |
+| `senior-developer` | sonnet | code de production + tests unitaires/intégration, ADR proposés, brouillon de spec | valider sa propre livraison |
 | `ui-ux-designer` | sonnet | triage UI, conception (`impeccable`), contrôle de conformité des écrans | code métier, logique de store |
 | `qa-engineer` | sonnet | vérifie les critères d'acceptation, build/tests/lint, régressions, grille `review-checklist`, verdict GO / NO-GO | code de production, désactiver ou assouplir un test |
 
 ## Puissance du modèle (paramètre `model` à l'appel)
-- **opus** : conception, spec, ADR, code complexe ou transverse, bug difficile.
-- **sonnet** : implémentation cadrée par une spec détaillée (`senior-developer` avec `model: sonnet`), QA, design, revue.
+- **sonnet** (défaut) : spec, ADR, implémentation, QA, design, revue.
+- **opus** : seulement sur accord de l'utilisateur, après un échec en sonnet sur une tâche de conception ou un bug difficile.
 - **haiku** : recherche dans le code (agent intégré `Explore`), triage UI (`ui-ux-designer` avec `model: haiku`), propagation mécanique (même bloc recopié dans plusieurs repos, renommage, mise en forme de docs).
 Choisir le plus petit modèle qui tient la tâche ; remonter d'un cran après un échec plutôt que de relancer à l'identique.
 
@@ -34,7 +34,7 @@ Recopier dans **chaque** prompt de sous-agent qui explore du code : « Si `graph
 | # | Étape | Qui | Porte de sortie |
 |---|---|---|---|
 | 1 | Cadrage | orchestrateur | besoin compris, type de workflow choisi (complet ou allégé) |
-| 2 | Spec / ADR | orchestrateur ou `senior-developer` (opus) avec `spec-writer`, `adr` | spec **validée par l'utilisateur**, critères `CA-n` vérifiables, ADR acceptés |
+| 2 | Spec / ADR | orchestrateur ou `senior-developer` avec `spec-writer`, `adr` | spec **validée par l'utilisateur**, critères `CA-n` vérifiables, ADR acceptés |
 | 3 | Design | `ui-ux-designer` (conception) | §5.4 de la spec rempli (brief `/impeccable shape`) ou « pas d'impact UI » ; questions tranchées par l'utilisateur |
 | 4 | Implémentation | `senior-developer`, une tâche `Tn` par appel | `FAIT` avec diff limité au périmètre, build/tests/lint verts (sorties), `graphify update .` lancé |
 | 5 | QA | `qa-engineer` ; si impact UI, `ui-ux-designer` (conformité) en parallèle | `GO` motivé, chaque `CA-n` prouvé, aucun bloquant `review-checklist`, design conforme |
@@ -49,7 +49,7 @@ Le plan de vérification QA peut être préparé dès l'étape 2 validée, en pa
 - **Écart de spec** découvert par un rôle (`BLOQUÉ`) → l'orchestrateur amende la spec avec l'utilisateur, jamais de décision silencieuse.
 
 ## Workflow allégé (correctif trivial)
-Conditions, toutes requises : changement local et évident, pas de nouveau comportement visible, pas de changement de contrat d'API, de données ni d'architecture. Alors : `senior-developer` (souvent `model: sonnet`) → triage `ui-ux-designer` (`model: haiku`) qui rend « PAS D'IMPACT UI » ou bascule en workflow complet → `qa-engineer` → PR. Le bug est couvert par un test qui échouait avant le correctif.
+Conditions, toutes requises : changement local et évident, pas de nouveau comportement visible, pas de changement de contrat d'API, de données ni d'architecture. Alors : `senior-developer` → triage `ui-ux-designer` (`model: haiku`) qui rend « PAS D'IMPACT UI » ou bascule en workflow complet → `qa-engineer` → PR. Le bug est couvert par un test qui échouait avant le correctif.
 
 ## Vérifications de l'orchestrateur (légères)
 - `git diff --stat` : seuls les fichiers du périmètre ont changé.
