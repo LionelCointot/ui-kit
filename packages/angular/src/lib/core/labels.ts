@@ -39,6 +39,7 @@ export interface LcLabels {
   /** Bloc de code (`lc-code-block`). */
   readonly copy: string;
   readonly copied: string;
+  readonly copyFailed: string;
   readonly codeTruncated: (count: number) => string;
   /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
   readonly expandRow: string;
@@ -329,6 +330,7 @@ export const LC_LABELS_FR: LcLabels = {
   pageStatus: (page, pageCount) => `Page ${page} sur ${pageCount}`,
   copy: 'Copier',
   copied: 'Copié',
+  copyFailed: 'Copie impossible',
   codeTruncated: (count) => `Texte tronqué aux ${count} premiers caractères`,
   expandRow: 'Déplier',
   collapseRow: 'Replier',
@@ -471,6 +473,7 @@ export const LC_LABELS_EN: LcLabels = {
   pageStatus: (page, pageCount) => `Page ${page} of ${pageCount}`,
   copy: 'Copy',
   copied: 'Copied',
+  copyFailed: 'Copy failed',
   codeTruncated: (count) => `Text truncated to the first ${count} characters`,
   expandRow: 'Expand',
   collapseRow: 'Collapse',

@@ -8,3 +8,4 @@ export * from './description-list/description-list.component';
 export * from './kpi-card/kpi-card.component';
 export * from './paginator/page-slice';
 export * from './paginator/paginator.component';
+export * from './code-block/code-block.component';
