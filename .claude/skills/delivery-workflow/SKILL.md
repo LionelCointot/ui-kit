@@ -11,9 +11,9 @@ La session principale est un **orchestrateur et vérificateur léger** : elle ca
 
 | Rôle | Modèle | Fait | Ne fait pas |
 |---|---|---|---|
-| `senior-developer` | sonnet | code de production + tests unitaires/intégration, ADR proposés, brouillon de spec | valider sa propre livraison |
+| `senior-developer` | sonnet | code de production testable, liste « À tester », ADR proposés, brouillon de spec | écrire ou modifier des tests, valider sa propre livraison |
 | `ui-ux-designer` | sonnet | triage UI, conception (`impeccable`), contrôle de conformité des écrans | code métier, logique de store |
-| `qa-engineer` | sonnet | vérifie les critères d'acceptation, build/tests/lint, régressions, grille `review-checklist`, verdict GO / NO-GO | code de production, désactiver ou assouplir un test |
+| `qa-engineer` | sonnet | **écrit tous les tests** (unitaires, intégration, E2E) à partir de la spec, vérifie les critères d'acceptation, build/tests/lint, régressions, grille `review-checklist`, verdict GO / NO-GO | code de production, désactiver ou assouplir un test |
 
 ## Puissance du modèle (paramètre `model` à l'appel)
 - **sonnet** (défaut) : spec, ADR, implémentation, QA, design, revue.
@@ -36,12 +36,12 @@ Recopier dans **chaque** prompt de sous-agent qui explore du code : « Si `graph
 | 1 | Cadrage | orchestrateur | besoin compris, type de workflow choisi (complet ou allégé) |
 | 2 | Spec / ADR | orchestrateur ou `senior-developer` avec `spec-writer`, `adr` | spec **validée par l'utilisateur**, critères `CA-n` vérifiables, ADR acceptés |
 | 3 | Design | `ui-ux-designer` (conception) | §5.4 de la spec rempli (brief `/impeccable shape`) ou « pas d'impact UI » ; questions tranchées par l'utilisateur |
-| 4 | Implémentation | `senior-developer`, une tâche `Tn` par appel | `FAIT` avec diff limité au périmètre, build/tests/lint verts (sorties), `graphify update .` lancé |
-| 5 | QA | `qa-engineer` ; si impact UI, `ui-ux-designer` (conformité) en parallèle | `GO` motivé, chaque `CA-n` prouvé, aucun bloquant `review-checklist`, design conforme |
+| 4 | Implémentation | `senior-developer`, une tâche `Tn` par appel | `FAIT` avec diff limité au périmètre et **sans fichier de test**, build/lint et tests existants verts (sorties), liste « À tester », `graphify update .` lancé |
+| 5 | Tests et QA | `qa-engineer` écrit les tests puis vérifie ; si impact UI, `ui-ux-designer` (conformité) en parallèle | `GO` motivé, chaque `CA-n` prouvé par un test écrit par la QA, aucun bloquant `review-checklist`, design conforme |
 | 6 | Revue | orchestrateur : `/code-review` sur le diff | aucun bug confirmé non traité |
 | 7 | PR | orchestrateur avec `pr-description` | description avec verdicts QA et design ; commit/push seulement sur accord de l'utilisateur |
 
-Le plan de vérification QA peut être préparé dès l'étape 2 validée, en parallèle de l'implémentation. Les tâches indépendantes d'une spec (back / front) peuvent partir en parallèle.
+**Séparation stricte** : le développeur n'écrit aucun test, la QA aucun code de production. Les tests tirés de la spec (`CA-n`) peuvent être écrits dès l'étape 2 validée, en parallèle de l'implémentation. Les tâches indépendantes d'une spec (back / front) peuvent partir en parallèle.
 
 ## Boucles de retour
 - **NO-GO QA** ou bug confirmé en revue → `senior-developer` reçoit les constats numérotés **tels quels**, ne corrige que ceux-là → QA re-vérifie (constats + suite complète). Après 3 allers-retours sans GO : arrêt et escalade à l'utilisateur.
@@ -49,9 +49,9 @@ Le plan de vérification QA peut être préparé dès l'étape 2 validée, en pa
 - **Écart de spec** découvert par un rôle (`BLOQUÉ`) → l'orchestrateur amende la spec avec l'utilisateur, jamais de décision silencieuse.
 
 ## Workflow allégé (correctif trivial)
-Conditions, toutes requises : changement local et évident, pas de nouveau comportement visible, pas de changement de contrat d'API, de données ni d'architecture. Alors : `senior-developer` → triage `ui-ux-designer` (`model: haiku`) qui rend « PAS D'IMPACT UI » ou bascule en workflow complet → `qa-engineer` → PR. Le bug est couvert par un test qui échouait avant le correctif.
+Conditions, toutes requises : changement local et évident, pas de nouveau comportement visible, pas de changement de contrat d'API, de données ni d'architecture. Alors : `senior-developer` → triage `ui-ux-designer` (`model: haiku`) qui rend « PAS D'IMPACT UI » ou bascule en workflow complet → `qa-engineer` → PR. Pour un bug, `qa-engineer` passe d'abord : il écrit le test qui échoue, puis le développeur corrige sans toucher au test.
 
 ## Vérifications de l'orchestrateur (légères)
-- `git diff --stat` : seuls les fichiers du périmètre ont changé.
+- `git diff --stat` : seuls les fichiers du périmètre ont changé ; aucun fichier de test dans le rendu du développeur, aucun fichier de production dans celui de la QA.
 - Aucun test désactivé, ignoré ou assoupli dans le diff (`skip`, `.only`, `xit`, `Skip =`, `[Ignore]`, seuils de couverture baissés, assertions supprimées).
 - Les preuves citées correspondent au commit courant ; en cas de doute, relancer une seule commande, pas toute la QA.
