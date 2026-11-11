@@ -35,6 +35,12 @@ class SliderInFieldComponent {
 /** Les espaces de la locale (fines insécables) deviennent des espaces simples pour comparer. */
 const plain = (text: string | null | undefined) => (text ?? '').replace(/\s/g, ' ');
 
+@Component({
+  imports: [LcSliderComponent],
+  template: `<lc-slider ariaLabel="Avancement" themeColor="highlight" [value]="40" />`,
+})
+class HighlightSliderHostComponent {}
+
 describe('LcSliderComponent', () => {
   async function setup() {
     const fixture = TestBed.createComponent(SliderHostComponent);
@@ -205,5 +211,17 @@ describe('LcSliderComponent', () => {
     expect(label.htmlFor).toBe(range.id);
     expect(element.querySelector('lc-number-input input')?.getAttribute('aria-label')).toBe('Épargne');
     expect(plain(range.getAttribute('aria-valuetext'))).toBe('1 500 €');
+  });
+
+  // CA-K2.2
+  it('CA-K2.2 : themeColor="highlight" pose la classe de rôle et laisse le curseur natif intact', async () => {
+    const fixture = TestBed.createComponent(HighlightSliderHostComponent);
+    await fixture.whenStable();
+    const slider = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('lc-slider')!;
+    expect(slider.classList).toContain('lc-slider--highlight');
+    expect(slider.classList).not.toContain('lc-slider--primary');
+    const range = slider.querySelector<HTMLInputElement>('input[type="range"]')!;
+    expect(range.value).toBe('40');
+    expect(range.getAttribute('aria-label')).toBe('Avancement');
   });
 });

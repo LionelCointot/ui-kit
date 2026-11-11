@@ -41,4 +41,16 @@ describe('LcThemePreviewComponent', () => {
     expect(element.textContent).toContain('Exemple de tableau');
     expect(element.querySelectorAll('[style*="#"]').length).toBe(0);
   });
+
+  // CA-K2.2 / CA-K2.3
+  it('CA-K2.3 : la galerie montre le rôle highlight (boutons des trois remplissages et badge « Relief »)', async () => {
+    const fixture = TestBed.createComponent(LcThemePreviewComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    for (const fill of ['solid', 'outline', 'flat']) {
+      expect(element.querySelector(`button.lc-button--${fill}.lc-button--highlight`), fill).not.toBeNull();
+    }
+    const badge = element.querySelector('lc-badge.lc-badge--highlight');
+    expect(badge?.textContent?.trim()).toBe('Relief');
+  });
 });
