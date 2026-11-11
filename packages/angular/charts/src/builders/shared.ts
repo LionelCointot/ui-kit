@@ -1,6 +1,7 @@
-import { LcFormatService, LcValueFormat, isoToLocalDate } from '@lionelcointot/ui-angular';
+import { LC_DEFAULT_ICONS, LcFormatService, LcValueFormat, isoToLocalDate } from '@lionelcointot/ui-angular';
 import type { LcCartesianData, LcChartTheme, LcChartValue, LcResolvedSeries, LcValueAxis } from '../types';
 import { escapeHtml } from './escape-html';
+import { LC_CHART_ROLE_ICONS, roleDecal, roleOutline } from './series-roles';
 
 export const GRID_BOTTOM = 32;
 export const GRID_LEFT = 56;
@@ -58,6 +59,24 @@ export function decalFor(index: number, theme: LcChartTheme): object | undefined
   };
 }
 
+/** Décalque d'une série : celui de son rôle (toujours appliqué), sinon l'alternance par rang (si les motifs sont actifs). */
+export function seriesDecal(item: LcResolvedSeries, theme: LcChartTheme): object | undefined {
+  return item.role ? roleDecal(item.role, theme) : decalFor(item.patternIndex, theme);
+}
+
+/** Bordure des marques pleines : couleur de surface (séparation), ou contour d'encre pour le rôle `warning`. */
+export function markBorder(item: LcResolvedSeries, theme: LcChartTheme, surfaceWidth = 1): { borderColor: string; borderWidth: number } {
+  const outline = roleOutline(item.role, theme);
+  return outline ? { borderColor: outline.color, borderWidth: outline.width } : { borderColor: theme.surface, borderWidth: surfaceWidth };
+}
+
+/** Icône du rôle de la série en SVG en ligne (constante du jeu d'icônes par défaut, jamais une saisie), pour l'info-bulle. */
+export function roleIconHtml(item: LcResolvedSeries): string {
+  const svg = item.role ? LC_DEFAULT_ICONS[LC_CHART_ROLE_ICONS[item.role]] : undefined;
+  if (!svg) return '';
+  return `<span style="display:inline-block;width:12px;height:12px;margin-inline-end:4px;vertical-align:middle">${svg.replace('<svg ', '<svg width="12" height="12" aria-hidden="true" ')}</span>`;
+}
+
 /** Pastille de couleur de série pour les info-bulles (la couleur n'est jamais appliquée au texte). */
 export function swatchHtml(color: string, shape: 'line' | 'rect'): string {
   const size = shape === 'line' ? 'width:12px;height:3px' : 'width:10px;height:10px;border-radius:2px';
@@ -69,6 +88,8 @@ export interface TooltipRow {
   readonly shape: 'line' | 'rect';
   readonly label: string;
   readonly value: string;
+  /** SVG en ligne du rôle de la série (voir `roleIconHtml`), placé avant le libellé. */
+  readonly iconHtml?: string;
 }
 
 /** Info-bulle : valeur d'abord (gras), libellé ensuite (secondaire) ; tous les libellés sont échappés. */
@@ -76,7 +97,7 @@ export function tooltipHtml(title: string | null, rows: readonly TooltipRow[], t
   const head = title === null ? '' : `<div style="color:${theme.ink.secondary};margin-bottom:4px">${escapeHtml(title)}</div>`;
   const body = rows.map((row) =>
     `<div style="display:flex;align-items:center;gap:8px;justify-content:space-between">`
-    + `<span>${swatchHtml(row.color, row.shape)}<span style="color:${theme.ink.secondary}">${escapeHtml(row.label)}</span></span>`
+    + `<span>${swatchHtml(row.color, row.shape)}${row.iconHtml ?? ''}<span style="color:${theme.ink.secondary}">${escapeHtml(row.label)}</span></span>`
     + `<strong style="color:${theme.ink.primary};font-variant-numeric:tabular-nums">${escapeHtml(row.value)}</strong></div>`).join('');
   const foot = footer
     ? `<div style="display:flex;justify-content:space-between;gap:8px;margin-top:4px;padding-top:4px;border-top:1px solid ${theme.gridline}">`

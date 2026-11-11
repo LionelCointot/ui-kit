@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, model, output } from '@angular/core';
-import { LC_LABELS, LcSkeletonComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcIconComponent, LcSkeletonComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 import type { EChartsCoreOption } from '../echarts-registry';
 import type { LcChartPointSelect, LcChartTable, LcLegendItem } from '../types';
 import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.component';
@@ -10,7 +10,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
  */
 @Component({
   selector: 'lc-chart-frame',
-  imports: [LcChartHostComponent, LcSkeletonComponent],
+  imports: [LcChartHostComponent, LcIconComponent, LcSkeletonComponent],
   template: `
     <p class="lc-chart-frame__title" [id]="titleId" [class.lc-chart-frame__hidden]="titleHidden()">{{ title() }}</p>
     @if (description()) {
@@ -29,6 +29,9 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
                     <span class="lc-chart-frame__symbol" [class]="'lc-chart-frame__symbol--' + item.symbol"></span>
                   }
                 </span>
+                @if (item.icon) {
+                  <lc-icon class="lc-chart-frame__role-icon" [name]="item.icon" />
+                }
                 <span>{{ item.label }}</span>
               </button>
             } @else {
@@ -39,6 +42,9 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
                     <span class="lc-chart-frame__symbol" [class]="'lc-chart-frame__symbol--' + item.symbol"></span>
                   }
                 </span>
+                @if (item.icon) {
+                  <lc-icon class="lc-chart-frame__role-icon" [name]="item.icon" />
+                }
                 <span>{{ item.label }}</span>
               </span>
             }

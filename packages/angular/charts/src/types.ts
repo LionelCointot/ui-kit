@@ -3,6 +3,8 @@ import type { LcValueFormat } from '@lionelcointot/ui-angular';
 /** `null` = trou (aucune interpolation). */
 export type LcChartValue = number | null;
 export type LcColorSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+/** Rôle sémantique d'une série : couleur du thème (`--lc-sys-chart-role-*`), décalque et icône stables, indépendants du rang. */
+export type LcChartRole = 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'highlight';
 
 export interface LcChartSeries {
   /** Identité stable : la couleur suit l'entité, jamais son rang. */
@@ -12,6 +14,11 @@ export interface LcChartSeries {
   /** Alignées sur `categories`. */
   readonly values: readonly LcChartValue[];
   readonly colorSlot?: LcColorSlot;
+  /**
+   * Couleur par rôle sémantique, prioritaire sur `colorSlot` : la série ne consomme aucun emplacement catégoriel,
+   * reçoit un décalque propre au rôle (même avec `patterns: 'never'`) et une icône dans la légende et l'info-bulle.
+   */
+  readonly colorRole?: LcChartRole;
   /** Groupe d'empilement. */
   readonly stack?: string;
   /** Style du trait (courbes) : plein (défaut) ou tirets, pour distinguer une série sans la couleur seule. */
@@ -101,6 +108,8 @@ export interface LcChartTheme {
   readonly gridline: string;
   readonly axis: string;
   readonly ink: { readonly primary: string; readonly secondary: string; readonly muted: string };
+  /** Couleur de chaque rôle de série (tokens `--lc-sys-chart-role-*`). */
+  readonly roles?: Readonly<Record<LcChartRole, string>>;
   /** Couleur des repères verticaux (token `--lc-chart-marker-color`, repli sur l'encre atténuée). */
   readonly markerColor: string;
   readonly fontFamily: string;
@@ -116,6 +125,8 @@ export interface LcResolvedSeries {
   readonly values: readonly LcChartValue[];
   readonly color: string;
   readonly slot: LcColorSlot | null;
+  /** Rôle de couleur de la série (voir `LcChartSeries.colorRole`). */
+  readonly role?: LcChartRole;
   /** Rang d'affichage (pour alterner les motifs). */
   readonly patternIndex: number;
   readonly stack?: string;
@@ -129,6 +140,8 @@ export interface LcLegendItem {
   readonly color: string;
   readonly shape: 'line' | 'rect';
   readonly hidden: boolean;
+  /** Icône du rôle de la série (nom `lc-icon`), jamais la couleur seule. */
+  readonly icon?: string;
   readonly dashed?: boolean;
   readonly symbol?: LcChartSeries['symbol'];
 }

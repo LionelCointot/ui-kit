@@ -1,11 +1,12 @@
 import { DOCUMENT, DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { LcThemeService } from '@lionelcointot/ui-angular';
 import { LC_CHARTS_OPTIONS } from '../provide-lc-charts';
-import type { LcChartTheme } from '../types';
+import type { LcChartRole, LcChartTheme } from '../types';
 
 /** Repli si la feuille de tokens n'est pas chargée (gris neutre) : un graphique reste lisible sans les thèmes. */
 const MISSING_TOKEN_COLOR = 'gray';
 const DEFAULT_FONT_SIZE = 14;
+const CHART_ROLES: readonly LcChartRole[] = ['success', 'warning', 'error', 'info', 'neutral', 'highlight'];
 
 export interface ChartThemeFlags {
   readonly reducedMotion: boolean;
@@ -23,6 +24,7 @@ export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValu
     sequentialWarm: [100, 200, 300, 400, 500, 600, 700].map((step) => token(`sequential-warm-${step}`)),
     diverging: { negative: token('diverging-negative'), neutral: token('diverging-neutral'), positive: token('diverging-positive') },
     status: { good: token('status-good'), warning: token('status-warning'), serious: token('status-serious'), critical: token('status-critical') },
+    roles: Object.fromEntries(CHART_ROLES.map((role) => [role, token(`role-${role}`)])) as Record<LcChartRole, string>,
     surface: token('surface'),
     gridline: token('gridline'),
     axis: token('axis'),

@@ -84,6 +84,11 @@ button.lc-chart-frame__legend-item:focus-visible,
   background: var(--lc-swatch-color);
 }
 
+.lc-chart-frame__role-icon {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  flex: none;
+}
+
 .lc-chart-frame__swatch--line {
   position: relative;
   inline-size: var(--lc-sys-space-5);

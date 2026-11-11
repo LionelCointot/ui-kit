@@ -473,6 +473,32 @@
           "$type": "color"
         }
       },
+      "role": {
+        "success": {
+          "$value": "{sys.chart.categorical.6}",
+          "$type": "color"
+        },
+        "warning": {
+          "$value": "{sys.chart.categorical.4}",
+          "$type": "color"
+        },
+        "error": {
+          "$value": "{sys.chart.categorical.8}",
+          "$type": "color"
+        },
+        "info": {
+          "$value": "{sys.chart.categorical.1}",
+          "$type": "color"
+        },
+        "highlight": {
+          "$value": "{sys.chart.categorical.7}",
+          "$type": "color"
+        },
+        "neutral": {
+          "$value": "{sys.chart.ink-muted}",
+          "$type": "color"
+        }
+      },
       "sequential": {
         "100": {
           "$value": "{ref.color.blue.100}",
