@@ -1,13 +1,11 @@
-import { FocusKeyManager } from '@angular/cdk/a11y';
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, Injector, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
-  linkedSignal, model, output, signal, viewChild, viewChildren,
+  ChangeDetectionStrategy, Component, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
+  linkedSignal, model, output, signal, viewChild,
 } from '@angular/core';
 import { LC_LABELS, LcFormatService, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcSort, LcTableColumn, columnAlign, nextSort } from '../table/table-model';
-import { LcTreeRowDirective } from './tree-row.directive';
 import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './tree-table-model';
 
 /**
@@ -19,7 +17,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
  */
 @Component({
   selector: 'lc-tree-table',
-  imports: [NgTemplateOutlet, LcIconComponent, LcTreeRowDirective],
+  imports: [NgTemplateOutlet, LcIconComponent],
   template: `
     <div class="lc-table__scroll">
       <table class="lc-table__table" role="treegrid" [attr.aria-labelledby]="captionId">
@@ -40,30 +38,36 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
             }
           </tr>
         </thead>
-        <tbody>
+        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (click)="onClick($event)">
           @for (row of rows(); track row.key; let rowIndex = $index) {
-            <tr lcTreeRow class="lc-tree-table__row" role="row" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
+            <tr class="lc-tree-table__row" role="row" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
               [attr.aria-setsize]="row.setSize" [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
-              [attr.tabindex]="row.key === activeKey() ? 0 : -1" [style.--_level]="row.level - 1"
-              (focus)="activeRowKey.set(row.key)" (keydown)="onKeydown($event, row, rowIndex)">
-              @for (column of columns(); track column.id; let first = $first) {
-                <td [class]="cellClass(column)">
+              [attr.tabindex]="rowIndex === activeIndex() ? 0 : -1" [style.--_level]="row.level - 1">
+              @for (view of columnViews(); track view.column.id; let first = $first) {
+                <td [class]="view.cellClass">
                   @if (first) {
                     <span class="lc-tree-table__first">
                       @if (row.hasChildren) {
-                        <button type="button" class="lc-table__toggle lc-tree-table__toggle" tabindex="-1" aria-hidden="true"
-                          (click)="toggleFromPointer(row)">
+                        <button type="button" class="lc-table__toggle lc-tree-table__toggle" tabindex="-1" aria-hidden="true">
                           <lc-icon [name]="row.expanded ? 'chevron-down' : 'chevron-right'" />
                         </button>
                       } @else {
                         <span class="lc-tree-table__spacer"></span>
                       }
                       <span class="lc-tree-table__content">
-                        <ng-container [ngTemplateOutlet]="cellOutlet(column)" [ngTemplateOutletContext]="context(column, row)" />
+                        @if (view.template; as template) {
+                          <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="context(view.column, row)" />
+                        } @else {
+                          {{ cellText(view.column, row.node) }}
+                        }
                       </span>
                     </span>
                   } @else {
-                    <ng-container [ngTemplateOutlet]="cellOutlet(column)" [ngTemplateOutletContext]="context(column, row)" />
+                    @if (view.template; as template) {
+                      <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="context(view.column, row)" />
+                    } @else {
+                      {{ cellText(view.column, row.node) }}
+                    }
                   }
                 </td>
               }
@@ -79,8 +83,6 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
     @if (model().truncated) {
       <p class="lc-table__notice" role="status">{{ labels.truncatedRows(maxRows) }}</p>
     }
-
-    <ng-template #textCell let-node let-column="column">{{ cellText(column, node) }}</ng-template>
   `,
   styleUrls: ['../table/table.component.css', './tree-table.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -93,7 +95,6 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
 export class LcTreeTableComponent<T> {
   protected readonly labels = inject(LC_LABELS);
   private readonly format = inject(LcFormatService);
-  private readonly injector = inject(Injector);
 
   /** Nœuds racines. */
   readonly data = input.required<readonly T[]>();
@@ -120,16 +121,19 @@ export class LcTreeTableComponent<T> {
 
   protected readonly maxRows = LC_TREE_TABLE_MAX_ROWS;
   protected readonly captionId = lcUniqueId('tree-table-caption');
-  protected readonly activeRowKey = signal<string | null>(null);
+  /** Dernière ligne active : sa clé et son index (la clé seule ne distingue pas deux lignes de même identité). */
+  private readonly activeRow = signal<{ key: string; index: number } | null>(null);
   private readonly cells = contentChildren(LcCellDirective);
   private readonly cellTemplates = computed(() => new Map(this.cells().map((cell) => [cell.lcCell(), cell.template])));
-  private readonly rowItems = viewChildren(LcTreeRowDirective);
-  private readonly textCell = viewChild.required<TemplateRef<unknown>>('textCell');
+  /** Par colonne : classe et gabarit de cellule, calculés une fois pour toutes les lignes. */
+  protected readonly columnViews = computed(() =>
+    this.columns().map((column) => ({ column, cellClass: this.cellClass(column), template: this.cellTemplates().get(column.id) ?? null })),
+  );
+  private readonly body = viewChild.required<ElementRef<HTMLTableSectionElement>>('body');
   /** Vrai tant que `expandAllInitially` ou un filtre s'applique (jusqu'à la première bascule) : le filtre déplie les ancêtres des résultats. */
   private readonly allExpanded = computed(() => (this.expandAllInitially() || !!this.filter()) && !this.toggled());
   /** Une bascule de l'utilisateur rend `expanded` prioritaire ; un nouveau filtre repart du dépliage automatique. */
   private readonly toggled = linkedSignal<((node: T) => boolean) | undefined, boolean>({ source: this.filter, computation: () => false });
-  private readonly keyManager = new FocusKeyManager<LcTreeRowDirective>(this.rowItems, this.injector).withVerticalOrientation().withHomeAndEnd();
 
   protected readonly model = computed(() => {
     const everything = this.allExpanded();
@@ -145,22 +149,26 @@ export class LcTreeTableComponent<T> {
     });
   });
   protected readonly rows = computed(() => this.model().rows);
-  /** Seule ligne dans l'ordre de tabulation : la dernière active, sinon la première. */
-  protected readonly activeKey = computed(() => {
+  /** Index de la seule ligne dans l'ordre de tabulation : la dernière active, sinon la première. */
+  protected readonly activeIndex = computed(() => {
     const rows = this.rows();
-    const key = this.activeRowKey();
-    return rows.some((row) => row.key === key) ? key : (rows[0]?.key ?? null);
+    const active = this.activeRow();
+    if (!active) return 0;
+    if (rows[active.index]?.key === active.key) return active.index;
+    return Math.max(0, rows.findIndex((row) => row.key === active.key));
   });
 
   constructor() {
-    this.keyManager.change.subscribe((index) => {
-      const key = this.rows()[index]?.key;
-      if (key !== undefined) this.activeRowKey.set(key);
-    });
     if (isDevMode()) {
       effect(() => {
         if (this.model().truncated) {
           console.warn(`[lc-tree-table] Plus de ${LC_TREE_TABLE_MAX_ROWS} lignes visibles : seules les ${LC_TREE_TABLE_MAX_ROWS} premières sont affichées. Filtrez ou repliez des nœuds.`);
+        }
+      });
+      effect(() => {
+        const rows = this.rows();
+        if (new Set(rows.map((row) => row.key)).size < rows.length) {
+          console.warn('[lc-tree-table] `trackBy` renvoie la même identité pour plusieurs lignes visibles : leur dépliage est lié. Fournissez une identité unique par nœud.');
         }
       });
     }
@@ -173,10 +181,6 @@ export class LcTreeTableComponent<T> {
 
   protected cellText(column: LcTableColumn<T>, node: T): string {
     return this.format.format(column.value(node), column.format);
-  }
-
-  protected cellOutlet(column: LcTableColumn<T>): TemplateRef<unknown> {
-    return this.cellTemplates().get(column.id) ?? this.textCell();
   }
 
   protected context(column: LcTableColumn<T>, row: LcTreeTableRow<T>): unknown {
@@ -199,15 +203,44 @@ export class LcTreeTableComponent<T> {
     this.sort.set(nextSort(this.sort(), column.id));
   }
 
-  protected toggleFromPointer(row: LcTreeTableRow<T>): void {
-    this.setExpanded([row], !row.expanded);
+  /** Ligne (`tr` du corps) qui est la cible directe d'un évènement du corps du tableau, ou `null` (cellule, contrôle de cellule). */
+  private rowOf(event: Event): { element: HTMLTableRowElement; index: number } | null {
+    const element = event.target;
+    if (!(element instanceof HTMLTableRowElement) || element.parentElement !== this.body().nativeElement) return null;
+    return { element, index: element.sectionRowIndex };
   }
 
-  protected onKeydown(event: KeyboardEvent, row: LcTreeTableRow<T>, index: number): void {
+  protected onFocusin(event: FocusEvent): void {
+    const target = this.rowOf(event);
+    if (target) this.markActive(target.index);
+  }
+
+  protected onClick(event: MouseEvent): void {
+    const toggle = event.target instanceof Element ? event.target.closest('.lc-tree-table__toggle') : null;
+    const rowElement = toggle?.closest('tr');
+    const row = rowElement ? this.rows()[rowElement.sectionRowIndex] : undefined;
+    if (row) this.setExpanded([row], !row.expanded);
+  }
+
+  protected onKeydown(event: KeyboardEvent): void {
     // Les touches saisies dans un contenu de cellule (champ, lien) ne sont pas détournées.
-    if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) return;
-    this.keyManager.updateActiveItem(index);
+    const target = this.rowOf(event);
+    const row = target ? this.rows()[target.index] : undefined;
+    if (!target || !row || event.altKey || event.ctrlKey || event.metaKey) return;
+    const index = target.index;
     switch (event.key) {
+      case 'ArrowDown':
+        this.focusRow(index + 1);
+        break;
+      case 'ArrowUp':
+        this.focusRow(index - 1);
+        break;
+      case 'Home':
+        this.focusRow(0);
+        break;
+      case 'End':
+        this.focusRow(this.rows().length - 1);
+        break;
       case 'ArrowRight':
         if (row.hasChildren && !row.expanded) this.setExpanded([row], true);
         else if (row.hasChildren) this.focusRow(index + 1);
@@ -224,14 +257,22 @@ export class LcTreeTableComponent<T> {
         this.setExpanded(this.rows().filter((sibling) => sibling.parentIndex === row.parentIndex && sibling.hasChildren && !sibling.expanded), true);
         break;
       default:
-        this.keyManager.onKeydown(event);
         return;
     }
     event.preventDefault();
   }
 
+  /** Donne le focus à la ligne d'index donné (sans effet hors des bornes : pas de bouclage). */
   private focusRow(index: number): void {
-    this.keyManager.setActiveItem(index);
+    const element = this.body().nativeElement.rows[index];
+    if (!element) return;
+    this.markActive(index);
+    element.focus();
+  }
+
+  private markActive(index: number): void {
+    const key = this.rows()[index]?.key;
+    if (key !== undefined) this.activeRow.set({ key, index });
   }
 
   /** Bascule des lignes parentes : le modèle `expanded` devient la référence dès la première bascule. */
