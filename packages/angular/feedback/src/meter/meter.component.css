@@ -1,0 +1,80 @@
+:host {
+  --_height: var(--lc-meter-height-sm, var(--lc-sys-space-2));
+  --_fill: var(--lc-meter-fill-primary, var(--lc-sys-color-primary));
+  --_edge: transparent;
+
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  inline-size: 100%;
+}
+
+:host(.lc-meter--medium) {
+  --_height: var(--lc-meter-height-md, var(--lc-sys-space-3));
+}
+
+:host(.lc-meter--large) {
+  --_height: var(--lc-meter-height-lg, var(--lc-sys-space-4));
+}
+
+:host(.lc-meter--success) {
+  --_fill: var(--lc-meter-fill-success, var(--lc-sys-color-success));
+}
+
+/* Le jaune clair n'atteint pas 3:1 contre la piste : un contour foncé porte le contraste. */
+:host(.lc-meter--warning) {
+  --_fill: var(--lc-meter-fill-warning, var(--lc-sys-color-warning));
+  --_edge: var(--lc-sys-color-on-warning-container);
+}
+
+:host(.lc-meter--error) {
+  --_fill: var(--lc-meter-fill-error, var(--lc-sys-color-error));
+}
+
+:host(.lc-meter--neutral) {
+  --_fill: var(--lc-meter-fill-neutral, var(--lc-sys-color-neutral));
+}
+
+.lc-meter__track {
+  display: block;
+  flex: 1;
+  min-inline-size: var(--lc-sys-space-8);
+  block-size: var(--_height);
+  overflow: hidden;
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-meter-track, var(--lc-sys-color-surface-sunken));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-sys-color-border);
+}
+
+.lc-meter__fill {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--_fill);
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_edge);
+  transition: inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-meter__value {
+  flex: none;
+  color: var(--lc-sys-color-on-surface);
+  font-size: var(--lc-sys-font-size-sm);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-meter__fill {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-meter__track {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+    box-shadow: none;
+  }
+
+  .lc-meter__fill {
+    background: Highlight;
+  }
+}
