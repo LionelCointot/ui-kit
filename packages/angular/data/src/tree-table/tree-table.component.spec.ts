@@ -303,6 +303,40 @@ describe('LcTreeTableComponent', () => {
       expect(host.toggled).toEqual(['A:true']);
     });
 
+    it('le focus reste sur la même ligne (même élément DOM) après repli puis dépliage', async () => {
+      const { row, key } = await setup((host) => host.expandAll.set(true));
+      const element = row('A');
+      element.focus();
+      await key(element, 'ArrowLeft');
+      expect(document.activeElement).toBe(element);
+      expect(element.getAttribute('aria-expanded')).toBe('false');
+      await key(element, 'ArrowRight');
+      expect(document.activeElement).toBe(element);
+      await key(element, 'Enter');
+      await key(element, ' ');
+      expect(document.activeElement).toBe(element);
+      expect(element.getAttribute('tabindex')).toBe('0');
+    });
+
+    it('le focus d\'un enfant reste cohérent quand son ancêtre est replié par l\'hôte (la ligne active retombe sur une ligne visible, un seul arrêt)', async () => {
+      const { row, rows, key, update } = await setup((host) => host.expandAll.set(true));
+      row('A1a').focus();
+      await key(row('A1a'), 'ArrowDown');
+      await update((host) => { host.expandAll.set(false); host.expanded.set(new Set()); });
+      expect(rows().filter((candidate) => candidate.getAttribute('tabindex') === '0').length).toBe(1);
+    });
+
+    it('après un clic souris sur le bouton de dépliage, les flèches continuent de déplacer le focus de ligne (le focus ne reste pas sur un bouton aria-hidden)', async () => {
+      const { row, fixture } = await setup();
+      const toggle = row('A').querySelector<HTMLButtonElement>('.lc-tree-table__toggle')!;
+      toggle.focus(); // un clic souris donne le focus au bouton (tabindex=-1) dans les navigateurs
+      toggle.click();
+      await fixture.whenStable();
+      press(document.activeElement!, 'ArrowDown');
+      await fixture.whenStable();
+      expect(document.activeElement!.tagName, 'le focus doit être sur une ligne').toBe('TR');
+    });
+
     it('un contrôle focalisable dans un gabarit de cellule reste un arrêt de tabulation (limite documentée)', async () => {
       const fixture = TestBed.createComponent(ButtonCellHostComponent);
       await fixture.whenStable();
@@ -581,6 +615,36 @@ describe('LcTreeTableComponent', () => {
       const duplicated = [node('dup', 1), node('dup', 2), node('uniq', 3)];
       const { rows } = await setup((host) => host.data.set(duplicated));
       expect(rows().length).toBe(3);
+      warn.mockRestore();
+      error.mockRestore();
+    });
+
+    it('identités dupliquées : avertissement en développement, navigation ↓ ↑ correcte sur chaque ligne', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const { rows, key } = await setup((host) => host.data.set([node('dup', 1), node('dup', 2), node('uniq', 3)]));
+      expect(warn.mock.calls.some((call) => String(call[0]).includes('trackBy'))).toBe(true);
+      const all = rows();
+      all[0].focus();
+      await key(all[0], 'ArrowDown');
+      expect(document.activeElement).toBe(rows()[1]);
+      expect(rows().filter((row) => row.getAttribute('tabindex') === '0')).toEqual([rows()[1]]);
+      await key(rows()[1], 'ArrowDown');
+      expect(document.activeElement).toBe(rows()[2]);
+      await key(rows()[2], 'ArrowUp');
+      await key(document.activeElement!, 'ArrowUp');
+      expect(document.activeElement).toBe(rows()[0]);
+      warn.mockRestore();
+      error.mockRestore();
+    });
+
+    it('identités dupliquées avec enfants : un seul tabindex=0 après dépliage au clavier', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const { rows, key } = await setup((host) => host.data.set([node('dup', 1, [node('c1', 1)]), node('dup', 2, [node('c2', 2)])]));
+      rows()[1].focus();
+      await key(rows()[1], 'ArrowRight');
+      expect(rows().filter((row) => row.getAttribute('tabindex') === '0').length).toBe(1);
       warn.mockRestore();
       error.mockRestore();
     });
