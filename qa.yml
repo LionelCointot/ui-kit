@@ -1,0 +1,48 @@
+# Contrat d'intégration avec qa-platform : `qa run <chemin du repo> --data <dossier>`.
+# Les commandes sont celles de CLAUDE.md et des scripts npm (ng test, node --test), avec rapports JUnit / LCOV.
+# Pas encore de suite Storybook / Playwright visuelle ni de lint (voir CLAUDE.md) : à déclarer quand elles existeront.
+version: 1
+project:
+  name: ui-kit
+  description: Bibliothèque de composants Angular (ui-angular) et design tokens (ui-tokens)
+suites:
+  - id: angular-unit
+    name: Composants Angular ui-angular (Vitest via ng test)
+    kind: unit
+    tools: [angular, vitest]
+    run: >-
+      npx ng test ui-angular --watch=false
+      --reporters=default --reporters=junit
+      --output-file="$QA_REPORTS_DIR/junit.xml"
+    reports:
+      tests:
+        - { format: junit, path: junit.xml }
+
+  - id: tokens-unit
+    name: Design tokens ui-tokens (node --test)
+    kind: unit
+    tools: [node-test]
+    working-directory: packages/tokens
+    run: >-
+      node --test --experimental-test-coverage
+      --test-reporter=spec --test-reporter-destination=stdout
+      --test-reporter=junit --test-reporter-destination="$QA_REPORTS_DIR/junit.xml"
+      --test-reporter=lcov --test-reporter-destination="$QA_REPORTS_DIR/lcov.info"
+      "lib/*.test.mjs"
+    reports:
+      tests:
+        - { format: junit, path: junit.xml }
+      coverage:
+        - { format: lcov, path: lcov.info, component: tokens, language: javascript }
+
+coverage:
+  exclude: ["**/*.test.mjs"]
+
+policy:
+  mode: enforce
+  tests:
+    minPassRate: 100
+  # Seuil posé sous la mesure initiale (tokens 96 % de lignes) ; maxDrop : pas de recul > 2 points.
+  components:
+    tokens:
+      lines: { min: 90, maxDrop: 2 }
