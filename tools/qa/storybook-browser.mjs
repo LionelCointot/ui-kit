@@ -1,6 +1,7 @@
 // Vérifications dans un vrai navigateur (Chromium via Playwright) sur le Storybook statique (`npm run build-storybook`) :
 //   node tools/qa/storybook-browser.mjs axe [fragment-d-id ...]   axe-core sur chaque story, thèmes clair et sombre
 //   node tools/qa/storybook-browser.mjs perf                      temps de rendu des 2 000 lignes de lc-tree-table (CA-K3.5)
+//   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
 import { createServer } from 'node:http';
@@ -227,6 +228,153 @@ async function dom(browser, base) {
   return results.every(Boolean) ? 0 : 1;
 }
 
+
+/** Clavier complet du treegrid dans Chromium (focus réel, lignes re-rendues après dépliage ou repli). */
+async function treegrid(browser, base) {
+  const results = [];
+  const check = (name, ok, detail = '') => {
+    results.push(ok);
+    console.log(`${ok ? 'OK ' : 'KO '} ${name}${detail ? ` : ${detail}` : ''}`);
+  };
+  const state = (page) => page.evaluate(() => {
+    const active = document.activeElement;
+    const rows = [...document.querySelectorAll('lc-tree-table tbody tr[aria-level]')];
+    return {
+      isRow: active?.tagName === 'TR' && !!active.closest('lc-tree-table'),
+      index: rows.indexOf(active),
+      level: active?.getAttribute('aria-level'),
+      expanded: active?.getAttribute('aria-expanded'),
+      name: active?.querySelector('.lc-tree-table__content')?.textContent.trim(),
+      count: rows.length,
+      tabStops: rows.filter((row) => row.getAttribute('tabindex') === '0').length,
+    };
+  });
+  const press = async (page, key) => {
+    await page.keyboard.press(key);
+    await page.waitForTimeout(80);
+    return state(page);
+  };
+  const open = async (id, theme = 'default') => {
+    const story = await openStory(browser, base, id, theme);
+    await story.page.locator('lc-tree-table tbody tr[tabindex="0"]').first().focus();
+    return story;
+  };
+
+  {
+    const { page, context } = await open('données-tableau-hiérarchique--tous-deplies');
+    let current = await state(page);
+    const total = current.count;
+    check('treegrid départ : focus sur la première ligne, niveau 1, un seul tabindex=0', current.index === 0 && current.level === '1' && current.tabStops === 1, JSON.stringify(current));
+    current = await press(page, 'ArrowDown');
+    check('↓ : ligne suivante (niveau 2)', current.index === 1 && current.level === '2', JSON.stringify(current));
+    current = await press(page, 'ArrowUp');
+    check('↑ : retour à la première ligne', current.index === 0, JSON.stringify(current));
+    current = await press(page, 'ArrowUp');
+    check('↑ en première ligne : sans effet, sans bouclage', current.index === 0, JSON.stringify(current));
+    current = await press(page, 'End');
+    check('Fin : dernière ligne visible', current.index === total - 1, JSON.stringify(current));
+    current = await press(page, 'ArrowDown');
+    check('↓ en dernière ligne : sans effet, sans bouclage', current.index === total - 1, JSON.stringify(current));
+    current = await press(page, 'Home');
+    check('Début : première ligne', current.index === 0, JSON.stringify(current));
+    current = await press(page, 'ArrowLeft');
+    check('← sur un parent déplié : replie, focus conservé sur la même ligne (re-rendu)', current.isRow && current.index === 0 && current.expanded === 'false' && current.count < total, JSON.stringify(current));
+    current = await press(page, 'ArrowRight');
+    check('→ sur un parent replié : déplie, focus conservé', current.isRow && current.index === 0 && current.expanded === 'true' && current.count === total, JSON.stringify(current));
+    current = await press(page, 'ArrowRight');
+    check('→ sur un parent déplié : premier enfant (niveau 2)', current.index === 1 && current.level === '2', JSON.stringify(current));
+    current = await press(page, 'ArrowLeft');
+    check('← sur un enfant parent déplié : replie (focus conservé)', current.index === 1 && current.expanded === 'false', JSON.stringify(current));
+    current = await press(page, 'ArrowLeft');
+    check('← sur un parent replié : remonte au parent (niveau 1)', current.index === 0 && current.level === '1', JSON.stringify(current));
+    current = await press(page, 'Enter');
+    check('Entrée : bascule (replie), focus conservé', current.isRow && current.index === 0 && current.expanded === 'false', JSON.stringify(current));
+    current = await press(page, 'Space');
+    check('Espace : bascule (déplie), focus conservé', current.isRow && current.index === 0 && current.expanded === 'true', JSON.stringify(current));
+    // Tabulation : sortir puis revenir sur la dernière ligne active.
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    const before = await state(page);
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    await page.waitForTimeout(80);
+    current = await state(page);
+    check('Tab puis Maj+Tab : retour sur la dernière ligne active, un seul arrêt', current.index === before.index && current.tabStops === 1, `${before.index} -> ${current.index}`);
+    await context.close();
+  }
+
+  {
+    const { page, context } = await open('données-tableau-hiérarchique--defaut');
+    const start = await state(page);
+    const current = await press(page, '*');
+    check('* : déplie tous les frères repliés du niveau, focus conservé', current.isRow && current.index === 0 && current.count > start.count && current.expanded === 'true', JSON.stringify({ start: start.count, current }));
+    const roots = await page.evaluate(() => [...document.querySelectorAll('lc-tree-table tbody tr[aria-level="1"][aria-expanded]')].map((row) => row.getAttribute('aria-expanded')));
+    check('* : toutes les racines parentes sont dépliées, pas les niveaux inférieurs', roots.every((value) => value === 'true') && (await page.locator('tr[aria-level="2"][aria-expanded="true"]').count()) === 0, roots.join(','));
+    await context.close();
+  }
+
+  {
+    // Clic souris sur le bouton de dépliage : la ligne bascule, aucune erreur ; le focus clavier reste cohérent ensuite.
+    const { page, context, errors } = await open('données-tableau-hiérarchique--defaut');
+    const toggle = page.locator('lc-tree-table tbody tr[aria-level="1"] .lc-tree-table__toggle').first();
+    await toggle.click();
+    await page.waitForTimeout(100);
+    const afterClick = await state(page);
+    const expanded = await page.locator('lc-tree-table tbody tr').first().getAttribute('aria-expanded');
+    check('clic sur le bouton de dépliage : ligne dépliée, un seul arrêt de tabulation', expanded === 'true' && afterClick.tabStops === 1, JSON.stringify(afterClick));
+    const focusAfterClick = await page.evaluate(() => ({ tag: document.activeElement?.tagName, hidden: document.activeElement?.getAttribute('aria-hidden'), cls: document.activeElement?.className }));
+    const arrow = await press(page, 'ArrowDown');
+    check('après un clic souris sur le bouton de dépliage, ↓ déplace le focus de ligne (sans re-cliquer la ligne)', arrow.isRow && arrow.index >= 0, `focus après clic : ${JSON.stringify(focusAfterClick)} ; après ↓ : ${JSON.stringify(arrow)}`);
+    await page.locator('lc-tree-table tbody tr').first().focus();
+    const down = await press(page, 'ArrowDown');
+    check('clavier après un clic souris : ↓ atteint l\'enfant', down.index === 1 && down.level === '2', JSON.stringify(down));
+    check('aucune erreur de page pendant la navigation', errors.length === 0, errors.join(' ; '));
+    await context.close();
+  }
+
+  {
+    // Tri sur la grande arborescence : la hiérarchie et le focus unique survivent, durée mesurée.
+    const { page, context } = await openStory(browser, base, 'données-tableau-hiérarchique--troncature-au-dela-de-deux-mille', 'default');
+    await page.waitForSelector('lc-tree-table tbody tr[aria-level]');
+    const sortButton = page.locator('lc-tree-table thead th button.lc-table__sort').nth(2);
+    const timings = [];
+    for (let pass = 0; pass < 3; pass += 1) {
+      const ms = await page.evaluate(async () => {
+        const button = document.querySelectorAll('lc-tree-table thead th button.lc-table__sort')[2];
+        const started = performance.now();
+        button.click();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        return performance.now() - started;
+      });
+      timings.push(Math.round(ms));
+    }
+    await sortButton.waitFor();
+    const rows = await state(page);
+    const ariaSort = await page.locator('lc-tree-table thead th').nth(2).getAttribute('aria-sort');
+    check('tri sur 2 000 lignes visibles : 3 clics (asc, desc, aucun), chaque réaffichage < 500 ms', timings.every((ms) => ms < 500), `${timings.join(' ms, ')} ms`);
+    check('tri sur 2 000 lignes : 2 000 lignes, un seul arrêt de tabulation, aria-sort retiré au 3e clic', rows.count === 2000 && rows.tabStops === 1 && ariaSort === null, JSON.stringify({ count: rows.count, tabStops: rows.tabStops, ariaSort }));
+    await page.evaluate(() => document.querySelectorAll('lc-tree-table thead th button.lc-table__sort')[2].click());
+    await page.waitForTimeout(300);
+    const asc = await page.locator('lc-tree-table thead th').nth(2).getAttribute('aria-sort');
+    const levels = await page.evaluate(() => [...document.querySelectorAll('lc-tree-table tbody tr[aria-level]')].slice(0, 400).map((row) => Number(row.getAttribute('aria-level'))));
+    const jumps = levels.slice(1).filter((level, index) => level - levels[index] > 1).length;
+    check('tri : aria-sort ascending et aucun saut de niveau (hiérarchie conservée)', asc === 'ascending' && jumps === 0, `aria-sort ${asc}, sauts ${jumps}`);
+    // Dépliage / repli sur 2 000 lignes : durée d'une bascule au clavier.
+    await page.locator('lc-tree-table tbody tr[tabindex="0"]').first().focus();
+    const toggleMs = await page.evaluate(async () => {
+      const row = document.querySelector('lc-tree-table tbody tr[tabindex="0"]');
+      const started = performance.now();
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return performance.now() - started;
+    });
+    const afterToggle = await state(page);
+    check('repli d\'une racine sur 2 000 lignes : < 500 ms, focus conservé sur la ligne', toggleMs < 500 && afterToggle.isRow && afterToggle.index === 0, `${Math.round(toggleMs)} ms ; ${JSON.stringify(afterToggle)}`);
+    await context.close();
+  }
+  return results.every(Boolean) ? 0 : 1;
+}
+
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -241,10 +389,12 @@ try {
     failures = await axeRun(browser, base, entries);
   } else if (mode === 'dom') {
     failures = await dom(browser, base);
+  } else if (mode === 'treegrid') {
+    failures = await treegrid(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | dom');
+    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | dom | treegrid');
     failures = 1;
   }
 } finally {
