@@ -21,7 +21,7 @@ Tout est **générique** : aucun vocabulaire métier dans les API, libellés, to
 | K8 | `lc-nav-group` | `navigation` | `label`, `collapsible`, `[(expanded)]` |
 | K9 | icônes | principal | `git-branch`, `git-commit-horizontal`, `activity`, `refresh-cw` |
 
-Libellés ajoutés à `LC_LABELS` (fr, en) : `noValue`, `pagination`, `previousPage`, `nextPage`, `pageSize`, `pageRange`, `pageStatus`, `copy`, `copied`, `copyFailed`, `codeTruncated`, `expandRow`, `collapseRow`, `themeBuilder.previewSamples.highlight`.
+Libellés ajoutés à `LC_LABELS` (fr, en) : `noValue`, `pagination`, `previousPage`, `nextPage`, `pageSize`, `pageRange`, `pageStatus`, `copy`, `copied`, `copyFailed`, `codeTruncated`, `themeBuilder.previewSamples.highlight`.
 
 ## Écarts constatés à l'implémentation
 
@@ -32,6 +32,8 @@ Libellés ajoutés à `LC_LABELS` (fr, en) : `noValue`, `pagination`, `previousP
 | K2 : aperçu du theme builder | — | la galerie montre aussi `highlight` (`LcThemePreviewSamples.highlight`) | elle énumère `LcThemeColor` |
 | K3 : filtre | ancêtres dépliés | un filtre déplie automatiquement jusqu'à la première bascule de l'utilisateur, puis `expanded` fait foi (un nouveau filtre repart du dépliage automatique) | pas de nœud impossible à replier |
 | K3 : focus | `FocusKeyManager` | focus sur la ligne (un seul arrêt de tabulation) ; le bouton de dépliage est `aria-hidden`, `tabindex=-1` (souris) ; un contrôle focalisable placé dans un gabarit de cellule reste un arrêt de tabulation | motif treegrid à focus de ligne |
+| K3 : performance (CA-K3.5) | rendu < 500 ms | clavier géré par délégation d'évènements sur `tbody` (flèches, Début, Fin calculés sur l'index de la ligne) sans `FocusKeyManager` ni `viewChildren` ; 2 000 lignes : ~145 ms (5 passes à froid, `tools/qa/storybook-browser.mjs perf`) | une requête de vue sur 2 000 lignes coûtait ~1,2 s (collecte O(n²)) ; deux lignes de même `trackBy` gardent la même clé mais un seul arrêt de tabulation (index), avec avertissement en développement |
+| K3 : libellés | `expandRow`, `collapseRow` | retirés de `LC_LABELS` | le bouton de dépliage est `aria-hidden` : l'état est annoncé par `aria-expanded` de la ligne |
 | K4 : `pageChange` | `output` explicite | sortie implicite du `model` `page` | Angular refuse le doublon (NG1054) |
 | K4 : `lcPageSlice` | bornes testées | page recadrée, liste vide → `[]`, taille invalide → `RangeError` | cohérent avec le composant |
 | K4 : tailles | liste native | `<select class="lc-select">` stylé par `ui-angular.css` | pas d'import de `forms` |

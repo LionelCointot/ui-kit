@@ -42,8 +42,6 @@ export interface LcLabels {
   readonly copyFailed: string;
   readonly codeTruncated: (count: number) => string;
   /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
-  readonly expandRow: string;
-  readonly collapseRow: string;
   /** Liste filtrable (`lc-combobox`) et champs géographiques. */
   readonly comboboxNoResults: string;
   readonly comboboxResultsCount: (count: number) => string;
@@ -332,8 +330,6 @@ export const LC_LABELS_FR: LcLabels = {
   copied: 'Copié',
   copyFailed: 'Copie impossible',
   codeTruncated: (count) => `Texte tronqué aux ${count} premiers caractères`,
-  expandRow: 'Déplier',
-  collapseRow: 'Replier',
   comboboxNoResults: 'Aucun résultat',
   comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
   comboboxSearching: 'Recherche en cours',
@@ -475,8 +471,6 @@ export const LC_LABELS_EN: LcLabels = {
   copied: 'Copied',
   copyFailed: 'Copy failed',
   codeTruncated: (count) => `Text truncated to the first ${count} characters`,
-  expandRow: 'Expand',
-  collapseRow: 'Collapse',
   comboboxNoResults: 'No results',
   comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
   comboboxSearching: 'Searching',
