@@ -1,0 +1,40 @@
+/* Les styles de base viennent de `table.component.css` (classes `lc-table__*`, tokens `--lc-table-*`). */
+.lc-tree-table__row {
+  --_indent: var(--lc-tree-table-indent, var(--lc-sys-space-5));
+}
+
+.lc-tree-table__row:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
+}
+
+/* L'indentation suit le niveau ; le niveau est aussi lu par `aria-level`, jamais par la seule marge. */
+.lc-tree-table__first {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  padding-inline-start: calc(var(--_indent) * var(--_level, 0));
+}
+
+.lc-tree-table__toggle,
+.lc-tree-table__spacer {
+  flex: none;
+  inline-size: var(--lc-sys-control-height-sm);
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+}
+
+.lc-tree-table__spacer {
+  display: inline-block;
+}
+
+.lc-tree-table__content {
+  min-inline-size: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-tree-table__toggle {
+    transition: none;
+  }
+}
