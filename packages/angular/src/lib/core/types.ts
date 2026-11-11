@@ -1,5 +1,5 @@
 /** Vocabulaire commun à tous les composants (API à la Kendo, ADR-0002). */
-export type LcThemeColor = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'neutral';
+export type LcThemeColor = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'highlight' | 'neutral';
 export type LcFillMode = 'solid' | 'outline' | 'flat';
 export type LcSize = 'small' | 'medium' | 'large';
 export type LcRounded = 'none' | 'small' | 'medium' | 'large' | 'full';

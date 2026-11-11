@@ -7,7 +7,7 @@ const meta: Meta<LcButtonComponent> = {
   component: LcButtonComponent,
   decorators: [moduleMetadata({ imports: [LcButtonComponent, LcIconComponent] })],
   argTypes: {
-    themeColor: { control: 'select', options: ['primary', 'secondary', 'success', 'warning', 'error', 'neutral'] },
+    themeColor: { control: 'select', options: ['primary', 'secondary', 'success', 'warning', 'error', 'highlight', 'neutral'] },
     fillMode: { control: 'inline-radio', options: ['solid', 'outline', 'flat'] },
     size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
     rounded: { control: 'select', options: ['none', 'small', 'medium', 'large', 'full'] },
@@ -29,7 +29,7 @@ export const Variantes: Story = {
       <div style="display:grid;gap:12px">
         @for (fill of ['solid','outline','flat']; track fill) {
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            @for (color of ['primary','secondary','success','warning','error','neutral']; track color) {
+            @for (color of ['primary','secondary','success','warning','error','highlight','neutral']; track color) {
               <button lcButton [fillMode]="fill" [themeColor]="color">{{ color }}</button>
             }
           </div>

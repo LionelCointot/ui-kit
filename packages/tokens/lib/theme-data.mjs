@@ -23,7 +23,7 @@ const EXCLUDED_ROOTS = new Set(['z', 'duration', 'easing']);
 const EDITABLE_TYPES = new Set(['color', 'dimension', 'fontFamily', 'number', 'shadow']);
 const SIMPLE_PATHS = new Set(['color.primary', 'color.secondary', 'color.neutral', 'color.surface', 'color.background', 'radius.md', 'font.family.base']);
 const BRAND_COLORS = /^color\.(on-)?(primary|secondary|neutral)(-container)?$/;
-const STATUS_COLORS = /^color\.(on-)?(success|warning|error|info)(-container)?$/;
+const STATUS_COLORS = /^color\.(on-)?(success|warning|error|info|highlight)(-container)?$/;
 const GROUP_BY_ROOT = {
   state: 'status',
   color: 'surface',

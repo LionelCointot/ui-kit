@@ -22,7 +22,7 @@ interface SampleRow {
   readonly share: number;
 }
 
-const THEME_COLORS: readonly LcThemeColor[] = ['primary', 'secondary', 'success', 'warning', 'error', 'neutral'];
+const THEME_COLORS: readonly LcThemeColor[] = ['primary', 'secondary', 'success', 'warning', 'error', 'highlight', 'neutral'];
 const FILL_MODES: readonly LcFillMode[] = ['solid', 'outline', 'flat'];
 const YEARS = ['2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033'];
 
@@ -57,6 +57,7 @@ const YEARS = ['2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033'];
         <lc-badge themeColor="success">{{ samples.success }}</lc-badge>
         <lc-badge themeColor="warning">{{ samples.warning }}</lc-badge>
         <lc-badge themeColor="error">{{ samples.error }}</lc-badge>
+        <lc-badge themeColor="highlight">{{ samples.highlight }}</lc-badge>
         <lc-badge>{{ samples.neutral }}</lc-badge>
       </div>
     </section>

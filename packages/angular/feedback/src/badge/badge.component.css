@@ -121,6 +121,22 @@
   --_border: var(--lc-sys-color-error);
 }
 
+:host(.lc-badge--solid.lc-badge--highlight) {
+  --_bg: var(--lc-sys-color-highlight);
+  --_fg: var(--lc-sys-color-on-highlight);
+}
+
+:host(.lc-badge--flat.lc-badge--highlight) {
+  --_bg: var(--lc-sys-color-highlight-container);
+  --_fg: var(--lc-sys-color-on-highlight-container);
+}
+
+:host(.lc-badge--outline.lc-badge--highlight) {
+  --_bg: transparent;
+  --_fg: var(--lc-sys-color-on-highlight-container);
+  --_border: var(--lc-sys-color-highlight);
+}
+
 @media (forced-colors: active) {
   :host {
     border-color: CanvasText;

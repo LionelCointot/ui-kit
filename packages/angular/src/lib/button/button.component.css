@@ -85,6 +85,11 @@
   --_fg: var(--lc-button-solid-error-fg, var(--lc-sys-color-on-error));
 }
 
+:host(.lc-button--solid.lc-button--highlight) {
+  --_bg: var(--lc-button-solid-highlight-bg, var(--lc-sys-color-highlight));
+  --_fg: var(--lc-button-solid-highlight-fg, var(--lc-sys-color-on-highlight));
+}
+
 :host(.lc-button--solid.lc-button--neutral) {
   --_bg: var(--lc-button-solid-neutral-bg, var(--lc-sys-color-neutral));
   --_fg: var(--lc-button-solid-neutral-fg, var(--lc-sys-color-on-neutral));
@@ -133,6 +138,15 @@
 
 :host(.lc-button--flat.lc-button--error) {
   --_fg: var(--lc-button-flat-error-fg, var(--lc-sys-color-on-error-container));
+}
+
+:host(.lc-button--outline.lc-button--highlight) {
+  --_fg: var(--lc-button-outline-highlight-fg, var(--lc-sys-color-on-highlight-container));
+  --_border: var(--lc-button-outline-highlight-border, var(--lc-sys-color-highlight));
+}
+
+:host(.lc-button--flat.lc-button--highlight) {
+  --_fg: var(--lc-button-flat-highlight-fg, var(--lc-sys-color-on-highlight-container));
 }
 
 :host(.lc-button--outline.lc-button--neutral) {

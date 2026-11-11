@@ -97,6 +97,22 @@
         "$value": "{ref.color.blue.100}",
         "$type": "color"
       },
+      "highlight": {
+        "$value": "{ref.color.purple.400}",
+        "$type": "color"
+      },
+      "on-highlight": {
+        "$value": "{ref.color.neutral.1000}",
+        "$type": "color"
+      },
+      "highlight-container": {
+        "$value": "{ref.color.purple.900}",
+        "$type": "color"
+      },
+      "on-highlight-container": {
+        "$value": "{ref.color.purple.200}",
+        "$type": "color"
+      },
       "neutral": {
         "$value": "{ref.color.neutral.300}",
         "$type": "color"

@@ -59,6 +59,7 @@ export interface LcThemePreviewSamples {
   readonly success: string;
   readonly warning: string;
   readonly error: string;
+  readonly highlight: string;
   readonly neutral: string;
   readonly text: string;
   readonly textValue: string;
@@ -265,7 +266,7 @@ const THEME_BUILDER_FR: LcThemeBuilderLabels = {
   previewChart: 'Graphique',
   previewNavigation: 'Navigation',
   previewSamples: {
-    primary: 'Principal', secondary: 'Secondaire', success: 'Succès', warning: 'Alerte', error: 'Erreur', neutral: 'Neutre',
+    primary: 'Principal', secondary: 'Secondaire', success: 'Succès', warning: 'Alerte', error: 'Erreur', highlight: 'Relief', neutral: 'Neutre',
     text: 'Champ texte', textValue: 'Valeur saisie', number: 'Montant', select: 'Liste', optionOne: 'Première option', optionTwo: 'Seconde option',
     checkbox: 'Case à cocher', switch: 'Interrupteur', invalid: 'Champ invalide', invalidMessage: 'Ce champ est obligatoire.',
     alertInfo: 'Information', alertSuccess: 'Enregistré', alertWarning: 'À vérifier', alertError: 'Échec',
@@ -395,7 +396,7 @@ const THEME_BUILDER_EN: LcThemeBuilderLabels = {
   previewChart: 'Chart',
   previewNavigation: 'Navigation',
   previewSamples: {
-    primary: 'Primary', secondary: 'Secondary', success: 'Success', warning: 'Warning', error: 'Error', neutral: 'Neutral',
+    primary: 'Primary', secondary: 'Secondary', success: 'Success', warning: 'Warning', error: 'Error', highlight: 'Highlight', neutral: 'Neutral',
     text: 'Text field', textValue: 'Typed value', number: 'Amount', select: 'List', optionOne: 'First option', optionTwo: 'Second option',
     checkbox: 'Checkbox', switch: 'Switch', invalid: 'Invalid field', invalidMessage: 'This field is required.',
     alertInfo: 'Information', alertSuccess: 'Saved', alertWarning: 'Check this', alertError: 'Failed',
