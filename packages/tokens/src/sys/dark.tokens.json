@@ -475,27 +475,27 @@
       },
       "role": {
         "success": {
-          "$value": "{sys.chart.categorical.6}",
+          "$value": "{ref.color.chart.dark.6}",
           "$type": "color"
         },
         "warning": {
-          "$value": "{sys.chart.categorical.4}",
+          "$value": "{ref.color.chart.dark.4}",
           "$type": "color"
         },
         "error": {
-          "$value": "{sys.chart.categorical.8}",
+          "$value": "{ref.color.chart.dark.8}",
           "$type": "color"
         },
         "info": {
-          "$value": "{sys.chart.categorical.1}",
+          "$value": "{ref.color.chart.dark.1}",
           "$type": "color"
         },
         "highlight": {
-          "$value": "{sys.chart.categorical.7}",
+          "$value": "{ref.color.chart.dark.7}",
           "$type": "color"
         },
         "neutral": {
-          "$value": "{sys.chart.ink-muted}",
+          "$value": "#898781",
           "$type": "color"
         }
       },
