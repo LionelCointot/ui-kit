@@ -75,4 +75,30 @@ describe('LcIconComponent', () => {
     expect(LC_DEFAULT_ICONS['scale']).toContain('<svg');
     expect((fixture.nativeElement as HTMLElement).querySelector('lc-icon svg')).not.toBeNull();
   });
+  // CA-K9.1
+  it.each(['git-branch', 'git-commit-horizontal', 'activity', 'refresh-cw'])(
+    'CA-K9.1 : « %s » rend un SVG via <lc-icon>, sans avertissement, avec le style des autres icônes',
+    async (name) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const fixture = TestBed.createComponent(IconHostComponent);
+      fixture.componentInstance.name.set(name);
+      await fixture.whenStable();
+      const icon = (fixture.nativeElement as HTMLElement).querySelector('lc-icon')!;
+      const svg = icon.querySelector('svg')!;
+      expect(svg).not.toBeNull();
+      expect(svg.getAttribute('viewBox')).toBe('0 0 24 24');
+      expect(svg.getAttribute('stroke')).toBe('currentColor');
+      expect(svg.getAttribute('stroke-width')).toBe(LC_DEFAULT_ICONS['check'].match(/stroke-width="([^"]+)"/)![1]);
+      expect(svg.querySelectorAll('path, circle, line, polyline, rect').length).toBeGreaterThan(0);
+      expect(icon.getAttribute('aria-hidden')).toBe('true');
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    },
+  );
+
+  it('CA-K9.1 : les icônes des rôles de statut (activity, minus, circle-x, triangle-alert...) existent toutes dans le jeu par défaut', () => {
+    for (const name of ['circle-check', 'circle-x', 'triangle-alert', 'activity', 'info', 'minus', 'copy', 'check', 'chevron-left', 'chevron-right', 'chevron-down']) {
+      expect(LC_DEFAULT_ICONS[name], name).toMatch(/^<svg /);
+    }
+  });
 });
