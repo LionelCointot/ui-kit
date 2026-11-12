@@ -180,7 +180,7 @@ export function axisMin(requested: number | undefined, fromZero: boolean): numbe
   return fromZero ? (value: { min: number }) => Math.min(0, value.min) : undefined;
 }
 
-/** Axe unique des valeurs : filets horizontaux `gridline`, graduations compactes. */
+/** Axe unique des valeurs : filets horizontaux `gridline`, graduations compactes ; pas minimal de 1 pour un format entier. */
 export function valueAxis(options: { axis?: LcValueAxis; theme: LcChartTheme; format: LcFormatService; fromZero: boolean }): object {
   const { axis, theme, format, fromZero } = options;
   return {
@@ -189,6 +189,7 @@ export function valueAxis(options: { axis?: LcValueAxis; theme: LcChartTheme; fo
     nameTextStyle: textStyle(theme, theme.ink.muted),
     min: axisMin(axis?.min, fromZero),
     max: axis?.max,
+    minInterval: axis?.format === 'integer' ? 1 : undefined,
     axisLine: { show: false },
     axisTick: { show: false },
     splitLine: { show: true, lineStyle: { color: theme.gridline } },

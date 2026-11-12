@@ -61,7 +61,7 @@ export interface LcPart {
 }
 
 export interface LcValueAxis {
-  /** Défaut `number`. */
+  /** Défaut `number`. Avec `integer` (comptes, effectifs), les graduations sont des entiers : jamais de 0,2 ni de 0,4 (pas minimal de 1). */
   readonly format?: LcValueFormat;
   /** Graduations compactes (« 250 k€ ») ; défaut true. */
   readonly compact?: boolean;

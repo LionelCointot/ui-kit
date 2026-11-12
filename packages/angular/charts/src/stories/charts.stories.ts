@@ -151,3 +151,11 @@ export const AiresParRole: Story = {
     template: `<lc-area-chart title="Volumes par état (aires)" [data]="data" [stacked]="true" />`,
   }),
 };
+
+/** `yAxis.format: 'integer'` : les graduations restent entières (pas minimal de 1), même sur de petits comptes. */
+export const AxeEnEntiers: Story = {
+  render: () => ({
+    props: { data: { categories: days, series: [{ id: 'ko', label: 'En échec', values: [1, 0, 2, 1, 0, 1, 2] }] } satisfies LcCartesianData },
+    template: `<lc-bar-chart title="Échecs par jour" [data]="data" [yAxis]="{ format: 'integer' }" />`,
+  }),
+};
