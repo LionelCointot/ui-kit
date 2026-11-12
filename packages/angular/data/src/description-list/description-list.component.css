@@ -57,3 +57,14 @@
 .lc-description-list__row--emphasis .lc-description-list__term {
   color: var(--lc-sys-color-on-surface);
 }
+
+.lc-description-list__action {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+:host(.lc-description-list--inline) .lc-description-list__action {
+  flex: none;
+  align-self: center;
+}

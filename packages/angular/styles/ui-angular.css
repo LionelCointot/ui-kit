@@ -155,6 +155,11 @@ textarea.lc-input.lc-input--auto-resize {
   cursor: not-allowed;
 }
 
+/* Radio dans une carte de choix : aligné sur la première ligne du titre. */
+.lc-choice-card .lc-radio {
+  margin-block-start: var(--lc-sys-space-1);
+}
+
 /* ---------- Emplacements [lcPrefix] / [lcSuffix] de lc-form-field ---------- */
 .lc-form-field-prefix,
 .lc-form-field-suffix,

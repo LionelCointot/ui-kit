@@ -1,0 +1,90 @@
+:host {
+  --_border: var(--lc-choice-card-border, var(--lc-sys-color-border-strong));
+
+  display: block;
+  min-inline-size: 0;
+}
+
+/* Dans un groupe horizontal, les cartes se partagent la ligne (3 par ligne à 180 px minimum), sinon elles s'empilent. */
+:host-context(.lc-radio-group__items--horizontal) {
+  flex: 1 1 var(--lc-choice-card-min-inline-size, calc(var(--lc-sys-space-1) * 45));
+}
+
+.lc-choice-card__label {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-3);
+  box-sizing: border-box;
+  block-size: 100%;
+  min-block-size: var(--lc-sys-control-height-md);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  border: var(--lc-sys-border-width-thin) solid var(--_border);
+  border-radius: var(--lc-choice-card-radius, var(--lc-sys-radius-md));
+  background: var(--lc-choice-card-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+  cursor: pointer;
+}
+
+/* Voile de survol : même opacité d'état que les autres contrôles. */
+.lc-choice-card__label::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lc-choice-card__label:hover:not(:has(:disabled))::before {
+  opacity: var(--lc-sys-state-hover-opacity);
+}
+
+/* Le point du radio coché reste le second indice (jamais la couleur seule) : le bord passe de 1 px à 2 px. */
+.lc-choice-card__label:has(:checked) {
+  --_border: var(--lc-choice-card-border-selected, var(--lc-sys-color-primary));
+
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_border);
+}
+
+.lc-choice-card__label:has([aria-invalid='true']) {
+  --_border: var(--lc-choice-card-border-invalid, var(--lc-sys-color-error));
+}
+
+.lc-choice-card__label:has(:focus-visible) {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-choice-card__label:has(:disabled) {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-choice-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+}
+
+.lc-choice-card__title {
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-choice-card__description {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+@media (forced-colors: active) {
+  .lc-choice-card__label {
+    border-color: CanvasText;
+  }
+
+  .lc-choice-card__label:has(:checked) {
+    border-color: Highlight;
+    box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) Highlight;
+  }
+}

@@ -36,6 +36,9 @@ export interface LcLabels {
   readonly pageSize: string;
   readonly pageRange: (first: number, last: number, total: number) => string;
   readonly pageStatus: (page: number, pageCount: number) => string;
+  /** Fil d'étapes (`lc-stepper`) : position (« Étape 2 sur 5 ») et nom accessible d'une étape faite. */
+  readonly stepOf: (current: number, total: number) => string;
+  readonly stepBack: (name: string) => string;
   /** Bloc de code (`lc-code-block`). */
   readonly copy: string;
   readonly copied: string;
@@ -326,6 +329,8 @@ export const LC_LABELS_FR: LcLabels = {
   pageSize: 'Éléments par page',
   pageRange: (first, last, total) => (total === 0 ? '0 sur 0' : `${first} à ${last} sur ${total}`),
   pageStatus: (page, pageCount) => `Page ${page} sur ${pageCount}`,
+  stepOf: (current, total) => `Étape ${current} sur ${total}`,
+  stepBack: (name) => `Revenir à : ${name}`,
   copy: 'Copier',
   copied: 'Copié',
   copyFailed: 'Copie impossible',
@@ -467,6 +472,8 @@ export const LC_LABELS_EN: LcLabels = {
   pageSize: 'Items per page',
   pageRange: (first, last, total) => (total === 0 ? '0 of 0' : `${first} to ${last} of ${total}`),
   pageStatus: (page, pageCount) => `Page ${page} of ${pageCount}`,
+  stepOf: (current, total) => `Step ${current} of ${total}`,
+  stepBack: (name) => `Back to: ${name}`,
   copy: 'Copy',
   copied: 'Copied',
   copyFailed: 'Copy failed',

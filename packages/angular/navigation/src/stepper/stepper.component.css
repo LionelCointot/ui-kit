@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-stepper__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lc-sys-space-2) var(--lc-sys-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-stepper__item {
+  display: flex;
+  align-items: center;
+}
+
+.lc-stepper__step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  box-sizing: border-box;
+  min-block-size: var(--lc-sys-control-height-md);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lc-sys-color-on-surface-muted);
+  font: inherit;
+}
+
+button.lc-stepper__step {
+  padding-inline: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-md);
+  color: var(--lc-sys-color-on-surface);
+  cursor: pointer;
+}
+
+button.lc-stepper__step:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+button.lc-stepper__step:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-stepper__badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: var(--lc-sys-space-6);
+  block-size: var(--lc-sys-space-6);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong);
+  border-radius: var(--lc-sys-radius-full);
+  font-size: var(--lc-sys-font-size-sm);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-stepper__item--done .lc-stepper__badge {
+  border-color: var(--lc-stepper-done-background, var(--lc-sys-color-secondary));
+  background: var(--lc-stepper-done-background, var(--lc-sys-color-secondary));
+  color: var(--lc-sys-color-on-secondary);
+}
+
+.lc-stepper__item--current .lc-stepper__step {
+  color: var(--lc-sys-color-on-surface);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-stepper__item--current .lc-stepper__badge {
+  border-color: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
+  background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
+  color: var(--lc-sys-color-on-primary);
+}
+
+/* Forme compacte : texte « Étape n sur N : nom » et piste fine décorative ; la liste est masquée (et retirée de l'arbre d'accessibilité). */
+.lc-stepper__summary {
+  display: none;
+  margin: 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-stepper__track {
+  display: block;
+  margin-block-start: var(--lc-sys-space-2);
+  block-size: var(--lc-sys-space-1);
+  overflow: hidden;
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-stepper-track, var(--lc-sys-color-surface-sunken));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-sys-color-border);
+}
+
+.lc-stepper__track-fill {
+  display: block;
+  block-size: 100%;
+  background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
+  transition: inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+:host(.lc-stepper--compact) .lc-stepper__summary {
+  display: block;
+}
+
+:host(.lc-stepper--compact) .lc-stepper__list {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  :host(:not(.lc-stepper--full)) .lc-stepper__summary {
+    display: block;
+  }
+
+  :host(:not(.lc-stepper--full)) .lc-stepper__list {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-stepper__track-fill {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-stepper__badge {
+    border-color: CanvasText;
+  }
+
+  .lc-stepper__item--current .lc-stepper__badge,
+  .lc-stepper__item--done .lc-stepper__badge {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .lc-stepper__track-fill {
+    background: Highlight;
+  }
+}
