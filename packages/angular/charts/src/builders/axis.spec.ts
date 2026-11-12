@@ -69,6 +69,77 @@ describe('axe des valeurs : min et max imposés', () => {
   });
 });
 
+describe('axe des valeurs : pas minimal de 1 pour yAxis.format integer', () => {
+  let format: LcFormatService;
+  beforeEach(() => {
+    format = TestBed.inject(LcFormatService);
+  });
+
+  const series: LcResolvedSeries[] = [{ id: 'a', label: 'a', values: [1, 0, 2], color: '#111', slot: null, patternIndex: 0 }];
+  const base = (yAxis?: object) => ({
+    categories: ['a', 'b', 'c'], series, summary: 's', theme, format, seriesCount: 1, directLabels: 'none' as const, yAxis,
+  });
+  const valueAxisOf = (kind: 'bar' | 'barH' | 'line' | 'area', yAxis?: object): AnyOption => {
+    const args = base(yAxis);
+    const option = kind === 'line' ? buildLineOption({ ...args, showPoints: 'auto' })
+      : kind === 'area' ? buildAreaOption({ ...args, stacked: false })
+      : buildBarOption({ ...args, orientation: kind === 'barH' ? 'horizontal' : 'vertical', stacked: false, totals: false, totalLabel: 'Total' }) as AnyOption;
+    return (kind === 'barH' ? (option as AnyOption)['xAxis'] : (option as AnyOption)['yAxis']);
+  };
+  const kinds = ['bar', 'barH', 'line', 'area'] as const;
+
+  kinds.forEach((kind) => {
+    it(`${kind} : integer pose minInterval 1 sur l'axe des valeurs`, () => {
+      expect(valueAxisOf(kind, { format: 'integer' })['minInterval']).toBe(1);
+    });
+
+    (['number', 'money', 'percent'] as const).forEach((valueFormat) => {
+      it(`${kind} : ${valueFormat} ne pose pas de minInterval`, () => {
+        expect(valueAxisOf(kind, { format: valueFormat })['minInterval']).toBeUndefined();
+      });
+    });
+
+    it(`${kind} : sans format ni yAxis, pas de minInterval`, () => {
+      expect(valueAxisOf(kind, {})['minInterval']).toBeUndefined();
+      expect(valueAxisOf(kind, undefined)['minInterval']).toBeUndefined();
+    });
+
+    it(`${kind} : compact (true ou false) ne modifie pas minInterval`, () => {
+      expect(valueAxisOf(kind, { format: 'integer', compact: false })['minInterval']).toBe(1);
+      expect(valueAxisOf(kind, { format: 'integer', compact: true })['minInterval']).toBe(1);
+      expect(valueAxisOf(kind, { format: 'number', compact: false })['minInterval']).toBeUndefined();
+    });
+  });
+
+  it('integer ne change ni les formateurs de graduations ni min/max', () => {
+    const integer = valueAxisOf('bar', { format: 'integer' });
+    const number = valueAxisOf('bar', { format: 'number' });
+    [0, 3, 1500, 2_500_000].forEach((value) => expect(integer['axisLabel'].formatter(value)).toBe(number['axisLabel'].formatter(value)));
+    expect(integer['max']).toBeUndefined();
+    expect(integer['min'](({ min: 4 }))).toBe(0);
+  });
+
+  it('integer avec compact false : graduations en entier complet, minInterval conservé', () => {
+    const axis = valueAxisOf('bar', { format: 'integer', compact: false });
+    expect(axis['axisLabel'].formatter(1500)).toBe(format.format(1500, 'integer'));
+    expect(axis['minInterval']).toBe(1);
+  });
+
+  // Constat (ECharts 6 rendu en SSR) : avec max 0.5 ou 0.9, l'axe obtient les graduations [0, max] (donc une graduation fractionnaire
+  // « 0,5 ») ; max 0 ou sans max donne [0, 1]. minInterval ne l'emporte pas sur un max imposé < 1 : cas absurde, hors usage courant.
+  it('integer avec un max imposé < 1 : max transmis tel quel avec minInterval 1 (ECharts décide ; aucune garde dans le builder)', () => {
+    const axis = valueAxisOf('line', { format: 'integer', max: 0.5 });
+    expect(axis['max']).toBe(0.5);
+    expect(axis['minInterval']).toBe(1);
+  });
+
+  it('integer avec max 0 : max 0 transmis (pas ignoré comme une valeur fausse), minInterval 1', () => {
+    const axis = valueAxisOf('bar', { format: 'integer', max: 0 });
+    expect(axis['max']).toBe(0);
+    expect(axis['minInterval']).toBe(1);
+  });
+});
+
 describe('graduations annuelles (annualTicks)', () => {
   const labelled = (ticks: readonly (string | null)[] | null) => (ticks ?? []).filter((tick): tick is string => tick !== null);
 
