@@ -15,6 +15,8 @@
 - [...]
 
 ## 4. Utilisateurs et cas d'usage
+**Utilisateur principal** : [qui, et ce qu'il sait déjà du sujet ; confirmé par l'utilisateur du projet, pas supposé]
+
 | Acteur | Cas d'usage | Résultat attendu |
 |---|---|---|
 
@@ -29,7 +31,7 @@
 [Endpoints, payloads, codes d'erreur, ou signatures de fonctions.]
 
 ### 5.4 Interface utilisateur
-[Brief de `ui-ux-designer` (`/impeccable shape`) : écrans, états (chargement, vide, erreur), accessibilité. Ou « Pas d'impact UI » et pourquoi.]
+[Direction choisie par l'utilisateur et lien vers les maquettes d'exploration (nouvel écran ou refonte). Brief de `ui-ux-designer` (`/impeccable shape`) : écrans, textes affichés, états (chargement, vide, erreur), accessibilité. Résultat du test `novice-user`. Ou « Pas d'impact UI » et pourquoi.]
 
 ## 6. Cas limites et gestion des erreurs
 - [...]
