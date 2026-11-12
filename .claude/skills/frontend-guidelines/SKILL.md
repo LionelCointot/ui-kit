@@ -13,7 +13,11 @@ Qui fait quoi :
   - Revue : `/impeccable critique` (design) et `/impeccable audit` (accessibilité, performance, responsive).
   - Finition : `/impeccable polish`, `/impeccable harden` (états d'erreur, textes longs, cas limites).
   - Le hook d'impeccable vérifie automatiquement chaque fichier UI modifié par Claude.
+- **Rôle** : le sous-agent `ui-ux-designer` porte ce travail (triage, conception, conformité) dans `delivery-workflow`.
 - **Ce skill** : le socle non négociable ci-dessous, quel que soit le design.
+
+## Impact UI (critère de triage)
+Il y a impact UI dès que la tâche change ce que l'utilisateur voit ou manipule : template, style, token, composant visuel, texte affiché (libellé, message d'erreur, format de nombre ou de date), état d'écran, navigation, focus ou comportement clavier. Un changement purement back, de test, de build ou de doc interne n'en a pas : le designer le déclare explicitement (« pas d'impact UI »).
 
 ## Structure
 - Composants petits, à responsabilité unique ; présentation séparée de la logique (store / services).

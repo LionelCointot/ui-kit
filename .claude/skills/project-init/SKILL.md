@@ -15,16 +15,17 @@ description: Initialise un nouveau projet à partir de ce template. À utiliser 
    - Niveau de rigueur : prototype ou production ?
    - Contraintes : sécurité, conformité, performance, budget ?
 4. Si l'utilisateur hésite sur la stack, proposer 2 options avec avantages / inconvénients et en recommander une.
-5. Remplir `CLAUDE.md` : contexte, stack, commandes réelles (install, dev, test, lint, build), conventions. Ne laisser aucun `[...]` sans demander.
+5. Remplir `CLAUDE.md` : contexte, stack, commandes réelles (install, dev, test, lint, build), conventions. Ne laisser aucun `[...]` sans demander. Les commandes doivent être exactes et non interactives : `qa-engineer` les exécute telles quelles pour son verdict.
 6. **Adapter les skills à la stack** (supprimer le dossier du skill inutile) :
    - Pas de front → supprimer `angular-best-practices`, `frontend-guidelines`, `impeccable` (et ses hooks dans `.claude/settings.json`, ses agents dans `.claude/agents/`).
    - Front non Angular → remplacer `angular-best-practices` par un skill équivalent pour le framework choisi (même structure : couches, état, accès API, exemples).
    - Pas de .NET → remplacer `dotnet-best-practices` par l'équivalent de la stack backend.
+   - Reporter chaque suppression ou remplacement dans le champ `skills:` des agents `.claude/agents/senior-developer.md`, `ui-ux-designer.md` et `qa-engineer.md` (aucun skill préchargé ne doit manquer). Les trois agents restent, même sans front : le designer y rendra « pas d'impact UI ».
 7. **Front Angular** : proposer d'ajouter le serveur MCP Angular CLI (`claude mcp add angular-cli --scope project -- npx -y @angular/cli mcp`) et, une fois l'app créée, de lancer `/impeccable init` pour le contexte design (`PRODUCT.md`).
 8. Ajouter les skills spécifiques au projet (conventions métier, règles propres) dans `.claude/skills/` de ce repo, pas dans le template.
 9. Créer la structure de dossiers de base adaptée à la stack (voir les skills de stack), sans code métier.
 10. Construire le graphe initial : `graphify update .`.
-11. Proposer un ADR pour la stack choisie (skill `adr`), puis une première spec (skill `spec-writer`).
+11. Proposer un ADR pour la stack choisie (skill `adr`), puis une première spec (skill `spec-writer`), livrée ensuite selon `delivery-workflow`.
 
 ## Règles
 - Ne génère pas de code applicatif tant que la stack et la première spec ne sont pas validées.

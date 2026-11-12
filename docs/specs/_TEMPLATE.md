@@ -29,7 +29,7 @@
 [Endpoints, payloads, codes d'erreur, ou signatures de fonctions.]
 
 ### 5.4 Interface utilisateur
-[Écrans, états (chargement, vide, erreur), accessibilité.]
+[Brief de `ui-ux-designer` (`/impeccable shape`) : écrans, états (chargement, vide, erreur), accessibilité. Ou « Pas d'impact UI » et pourquoi.]
 
 ## 6. Cas limites et gestion des erreurs
 - [...]
@@ -49,11 +49,11 @@
 - E2E : [...]
 
 ## 10. Critères d'acceptation
-- [ ] [Critère vérifiable 1]
-- [ ] [Critère vérifiable 2]
+- [ ] CA-1 : [Critère vérifiable]
+- [ ] CA-2 : [Critère vérifiable]
 
 ## 11. Découpage en tâches
-- [ ] T1 : [...] (S/M/L)
+- [ ] T1 : [...] (S/M/L, couvre CA-...)
 - [ ] T2 : [...]
 
 ## 12. Risques et questions ouvertes
