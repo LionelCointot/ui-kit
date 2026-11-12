@@ -3,42 +3,53 @@
   color: var(--lc-sys-color-on-surface);
 }
 
+/* Corps : piste (derrière) + liste des étapes. Chaque étape occupe 1/N de l'espace ; sa pastille en occupe le centre. */
+.lc-stepper__body {
+  position: relative;
+}
+
 .lc-stepper__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--lc-sys-space-2) var(--lc-sys-space-6);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(var(--lc-sys-control-height-md), 1fr);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .lc-stepper__item {
+  position: relative;
   display: flex;
-  align-items: center;
+  justify-content: center;
+  min-inline-size: 0;
+  padding-inline: var(--lc-sys-space-1);
 }
 
 .lc-stepper__step {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--lc-sys-space-2);
+  gap: var(--lc-sys-space-1);
   box-sizing: border-box;
   min-block-size: var(--lc-sys-control-height-md);
+  min-inline-size: var(--lc-sys-control-height-md);
+  max-inline-size: 100%;
   padding: 0;
   border: 0;
   background: none;
   color: var(--lc-sys-color-on-surface-muted);
   font: inherit;
+  text-align: center;
 }
 
 button.lc-stepper__step {
-  padding-inline: var(--lc-sys-space-2);
   border-radius: var(--lc-sys-radius-md);
   color: var(--lc-sys-color-on-surface);
   cursor: pointer;
 }
 
-button.lc-stepper__step:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+button.lc-stepper__step:hover .lc-stepper__name {
+  text-decoration: underline;
 }
 
 button.lc-stepper__step:focus-visible {
@@ -46,82 +57,249 @@ button.lc-stepper__step:focus-visible {
   outline-offset: var(--lc-sys-focus-ring-offset);
 }
 
-.lc-stepper__badge {
-  display: inline-flex;
+/* Zone fixe de 40 px : la pastille (32 ou 40 px) y reste centrée, la piste la traverse à mi-hauteur. */
+.lc-stepper__marker {
+  display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
+  inline-size: var(--lc-sys-space-10);
+  block-size: var(--lc-sys-space-10);
+}
+
+.lc-stepper__badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-sizing: border-box;
-  inline-size: var(--lc-sys-space-6);
-  block-size: var(--lc-sys-space-6);
-  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong);
+  inline-size: var(--lc-sys-space-8);
+  block-size: var(--lc-sys-space-8);
+  border: var(--lc-sys-border-width-thick) solid var(--lc-sys-color-border-strong);
   border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-surface);
+  color: var(--lc-sys-color-on-surface-muted);
   font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
   font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+  transition:
+    inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
+    block-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+/* Anneau de l'étape en cours : apparaît en fondu. */
+.lc-stepper__badge::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--lc-sys-space-1) - var(--lc-sys-border-width-thick));
+  border: var(--lc-sys-space-1) solid var(--lc-sys-color-primary-container);
+  border-radius: var(--lc-sys-radius-full);
+  opacity: 0;
+  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 .lc-stepper__item--done .lc-stepper__badge {
-  border-color: var(--lc-stepper-done-background, var(--lc-sys-color-secondary));
-  background: var(--lc-stepper-done-background, var(--lc-sys-color-secondary));
-  color: var(--lc-sys-color-on-secondary);
-}
-
-.lc-stepper__item--current .lc-stepper__step {
-  color: var(--lc-sys-color-on-surface);
-  font-weight: var(--lc-sys-font-weight-semibold);
+  border-color: var(--lc-stepper-done-background, var(--lc-sys-color-primary));
+  background: var(--lc-stepper-done-background, var(--lc-sys-color-primary));
+  color: var(--lc-sys-color-on-primary);
 }
 
 .lc-stepper__item--current .lc-stepper__badge {
+  inline-size: var(--lc-sys-space-10);
+  block-size: var(--lc-sys-space-10);
   border-color: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
   background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
   color: var(--lc-sys-color-on-primary);
 }
 
-/* Forme compacte : texte « Étape n sur N : nom » et piste fine décorative ; la liste est masquée (et retirée de l'arbre d'accessibilité). */
-.lc-stepper__summary {
-  display: none;
-  margin: 0;
+.lc-stepper__item--current .lc-stepper__badge::after {
+  opacity: 1;
+}
+
+/* En erreur : bord et icône `error`, quel que soit l'état. */
+.lc-stepper__item--invalid .lc-stepper__badge {
+  border-color: var(--lc-sys-color-error);
+  background: var(--lc-sys-color-surface);
+  color: var(--lc-sys-color-error);
+}
+
+.lc-stepper__item--disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+}
+
+.lc-stepper__text {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  min-inline-size: 0;
+}
+
+.lc-stepper__name {
+  font-weight: var(--lc-sys-font-weight-medium);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.lc-stepper__item--current .lc-stepper__name {
+  color: var(--lc-sys-color-on-surface);
   font-weight: var(--lc-sys-font-weight-semibold);
 }
 
-.lc-stepper__track {
-  display: block;
-  margin-block-start: var(--lc-sys-space-2);
-  block-size: var(--lc-sys-space-1);
-  overflow: hidden;
-  border-radius: var(--lc-sys-radius-full);
-  background: var(--lc-stepper-track, var(--lc-sys-color-surface-sunken));
-  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-sys-color-border);
+.lc-stepper__optional {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
 }
 
-.lc-stepper__track-fill {
+/* Texte lu mais non affiché (« (à corriger) », « (facultative) » sur une étape non cliquable). */
+.lc-stepper__hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Piste : trait de 2 px derrière les pastilles, de la première à la dernière ; la partie parcourue est remplie. */
+.lc-stepper__rail {
+  position: absolute;
+  inset-block-start: calc(var(--lc-sys-space-10) / 2 - var(--lc-sys-border-width-thick) / 2);
+  inset-inline: calc(100% / (2 * var(--lc-stepper-count)));
+  block-size: var(--lc-sys-border-width-thick);
+  background: var(--lc-stepper-track, var(--lc-sys-color-border));
+}
+
+.lc-stepper__rail-fill {
   display: block;
+  inline-size: var(--lc-stepper-progress);
   block-size: 100%;
   background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
   transition: inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-:host(.lc-stepper--compact) .lc-stepper__summary {
+/* Texte « Étape n sur N : nom » : forme compacte seulement. */
+.lc-stepper__summary {
+  display: none;
+  margin: var(--lc-sys-space-2) 0 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  text-align: center;
+}
+
+/* Forme compacte (horizontal) : pastilles et piste restent, libellés masqués à l'écran, texte sous la piste. */
+:host(.lc-stepper--compact:not(.lc-stepper--vertical)) .lc-stepper__summary {
   display: block;
 }
 
-:host(.lc-stepper--compact) .lc-stepper__list {
-  display: none;
+:host(.lc-stepper--compact:not(.lc-stepper--vertical)) .lc-stepper__text {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 @media (max-width: 767.98px) {
-  :host(:not(.lc-stepper--full)) .lc-stepper__summary {
+  :host(:not(.lc-stepper--full, .lc-stepper--vertical)) .lc-stepper__summary {
     display: block;
   }
 
-  :host(:not(.lc-stepper--full)) .lc-stepper__list {
-    display: none;
+  :host(:not(.lc-stepper--full, .lc-stepper--vertical)) .lc-stepper__text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Vertical : pastilles en colonne, piste verticale, libellé à droite. */
+:host(.lc-stepper--vertical) .lc-stepper__list {
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+  grid-auto-rows: minmax(var(--lc-sys-space-16), 1fr);
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__item {
+  align-items: center;
+  justify-content: flex-start;
+  padding-inline: 0;
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__step {
+  flex-direction: row;
+  gap: var(--lc-sys-space-3);
+  text-align: start;
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__text {
+  align-items: flex-start;
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__rail {
+  inset-block: calc(100% / (2 * var(--lc-stepper-count)));
+  inset-inline: auto;
+  inset-inline-start: calc(var(--lc-sys-space-10) / 2 - var(--lc-sys-border-width-thick) / 2);
+  inline-size: var(--lc-sys-border-width-thick);
+  block-size: auto;
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__rail-fill {
+  inline-size: 100%;
+  block-size: var(--lc-stepper-progress);
+  transition-property: block-size;
+}
+
+/* Sens du changement : la pastille qui devient « en cours » attend que la piste l'atteigne (avance) ou la quitte (recul). */
+:host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge,
+:host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge {
+  transition-delay: var(--lc-sys-duration-normal);
+}
+
+:host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge::after,
+:host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge::after {
+  transition-delay: var(--lc-sys-duration-normal);
+}
+
+/* Minuterie sans effet visible : sa fin (animationend) retire la classe de sens de l'hôte. */
+:host(.lc-stepper--forward),
+:host(.lc-stepper--backward) {
+  animation: lc-stepper-sync calc(var(--lc-sys-duration-normal) * 2) linear;
+}
+
+@keyframes lc-stepper-sync {
+  from {
+    --lc-stepper-sync: 0;
+  }
+
+  to {
+    --lc-stepper-sync: 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-stepper__track-fill {
+  .lc-stepper__badge,
+  .lc-stepper__badge::after,
+  .lc-stepper__rail-fill {
     transition: none;
+  }
+
+  :host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge,
+  :host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge,
+  :host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge::after,
+  :host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge::after {
+    transition-delay: 0s;
+  }
+
+  /* La minuterie ne change aucune propriété visible ; on la raccourcit pour que la classe de sens soit retirée aussitôt. */
+  :host(.lc-stepper--forward),
+  :host(.lc-stepper--backward) {
+    animation-duration: 1ms;
   }
 }
 
@@ -130,13 +308,27 @@ button.lc-stepper__step:focus-visible {
     border-color: CanvasText;
   }
 
+  .lc-stepper__badge::after {
+    border-color: Highlight;
+  }
+
   .lc-stepper__item--current .lc-stepper__badge,
   .lc-stepper__item--done .lc-stepper__badge {
     background: Highlight;
     color: HighlightText;
   }
 
-  .lc-stepper__track-fill {
+  .lc-stepper__item--invalid .lc-stepper__badge {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .lc-stepper__rail {
+    background: GrayText;
+  }
+
+  .lc-stepper__rail-fill {
     background: Highlight;
   }
 }

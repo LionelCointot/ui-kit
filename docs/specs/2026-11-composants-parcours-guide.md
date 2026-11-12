@@ -21,11 +21,11 @@ Un parcours guidé pour débutant a besoin de quatre éléments absents du kit :
 | Composant | Point d'entrée | Sélecteur | Entrées | Sorties |
 |---|---|---|---|---|
 | Carte de choix | `forms` | `lc-choice-card` | `title` (obligatoire), `description` | aucune |
-| Fil d'étapes | `navigation` | `lc-stepper` | `steps` (`{id, label, state: 'done'\|'current'\|'upcoming'}[]`), `ariaLabel` (obligatoire), `compact` (`'auto'` ou booléen) | `stepSelect` (id, étapes faites seulement) |
+| Fil d'étapes | `navigation` | `lc-stepper` | `steps` (`{id, label, state: 'done'\|'current'\|'upcoming', optional?, invalid?, disabled?, icon?}[]`), `ariaLabel` (obligatoire), `compact` (`'auto'` ou booléen), `linear` (vrai), `orientation` (`'horizontal'` ou `'vertical'`) | `stepSelect` (id d'une étape cliquable : faites si `linear`, sinon toutes sauf désactivées), `directionChange` (`'forward'\|'backward'`) |
 | Barre de durées | `data` | `lc-timeline-bar` | `segments` (`{id, weight, label, colorSlot: 1-8\|'neutral', marker?}[]`), `label`, `description` (obligatoires), `startLabel`, `endLabel`, `minLabelShare` (0,06), `emptyMessage`, `stale`, `loading` | aucune |
 | Liste de définitions | `data` | `lc-description-list` | `LcDescriptionItem.action?: {label, ariaLabel?}` | `itemAction` (index de la ligne) |
 
-Libellés ajoutés à `LC_LABELS` (fr, en) : `stepOf(n, N)`, `stepBack(nom)`.
+Libellés ajoutés à `LC_LABELS` (fr, en) : `stepOf(n, N)`, `stepBack(nom)` (déprécié, conservé), `stepGoTo(n, nom)`, `stepInvalid`, `stepOptionalHidden`, `stepOptional`.
 
 ### 5.4 Interface utilisateur
 Brief du designer (§5 à §8) appliqué tel quel ; pas de nouvelle direction visuelle.
@@ -106,3 +106,12 @@ Demande du porteur du produit : un `lc-stepper` qui ressemble davantage au stepp
 
 ### 13.7 Tâches
 - [ ] T6 : `lc-stepper` v2 (M, CA-10 à CA-15) ; stories : horizontal, vertical, non linéaire, erreur, facultative, compact, démonstration « Suivant / Précédent » pour voir l'animation.
+
+### 13.8 Écarts constatés à l'implémentation (T6)
+- Icône d'erreur : le registre ne contient pas `alert-circle` ; c'est `circle-alert` qui est utilisé.
+- Libellés : `stepGoTo(n, nom)`, `stepInvalid` (« (à corriger) »), `stepOptionalHidden` (« (facultative) »), `stepOptional` (« Facultative », visible) ; `stepBack` est conservé et marqué déprécié.
+- Une étape en erreur affiche l'icône d'erreur quel que soit son état (elle l'emporte sur la coche d'une étape faite) ; l'icône de `icon` ne remplace que le numéro.
+- Animation : la pastille qui devient « en cours » grandit par **transition de taille** (32 px vers 40 px, soit l'échelle 0,8 à 1) et son anneau apparaît en fondu, après la piste (délai d'une durée `normal`) ; aucune `transform` n'est utilisée, donc rien à neutraliser sous `prefers-reduced-motion`. Aucun nouveau token : `--lc-sys-duration-normal` et `--lc-sys-easing-standard` suffisent.
+- La classe de sens est retirée à la fin d'une animation CSS sans effet visible (minuterie de `2 x duration-normal`, 1 ms sous `prefers-reduced-motion`).
+- Forme compacte (horizontale) : les libellés sont masqués visuellement mais restent dans le nom accessible ; l'ancienne piste fine du résumé est supprimée (la piste des pastilles la remplace). En vertical, `compact` est ignoré (les libellés restent affichés).
+- Étape désactivée : `span` avec `aria-disabled="true"` (pas de bouton), ce qui exempte son texte du contrôle de contraste d'axe. En mode non linéaire, l'étape en cours est un bouton.
