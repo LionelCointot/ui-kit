@@ -38,7 +38,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
             }
           </tr>
         </thead>
-        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (click)="onClick($event)">
+        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)">
           @for (row of rows(); track row.key; let rowIndex = $index) {
             <tr class="lc-tree-table__row" role="row" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
               [attr.aria-setsize]="row.setSize" [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
@@ -215,11 +215,19 @@ export class LcTreeTableComponent<T> {
     if (target) this.markActive(target.index);
   }
 
+  /** Le bouton de dépliage (souris seulement, `aria-hidden`) ne prend jamais le focus : il reste sur la ligne. */
+  protected onMousedown(event: MouseEvent): void {
+    if (event.target instanceof Element && event.target.closest('.lc-tree-table__toggle')) event.preventDefault();
+  }
+
   protected onClick(event: MouseEvent): void {
     const toggle = event.target instanceof Element ? event.target.closest('.lc-tree-table__toggle') : null;
     const rowElement = toggle?.closest('tr');
     const row = rowElement ? this.rows()[rowElement.sectionRowIndex] : undefined;
-    if (row) this.setExpanded([row], !row.expanded);
+    if (!rowElement || !row) return;
+    // Filet pour un focus donné au bouton sans `mousedown` (lecteur d'écran, automatisation) : la navigation clavier continue.
+    this.focusRow(rowElement.sectionRowIndex);
+    this.setExpanded([row], !row.expanded);
   }
 
   protected onKeydown(event: KeyboardEvent): void {
