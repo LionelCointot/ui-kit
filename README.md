@@ -48,6 +48,6 @@ Les scripts installent si besoin Node >= 24.15 dans votre dossier utilisateur (s
 
 ## Développer
 
-Prérequis : Node.js 24, un jeton GitHub `read:packages` pour le registre privé. Puis `./scripts/setup.sh` (graphify et impeccable), et les commandes listées dans [CLAUDE.md](CLAUDE.md).
+Prérequis : Node.js >= 24.15, un jeton GitHub `read:packages` pour le registre privé. Puis `./scripts/setup.sh` (graphify et impeccable), et les commandes listées dans [CLAUDE.md](CLAUDE.md).
 
 Créé depuis [project-template](https://github.com/LionelCointot/project-template) (workflow spec d'abord avec Claude Code).

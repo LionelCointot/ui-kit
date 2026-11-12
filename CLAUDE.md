@@ -8,9 +8,9 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 ## Stack
 - Langage / runtime : TypeScript (strict), Node.js ≥ 24.15 (Angular CLI 22 refuse les versions antérieures)
 - Framework(s) : Angular 22 (standalone, signaux, zoneless), Angular CDK 22 ; Style Dictionary 5 (tokens DTCG) ; Apache ECharts 6 (point d'entrée `charts`, dépendance optionnelle) ; AG Grid Community 36 (`data-grid`, phase 5, optionnelle)
-- Outillage : Storybook 10, Vitest, Playwright (tests visuels), ESLint, stylelint, ng-packagr, workspaces npm
+- Outillage : Storybook 10, Vitest, Playwright, ng-packagr, workspaces npm ; prévus, pas encore en place : tests visuels, ESLint, stylelint
 - Base de données : aucune
-- Déploiement : paquets npm `@lionelcointot/ui-tokens` et `@lionelcointot/ui-angular` sur GitHub Packages (release-please) ; Storybook publié en artefact de CI
+- Déploiement : paquets npm `@lionelcointot/ui-tokens` et `@lionelcointot/ui-angular` sur GitHub Packages (release-please) ; Storybook publié en artefact de CI (cible : ni CI ni publication en place à ce jour)
 
 ## Commandes
 - Tout installer / lancer Storybook (Node installé au besoin) : `installer.command` / `lancer.command` (macOS), `.cmd` (Windows), `bash installer.command` (Linux) ; équivalent : `bash scripts/dev/bootstrap.sh install|start`. Configuration : `dev.config.json`
@@ -26,7 +26,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md` (chacune se termine par ses écarts constatés à l'implémentation)
 - ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
-- Direction visuelle : `PRODUCT.md` et `DESIGN.md` (créés par `/impeccable init` et `/impeccable document`, tâche T2)
+- Direction visuelle : `PRODUCT.md` et `DESIGN.md` (pas encore créés : `/impeccable init` puis `/impeccable document`, tâche T2)
 
 ## Workflow (spec d'abord, code ensuite : skill `delivery-workflow`)
 La session principale orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (sonnet par défaut ; haiku : recherche, tâches mécaniques ; opus seulement sur accord de l'utilisateur).
@@ -73,7 +73,7 @@ La session principale orchestre et vérifie ; elle délègue aux agents et chois
 
 ## Outils
 - **graphify** : graphe de connaissances du code dans `graphify-out/` (non versionné), reconstruit automatiquement après chaque commit par les hooks git. Installation sur un nouveau poste : `./scripts/setup.sh`.
-- **impeccable** : son hook vérifie chaque fichier UI modifié. Contexte design dans `PRODUCT.md` et `DESIGN.md`.
+- **impeccable** : son hook vérifie chaque fichier UI modifié. Contexte design dans `PRODUCT.md` et `DESIGN.md` (pas encore créés ici).
 - Mise à jour des deux outils : `./scripts/update-tools.sh`.
 
 ## graphify
