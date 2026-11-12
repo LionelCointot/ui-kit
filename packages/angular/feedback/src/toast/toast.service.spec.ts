@@ -1,4 +1,5 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LcToastService } from './toast.service';
 
@@ -22,6 +23,22 @@ describe('LcToastService', () => {
     service.show({ kind: 'error', message: 'Échec de l\'enregistrement' });
     expect(announce).toHaveBeenCalledWith('Scénario enregistré', 'polite');
     expect(announce).toHaveBeenCalledWith('Échec de l\'enregistrement', 'assertive');
+  });
+
+  it("n'oblige pas un effect qui l'appelle à se relancer à chaque toast ajouté", () => {
+    let runs = 0;
+    TestBed.runInInjectionContext(() =>
+      effect(() => {
+        runs += 1;
+        service.show({ kind: 'error', message: 'Échec' });
+      }),
+    );
+
+    TestBed.tick();
+    TestBed.tick();
+
+    expect(runs).toBe(1);
+    expect(service.toasts()).toHaveLength(1);
   });
 
   it('retire le toast après sa durée, sauf une erreur', () => {

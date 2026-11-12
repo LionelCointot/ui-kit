@@ -1,5 +1,5 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, untracked } from '@angular/core';
 import { LcStatusKind } from '@lionelcointot/ui-angular';
 
 export interface LcToastOptions {
@@ -42,7 +42,8 @@ export class LcToastService {
   show(options: LcToastOptions): void {
     this.nextId += 1;
     const toast: LcToast = { ...options, id: this.nextId };
-    let toasts = [...this._toasts(), toast];
+    // `untracked` : appelé depuis un `effect`, `show()` ne doit pas le rendre dépendant de la liste qu'il modifie.
+    let toasts = [...untracked(this._toasts), toast];
     while (toasts.length > MAX_VISIBLE_TOASTS) {
       const oldestNonError = toasts.findIndex((candidate) => candidate.kind !== 'error');
       const removed = oldestNonError >= 0 && oldestNonError < toasts.length - 1 ? oldestNonError : 0;
