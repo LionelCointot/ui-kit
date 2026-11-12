@@ -113,4 +113,24 @@ describe('LcThemeEditorComponent', () => {
     const fixture = await setup();
     expect(tabNames(fixture)[0]).toBe('Brand colors');
   });
+
+  // CA-K2.3
+  it('CA-K2.3 : le groupe « États » propose les quatre jetons highlight, modifiables et reportés dans le thème', async () => {
+    const fixture = await setup('advanced');
+    const tab = [...fixture.nativeElement.querySelectorAll('[role=tab]')].find((element) => (element as HTMLElement).textContent?.trim() === 'États') as HTMLElement;
+    expect(tab).toBeDefined();
+    tab.click();
+    await fixture.whenStable();
+    const labels = [...fixture.nativeElement.querySelectorAll('lc-theme-token-field')]
+      .map((element) => (element as HTMLElement).querySelector('label')?.textContent?.trim() ?? '')
+      .filter((text) => /highlight/i.test(text));
+    expect(labels.length).toBe(4);
+    const field = [...fixture.nativeElement.querySelectorAll('lc-theme-token-field')].find((element) =>
+      (element as HTMLElement).querySelector('label')?.textContent?.trim() === 'Color highlight') as HTMLElement;
+    expect(field).toBeDefined();
+    const input = field.querySelector<HTMLInputElement>('input[type=text]')!;
+    expect(input.value).toBe('#6250d6');
+    await type(fixture, input, '#6b46c1');
+    expect(fixture.componentInstance.theme().overrides['color.highlight']).toBe('#6b46c1');
+  });
 });

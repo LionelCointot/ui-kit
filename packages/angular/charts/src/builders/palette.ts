@@ -1,3 +1,4 @@
+import { roleColor, roleSymbol } from './series-roles';
 import type { LcChartSeries, LcChartTheme, LcChartValue, LcColorSlot, LcResolvedSeries } from '../types';
 
 export const LC_OTHER_SERIES_ID = '__other__';
@@ -10,7 +11,8 @@ const SLOTS: readonly LcColorSlot[] = [1, 2, 3, 4, 5, 6, 7, 8];
  */
 export function assignColorSlots(series: readonly LcChartSeries[], memory: Map<string, LcColorSlot>): ReadonlyMap<string, LcColorSlot> {
   const result = new Map<string, LcColorSlot>();
-  const current = series.filter((item) => item.id !== LC_OTHER_SERIES_ID);
+  // Une série à rôle (`colorRole`) ne consomme aucun emplacement : les autres séries gardent leur couleur.
+  const current = series.filter((item) => item.id !== LC_OTHER_SERIES_ID && !item.colorRole);
   for (const item of current) {
     if (item.colorSlot) {
       memory.set(item.id, item.colorSlot);
@@ -72,16 +74,18 @@ export function prepareSeries(
   const slots = assignColorSlots(folded, memory);
   const all = folded.map<LcResolvedSeries>((item, index) => {
     const slot = slots.get(item.id) ?? null;
+    const role = item.colorRole;
     return {
       id: item.id,
       label: item.label,
       values: item.values,
-      color: slot ? theme.categorical[slot - 1] : theme.ink.muted,
+      color: role ? roleColor(role, theme) : slot ? theme.categorical[slot - 1] : theme.ink.muted,
       slot,
+      role,
       patternIndex: index,
       stack: item.stack,
-      lineStyle: item.lineStyle,
-      symbol: item.symbol,
+      lineStyle: item.lineStyle ?? (role === 'neutral' ? 'dashed' : undefined),
+      symbol: item.symbol ?? (role ? roleSymbol(role) : undefined),
     };
   });
   return { all, visible: all.filter((item) => !hidden.has(item.id)) };

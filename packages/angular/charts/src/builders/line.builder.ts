@@ -3,8 +3,8 @@ import { LcFormatService, LcValueFormat } from '@lionelcointot/ui-angular';
 import type { LcChartTheme, LcResolvedSeries, LcValueAxis } from '../types';
 import type { ResolvedOverlays } from './annotations';
 import {
-  GRID_BOTTOM, GRID_LEFT, SERIES_STROKE, baseOption, categoryAxis, decalFor, formatFull, minMax, padValues,
-  textStyle, tooltipBase, tooltipHtml, valueAxis,
+  GRID_BOTTOM, GRID_LEFT, SERIES_STROKE, baseOption, categoryAxis, formatFull, markBorder, minMax, padValues,
+  roleIconHtml, seriesDecal, textStyle, tooltipBase, tooltipHtml, valueAxis,
 } from './shared';
 
 export interface CartesianBuildArgs {
@@ -87,6 +87,7 @@ export function axisTooltip(index: number, args: CartesianBuildArgs, valueFormat
     shape: 'line' as const,
     label: item.label,
     value: formatFull(item.values[index], valueFormat, args.format),
+    iconHtml: roleIconHtml(item),
   }));
   return tooltipHtml(args.categories[index] ?? '', rows, args.theme);
 }
@@ -106,9 +107,9 @@ function lineSeries(item: LcResolvedSeries, args: LineBuildArgs, showPoints: boo
     symbolSize: 8,
     stack: area && stacked ? (item.stack ?? 'total') : undefined,
     color: item.color,
-    itemStyle: { color: item.color, borderColor: theme.surface, borderWidth: SERIES_STROKE, decal: area ? decalFor(item.patternIndex, theme) : undefined },
-    lineStyle: { width: SERIES_STROKE, color: area && stacked ? theme.surface : item.color, type: item.lineStyle === 'dashed' && !area ? DASH_PATTERN : 'solid' },
-    areaStyle: area ? { color: item.color, opacity: stacked ? 1 : 0.25, decal: decalFor(item.patternIndex, theme) } : undefined,
+    itemStyle: { color: item.color, ...markBorder(item, theme, SERIES_STROKE), decal: area ? seriesDecal(item, theme) : undefined },
+    lineStyle: { width: SERIES_STROKE, color: area && stacked ? theme.surface : area && item.role === 'warning' ? theme.ink.primary : item.color, type: item.lineStyle === 'dashed' && !area ? DASH_PATTERN : 'solid' },
+    areaStyle: area ? { color: item.color, opacity: stacked ? 1 : 0.25, decal: seriesDecal(item, theme) } : undefined,
     emphasis: { focus: 'none' },
     endLabel: directLabels
       ? { show: true, formatter: item.label, distance: 8, ...textStyle(theme, theme.ink.primary) }

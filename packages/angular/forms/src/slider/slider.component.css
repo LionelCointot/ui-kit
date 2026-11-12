@@ -20,6 +20,7 @@
 :host(.lc-slider--success) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-success)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-success)); }
 :host(.lc-slider--warning) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-warning)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-warning)); }
 :host(.lc-slider--error) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-error)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-error)); }
+:host(.lc-slider--highlight) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-highlight)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-highlight)); }
 :host(.lc-slider--neutral) { --_fill-color: var(--lc-slider-fill-color, var(--lc-sys-color-neutral)); --_thumb-color: var(--lc-slider-thumb-color, var(--lc-sys-color-neutral)); }
 
 :host(.lc-slider--small) {

@@ -32,6 +32,11 @@
       4.5
     ],
     [
+      "sys.color.on-highlight",
+      "sys.color.highlight",
+      4.5
+    ],
+    [
       "sys.color.on-neutral",
       "sys.color.neutral",
       4.5
@@ -64,6 +69,11 @@
     [
       "sys.color.on-info-container",
       "sys.color.info-container",
+      4.5
+    ],
+    [
+      "sys.color.on-highlight-container",
+      "sys.color.highlight-container",
       4.5
     ],
     [

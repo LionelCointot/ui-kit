@@ -1,0 +1,74 @@
+/* Indicateur d'état : variables privées --_bg, --_fg ; icône 16 px, jamais de couleur seule. */
+:host {
+  --_bg: var(--lc-status-badge-neutral-bg, var(--lc-sys-color-surface-sunken));
+  --_fg: var(--lc-status-badge-neutral-fg, var(--lc-sys-color-on-surface));
+  --_font-size: var(--lc-status-badge-font-size, var(--lc-sys-font-size-sm));
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  max-width: 100%;
+  padding-block: var(--lc-sys-space-1);
+  padding-inline: var(--lc-sys-space-2);
+  border: var(--lc-sys-border-width-thin) solid transparent;
+  border-radius: var(--lc-status-badge-radius, var(--lc-sys-radius-full));
+  background: var(--_bg);
+  color: var(--_fg);
+  font-size: var(--_font-size);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: var(--lc-sys-font-line-height-normal);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+:host(.lc-status-badge--small) {
+  --_font-size: var(--lc-status-badge-font-size-sm, var(--lc-sys-font-size-xs));
+  padding-block: 0;
+}
+
+:host(.lc-status-badge--large) {
+  --_font-size: var(--lc-status-badge-font-size-lg, var(--lc-sys-font-size-md));
+  padding-inline: var(--lc-sys-space-3);
+}
+
+:host(.lc-status-badge--success) {
+  --_bg: var(--lc-status-badge-success-bg, var(--lc-sys-color-success-container));
+  --_fg: var(--lc-status-badge-success-fg, var(--lc-sys-color-on-success-container));
+}
+
+:host(.lc-status-badge--error) {
+  --_bg: var(--lc-status-badge-error-bg, var(--lc-sys-color-error-container));
+  --_fg: var(--lc-status-badge-error-fg, var(--lc-sys-color-on-error-container));
+}
+
+:host(.lc-status-badge--warning) {
+  --_bg: var(--lc-status-badge-warning-bg, var(--lc-sys-color-warning-container));
+  --_fg: var(--lc-status-badge-warning-fg, var(--lc-sys-color-on-warning-container));
+}
+
+:host(.lc-status-badge--highlight) {
+  --_bg: var(--lc-status-badge-highlight-bg, var(--lc-sys-color-highlight-container));
+  --_fg: var(--lc-status-badge-highlight-fg, var(--lc-sys-color-on-highlight-container));
+}
+
+:host(.lc-status-badge--info) {
+  --_bg: var(--lc-status-badge-info-bg, var(--lc-sys-color-info-container));
+  --_fg: var(--lc-status-badge-info-fg, var(--lc-sys-color-on-info-container));
+}
+
+.lc-status-badge__icon {
+  flex: none;
+}
+
+.lc-status-badge__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}

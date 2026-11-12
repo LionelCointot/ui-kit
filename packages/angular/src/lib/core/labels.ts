@@ -27,6 +27,21 @@ export interface LcLabels {
   readonly hidePassword: string;
   readonly unallocated: string;
   readonly truncatedRows: (count: number) => string;
+  /** Jauge (`lc-meter`) : texte lu quand la valeur n'est pas mesurée. */
+  readonly noValue: string;
+  /** Pagination (`lc-paginator`). */
+  readonly pagination: string;
+  readonly previousPage: string;
+  readonly nextPage: string;
+  readonly pageSize: string;
+  readonly pageRange: (first: number, last: number, total: number) => string;
+  readonly pageStatus: (page: number, pageCount: number) => string;
+  /** Bloc de code (`lc-code-block`). */
+  readonly copy: string;
+  readonly copied: string;
+  readonly copyFailed: string;
+  readonly codeTruncated: (count: number) => string;
+  /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
   /** Liste filtrable (`lc-combobox`) et champs géographiques. */
   readonly comboboxNoResults: string;
   readonly comboboxResultsCount: (count: number) => string;
@@ -59,6 +74,7 @@ export interface LcThemePreviewSamples {
   readonly success: string;
   readonly warning: string;
   readonly error: string;
+  readonly highlight: string;
   readonly neutral: string;
   readonly text: string;
   readonly textValue: string;
@@ -265,7 +281,7 @@ const THEME_BUILDER_FR: LcThemeBuilderLabels = {
   previewChart: 'Graphique',
   previewNavigation: 'Navigation',
   previewSamples: {
-    primary: 'Principal', secondary: 'Secondaire', success: 'Succès', warning: 'Alerte', error: 'Erreur', neutral: 'Neutre',
+    primary: 'Principal', secondary: 'Secondaire', success: 'Succès', warning: 'Alerte', error: 'Erreur', highlight: 'Relief', neutral: 'Neutre',
     text: 'Champ texte', textValue: 'Valeur saisie', number: 'Montant', select: 'Liste', optionOne: 'Première option', optionTwo: 'Seconde option',
     checkbox: 'Case à cocher', switch: 'Interrupteur', invalid: 'Champ invalide', invalidMessage: 'Ce champ est obligatoire.',
     alertInfo: 'Information', alertSuccess: 'Enregistré', alertWarning: 'À vérifier', alertError: 'Échec',
@@ -303,6 +319,17 @@ export const LC_LABELS_FR: LcLabels = {
   hidePassword: 'Masquer le mot de passe',
   unallocated: 'Non réparti',
   truncatedRows: (count) => `${count} premières lignes affichées`,
+  noValue: 'Non mesuré',
+  pagination: 'Pagination',
+  previousPage: 'Précédent',
+  nextPage: 'Suivant',
+  pageSize: 'Éléments par page',
+  pageRange: (first, last, total) => (total === 0 ? '0 sur 0' : `${first} à ${last} sur ${total}`),
+  pageStatus: (page, pageCount) => `Page ${page} sur ${pageCount}`,
+  copy: 'Copier',
+  copied: 'Copié',
+  copyFailed: 'Copie impossible',
+  codeTruncated: (count) => `Texte tronqué aux ${count} premiers caractères`,
   comboboxNoResults: 'Aucun résultat',
   comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
   comboboxSearching: 'Recherche en cours',
@@ -395,7 +422,7 @@ const THEME_BUILDER_EN: LcThemeBuilderLabels = {
   previewChart: 'Chart',
   previewNavigation: 'Navigation',
   previewSamples: {
-    primary: 'Primary', secondary: 'Secondary', success: 'Success', warning: 'Warning', error: 'Error', neutral: 'Neutral',
+    primary: 'Primary', secondary: 'Secondary', success: 'Success', warning: 'Warning', error: 'Error', highlight: 'Highlight', neutral: 'Neutral',
     text: 'Text field', textValue: 'Typed value', number: 'Amount', select: 'List', optionOne: 'First option', optionTwo: 'Second option',
     checkbox: 'Checkbox', switch: 'Switch', invalid: 'Invalid field', invalidMessage: 'This field is required.',
     alertInfo: 'Information', alertSuccess: 'Saved', alertWarning: 'Check this', alertError: 'Failed',
@@ -433,6 +460,17 @@ export const LC_LABELS_EN: LcLabels = {
   hidePassword: 'Hide password',
   unallocated: 'Unallocated',
   truncatedRows: (count) => `First ${count} rows shown`,
+  noValue: 'Not measured',
+  pagination: 'Pagination',
+  previousPage: 'Previous',
+  nextPage: 'Next',
+  pageSize: 'Items per page',
+  pageRange: (first, last, total) => (total === 0 ? '0 of 0' : `${first} to ${last} of ${total}`),
+  pageStatus: (page, pageCount) => `Page ${page} of ${pageCount}`,
+  copy: 'Copy',
+  copied: 'Copied',
+  copyFailed: 'Copy failed',
+  codeTruncated: (count) => `Text truncated to the first ${count} characters`,
   comboboxNoResults: 'No results',
   comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
   comboboxSearching: 'Searching',

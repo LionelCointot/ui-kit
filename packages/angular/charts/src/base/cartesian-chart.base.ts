@@ -2,6 +2,7 @@ import { Directive, booleanAttribute, computed, inject, input, isDevMode, model,
 import { LC_LABELS, LcFormatService, LcValueFormat } from '@lionelcointot/ui-angular';
 import type { EChartsCoreOption } from '../echarts-registry';
 import { prepareSeries } from '../builders/palette';
+import { LC_CHART_ROLE_ICONS } from '../builders/series-roles';
 import type { CartesianBuildArgs } from '../builders/line.builder';
 import { annualTicks, categoryLabels } from '../builders/shared';
 import type { ResolvedOverlays } from '../builders/annotations';
@@ -74,6 +75,7 @@ export abstract class LcCartesianChartBase {
   protected readonly legend = computed<readonly LcLegendItem[]>(() =>
     this.prepared().all.map((item) => ({
       id: item.id, label: item.label, color: item.color, shape: this.legendShape, hidden: this.hidden().has(item.id),
+      icon: item.role ? LC_CHART_ROLE_ICONS[item.role] : undefined,
       dashed: item.lineStyle === 'dashed', symbol: item.symbol,
     })));
 

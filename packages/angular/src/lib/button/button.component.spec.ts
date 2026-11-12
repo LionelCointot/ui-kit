@@ -27,6 +27,15 @@ class ButtonHostComponent {
   readonly linkClicks = signal(0);
 }
 
+@Component({
+  imports: [LcButtonComponent],
+  template: `<button lcButton themeColor="highlight" [fillMode]="fillMode()" [disabled]="disabled()">Relief</button>`,
+})
+class HighlightButtonHostComponent {
+  readonly fillMode = signal<'solid' | 'outline' | 'flat'>('solid');
+  readonly disabled = signal(false);
+}
+
 describe('LcButtonComponent', () => {
   async function setup() {
     const fixture = TestBed.createComponent(ButtonHostComponent);
@@ -45,6 +54,21 @@ describe('LcButtonComponent', () => {
     await fixture.whenStable();
     expect(save.classList).toContain('lc-button--error');
     expect(save.classList).not.toContain('lc-button--primary');
+  });
+
+  // CA-K2.2
+  it.each(['solid', 'outline', 'flat'] as const)('CA-K2.2 : themeColor="highlight" avec le remplissage « %s » (bouton natif, état désactivé conservé)', async (fillMode) => {
+    const fixture = TestBed.createComponent(HighlightButtonHostComponent);
+    fixture.componentInstance.fillMode.set(fillMode);
+    await fixture.whenStable();
+    const button = (fixture.nativeElement as HTMLElement).querySelector('button')!;
+    expect(button.classList).toContain('lc-button--highlight');
+    expect(button.classList).toContain(`lc-button--${fillMode}`);
+    expect(button.classList).not.toContain('lc-button--primary');
+    fixture.componentInstance.disabled.set(true);
+    await fixture.whenStable();
+    expect(button.disabled).toBe(true);
+    expect(button.classList).toContain('lc-button--highlight');
   });
 
   it('suit les valeurs par défaut globales de provideLcUiKit', async () => {

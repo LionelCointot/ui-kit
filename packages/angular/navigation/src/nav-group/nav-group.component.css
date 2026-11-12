@@ -1,0 +1,80 @@
+:host {
+  display: block;
+}
+
+.lc-nav-group__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+}
+
+.lc-nav-group__title {
+  margin: 0;
+  padding: var(--lc-nav-group-padding, var(--lc-sys-space-2) var(--lc-sys-space-3));
+  color: var(--lc-nav-group-color, var(--lc-sys-color-on-surface-muted));
+  font-size: var(--lc-nav-group-font-size, var(--lc-sys-font-size-sm));
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: var(--lc-sys-font-line-height-normal);
+}
+
+.lc-nav-group__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-2);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--lc-sys-control-height-md);
+  border: 0;
+  border-radius: var(--lc-sys-radius-md);
+  background: transparent;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.lc-nav-group__toggle:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+.lc-nav-group__toggle:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-nav-group__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+}
+
+.lc-nav-group__items[hidden] {
+  display: none;
+}
+
+/* Mode réduit : le titre reste dans l'arbre d'accessibilité, un séparateur fin le remplace. */
+:host(.lc-nav-group--list-collapsed) {
+  padding-block-start: var(--lc-sys-space-2);
+  border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+:host(.lc-nav-group--list-collapsed:first-child) {
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+:host(.lc-nav-group--list-collapsed) .lc-nav-group__title {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (forced-colors: active) {
+  :host(.lc-nav-group--list-collapsed) {
+    border-color: CanvasText;
+  }
+}

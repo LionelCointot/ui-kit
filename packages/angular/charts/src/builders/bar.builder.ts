@@ -2,8 +2,8 @@ import type { EChartsCoreOption } from 'echarts/core';
 import { LcValueFormat } from '@lionelcointot/ui-angular';
 import type { LcChartTheme, LcResolvedSeries } from '../types';
 import {
-  BAR_RADIUS, GRID_BOTTOM, GRID_LEFT, baseOption, categoryAxis, decalFor, formatFull, formatTick, padValues,
-  textStyle, tooltipBase, tooltipHtml, valueAxis,
+  BAR_RADIUS, GRID_BOTTOM, GRID_LEFT, baseOption, categoryAxis, formatFull, formatTick, padValues,
+  markBorder, roleIconHtml, seriesDecal, textStyle, tooltipBase, tooltipHtml, valueAxis,
 } from './shared';
 import type { CartesianBuildArgs } from './line.builder';
 
@@ -55,7 +55,7 @@ export function buildBarOption(args: BarBuildArgs): EChartsCoreOption {
       value,
       itemStyle: { borderRadius: radius(value, stacked ? endOfStackIndex(series, categoryIndex, item.stack, (value ?? 0) < 0) === seriesIndex : true, horizontal) },
     })),
-    itemStyle: { color: item.color, borderColor: theme.surface, borderWidth: 1, decal: decalFor(item.patternIndex, theme) },
+    itemStyle: { color: item.color, ...markBorder(item, theme), decal: seriesDecal(item, theme) },
     emphasis: { focus: 'none', itemStyle: { opacity: 0.85 } },
   }));
 
@@ -101,7 +101,7 @@ export function buildBarOption(args: BarBuildArgs): EChartsCoreOption {
 export function barTooltip(seriesIndex: number, categoryIndex: number, args: BarBuildArgs, valueFormat: LcValueFormat): string {
   const item = args.series[seriesIndex];
   if (!item) return '';
-  const row = { color: item.color, shape: 'rect' as const, label: item.label, value: formatFull(item.values[categoryIndex], valueFormat, args.format) };
+  const row = { color: item.color, shape: 'rect' as const, label: item.label, value: formatFull(item.values[categoryIndex], valueFormat, args.format), iconHtml: roleIconHtml(item) };
   const footer = args.stacked
     ? { label: args.totalLabel, value: formatFull(categoryTotals(args.series, args.categories.length)[categoryIndex], valueFormat, args.format) }
     : undefined;

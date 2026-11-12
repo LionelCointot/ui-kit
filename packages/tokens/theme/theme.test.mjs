@@ -120,11 +120,23 @@ test('un thème sans surcharge est accepté et identique à sa base', () => {
   for (const [path, value] of Object.entries(baseValues('default'))) assert.equal(resolved[cssVarOf(path)], value);
 });
 
-test('contraste : ratios connus et 26 paires des thèmes de base', () => {
+// CA-K2.1 : les deux paires du rôle highlight (texte sur plein, texte sur conteneur), seuil 4,5:1.
+const HIGHLIGHT_PAIRS = [
+  ['color.on-highlight', 'color.highlight'],
+  ['color.on-highlight-container', 'color.highlight-container'],
+];
+
+test('contraste : ratios connus et paires des thèmes de base (dont highlight)', () => {
   assert.equal(Math.round(contrastRatio('#000000', '#ffffff') * 100) / 100, 21);
   for (const base of ['default', 'dark']) {
     const results = checkContrast(resolveTheme(theme({}, { extends: base })));
-    assert.equal(results.length, 26);
+    assert.equal(results.length, 28, `${base} : 26 paires historiques + 2 paires highlight`);
+    for (const [fg, bg] of HIGHLIGHT_PAIRS) {
+      const pair = results.find((result) => result.fg === fg && result.bg === bg);
+      assert.ok(pair, `${base} : paire ${fg} / ${bg} absente`);
+      assert.equal(pair.required, 4.5);
+      assert.ok(pair.pass && pair.ratio >= 4.5, `${base} : ${fg} / ${bg} = ${pair.ratio}`);
+    }
     assert.ok(results.every((result) => result.pass), `${base} : ${results.filter((r) => !r.pass).map((r) => r.fg)}`);
   }
   const weak = checkContrast(resolveTheme(theme({ 'color.on-primary': '#ffffff', 'color.primary': '#aaaaaa' })));
@@ -137,7 +149,9 @@ test('contraste : ratios connus et 26 paires des thèmes de base', () => {
 
 test('contraste : une couleur translucide est ignorée', () => {
   const resolved = resolveTheme(theme({ 'color.primary': '#0b5f5acc' }));
-  assert.equal(checkContrast(resolved).length, 24, "primary figure dans deux paires");
+  const base = checkContrast(resolveTheme(theme())).length;
+  assert.equal(checkContrast(resolved).length, base - 2, "primary figure dans deux paires, ignorées une fois translucide");
+  assert.ok(!checkContrast(resolved).some((pair) => pair.fg === 'color.primary' || pair.bg === 'color.primary'));
 });
 
 test('DTCG : export, aller-retour et refus des jetons non éditables', () => {

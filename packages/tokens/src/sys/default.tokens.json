@@ -97,6 +97,22 @@
         "$value": "{ref.color.blue.700}",
         "$type": "color"
       },
+      "highlight": {
+        "$value": "{ref.color.purple.550}",
+        "$type": "color"
+      },
+      "on-highlight": {
+        "$value": "{ref.color.neutral.0}",
+        "$type": "color"
+      },
+      "highlight-container": {
+        "$value": "{ref.color.purple.100}",
+        "$type": "color"
+      },
+      "on-highlight-container": {
+        "$value": "{ref.color.purple.700}",
+        "$type": "color"
+      },
       "neutral": {
         "$value": "{ref.color.neutral.600}",
         "$type": "color"
@@ -454,6 +470,32 @@
         },
         "8": {
           "$value": "{ref.color.chart.light.8}",
+          "$type": "color"
+        }
+      },
+      "role": {
+        "success": {
+          "$value": "{ref.color.chart.light.6}",
+          "$type": "color"
+        },
+        "warning": {
+          "$value": "{ref.color.chart.light.4}",
+          "$type": "color"
+        },
+        "error": {
+          "$value": "{ref.color.chart.light.8}",
+          "$type": "color"
+        },
+        "info": {
+          "$value": "{ref.color.chart.light.1}",
+          "$type": "color"
+        },
+        "highlight": {
+          "$value": "{ref.color.chart.light.7}",
+          "$type": "color"
+        },
+        "neutral": {
+          "$value": "#898781",
           "$type": "color"
         }
       },

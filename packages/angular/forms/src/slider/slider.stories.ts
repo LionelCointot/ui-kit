@@ -9,7 +9,7 @@ const meta: Meta<LcSliderComponent> = {
   decorators: [moduleMetadata({ imports: [LcSliderComponent, LcFormFieldComponent] })],
   argTypes: {
     size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
-    themeColor: { control: 'select', options: ['primary', 'secondary', 'success', 'warning', 'error', 'neutral'] },
+    themeColor: { control: 'select', options: ['primary', 'secondary', 'success', 'warning', 'error', 'highlight', 'neutral'] },
     showValue: { control: 'inline-radio', options: ['none', 'label', 'input'] },
   },
   args: { min: 0, max: 100, step: 5, unit: '%', decimals: 0, showValue: 'label', disabled: false, readonly: false },

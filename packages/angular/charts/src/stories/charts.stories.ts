@@ -123,3 +123,39 @@ export const MensuelSurQuaranteAns: Story = {
     template: `<lc-line-chart title="Patrimoine net sur 40 ans" [data]="data" [yAxis]="{ format: 'money' }" />`,
   }),
 };
+
+const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const byRole: LcCartesianData = {
+  categories: days,
+  series: [
+    { id: 'ok', label: 'Réussies', values: [42, 45, 39, 48, 44, 20, 18], colorRole: 'success', stack: 'runs' },
+    { id: 'flaky', label: 'Intermittentes', values: [3, 2, 5, 1, 4, 2, 1], colorRole: 'highlight', stack: 'runs' },
+    { id: 'slow', label: 'Dégradées', values: [2, 3, 2, 4, 2, 1, 1], colorRole: 'warning', stack: 'runs' },
+    { id: 'ko', label: 'En échec', values: [1, 0, 4, 2, 1, 0, 2], colorRole: 'error', stack: 'runs' },
+    { id: 'skipped', label: 'Ignorées', values: [2, 2, 1, 1, 3, 4, 4], colorRole: 'neutral', stack: 'runs' },
+  ],
+};
+
+/** Couleur par rôle (`colorRole`) : couleur du thème, décalque et icône propres au rôle, indépendants du rang. */
+export const BarresParRole: Story = {
+  render: () => ({
+    props: { data: byRole },
+    template: `<lc-bar-chart title="Volumes par état" description="Par jour de la semaine" [data]="data" [stacked]="true" />`,
+  }),
+};
+
+/** Les décalques de rôle restent actifs même avec `provideLcCharts({ patterns: 'never' })`. */
+export const AiresParRole: Story = {
+  render: () => ({
+    props: { data: byRole },
+    template: `<lc-area-chart title="Volumes par état (aires)" [data]="data" [stacked]="true" />`,
+  }),
+};
+
+/** `yAxis.format: 'integer'` : les graduations restent entières (pas minimal de 1), même sur de petits comptes. */
+export const AxeEnEntiers: Story = {
+  render: () => ({
+    props: { data: { categories: days, series: [{ id: 'ko', label: 'En échec', values: [1, 0, 2, 1, 0, 1, 2] }] } satisfies LcCartesianData },
+    template: `<lc-bar-chart title="Échecs par jour" [data]="data" [yAxis]="{ format: 'integer' }" />`,
+  }),
+};
