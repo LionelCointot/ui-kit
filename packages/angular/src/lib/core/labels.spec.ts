@@ -27,3 +27,25 @@ describe('libellés du fil d\'étapes v2 (CA-11, CA-14)', () => {
     expect(LC_LABELS_EN.stepOptional).toBe('Optional');
   });
 });
+
+describe('libellés du journal (lc-log-view)', () => {
+  it('français', () => {
+    expect(LC_LABELS_FR.logCopy).toBe('Copier le journal');
+    expect(LC_LABELS_FR.logResume).toBe('Revenir en bas');
+    expect(LC_LABELS_FR.logEmpty).toBe('Aucune sortie pour l\'instant.');
+    expect(LC_LABELS_FR.logLevelError).toBe('err');
+    expect(LC_LABELS_FR.logLevelInfo).toBe('info');
+    expect(LC_LABELS_FR.logTruncated(1)).toBe('1 ligne plus ancienne masquée');
+    expect(LC_LABELS_FR.logTruncated(12)).toBe('12 lignes plus anciennes masquées');
+  });
+
+  it('anglais', () => {
+    expect(LC_LABELS_EN.logCopy).toBe('Copy the log');
+    expect(LC_LABELS_EN.logResume).toBe('Back to bottom');
+    expect(LC_LABELS_EN.logEmpty).toBe('No output yet.');
+    expect(LC_LABELS_EN.logLevelError).toBe('err');
+    expect(LC_LABELS_EN.logLevelInfo).toBe('info');
+    expect(LC_LABELS_EN.logTruncated(1)).toBe('1 older line hidden');
+    expect(LC_LABELS_EN.logTruncated(12)).toBe('12 older lines hidden');
+  });
+});

@@ -1,5 +1,5 @@
 /*
- * API publique du point d'entrée @lionelcointot/ui-angular/layout : mise en page.
+ * API publique du point d'entrée @lionelcointot/ui-angular/layout : mise en page, ligne dépliable.
  */
 export type { LcResponsiveNumber } from './space';
 export * from './stack/stack.component';
@@ -10,3 +10,4 @@ export * from './card/card-header.component';
 export * from './divider/divider.component';
 export * from './page/page.component';
 export * from './app-shell/app-shell.component';
+export * from './disclosure/disclosure.component';

@@ -1,5 +1,5 @@
 /*
- * API publique du point d'entrée @lionelcointot/ui-angular/data : tableau, tableau hiérarchique, pagination, bloc de code, liste de définitions, carte indicateur, barre de durées.
+ * API publique du point d'entrée @lionelcointot/ui-angular/data : tableau, tableau hiérarchique, pagination, bloc de code, liste de définitions, carte indicateur, barre de durées, journal.
  */
 export * from './table/table-model';
 export * from './table/cell.directive';
@@ -12,3 +12,4 @@ export * from './timeline-bar/timeline-bar.component';
 export * from './paginator/page-slice';
 export * from './paginator/paginator.component';
 export * from './code-block/code-block.component';
+export * from './log-view/log-view.component';

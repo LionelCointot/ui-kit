@@ -1,0 +1,94 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  block-size: 100%;
+  max-block-size: inherit;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-inline-end: 0;
+  border-start-start-radius: var(--lc-drawer-radius, var(--lc-sys-radius-lg));
+  border-end-start-radius: var(--lc-drawer-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-drawer-background, var(--lc-sys-color-surface-raised));
+  box-shadow: var(--lc-sys-shadow-3);
+  color: var(--lc-sys-color-on-surface);
+}
+
+/* Tiroir ancré au bord de départ : filet et arrondi du côté opposé. */
+:host(.lc-drawer--start) {
+  border-inline-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-inline-start: 0;
+  border-radius: 0;
+  border-start-end-radius: var(--lc-drawer-radius, var(--lc-sys-radius-lg));
+  border-end-end-radius: var(--lc-drawer-radius, var(--lc-sys-radius-lg));
+}
+
+.lc-drawer__header {
+  position: sticky;
+  inset-block-start: 0;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-3);
+  padding: var(--lc-sys-space-4) var(--lc-sys-space-6);
+  border-block-end: var(--lc-sys-border-width-thin) solid transparent;
+}
+
+/* Ombre interne sous l'en-tête quand le corps a défilé (le filet reste visible sans l'ombre). */
+.lc-drawer__header--scrolled {
+  border-block-end-color: var(--lc-sys-color-border);
+  box-shadow: var(--lc-sys-shadow-1);
+}
+
+.lc-drawer__title {
+  margin: 0;
+  font-size: var(--lc-sys-font-size-xl);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  line-height: var(--lc-sys-font-line-height-tight);
+}
+
+.lc-drawer__close {
+  flex: none;
+}
+
+.lc-drawer__content {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+  padding: var(--lc-sys-space-4) var(--lc-sys-space-6);
+}
+
+.lc-drawer__actions {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-6) var(--lc-sys-space-5);
+  border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-drawer__actions:empty {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  :host,
+  :host(.lc-drawer--start) {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+
+  :host(.lc-drawer--start) {
+    border-color: CanvasText;
+  }
+}

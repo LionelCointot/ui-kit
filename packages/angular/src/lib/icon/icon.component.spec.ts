@@ -31,6 +31,15 @@ describe('LcIconComponent', () => {
     },
   );
 
+  it.each(['play', 'square', 'circle-dashed', 'clock'])('CA-11 : lc-icon résout l\'icône d\'état « %s »', async (name) => {
+    const fixture = TestBed.createComponent(IconHostComponent);
+    fixture.componentInstance.name.set(name);
+    await fixture.whenStable();
+    const icon = (fixture.nativeElement as HTMLElement).querySelector('lc-icon')!;
+    expect(LC_DEFAULT_ICONS[name]).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*>.+<\/svg>$/);
+    expect(icon.querySelector('svg')).not.toBeNull();
+  });
+
   it('porte role="img" et aria-label avec un libellé', async () => {
     const fixture = TestBed.createComponent(IconHostComponent);
     fixture.componentInstance.label.set('Validé');

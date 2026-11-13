@@ -1,0 +1,118 @@
+:host {
+  display: block;
+  color: var(--lc-sys-color-on-surface);
+}
+
+:host(.lc-disclosure--bordered) {
+  border-block: var(--lc-sys-border-width-thin) solid var(--lc-disclosure-border, var(--lc-sys-color-border));
+}
+
+.lc-disclosure__header {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-disclosure__heading {
+  flex: 1;
+  min-inline-size: 0;
+  margin: 0;
+  font: inherit;
+}
+
+.lc-disclosure__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--lc-sys-control-height-md);
+  margin: 0;
+  padding-block: var(--lc-sys-space-1);
+  padding-inline: var(--lc-sys-space-2);
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .lc-disclosure__summary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--lc-sys-color-on-surface) calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
+}
+
+.lc-disclosure__summary:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
+}
+
+.lc-disclosure__summary:disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-disclosure__summary-content {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.lc-disclosure__chevron {
+  flex: none;
+  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+:host(.lc-disclosure--expanded) .lc-disclosure__chevron {
+  transform: rotate(90deg);
+}
+
+.lc-disclosure__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-disclosure__actions:empty {
+  display: none;
+}
+
+.lc-disclosure__region {
+  padding-inline: var(--lc-sys-space-2);
+  padding-block-end: var(--lc-sys-space-3);
+  animation: lc-disclosure-open var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+.lc-disclosure__region[hidden] {
+  display: none;
+}
+
+@keyframes lc-disclosure-open {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-disclosure__chevron {
+    transition: none;
+  }
+
+  .lc-disclosure__region {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-disclosure__chevron {
+    color: ButtonText;
+  }
+
+  :host(.lc-disclosure--bordered) {
+    border-color: CanvasText;
+  }
+}
