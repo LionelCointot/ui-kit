@@ -30,6 +30,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 
 ## Workflow (spec d'abord, code ensuite : skill `delivery-workflow`)
 La session principale orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (sonnet par défaut ; haiku : recherche, tâches mécaniques ; opus seulement sur accord de l'utilisateur).
+Mode **`ponytail`** (skill `ponytail`, niveau full, recopié dans `.claude/skills/ponytail/`) actif par défaut pour la session principale et tous les sous-agents sauf `novice-user` : le changement le plus petit qui résout complètement la tâche, des rendus courts, moins de tokens. Exception : le développeur n'écrit aucun test (la QA les écrit).
 1. Cadrage, puis spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), validée par l'utilisateur avant de coder ; choix d'architecture dans `docs/adr/` (skill `adr`).
 2. Design : `ui-ux-designer` conçoit avec `impeccable` (`shape` avant, `critique` et `audit` après) ou déclare « pas d'impact UI ». Nouvel écran ou refonte : utilisateur principal confirmé dans `PRODUCT.md`, 2 ou 3 directions maquettées, **l'utilisateur choisit** avant la spec ; `novice-user` teste le brief, puis l'écran réel.
 3. Implémentation : `senior-developer` (code de production, aucun test), une tâche de la spec par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
@@ -68,7 +69,7 @@ La session principale orchestre et vérifie ; elle délègue aux agents et chois
 - Conception : `web-architecture`, `api-design`, `frontend-guidelines`
 - Code : `clean-code`, `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici)
 - Qualité : `review-checklist`, `security-checklist`, `test-strategy`
-- Outils : `graphify` (graphe du code), `impeccable` (design front : `/impeccable init`, `shape`, `critique`, `audit`, `polish`)
+- Outils : `graphify` (graphe du code), `impeccable` (design front : `/impeccable init`, `shape`, `critique`, `audit`, `polish`) ; `ponytail` (mode développeur senior économe, actif par défaut)
 - Global utile : `dataviz` (règles et validation de palette des graphiques)
 
 ## Outils

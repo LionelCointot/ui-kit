@@ -26,7 +26,7 @@ Choisir le plus petit modèle qui tient la tâche ; remonter d'un cran après un
 Recopier dans **chaque** prompt de sous-agent qui explore du code : « Si `graphify-out/graph.json` existe, lance `graphify query "<question>"` (ou `graphify path "A" "B"`, `graphify explain "X"`) avant tout grep ou lecture de fichier ; ne lis ensuite que les lignes localisées. Après modification du code, lance `graphify update .`. » Sans graphe (outil absent), grep et lecture directe.
 
 ## Contrat de passage de relais
-**Entrée (fiche de tâche, rédigée par l'orchestrateur, ≤ 15 lignes)** : objectif ; spec et critères visés (`CA-n`) ; périmètre (fichiers/dossiers, hors périmètre) ; contraintes (ADR, conventions) ; rendu attendu ; règle graphify ci-dessus. Pas d'historique de conversation : le sous-agent part de zéro.
+**Entrée (fiche de tâche, rédigée par l'orchestrateur, ≤ 15 lignes)** : objectif ; spec et critères visés (`CA-n`) ; périmètre (fichiers/dossiers, hors périmètre) ; contraintes (ADR, conventions) ; rendu attendu ; règle graphify ci-dessus ; « Applique le skill `ponytail` (niveau full, `.claude/skills/ponytail/SKILL.md`) » (sauf pour `novice-user`). Pas d'historique de conversation : le sous-agent part de zéro.
 
 **Sortie (tout rôle)** : commence par une ligne de statut (`FAIT` | `BLOQUÉ` | `GO` | `NO-GO` | `PAS D'IMPACT UI`), puis le détail défini dans l'agent, puis **Questions pour l'utilisateur** (ou « aucune »). Preuves = sorties réelles de commandes, jamais « les tests passent » sans sortie.
 

@@ -1,0 +1,3 @@
+Origine : https://github.com/DietrichGebert/ponytail (MIT), skills/ponytail/SKILL.md
+Version : 5.3.3, commit 96608e078b2d5ea607c5c3b8b5a54d1c1fba6846 (2026-10-29)
+Recopié tel quel ; mise à jour : scripts/update-tools.sh. Hooks du plugin non installés.
