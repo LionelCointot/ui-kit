@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
+  afterRenderEffect,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChildren,
+} from '@angular/core';
 import { LC_LABELS, LcSkeletonComponent } from '@lionelcointot/ui-angular';
 
 export type LcTimelineColorSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 'neutral';
@@ -14,6 +27,18 @@ export interface LcTimelineSegment {
   readonly colorSlot: LcTimelineColorSlot;
   /** Repère de forme de la légende (défaut : rond). */
   readonly marker?: LcTimelineMarker;
+}
+
+export interface LcTimelineTick {
+  /** Position sur la piste, dans la même unité que les poids (de 0 au total des poids dessinés). Hors de cet intervalle ou non finie : graduation ignorée. */
+  readonly at: number;
+  readonly label: string;
+}
+
+interface DrawnTick {
+  readonly label: string;
+  /** Part de la piste (0 à 1) où se trouve la graduation. */
+  readonly position: number;
 }
 
 interface DrawnSegment {
@@ -32,6 +57,8 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
  * Barre de segments contigus de largeur proportionnelle à une durée (HTML et CSS, sans ECharts).
  * Chaque segment a une couleur de rôle et un motif ; la légende sous la barre porte un repère de forme et le libellé
  * (masquée sous `minLabelShare`). La barre est une image (`role="img"`) dont `description` est le texte équivalent complet.
+ * `ticks` (facultatif) dessine sous la piste des graduations courtes avec leur libellé, purement décoratives (`aria-hidden`) :
+ * le texte équivalent reste `description`. Un libellé qui chevaucherait le précédent est masqué visuellement (la graduation reste).
  * Ne pas confondre avec `lc-segmented-bar` (graphiques : part d'un tout).
  */
 @Component({
@@ -48,6 +75,21 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
           <span class="lc-timeline-bar__segment" [class]="'lc-timeline-bar__segment ' + item.swatchClass" [style.flex-grow]="item.segment.weight"></span>
         }
       </div>
+      @if (tickMarks().length > 0) {
+        <div class="lc-timeline-bar__ticks" aria-hidden="true">
+          @for (tick of tickMarks(); track $index) {
+            <span
+              class="lc-timeline-bar__tick"
+              [class.lc-timeline-bar__tick--start]="tick.position === 0"
+              [class.lc-timeline-bar__tick--end]="tick.position === 1"
+              [style.inset-inline-start.%]="tick.position * 100"
+            >
+              <span class="lc-timeline-bar__tick-mark"></span>
+              <span #tickLabel class="lc-timeline-bar__tick-label" [class.lc-timeline-bar__tick-label--hidden]="hiddenTicks().has($index)">{{ tick.label }}</span>
+            </span>
+          }
+        </div>
+      }
       @if (startLabel() || endLabel()) {
         <div class="lc-timeline-bar__bounds">
           <span>{{ startLabel() }}</span>
@@ -95,6 +137,15 @@ export class LcTimelineBarComponent {
   /** Résultat périmé : barre et repères atténués à 60 % (les textes gardent leur contraste). */
   readonly stale = input(false, { transform: booleanAttribute });
   readonly loading = input(false, { transform: booleanAttribute });
+  /** Graduations sous la piste (`at` dans l'unité des poids, de 0 au total) ; décoratives, `description` reste le texte équivalent. */
+  readonly ticks = input<readonly LcTimelineTick[]>([]);
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly tickLabels = viewChildren<ElementRef<HTMLElement>>('tickLabel');
+  private readonly hostWidth = signal(0);
+  /** Rangs (dans `tickMarks`) des libellés masqués parce qu'ils chevaucheraient un libellé précédent. */
+  protected readonly hiddenTicks = signal<ReadonlySet<number>>(new Set());
 
   protected readonly drawn = computed<readonly DrawnSegment[]>(() => {
     const visible = this.segments().filter((segment) => Number.isFinite(segment.weight) && segment.weight > 0);
@@ -105,6 +156,37 @@ export class LcTimelineBarComponent {
       swatchClass: `lc-timeline-bar__swatch lc-timeline-bar__swatch--${lcTimelinePattern(segment.colorSlot)} lc-timeline-bar__swatch--slot-${segment.colorSlot}`,
     }));
   });
+
+  protected readonly tickMarks = computed<readonly DrawnTick[]>(() => {
+    const total = this.drawn().reduce((sum, item) => sum + item.segment.weight, 0);
+    return this.ticks()
+      .filter((tick) => Number.isFinite(tick.at) && tick.at >= 0 && tick.at <= total)
+      .map((tick) => ({ label: tick.label, position: tick.at / total }))
+      .sort((a, b) => a.position - b.position);
+  });
+
+  constructor() {
+    // Mesure : la largeur de l'hôte change la place disponible, donc les chevauchements possibles.
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver((entries) => this.hostWidth.set(entries[0]?.contentRect.width ?? 0));
+      observer.observe(this.host.nativeElement);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    });
+    afterRenderEffect(() => {
+      this.hostWidth();
+      this.tickMarks();
+      const kept: DOMRect[] = [];
+      const hidden = new Set<number>();
+      this.tickLabels().forEach((label, index) => {
+        const rect = label.nativeElement.getBoundingClientRect();
+        if (kept.some((other) => rect.left < other.right && other.left < rect.right)) hidden.add(index);
+        else kept.push(rect);
+      });
+      const current = this.hiddenTicks();
+      if (hidden.size !== current.size || [...hidden].some((index) => !current.has(index))) this.hiddenTicks.set(hidden);
+    });
+  }
 
   protected readonly legend = computed(() => this.drawn().filter((item) => item.share >= this.minLabelShare()));
 }

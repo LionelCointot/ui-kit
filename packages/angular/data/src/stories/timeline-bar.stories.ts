@@ -1,10 +1,18 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcTimelineBarComponent, type LcTimelineSegment } from '../timeline-bar/timeline-bar.component';
+import { LcTimelineBarComponent, type LcTimelineSegment, type LcTimelineTick } from '../timeline-bar/timeline-bar.component';
 
 const PHASES: LcTimelineSegment[] = [
   { id: 'a', weight: 60, label: 'Phase A', colorSlot: 1, marker: 'circle' },
   { id: 'b', weight: 24, label: 'Phase B', colorSlot: 2, marker: 'square' },
   { id: 'c', weight: 36, label: 'Phase C', colorSlot: 1, marker: 'circle' },
+];
+
+const GRADUATIONS: LcTimelineTick[] = [
+  { at: 0, label: '0' },
+  { at: 24, label: '2 ans' },
+  { at: 60, label: '5 ans' },
+  { at: 96, label: '8 ans' },
+  { at: 120, label: '10 ans' },
 ];
 
 const meta: Meta<LcTimelineBarComponent> = {
@@ -20,12 +28,13 @@ const meta: Meta<LcTimelineBarComponent> = {
     minLabelShare: 0.06,
     stale: false,
     loading: false,
+    ticks: [],
   },
   render: (args) => ({
     props: args,
     template: `<div style="max-width:40rem"><lc-timeline-bar [segments]="segments" [label]="label" [description]="description"
       [startLabel]="startLabel" [endLabel]="endLabel" [minLabelShare]="minLabelShare" [emptyMessage]="emptyMessage"
-      [stale]="stale" [loading]="loading" /></div>`,
+      [stale]="stale" [loading]="loading" [ticks]="ticks" /></div>`,
   }),
 };
 export default meta;
@@ -67,3 +76,18 @@ export const Perimee: Story = { args: { stale: true } };
 export const Chargement: Story = { args: { loading: true } };
 
 export const Vide: Story = { args: { segments: [], emptyMessage: 'Aucune phase à afficher.' } };
+
+/** Graduations décoratives sous la piste (`at` dans l'unité des poids) ; `description` reste le texte équivalent. */
+export const AvecGraduations: Story = { args: { ticks: GRADUATIONS } };
+
+/** Deux libellés qui se chevaucheraient : le second est masqué visuellement, sa graduation reste. Réduire la largeur pour voir le masquage évoluer. */
+export const GraduationsSerrees: Story = {
+  args: {
+    ticks: [
+      { at: 0, label: 'Début' },
+      { at: 58, label: 'Cinq ans' },
+      { at: 62, label: 'Cinq ans et demi' },
+      { at: 120, label: 'Fin' },
+    ],
+  },
+};

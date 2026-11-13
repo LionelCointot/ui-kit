@@ -61,6 +61,52 @@
   box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_color);
 }
 
+/* Graduations : décoratives. Chaque ancre est de largeur nulle, posée à la position de la graduation ; le libellé est centré dessus
+   (ou calé à l'extrémité pour 0 et le total, afin de ne pas déborder de la barre). */
+.lc-timeline-bar__ticks {
+  position: relative;
+  margin-block-start: var(--lc-sys-space-1);
+  block-size: calc(var(--lc-sys-space-1) + 1lh);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-timeline-bar__tick {
+  position: absolute;
+  inset-block-start: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  inline-size: 0;
+}
+
+.lc-timeline-bar__tick--start {
+  align-items: flex-start;
+}
+
+.lc-timeline-bar__tick--end {
+  align-items: flex-end;
+}
+
+.lc-timeline-bar__tick-mark {
+  flex: none;
+  inline-size: var(--lc-sys-border-width-thin);
+  block-size: var(--lc-sys-space-1);
+  background: var(--lc-sys-color-border-strong);
+}
+
+.lc-timeline-bar__tick-label {
+  flex: none;
+  padding-inline: var(--lc-sys-space-1);
+  white-space: nowrap;
+}
+
+/* Masqué visuellement seulement : la mesure du chevauchement reste valable (la place est conservée). */
+.lc-timeline-bar__tick-label--hidden {
+  visibility: hidden;
+}
+
 .lc-timeline-bar__bounds {
   display: flex;
   justify-content: space-between;
@@ -117,6 +163,11 @@
 }
 
 @media (forced-colors: active) {
+  .lc-timeline-bar__tick-mark {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+
   .lc-timeline-bar__segment,
   .lc-timeline-bar__marker {
     forced-color-adjust: none;

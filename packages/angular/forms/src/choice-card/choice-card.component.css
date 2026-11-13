@@ -26,7 +26,8 @@
   cursor: pointer;
 }
 
-/* Voile de survol : même opacité d'état que les autres contrôles. */
+/* Voile de survol : même opacité d'état que les autres contrôles. Seulement avec un pointeur qui survole vraiment : sur écran tactile,
+   `:hover` reste collé après un toucher et la carte paraîtrait grisée (donc désactivée). */
 .lc-choice-card__label::before {
   content: '';
   position: absolute;
@@ -37,15 +38,24 @@
   pointer-events: none;
 }
 
-.lc-choice-card__label:hover:not(:has(:disabled))::before {
-  opacity: var(--lc-sys-state-hover-opacity);
+@media (hover: hover) {
+  .lc-choice-card__label:hover:not(:has(:disabled))::before {
+    opacity: var(--lc-sys-state-hover-opacity);
+  }
 }
 
-/* Le point du radio coché reste le second indice (jamais la couleur seule) : le bord passe de 1 px à 2 px. */
+/* Carte cochée : fond teinté, bord de 2 px (1 px de bord + 1 px d'ombre interne : aucun décalage de mise en page) et point du radio
+   (jamais la couleur seule). Les textes passent sur `on-primary-container` (contraste AA garanti par la paire de tokens, clair et sombre). */
 .lc-choice-card__label:has(:checked) {
   --_border: var(--lc-choice-card-border-selected, var(--lc-sys-color-primary));
 
+  background: var(--lc-choice-card-background-selected, var(--lc-sys-color-primary-container));
+  color: var(--lc-sys-color-on-primary-container);
   box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_border);
+}
+
+.lc-choice-card__label:has(:checked) .lc-choice-card__description {
+  color: inherit;
 }
 
 .lc-choice-card__label:has([aria-invalid='true']) {
@@ -85,6 +95,8 @@
 
   .lc-choice-card__label:has(:checked) {
     border-color: Highlight;
+    background: Canvas;
+    color: CanvasText;
     box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) Highlight;
   }
 }

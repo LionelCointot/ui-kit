@@ -75,3 +75,12 @@ export const SansDescription: Story = {
     </lc-radio-group></div>`,
   }),
 };
+
+/**
+ * Largeur d'un téléphone. Le voile de survol n'existe que sous `@media (hover: hover)` : pour voir l'effet tactile, activer
+ * l'émulation d'un appareil tactile dans les outils du navigateur (aucun voile après un toucher, la carte cochée reste teintée).
+ */
+export const Tactile: Story = {
+  parameters: { viewport: { defaultViewport: 'mobile1' } },
+  render: () => ({ template: `<div style="max-width:22rem"><lc-choice-card-demo /></div>` }),
+};
