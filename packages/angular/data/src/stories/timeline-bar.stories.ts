@@ -1,5 +1,5 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcTimelineBarComponent, type LcTimelineSegment, type LcTimelineTick } from '../timeline-bar/timeline-bar.component';
+import { LcTimelineBarComponent, type LcTimelineLane, type LcTimelineSegment, type LcTimelineTick } from '../timeline-bar/timeline-bar.component';
 
 const PHASES: LcTimelineSegment[] = [
   { id: 'a', weight: 60, label: 'Phase A', colorSlot: 1, marker: 'circle' },
@@ -14,6 +14,14 @@ const GRADUATIONS: LcTimelineTick[] = [
   { at: 96, label: '8 ans' },
   { at: 120, label: '10 ans' },
 ];
+
+/** Deux voies sur un même axe de 20 ans (en mois) : la première est devant jusqu'au mois 130, la seconde ensuite ; repère transversal au mois 130. */
+const LANES: LcTimelineLane[] = [
+  { id: 'a', label: 'Voie A', caption: 'devant de 0 à 10 ans et 10 mois', colorSlot: 2, marker: 'square', spans: [{ from: 0, to: 130 }] },
+  { id: 'b', label: 'Voie B', caption: 'devant de 10 ans et 10 mois à 20 ans', colorSlot: 1, marker: 'circle', spans: [{ from: 130, to: 240 }] },
+];
+
+const LANES_TICKS: LcTimelineTick[] = [0, 60, 120, 180, 240].map((at) => ({ at, label: at === 0 ? '0' : `${at / 12} ans` }));
 
 const meta: Meta<LcTimelineBarComponent> = {
   title: 'Données/Barre de durées',
@@ -69,6 +77,44 @@ export const SegmentsParticuliers: Story = {
 
 export const UnSeulSegment: Story = {
   args: { segments: [{ id: 'a', weight: 12, label: 'Tout le parcours', colorSlot: 1 }], description: 'Un seul segment de 12 mois.' },
+};
+
+const lanesStory = (width: string): Story => ({
+  args: {
+    segments: [],
+    lanes: LANES,
+    axisEnd: 240,
+    reference: { at: 130, label: '10 ans et 10 mois' },
+    ticks: LANES_TICKS,
+    axisLabel: 'Années depuis le début',
+    label: 'Qui est devant, et quand',
+    description: 'La voie A est devant de 0 à 10 ans et 10 mois, puis la voie B de 10 ans et 10 mois à 20 ans.',
+  },
+  render: (args) => ({
+    props: args,
+    template: `<div style="width:${width};max-width:100%"><lc-timeline-bar [lanes]="lanes" [axisEnd]="axisEnd" [reference]="reference" [ticks]="ticks"
+      [axisLabel]="axisLabel" [label]="label" [description]="description" [stale]="stale" [loading]="loading" /></div>`,
+  }),
+});
+
+/** Deux voies alignées sur un même axe (carré rayé / rond plein), « devant de … à … » sous le nom, repère transversal étiqueté. Dès 700 px, le nom est à gauche de la piste. */
+export const DeuxVoies: Story = lanesStory('60rem');
+
+/** 360 px : le nom et le texte de chaque voie surmontent sa piste ; graduations et repère restent alignés sur les pistes. */
+export const DeuxVoies360: Story = lanesStory('360px');
+
+/** Une voie sans partie colorée (« jamais devant ») et pas de repère. */
+export const VoieJamaisDevant: Story = {
+  ...lanesStory('60rem'),
+  args: {
+    ...lanesStory('60rem').args,
+    lanes: [
+      { ...LANES[0], caption: 'devant de 0 à 20 ans', spans: [{ from: 0, to: 240 }] },
+      { ...LANES[1], caption: 'jamais devant', spans: [] },
+    ],
+    reference: undefined,
+    description: 'La voie A est devant pendant toute la durée ; la voie B n\'est jamais devant.',
+  },
 };
 
 export const Perimee: Story = { args: { stale: true } };

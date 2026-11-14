@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
+import { LcStepActionDirective } from '../stepper/step-action.directive';
 import { LcStepperComponent, type LcStep } from '../stepper/stepper.component';
 
 const NAMES = ['Votre situation', 'Votre projet', 'Vos ressources', 'Vos hypothèses', 'Résultat'];
@@ -57,10 +59,51 @@ class StepperNavDemoComponent {
   }
 }
 
+/** Fil du projet : réponse, détail et gabarit d'action par étape. L'ancêtre `container-type: inline-size` décide de la forme (≥ 900 px : liste ; dessous : « Étape n sur N » + « Voir vos réponses »). */
+@Component({
+  selector: 'lc-stepper-rail-demo',
+  imports: [LcStepperComponent, LcStepActionDirective, LcButtonComponent, LcIconComponent],
+  template: `
+    <div style="container-type:inline-size">
+      <div [style.display]="'grid'" [style.grid-template-columns]="columns()" style="gap:24px">
+        <lc-stepper variant="rail" ariaLabel="Votre projet" [steps]="steps()" [compact]="compact()">
+          <ng-template lcStepAction let-step>
+            @if (step.answer) {
+              <button type="button" lcButton fillMode="flat" size="small" (click)="goTo(step.id)">
+                <lc-icon name="pencil" size="small" /> Modifier
+              </button>
+            }
+          </ng-template>
+        </lc-stepper>
+        <div>
+          <p>Étape ouverte : {{ current() + 1 }}</p>
+          <button type="button" lcButton (click)="current.set(current() === 4 ? 0 : current() + 1)">Suivant</button>
+        </div>
+      </div>
+    </div>
+  `,
+})
+class StepperRailDemoComponent {
+  readonly width = input<'bureau' | 'mobile'>('bureau');
+  readonly compact = input<'auto' | boolean>('auto');
+  protected readonly current = signal(2);
+  protected readonly columns = () => (this.width() === 'bureau' ? '290px minmax(0,1fr)' : '1fr');
+  protected readonly steps = (): LcStep[] =>
+    NAMES.map((label, index) => ({
+      id: `step-${index + 1}`,
+      label,
+      state: index < this.current() ? 'done' : index === this.current() ? 'current' : 'upcoming',
+      ...(index < 4 ? { answer: `Réponse ${index + 1}`, detail: `Réglage ${index + 1} : 3 % par an` } : {}),
+    }));
+  protected goTo(id: string): void {
+    this.current.set(Number(id.replace('step-', '')) - 1);
+  }
+}
+
 const meta: Meta<LcStepperComponent> = {
   title: 'Navigation/Fil d\'étapes',
   component: LcStepperComponent,
-  decorators: [moduleMetadata({ imports: [LcStepperComponent, StepperDemoComponent, StepperNavDemoComponent] })],
+  decorators: [moduleMetadata({ imports: [LcStepperComponent, StepperDemoComponent, StepperNavDemoComponent, StepperRailDemoComponent] })],
   argTypes: {
     compact: { control: 'inline-radio', options: ['auto', true, false] },
     orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
@@ -116,4 +159,19 @@ export const Desactivee: Story = {
 /** « Précédent » / « Suivant » : la piste s'allonge ou se raccourcit, la pastille grandit, `directionChange` donne le sens. */
 export const Animation: Story = {
   render: () => ({ template: `<lc-stepper-nav-demo />` }),
+};
+
+/** Variante `rail`, bureau : colonne de 290 px dans un conteneur de 1 000 px (≥ 900 px), pastilles reliées, réponse, détail et « Modifier » par étape. */
+export const FilDuProjetBureau: Story = {
+  render: () => ({ template: `<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="bureau" /></div>` }),
+};
+
+/** Variante `rail`, 360 px : « Étape n sur 5 · nom », 5 segments et « Voir vos réponses » (replié) ; la même liste se déplie dessous. */
+export const FilDuProjet360: Story = {
+  render: () => ({ template: `<div style="width:360px;max-width:100%"><lc-stepper-rail-demo width="mobile" /></div>` }),
+};
+
+/** `compact` force la forme choisie, quelle que soit la largeur du conteneur (ici, forme étroite à 1 000 px). */
+export const FilDuProjetForceEtroit: Story = {
+  render: () => ({ template: `<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="mobile" [compact]="true" /></div>` }),
 };

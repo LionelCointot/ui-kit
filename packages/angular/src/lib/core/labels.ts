@@ -47,6 +47,8 @@ export interface LcLabels {
   readonly stepOptionalHidden: string;
   /** Mention visible sous le nom d'une étape facultative. */
   readonly stepOptional: string;
+  /** Bouton qui déplie la liste des réponses du fil d'étapes en variante `rail` sous 900 px. */
+  readonly stepAnswers: string;
   /** Bloc de code (`lc-code-block`). */
   readonly copy: string;
   readonly copied: string;
@@ -354,6 +356,7 @@ export const LC_LABELS_FR: LcLabels = {
   stepInvalid: '(à corriger)',
   stepOptionalHidden: '(facultative)',
   stepOptional: 'Facultative',
+  stepAnswers: 'Voir vos réponses',
   copy: 'Copier',
   copied: 'Copié',
   copyFailed: 'Copie impossible',
@@ -507,6 +510,7 @@ export const LC_LABELS_EN: LcLabels = {
   stepInvalid: '(to fix)',
   stepOptionalHidden: '(optional)',
   stepOptional: 'Optional',
+  stepAnswers: 'View your answers',
   copy: 'Copy',
   copied: 'Copied',
   copyFailed: 'Copy failed',
