@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { LcOption } from '@lionelcointot/ui-angular';
+import { By } from '@angular/platform-browser';
+import { LcIconComponent, LcOption } from '@lionelcointot/ui-angular';
 import { LcSegmentedControlComponent } from './segmented-control.component';
 
 type View = 'total' | 'loan' | 'year';
@@ -18,7 +19,97 @@ class SegmentedHostComponent {
   readonly view = signal<View | null>('total');
 }
 
+@Component({
+  imports: [LcSegmentedControlComponent],
+  template: `<lc-segmented-control ariaLabel="Vue" controlled [options]="options" [value]="view()"
+    (valueChange)="changes.push($event)" (valueRequest)="requests.push($event)" />`,
+})
+class ControlledHostComponent {
+  readonly options: readonly LcOption<View>[] = [
+    { value: 'total', label: 'Cumul' },
+    { value: 'loan', label: 'Par prêt', disabled: true },
+    { value: 'year', label: 'Par année', icon: 'calendar' },
+  ];
+  readonly view = signal<View | null>('total');
+  readonly requests: (View | null)[] = [];
+  readonly changes: (View | null)[] = [];
+}
+
 describe('LcSegmentedControlComponent', () => {
+  describe('coche de l\'option active', () => {
+    it('seule l\'option active affiche la coche (à la place de son icône) et aria-checked', async () => {
+      const fixture = TestBed.createComponent(SegmentedHostComponent);
+      await fixture.whenStable();
+      const radios = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+      const icon = (radio: HTMLElement) =>
+        fixture.debugElement.queryAll(By.directive(LcIconComponent))
+          .find((debug) => radio.contains(debug.nativeElement))?.componentInstance.name() ?? null;
+      expect(radios.map(icon)).toEqual(['check', null, 'calendar']);
+      radios[2].click();
+      await fixture.whenStable();
+      expect(radios.map(icon)).toEqual([null, null, 'check']);
+      expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true']);
+    });
+  });
+
+  describe('mode controlled', () => {
+    async function setupControlled() {
+      const fixture = TestBed.createComponent(ControlledHostComponent);
+      await fixture.whenStable();
+      const radios = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+      const checked = () => radios.map((radio) => radio.getAttribute('aria-checked'));
+      return { fixture, host: fixture.componentInstance, radios, checked };
+    }
+
+    it('un clic émet valueRequest sans changer la sélection ; le parent qui met value à jour fait suivre l\'affichage', async () => {
+      const { fixture, host, radios, checked } = await setupControlled();
+      radios[2].click();
+      await fixture.whenStable();
+      expect(host.requests).toEqual(['year']);
+      expect(host.changes).toEqual([]);
+      expect(checked()).toEqual(['true', 'false', 'false']);
+      host.view.set('year');
+      await fixture.whenStable();
+      expect(checked()).toEqual(['false', 'false', 'true']);
+    });
+
+    it('flèches, Début et Fin émettent valueRequest sans changer la sélection', async () => {
+      const { fixture, host, radios, checked } = await setupControlled();
+      const press = async (radio: HTMLElement, key: string) => {
+        radio.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+        await fixture.whenStable();
+      };
+      await press(radios[0], 'ArrowRight');
+      await press(radios[0], 'End');
+      await press(radios[0], 'ArrowLeft');
+      host.view.set('year');
+      await fixture.whenStable();
+      await press(radios[2], 'Home');
+      expect(host.requests).toEqual(['year', 'year', 'year', 'total']);
+      expect(host.changes).toEqual([]);
+      expect(checked()).toEqual(['false', 'false', 'true']);
+    });
+
+    it('une option désactivée n\'émet rien', async () => {
+      const { fixture, host, radios } = await setupControlled();
+      radios[1].click();
+      await fixture.whenStable();
+      expect(host.requests).toEqual([]);
+    });
+
+    it('sans controlled, le comportement est inchangé : value change et valueRequest n\'est pas émis', async () => {
+      const fixture = TestBed.createComponent(SegmentedHostComponent);
+      await fixture.whenStable();
+      const segmented = fixture.debugElement.query(By.directive(LcSegmentedControlComponent)).componentInstance;
+      const requests: unknown[] = [];
+      segmented.valueRequest.subscribe((value: unknown) => requests.push(value));
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="radio"]')[2].click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.view()).toBe('year');
+      expect(requests).toEqual([]);
+    });
+  });
+
   async function setup() {
     const fixture = TestBed.createComponent(SegmentedHostComponent);
     await fixture.whenStable();
