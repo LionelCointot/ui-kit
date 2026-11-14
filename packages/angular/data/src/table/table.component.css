@@ -93,6 +93,24 @@ tr > :first-child,
   z-index: 1;
 }
 
+/* Petit écran : défilement horizontal par colonne entière (aucune colonne coupée au repos). La première colonne est collante :
+   `--lc-table-sticky-start-size` (largeur de cette colonne, à poser par l'usage) décale la butée pour qu'une colonne calée
+   ne passe pas dessous. */
+@media (max-width: 37.5rem) {
+  .lc-table__scroll {
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline-start: var(--lc-table-sticky-start-size, 0px);
+  }
+
+  tr > :first-child {
+    inline-size: var(--lc-table-sticky-start-size, auto);
+  }
+
+  tr > :not(:first-child) {
+    scroll-snap-align: start;
+  }
+}
+
 :host(.lc-table--sticky-header) thead tr > :first-child,
 :host(.lc-table--sticky-header) thead .lc-table__cell--sticky-start,
 :host(.lc-table--sticky-header) thead .lc-table__cell--sticky-end {

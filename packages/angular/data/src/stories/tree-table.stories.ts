@@ -120,6 +120,16 @@ export const Compact: Story = {
   }),
 };
 
+/** Sous 600 px : première colonne collante et défilement par colonne entière (`--lc-table-sticky-start-size` = largeur de la première colonne). */
+export const PetitEcran: Story = {
+  parameters: { viewport: { defaultViewport: 'mobile1' } },
+  render: () => ({
+    props: base,
+    template: `<div style="--lc-table-sticky-start-size: 9rem"><lc-tree-table caption="Organisation" [data]="data" [columns]="columns"
+      [trackBy]="trackBy" [children]="children" [expandAllInitially]="true" /></div>`,
+  }),
+};
+
 export const Vide: Story = {
   render: () => ({
     props: { ...base, data: [] },

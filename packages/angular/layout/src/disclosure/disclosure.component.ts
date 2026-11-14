@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, Directive, ElementRef, TemplateRef, booleanAttribute, computed, contentChild,
-  inject, input, linkedSignal, model, viewChild,
+  ChangeDetectionStrategy, Component, DestroyRef, Directive, ElementRef, TemplateRef, booleanAttribute, computed, contentChild,
+  effect, inject, input, linkedSignal, model, untracked, viewChild,
 } from '@angular/core';
 import { LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 
@@ -17,9 +17,33 @@ export class LcDisclosureContentDirective {
 }
 
 /**
+ * Groupe de lignes dépliables. Avec `exclusive`, ouvrir une ligne referme les autres (accordéon) ; le parent pilote
+ * `exclusive` (par exemple selon la largeur). Sans groupe, ou sans `exclusive`, plusieurs lignes restent ouvertes.
+ */
+@Directive({ selector: '[lcDisclosureGroup]', exportAs: 'lcDisclosureGroup' })
+export class LcDisclosureGroupDirective {
+  readonly exclusive = input(false, { transform: booleanAttribute });
+  private readonly members = new Set<LcDisclosureComponent>();
+
+  /** @internal */
+  register(member: LcDisclosureComponent): () => void {
+    this.members.add(member);
+    return () => this.members.delete(member);
+  }
+
+  /** @internal Une ligne vient de s'ouvrir : en mode exclusif, les autres se referment. */
+  opened(member: LcDisclosureComponent): void {
+    if (!this.exclusive()) return;
+    for (const other of this.members) {
+      if (other !== member) other.expanded.set(false);
+    }
+  }
+}
+
+/**
  * Ligne dépliable : l'en-tête est un bouton (`aria-expanded`, `aria-controls`) dont le contenu est projeté par
  * `[lcDisclosureSummary]`, suivi des actions (`[lcDisclosureActions]`), jamais imbriquées dans le bouton.
- * Plusieurs lignes peuvent être ouvertes en même temps (ce n'est pas un accordéon).
+ * Plusieurs lignes peuvent être ouvertes en même temps, sauf dans un `lcDisclosureGroup` `exclusive` (accordéon).
  */
 @Component({
   selector: 'lc-disclosure',
@@ -65,6 +89,7 @@ export class LcDisclosureContentDirective {
 export class LcDisclosureComponent {
   private readonly summaryButton = viewChild<ElementRef<HTMLButtonElement>>('summary');
   private readonly lazyContent = contentChild(LcDisclosureContentDirective);
+  private readonly group = inject(LcDisclosureGroupDirective, { optional: true });
 
   protected readonly summaryId = lcUniqueId('disclosure-summary');
   protected readonly regionId = lcUniqueId('disclosure-region');
@@ -85,6 +110,15 @@ export class LcDisclosureComponent {
     computation: (expanded, previous) => expanded || (previous?.value ?? false),
   });
   protected readonly rendered = computed(() => this.opened() || !this.lazy());
+
+  constructor() {
+    const group = this.group;
+    if (!group) return;
+    inject(DestroyRef).onDestroy(group.register(this));
+    effect(() => {
+      if (this.expanded()) untracked(() => group.opened(this));
+    });
+  }
 
   toggle(): void {
     if (!this.disabled()) this.expanded.update((value) => !value);

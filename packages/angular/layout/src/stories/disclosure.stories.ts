@@ -1,11 +1,15 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { LcDisclosureComponent, LcDisclosureContentDirective } from '../disclosure/disclosure.component';
+import {
+  LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective,
+} from '../disclosure/disclosure.component';
 
 const meta: Meta<LcDisclosureComponent> = {
   title: 'Mise en page/Ligne dépliable',
   component: LcDisclosureComponent,
-  decorators: [moduleMetadata({ imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcButtonComponent, LcIconComponent] })],
+  decorators: [moduleMetadata({
+    imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, LcButtonComponent, LcIconComponent],
+  })],
   args: { expanded: false, headingLevel: null, disabled: false, lazy: false, bordered: false },
   render: (args) => ({
     props: args,
@@ -28,7 +32,7 @@ export const AvecTitre: Story = { args: { headingLevel: 3, bordered: true, expan
 
 export const Desactivee: Story = { args: { disabled: true } };
 
-/** Plusieurs lignes ouvertes en même temps (pas d'accordéon) ; le contenu de la dernière n'est créé qu'à l'ouverture. */
+/** Plusieurs lignes ouvertes en même temps (sans `lcDisclosureGroup` exclusif) ; le contenu de la dernière n'est créé qu'à l'ouverture. */
 export const Liste: Story = {
   render: () => ({
     template: `
@@ -38,5 +42,17 @@ export const Liste: Story = {
         <span lcDisclosureSummary>Troisième ligne (contenu créé à l'ouverture)</span>
         <ng-template lcDisclosureContent><p>Contenu C</p></ng-template>
       </lc-disclosure>`,
+  }),
+};
+
+/** Accordéon : dans un `lcDisclosureGroup` `exclusive`, ouvrir une ligne referme les autres (le parent pilote `exclusive`, par exemple selon la largeur). */
+export const Accordeon: Story = {
+  render: () => ({
+    template: `
+      <div lcDisclosureGroup exclusive>
+        <lc-disclosure bordered headingLevel="3" [expanded]="true"><span lcDisclosureSummary>Première section</span><p>Contenu A</p></lc-disclosure>
+        <lc-disclosure bordered headingLevel="3"><span lcDisclosureSummary>Deuxième section</span><p>Contenu B</p></lc-disclosure>
+        <lc-disclosure bordered headingLevel="3"><span lcDisclosureSummary>Troisième section</span><p>Contenu C</p></lc-disclosure>
+      </div>`,
   }),
 };
