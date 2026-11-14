@@ -327,7 +327,7 @@ export interface LcToastOptions {
 export class LcToastService { show(options: LcToastOptions): void; dismissAll(): void; }
 ```
 
-Au plus 3 toasts visibles. Le minuteur se met en pause au survol et au focus. Annonce par `LiveAnnouncer` (polie, ou assertive pour les erreurs).
+Au plus 3 toasts visibles. Le minuteur se met en pause au survol et au focus. Annonce par `LiveAnnouncer` (polie, ou assertive pour les erreurs). Sous 480 px, la pile est pleine largeur avec marges de sécurité (`env(safe-area-inset-*)`) ; `--lc-toast-offset-block-end` la décale au-dessus d'une barre d'actions fixe.
 
 **`lc-badge`** : entrées `themeColor`, `fillMode` (défaut `flat`), `size`. Contenu texte.
 

@@ -3,7 +3,10 @@ import { LC_LABELS, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LC_STATUS_ICONS } from '../status-icons';
 import { LcToast, LcToastService } from './toast.service';
 
-/** Zone d'affichage des toasts de `LcToastService`, à placer une fois à la racine de l'application. */
+/**
+ * Zone d'affichage des toasts de `LcToastService`, à placer une fois à la racine de l'application.
+ * Variable CSS `--lc-toast-offset-block-end` : décalage de la pile vers le haut (ex. au-dessus d'une barre d'actions fixe).
+ */
 @Component({
   selector: 'lc-toast-outlet',
   imports: [LcIconComponent],
