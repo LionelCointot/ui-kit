@@ -1,13 +1,23 @@
 .lc-toast-outlet__region {
   position: fixed;
   z-index: var(--lc-sys-z-toast);
-  inset-block-end: var(--lc-sys-space-4);
-  inset-inline-end: var(--lc-sys-space-4);
+  /* `--lc-toast-offset-block-end` : à renseigner (ex. hauteur d'une barre d'actions fixe) pour que la pile ne la recouvre pas. */
+  inset-block-end: calc(var(--lc-toast-offset-block-end, 0px) + max(var(--lc-sys-space-4), env(safe-area-inset-bottom)));
+  inset-inline-end: max(var(--lc-sys-space-4), env(safe-area-inset-right));
   display: flex;
   flex-direction: column;
   gap: var(--lc-sys-space-2);
   width: min(calc(100vw - 2 * var(--lc-sys-space-4)), var(--lc-toast-width, calc(var(--lc-sys-space-16) * 6)));
   pointer-events: none;
+}
+
+/* Petit écran : pile pleine largeur, marges réduites et zones de sécurité (encoche, barre d'accueil). */
+@media (max-width: 479.98px) {
+  .lc-toast-outlet__region {
+    inset-inline: max(var(--lc-sys-space-2), env(safe-area-inset-left)) max(var(--lc-sys-space-2), env(safe-area-inset-right));
+    inset-block-end: calc(var(--lc-toast-offset-block-end, 0px) + max(var(--lc-sys-space-2), env(safe-area-inset-bottom)));
+    width: auto;
+  }
 }
 
 .lc-toast {
