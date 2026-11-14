@@ -155,6 +155,11 @@ textarea.lc-input.lc-input--auto-resize {
   cursor: not-allowed;
 }
 
+/* Radio dans une carte de choix : aligné sur la première ligne du titre. */
+.lc-choice-card .lc-radio {
+  margin-block-start: var(--lc-sys-space-1);
+}
+
 /* ---------- Emplacements [lcPrefix] / [lcSuffix] de lc-form-field ---------- */
 .lc-form-field-prefix,
 .lc-form-field-suffix,
@@ -213,6 +218,65 @@ lc-form-field [lcSuffix] {
 
 .lc-dialog-panel .cdk-dialog-container {
   outline: none;
+}
+
+/* ---------- lc-drawer : tiroir latéral (panneau CDK hors du composant) ---------- */
+.lc-drawer-backdrop {
+  background: var(--lc-sys-color-backdrop);
+}
+
+.lc-drawer-panel {
+  box-sizing: border-box;
+  block-size: 100dvh;
+  max-block-size: 100dvh;
+  max-inline-size: 100vw;
+  animation: lc-drawer-in-end var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-drawer-panel--start {
+  animation-name: lc-drawer-in-start;
+}
+
+.lc-drawer-panel--small {
+  inline-size: calc(var(--lc-sys-space-16) * 6);
+}
+
+.lc-drawer-panel--medium {
+  inline-size: calc(var(--lc-sys-space-16) * 8);
+}
+
+.lc-drawer-panel--large {
+  inline-size: calc(var(--lc-sys-space-16) * 10);
+}
+
+.lc-drawer-panel .cdk-dialog-container {
+  outline: none;
+}
+
+@media (max-width: 767.98px) {
+  .lc-drawer-panel {
+    inline-size: 100vw;
+  }
+}
+
+@keyframes lc-drawer-in-end {
+  from {
+    opacity: 0;
+    transform: translateX(var(--lc-sys-space-8));
+  }
+}
+
+@keyframes lc-drawer-in-start {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--lc-sys-space-8)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-drawer-panel {
+    animation: none;
+  }
 }
 
 /* lc-combobox : le panneau (rôle listbox) vit dans la surcouche CDK, hors du composant. */

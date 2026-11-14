@@ -14,7 +14,7 @@ Complémentaire de la commande intégrée `/code-review` (chasse aux bugs multi-
    1. **Correction** : le code fait-il ce que la spec demande ? bugs, cas limites, concurrence, erreurs non gérées, arrondis monétaires.
    2. **Sécurité** : entrées non validées, injection, autorisation manquante, secrets, fuite de données (voir `security-checklist`).
    3. **Tests** : chaque critère d'acceptation (`CA-n`) couvert ? tests significatifs (comportement, pas implémentation) ? aucun test désactivé, ignoré ou assoupli dans le diff (voir `test-strategy`) ?
-   4. **Architecture** : respect des couches. Angular : aucun composant n'injecte `HttpClient`/client d'API, état en signaux dans un store (voir `angular-best-practices`). .NET : Core sans dépendance web/stockage, endpoints sans logique métier, ProblemDetails (voir `dotnet-best-practices`).
+   4. **Architecture** : respect des couches. Angular : aucun composant n'injecte `HttpClient`/client d'API, état en signaux dans un store (voir `angular-best-practices`). .NET : Core sans dépendance web/stockage, endpoints sans logique métier, ProblemDetails (voir `dotnet-best-practices`). Back TypeScript : cœur pur sans I/O, détails (fichiers, processus) derrière des interfaces injectées (voir `clean-code`).
    5. **Lisibilité et maintenabilité** : nommage, taille des fonctions, imbrication, duplication de connaissance, code mort ou commenté (voir `clean-code`).
    6. **Performance** : requêtes N+1, boucles coûteuses, re-rendus inutiles, chargements non paresseux.
    7. **Périmètre** : changements hors sujet, dépendance ajoutée sans justification.

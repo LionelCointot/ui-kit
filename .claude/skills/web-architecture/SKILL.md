@@ -24,7 +24,7 @@ description: Principes d'architecture et de conception d'applications web. À ut
 - **Évolutivité** : conçois pour 10x la charge actuelle, pas pour 1000x.
 
 ## Exemple de stack : .NET + Angular
-- Back : métier pur → infrastructure → API (hôte). Détails : skill `dotnet-best-practices`.
+- Back : métier pur → infrastructure → API (hôte). Détails : `dotnet-best-practices` pour .NET, `clean-code` pour un back TypeScript (cœur pur, I/O injectées).
 - Front : composants → store à signaux → client d'API généré depuis l'OpenAPI du back. Détails : skill `angular-best-practices`.
 - Contrat : OpenAPI généré automatiquement par le back = source de vérité (skill `api-design`).
 

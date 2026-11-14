@@ -36,11 +36,29 @@ export interface LcLabels {
   readonly pageSize: string;
   readonly pageRange: (first: number, last: number, total: number) => string;
   readonly pageStatus: (page: number, pageCount: number) => string;
+  /** Fil d'étapes (`lc-stepper`) : position (« Étape 2 sur 5 »), nom accessible d'une étape cliquable et mentions des étapes en erreur ou facultatives. */
+  readonly stepOf: (current: number, total: number) => string;
+  /** @deprecated Remplacé par `stepGoTo` (nom accessible d'une étape cliquable du fil d'étapes v2). */
+  readonly stepBack: (name: string) => string;
+  readonly stepGoTo: (position: number, name: string) => string;
+  /** Texte masqué ajouté au nom d'une étape en erreur. */
+  readonly stepInvalid: string;
+  /** Texte masqué ajouté au nom d'une étape facultative. */
+  readonly stepOptionalHidden: string;
+  /** Mention visible sous le nom d'une étape facultative. */
+  readonly stepOptional: string;
   /** Bloc de code (`lc-code-block`). */
   readonly copy: string;
   readonly copied: string;
   readonly copyFailed: string;
   readonly codeTruncated: (count: number) => string;
+  /** Journal (`lc-log-view`) : copie, reprise du suivi, avis de lignes masquées, état vide et repères de niveau. */
+  readonly logCopy: string;
+  readonly logResume: string;
+  readonly logTruncated: (count: number) => string;
+  readonly logEmpty: string;
+  readonly logLevelError: string;
+  readonly logLevelInfo: string;
   /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
   /** Liste filtrable (`lc-combobox`) et champs géographiques. */
   readonly comboboxNoResults: string;
@@ -326,10 +344,22 @@ export const LC_LABELS_FR: LcLabels = {
   pageSize: 'Éléments par page',
   pageRange: (first, last, total) => (total === 0 ? '0 sur 0' : `${first} à ${last} sur ${total}`),
   pageStatus: (page, pageCount) => `Page ${page} sur ${pageCount}`,
+  stepOf: (current, total) => `Étape ${current} sur ${total}`,
+  stepBack: (name) => `Revenir à : ${name}`,
+  stepGoTo: (position, name) => `Aller à l'étape ${position} : ${name}`,
+  stepInvalid: '(à corriger)',
+  stepOptionalHidden: '(facultative)',
+  stepOptional: 'Facultative',
   copy: 'Copier',
   copied: 'Copié',
   copyFailed: 'Copie impossible',
   codeTruncated: (count) => `Texte tronqué aux ${count} premiers caractères`,
+  logCopy: 'Copier le journal',
+  logResume: 'Revenir en bas',
+  logTruncated: (count) => (count === 1 ? '1 ligne plus ancienne masquée' : `${count} lignes plus anciennes masquées`),
+  logEmpty: 'Aucune sortie pour l\'instant.',
+  logLevelError: 'err',
+  logLevelInfo: 'info',
   comboboxNoResults: 'Aucun résultat',
   comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
   comboboxSearching: 'Recherche en cours',
@@ -467,10 +497,22 @@ export const LC_LABELS_EN: LcLabels = {
   pageSize: 'Items per page',
   pageRange: (first, last, total) => (total === 0 ? '0 of 0' : `${first} to ${last} of ${total}`),
   pageStatus: (page, pageCount) => `Page ${page} of ${pageCount}`,
+  stepOf: (current, total) => `Step ${current} of ${total}`,
+  stepBack: (name) => `Back to: ${name}`,
+  stepGoTo: (position, name) => `Go to step ${position}: ${name}`,
+  stepInvalid: '(to fix)',
+  stepOptionalHidden: '(optional)',
+  stepOptional: 'Optional',
   copy: 'Copy',
   copied: 'Copied',
   copyFailed: 'Copy failed',
   codeTruncated: (count) => `Text truncated to the first ${count} characters`,
+  logCopy: 'Copy the log',
+  logResume: 'Back to bottom',
+  logTruncated: (count) => (count === 1 ? '1 older line hidden' : `${count} older lines hidden`),
+  logEmpty: 'No output yet.',
+  logLevelError: 'err',
+  logLevelInfo: 'info',
   comboboxNoResults: 'No results',
   comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
   comboboxSearching: 'Searching',

@@ -23,6 +23,8 @@ const ICONS = [
   'scale',
   // Ajouts : contrôle de version, activité et rafraîchissement (composants génériques de suivi).
   'git-branch', 'git-commit-horizontal', 'activity', 'refresh-cw',
+  // Ajouts : lancement, arrêt et états d'attente (pilotage d'une tâche).
+  'play', 'square', 'circle-dashed', 'clock',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */
