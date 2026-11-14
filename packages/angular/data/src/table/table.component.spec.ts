@@ -92,4 +92,31 @@ describe('LcTableComponent', () => {
     expect(element.querySelector('.lc-table__toggle')!.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.componentInstance.toggled()).toBe('2026');
   });
+
+  // jsdom ne résout pas `var()` : on lit la feuille de style que le composant injecte (variable lue, défauts, bloc compact).
+  describe('espacement horizontal des cellules (--lc-table-cell-padding-inline)', () => {
+    async function rules() {
+      const { fixture } = await setup();
+      await fixture.whenStable();
+      const text = Array.from(document.querySelectorAll('style')).map((style) => style.textContent ?? '').join('\n').replace(/\s+/g, '');
+      const blocks = text.split('}').filter((block) => block.includes('--_cell-padding'));
+      return {
+        normal: blocks.find((block) => !block.includes('compact')) ?? '',
+        compact: blocks.find((block) => block.includes('compact')) ?? '',
+      };
+    }
+
+    it('le padding horizontal vient de la variable posée sur l\'hôte, avec repli sur space-4', async () => {
+      const { normal } = await rules();
+      expect(normal).toContain('--_cell-padding-inline:var(--lc-table-cell-padding-inline,var(--lc-sys-space-4))');
+      expect(normal).toContain('padding:var(--_cell-padding-block)var(--_cell-padding-inline)');
+      expect(normal).toContain('--_cell-padding-block:var(--lc-sys-space-3)');
+    });
+
+    it('en compact, la même variable pilote le padding horizontal ; défauts space-3 et space-1 inchangés', async () => {
+      const { compact } = await rules();
+      expect(compact).toContain('--_cell-padding-inline:var(--lc-table-cell-padding-inline,var(--lc-sys-space-3))');
+      expect(compact).toContain('--_cell-padding-block:var(--lc-sys-space-1)');
+    });
+  });
 });

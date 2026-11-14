@@ -49,3 +49,23 @@ describe('libellés du journal (lc-log-view)', () => {
     expect(LC_LABELS_EN.logTruncated(12)).toBe('12 older lines hidden');
   });
 });
+
+describe('libellés de pagination : grands nombres', () => {
+  it('français : séparateur de milliers en espace fine insécable (U+202F)', () => {
+    expect(LC_LABELS_FR.pageRange(1, 25, 12345)).toBe('1 à 25 sur 12\u202F345');
+    expect(LC_LABELS_FR.pageStatus(1, 494)).toBe('Page 1 sur 494');
+    expect(LC_LABELS_FR.pageStatus(1234, 12345)).toBe('Page 1\u202F234 sur 12\u202F345');
+  });
+
+  it('anglais : séparateur virgule', () => {
+    expect(LC_LABELS_EN.pageRange(1, 25, 12345)).toBe('1 to 25 of 12,345');
+    expect(LC_LABELS_EN.pageStatus(1, 494)).toBe('Page 1 of 494');
+    expect(LC_LABELS_EN.pageStatus(1234, 12345)).toBe('Page 1,234 of 12,345');
+  });
+
+  it('total à 0 : libellé dédié dans les deux langues', () => {
+    expect(LC_LABELS_FR.pageRange(0, 0, 0)).toBe('0 sur 0');
+    expect(LC_LABELS_EN.pageRange(0, 0, 0)).toBe('0 of 0');
+  });
+});
+
