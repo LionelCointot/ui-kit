@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, contentChildren, input, model, signal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, afterRenderEffect, computed, contentChildren, inject, input, model, signal, viewChild, viewChildren } from '@angular/core';
 import { LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcTabComponent } from './tab.component';
 
@@ -12,7 +12,9 @@ import { LcTabComponent } from './tab.component';
   selector: 'lc-tabs',
   imports: [NgTemplateOutlet, LcIconComponent],
   template: `
-    <div class="lc-tabs__list" role="tablist" [attr.aria-label]="ariaLabel() || null">
+    <div #list class="lc-tabs__list" role="tablist" [attr.aria-label]="ariaLabel() || null"
+      [class.lc-tabs__list--fade-left]="fadeLeft()" [class.lc-tabs__list--fade-right]="fadeRight()"
+      (scroll)="updateFades()">
       @for (tab of tabs(); track tab.id()) {
         <button #tabButton type="button" role="tab" class="lc-tabs__tab"
           [id]="tabId(tab.id())" [attr.aria-selected]="tab.id() === current()"
@@ -45,7 +47,12 @@ export class LcTabsComponent {
 
   protected readonly tabs = contentChildren(LcTabComponent);
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
+  private readonly list = viewChild.required<ElementRef<HTMLElement>>('list');
+  private readonly view = inject(DOCUMENT).defaultView;
   private readonly baseId = lcUniqueId('tabs');
+  /** Onglets cachés à gauche / à droite de la rangée : un fondu de bord le signale. */
+  protected readonly fadeLeft = signal(false);
+  protected readonly fadeRight = signal(false);
   protected readonly visited = signal<ReadonlySet<string>>(new Set());
 
   /** Onglet affiché : `selected` s'il existe et n'est pas désactivé, sinon le premier onglet actif. */
@@ -58,6 +65,43 @@ export class LcTabsComponent {
   /** Onglet atteignable par Tab (focus itinérant), suit la sélection tant que le focus n'a pas bougé. */
   private readonly focusedTab = signal<string | null>(null);
   protected readonly focusable = computed(() => this.focusedTab() ?? this.current());
+
+  constructor() {
+    // Ramène l'onglet focalisable (sélectionné ou au focus) dans la zone visible, puis met à jour les fondus.
+    afterRenderEffect(() => {
+      const index = this.tabs().findIndex((tab) => tab.id() === this.focusable());
+      this.reveal(this.buttons()[index]?.nativeElement);
+      this.updateFades();
+    });
+    afterRenderEffect((onCleanup) => {
+      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.updateFades());
+      observer?.observe(this.list().nativeElement);
+      onCleanup(() => observer?.disconnect());
+    });
+  }
+
+  protected updateFades(): void {
+    const list = this.list().nativeElement;
+    const max = list.scrollWidth - list.clientWidth;
+    const rtl = this.view?.getComputedStyle(list).direction === 'rtl';
+    const hiddenLeft = rtl ? max + list.scrollLeft : list.scrollLeft;
+    this.fadeLeft.set(hiddenLeft > 1);
+    this.fadeRight.set(max - hiddenLeft > 1);
+  }
+
+  /** Fait défiler la rangée (jamais la page) jusqu'à l'onglet, en laissant la largeur du fondu de chaque côté. */
+  private reveal(button: HTMLElement | undefined): void {
+    if (!button || !this.view) return;
+    const list = this.list().nativeElement;
+    const margin = parseFloat(this.view.getComputedStyle(list).scrollPaddingLeft) || 0;
+    const listBox = list.getBoundingClientRect();
+    const box = button.getBoundingClientRect();
+    const delta = box.left < listBox.left + margin ? box.left - listBox.left - margin
+      : box.right > listBox.right - margin ? box.right - listBox.right + margin : 0;
+    if (delta === 0) return;
+    const reduced = this.view.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    list.scrollBy({ left: delta, behavior: reduced ? 'auto' : 'smooth' });
+  }
 
   protected tabId(id: string): string {
     return `${this.baseId}-tab-${id}`;
