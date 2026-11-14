@@ -56,6 +56,43 @@ describe('LcDialogService', () => {
     expect(overlay().querySelector('[role="dialog"]')!.getAttribute('aria-modal')).toBe('true');
   });
 
+  describe('rôle ARIA du dialogue (I7)', () => {
+    const openWith = async (config: Parameters<LcDialogService['open']>[1]) => {
+      TestBed.inject(LcDialogService).open(RenameDialogComponent, { data: { name: 'A' }, ...config });
+      await settle();
+      return overlay().querySelector('.lc-dialog-panel [role]')!;
+    };
+
+    it('par défaut : role="dialog", sans aria-describedby', async () => {
+      const container = await openWith({});
+      expect(container.getAttribute('role')).toBe('dialog');
+      expect(container.hasAttribute('aria-describedby')).toBe(false);
+    });
+
+    it('role: "alertdialog" donne role="alertdialog"', async () => {
+      const container = await openWith({ role: 'alertdialog' });
+      expect(container.getAttribute('role')).toBe('alertdialog');
+      expect(overlay().querySelector('[role="dialog"]')).toBeNull();
+    });
+
+    it('role: "dialog" explicite reste un dialog', async () => {
+      expect((await openWith({ role: 'dialog' })).getAttribute('role')).toBe('dialog');
+    });
+
+    it('ariaDescribedBy est relié par aria-describedby', async () => {
+      const container = await openWith({ role: 'alertdialog', ariaDescribedBy: 'message-id' });
+      expect(container.getAttribute('aria-describedby')).toBe('message-id');
+    });
+
+    it('confirm() est toujours un alertdialog', async () => {
+      const service = TestBed.inject(LcDialogService);
+      void service.confirm({ title: 'Supprimer ?', message: 'Action définitive.' });
+      await settle();
+      expect(overlay().querySelector('.lc-dialog-panel [role]')!.getAttribute('role')).toBe('alertdialog');
+      expect(overlay().querySelector('[role="dialog"]')).toBeNull();
+    });
+  });
+
   it('confirm() résout true sur confirmation et false sur annulation', async () => {
     const service = TestBed.inject(LcDialogService);
     const confirmed = service.confirm({ title: 'Supprimer ?', message: 'Action définitive.', destructive: true });

@@ -1,3 +1,6 @@
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideLcUiKit } from '../core/provide-ui-kit';
@@ -125,6 +128,46 @@ describe('LcButtonComponent', () => {
       await fixture.whenStable();
       expect(warn).toHaveBeenCalled();
       warn.mockRestore();
+    });
+  });
+
+  describe('zone de frappe de 44 px (B4, lecture de la feuille : jsdom ne fait pas de mise en page)', () => {
+    const css = () => readFileSync(resolve(process.cwd(), 'packages/angular/src/lib/button/button.component.css'), 'utf8');
+    /** Bloc `{ … }` qui commence à `start`. */
+    const blockAt = (source: string, start: number) => source.slice(start, source.indexOf('}', start) + 1);
+
+    it(':host::before est posé sur l\'hôte lui-même, sans condition de taille (small, icône seule et moyen la reçoivent)', () => {
+      const source = css();
+      expect(source).toContain('\n:host::before {');
+      expect(source).not.toMatch(/:host\(\.lc-button--(small|icon-only)[^)]*\)::before/);
+      expect(source).toMatch(/:host\s*\{[^}]*position:\s*relative/);
+      const rule = blockAt(source, source.indexOf('\n:host::before {') + 1);
+      expect(rule).toContain("content: ''");
+      expect(rule).toContain('position: absolute');
+    });
+
+    it('la zone fait 44 px par défaut, réglable par --lc-button-hit-size, dans les deux axes', () => {
+      const source = css();
+      const rule = blockAt(source, source.indexOf('\n:host::before {') + 1);
+      expect(rule).toMatch(/inset-block:[^;]*var\(--lc-button-hit-size, 44px\)/);
+      expect(rule).toMatch(/inset-inline:[^;]*var\(--lc-button-hit-size, 44px\)/);
+    });
+
+    it('un bouton déjà plus grand que la zone ne déborde pas (inset plafonné à 0)', () => {
+      const rule = blockAt(css(), css().indexOf('\n:host::before {') + 1);
+      expect(rule).toMatch(/inset-block:\s*min\(0px,/);
+      expect(rule).toMatch(/inset-inline:\s*min\(0px,/);
+    });
+
+    it('chargement : l\'anneau ::after est inchangé (centré, taille de l\'icône, ::before non touché)', () => {
+      const source = css();
+      const rule = blockAt(source, source.indexOf('\n:host(.lc-button--loading)::after {') + 1);
+      expect(rule).toContain("content: ''");
+      expect(rule).toContain('position: absolute');
+      expect(rule).toContain('inset: 0');
+      expect(rule).toContain('width: var(--lc-icon-size)');
+      expect(rule).toContain('animation: lc-button-spin');
+      expect(source).not.toMatch(/--lc-button--loading\)::before/);
     });
   });
   });
