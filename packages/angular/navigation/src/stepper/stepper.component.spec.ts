@@ -1,8 +1,12 @@
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LC_DEFAULT_ICONS, LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
 import refTokens from '../../../../tokens/src/ref/scale.tokens.json';
 import sysTokens from '../../../../tokens/src/sys/default.tokens.json';
+import { LcStepActionDirective } from './step-action.directive';
 import { LcStep, LcStepperComponent, LcStepperDirection, LcStepperOrientation } from './stepper.component';
 
 const STEPS: readonly LcStep[] = [
@@ -967,6 +971,453 @@ describe('LcStepperComponent', () => {
       expect(element.classList).not.toContain('lc-stepper--vertical');
       expect(element.classList).not.toContain('lc-stepper--compact');
       expect(element.classList).not.toContain('lc-stepper--full');
+    });
+  });
+});
+
+/** Variante `rail` (fil du projet) : CA-16 à CA-18 de `docs/specs/2026-11-composants-parcours-guide.md` §14. */
+describe('LcStepperComponent : variante rail', () => {
+  const RAIL_STEPS: readonly LcStep[] = [
+    { id: 'e1', label: 'Etape 1', state: 'done', answer: 'Maison à 250 000 €', detail: 'Apport de 20 000 €' },
+    { id: 'e2', label: 'Etape 2', state: 'done', answer: 'Célibataire' },
+    { id: 'e3', label: 'Etape 3', state: 'current' },
+    { id: 'e4', label: 'Etape 4', state: 'upcoming', detail: 'Prêt sur 20 ans' },
+    { id: 'e5', label: 'Etape 5', state: 'upcoming' },
+  ];
+
+  @Component({
+    imports: [LcStepperComponent, LcStepActionDirective],
+    template: `
+      <lc-stepper ariaLabel="Fil" [variant]="variant()" [steps]="steps()" [compact]="compact()">
+        <ng-template lcStepAction let-step>
+          <button type="button" class="act" (click)="edited.push(step.id)">Modifier {{ step.label }}</button>
+        </ng-template>
+      </lc-stepper>
+    `,
+  })
+  class RailHostComponent {
+    readonly variant = signal<'default' | 'rail'>('rail');
+    readonly steps = signal<readonly LcStep[]>(RAIL_STEPS);
+    readonly compact = signal<'auto' | boolean>('auto');
+    readonly edited: string[] = [];
+  }
+
+  @Component({
+    imports: [LcStepperComponent],
+    template: `<lc-stepper ariaLabel="Fil" variant="rail" [steps]="steps" />`,
+  })
+  class RailWithoutActionComponent {
+    readonly steps = RAIL_STEPS;
+  }
+
+  async function rail(steps: readonly LcStep[] = RAIL_STEPS, compact: 'auto' | boolean = 'auto') {
+    const fixture = TestBed.createComponent(RailHostComponent);
+    fixture.componentInstance.steps.set(steps);
+    fixture.componentInstance.compact.set(compact);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const stepper = root.querySelector('lc-stepper') as HTMLElement;
+    return { fixture, host: fixture.componentInstance, root, stepper };
+  }
+
+  const railItems = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('ol.lc-stepper__answers > li'));
+  const text = (element: Element | null) => element?.textContent?.replace(/\s+/g, ' ').trim();
+  const toggle = (root: HTMLElement) => root.querySelector<HTMLButtonElement>('button.lc-stepper__toggle')!;
+  const answersList = (root: HTMLElement) => root.querySelector<HTMLOListElement>('ol.lc-stepper__answers')!;
+
+  /** Nom de l'icône du registre affichée dans `element`, `null` s'il n'y en a pas. */
+  function iconIn(element: Element): string | null {
+    const svg = element.querySelector('lc-icon svg');
+    if (!svg) return null;
+    for (const [name, markup] of Object.entries(LC_DEFAULT_ICONS)) {
+      const holder = document.createElement('div');
+      holder.innerHTML = markup;
+      if (holder.querySelector('svg')!.innerHTML === svg.innerHTML) return name;
+    }
+    return 'inconnue';
+  }
+
+  const STEPPER_CSS = 'packages/angular/navigation/src/stepper/stepper.component.css';
+
+  /** Bloc `{ … }` (accolades appariées) qui commence à `start`, en-tête compris. */
+  function blockAt(css: string, start: number): string {
+    let depth = 0;
+    for (let index = css.indexOf('{', start); index < css.length; index++) {
+      if (css[index] === '{') depth++;
+      if (css[index] === '}' && --depth === 0) return css.slice(start, index + 1);
+    }
+    throw new Error('Accolades non appariées');
+  }
+
+  /** Valeur de `property` dans la règle `selector` de la feuille (lue en texte) ; `within` : en-tête d'un `@container` qui la contient. */
+  function cssDecl(selector: string, property: string, within?: string): string {
+    const css = readFileSync(resolve(process.cwd(), STEPPER_CSS), 'utf8');
+    const scope = within ? blockAt(css, css.indexOf(within)) : css;
+    const start = scope.indexOf(`\n${within ? '  ' : ''}${selector} {`);
+    if (start < 0) throw new Error(`Règle « ${selector} » introuvable${within ? ` dans ${within}` : ''}`);
+    const match = new RegExp(`\\s${property}:\\s*([^;]+);`).exec(blockAt(scope, start + 1));
+    if (!match) throw new Error(`« ${selector} » ne déclare pas ${property}`);
+    return match[1].trim();
+  }
+
+  describe('CA-16 : rendu des champs de chaque étape', () => {
+    it('CA-16 : chaque étape affiche son titre, sa réponse et son détail quand ils existent', async () => {
+      const { root } = await rail();
+      const [e1, e2] = railItems(root);
+      expect(railItems(root).length).toBe(5);
+      expect(text(e1.querySelector('.lc-stepper__title'))).toBe('Etape 1');
+      expect(text(e1.querySelector('.lc-stepper__answer'))).toBe('Maison à 250 000 €');
+      expect(text(e1.querySelector('.lc-stepper__detail'))).toBe('Apport de 20 000 €');
+      expect(text(e2.querySelector('.lc-stepper__answer'))).toBe('Célibataire');
+    });
+
+    it('CA-16 : un champ absent ne rend aucun élément (pas de paragraphe vide)', async () => {
+      const { root } = await rail();
+      const [, e2, e3, e4] = railItems(root);
+      expect(e2.querySelector('.lc-stepper__detail')).toBeNull();
+      expect(e3.querySelector('.lc-stepper__answer')).toBeNull();
+      expect(e3.querySelector('.lc-stepper__detail')).toBeNull();
+      expect(e4.querySelector('.lc-stepper__answer')).toBeNull();
+      expect(text(e4.querySelector('.lc-stepper__detail'))).toBe('Prêt sur 20 ans');
+      expect(Array.from(root.querySelectorAll('.lc-stepper__answer, .lc-stepper__detail')).every((p) => p.textContent!.trim() !== '')).toBe(true);
+    });
+
+    it('CA-16 : réponse et détail sont du texte brut (aucun HTML interprété)', async () => {
+      const { root } = await rail([{ id: 'x', label: 'X', state: 'current', answer: '<b>gras</b>', detail: '<i>italique</i>' }]);
+      const [item] = railItems(root);
+      expect(item.querySelector('b, i')).toBeNull();
+      expect(item.querySelector('.lc-stepper__answer')!.textContent).toBe('<b>gras</b>');
+      expect(item.querySelector('.lc-stepper__detail')!.textContent).toBe('<i>italique</i>');
+    });
+
+    it('CA-16 : le gabarit lcStepAction est rendu une fois par étape, avec l\'étape en contexte', async () => {
+      const { root, host } = await rail();
+      const acts = Array.from(root.querySelectorAll<HTMLButtonElement>('.lc-stepper__actions .act'));
+      expect(acts.map((button) => text(button))).toEqual(['Modifier Etape 1', 'Modifier Etape 2', 'Modifier Etape 3', 'Modifier Etape 4', 'Modifier Etape 5']);
+      railItems(root).forEach((item) => expect(item.querySelectorAll('.lc-stepper__actions .act').length).toBe(1));
+      acts[1].click();
+      acts[4].click();
+      expect(host.edited).toEqual(['e2', 'e5']);
+    });
+
+    it('CA-16 : l\'action vient après la réponse et le détail de son étape', async () => {
+      const { root } = await rail();
+      const content = railItems(root)[0].querySelector('.lc-stepper__content')!;
+      expect(Array.from(content.children).map((child) => child.className)).toEqual(['lc-stepper__title', 'lc-stepper__answer', 'lc-stepper__detail', 'lc-stepper__actions']);
+    });
+
+    it('CA-16 : sans gabarit lcStepAction, aucun bloc d\'actions', async () => {
+      const fixture = TestBed.createComponent(RailWithoutActionComponent);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      expect(railItems(root).length).toBe(5);
+      expect(root.querySelector('.lc-stepper__actions')).toBeNull();
+      expect(root.querySelectorAll('ol button').length).toBe(0);
+    });
+
+    it('CA-16 : l\'étape en cours est la seule à porter aria-current="step"', async () => {
+      const { root } = await rail();
+      expect(root.querySelectorAll('[aria-current]').length).toBe(1);
+      expect(railItems(root)[2].getAttribute('aria-current')).toBe('step');
+    });
+
+    it('CA-16 : aucune étape en cours = aucun aria-current', async () => {
+      const { root } = await rail(RAIL_STEPS.map((step) => ({ ...step, state: 'done' as const })));
+      expect(root.querySelector('[aria-current]')).toBeNull();
+    });
+
+    it('CA-16 : les titres ne sont pas cliquables (ni bouton, ni lien), même pour une étape faite', async () => {
+      const { root, host } = await rail();
+      for (const item of railItems(root)) {
+        expect(item.querySelector('.lc-stepper__title button, .lc-stepper__title a, .lc-stepper__title [tabindex]')).toBeNull();
+      }
+      expect(root.querySelector('.lc-stepper__step')).toBeNull();
+      expect(root.querySelector('nav')!.getAttribute('aria-label')).toBe('Fil');
+      expect(host.edited).toEqual([]);
+    });
+
+    it('CA-16 : un clic sur le titre n\'émet pas stepSelect', async () => {
+      const { fixture, root } = await rail();
+      const picked: string[] = [];
+      fixture.debugElement.query((node) => node.name === 'lc-stepper').componentInstance.stepSelect.subscribe((id: string) => picked.push(id));
+      root.querySelector<HTMLElement>('.lc-stepper__title')!.click();
+      expect(picked).toEqual([]);
+    });
+
+    it('CA-16 : pastille décorative (aria-hidden) : coche pour une étape faite, numéro sinon', async () => {
+      const { root } = await rail();
+      const markers = Array.from(root.querySelectorAll('.lc-stepper__marker'));
+      expect(markers.length).toBe(5);
+      expect(markers.every((marker) => marker.getAttribute('aria-hidden') === 'true')).toBe(true);
+      expect(iconIn(markers[0])).toBe('check');
+      expect(text(markers[2])).toBe('3');
+      expect(iconIn(markers[2])).toBeNull();
+    });
+
+    it('CA-16 : « (à corriger) » et « (facultative) » sont lus avec le titre, « Facultative » est masquée aux lecteurs d\'écran', async () => {
+      const { root } = await rail([
+        { id: 'a', label: 'Alpha', state: 'upcoming', invalid: true },
+        { id: 'b', label: 'Beta', state: 'upcoming', optional: true },
+        { id: 'c', label: 'Gamma', state: 'upcoming', invalid: true, optional: true },
+        { id: 'd', label: 'Delta', state: 'upcoming' },
+      ]);
+      const [a, b, c, d] = railItems(root);
+      expect(text(a.querySelector('.lc-stepper__hidden'))).toBe('(à corriger)');
+      expect(text(b.querySelector('.lc-stepper__hidden'))).toBe('(facultative)');
+      expect(text(c.querySelector('.lc-stepper__hidden'))).toBe('(à corriger) (facultative)');
+      expect(d.querySelector('.lc-stepper__hidden')).toBeNull();
+      expect(text(b.querySelector('.lc-stepper__optional'))).toBe('Facultative');
+      expect(b.querySelector('.lc-stepper__optional')!.getAttribute('aria-hidden')).toBe('true');
+      expect(d.querySelector('.lc-stepper__optional')).toBeNull();
+      expect(a.classList).toContain('lc-stepper__item--invalid');
+    });
+
+    it('CA-16 : l\'hôte porte lc-stepper--rail', async () => {
+      const { stepper } = await rail();
+      expect(stepper.classList).toContain('lc-stepper--rail');
+    });
+  });
+
+  describe('CA-17 : étape affichée, en-tête et segments', () => {
+    it('CA-17 : « Étape n sur N · nom » pour l\'étape en cours', async () => {
+      const { root } = await rail();
+      expect(text(root.querySelector('.lc-stepper__where'))).toBe('Étape 3 sur 5 · Etape 3');
+    });
+
+    it('CA-17 : N segments décoratifs (aria-hidden), dont les n premiers pleins', async () => {
+      const { root } = await rail();
+      const bars = root.querySelector('.lc-stepper__bars')!;
+      expect(bars.getAttribute('aria-hidden')).toBe('true');
+      const segments = Array.from(bars.querySelectorAll('.lc-stepper__bar'));
+      expect(segments.length).toBe(5);
+      expect(segments.map((bar) => bar.classList.contains('lc-stepper__bar--on'))).toEqual([true, true, true, false, false]);
+    });
+
+    it('CA-17 : sans étape en cours, la première étape non faite est affichée', async () => {
+      const steps = RAIL_STEPS.map((step, index) => ({ ...step, state: index < 2 ? ('done' as const) : ('upcoming' as const) }));
+      const { root } = await rail(steps);
+      expect(text(root.querySelector('.lc-stepper__where'))).toBe('Étape 3 sur 5 · Etape 3');
+      expect(root.querySelectorAll('.lc-stepper__bar--on').length).toBe(3);
+    });
+
+    it('CA-17 : toutes les étapes faites : la dernière est affichée, tous les segments sont pleins', async () => {
+      const { root } = await rail(RAIL_STEPS.map((step) => ({ ...step, state: 'done' as const })));
+      expect(text(root.querySelector('.lc-stepper__where'))).toBe('Étape 5 sur 5 · Etape 5');
+      expect(root.querySelectorAll('.lc-stepper__bar--on').length).toBe(5);
+    });
+
+    it('CA-17 : l\'étape en cours l\'emporte sur une étape non faite antérieure', async () => {
+      const steps: readonly LcStep[] = [
+        { id: 'a', label: 'A', state: 'upcoming' },
+        { id: 'b', label: 'B', state: 'current' },
+        { id: 'c', label: 'C', state: 'upcoming' },
+      ];
+      const { root } = await rail(steps);
+      expect(text(root.querySelector('.lc-stepper__where'))).toBe('Étape 2 sur 3 · B');
+      expect(root.querySelectorAll('.lc-stepper__bar--on').length).toBe(2);
+    });
+
+    it('CA-17 : première étape en cours : un seul segment plein', async () => {
+      const { root } = await rail(stepsAt(0));
+      expect(text(root.querySelector('.lc-stepper__where'))).toBe('Étape 1 sur 5 · Etape 1');
+      expect(root.querySelectorAll('.lc-stepper__bar--on').length).toBe(1);
+    });
+
+    it('CA-17 : l\'en-tête suit un changement d\'étape', async () => {
+      const { fixture, host, root } = await rail(stepsAt(1));
+      host.steps.set(stepsAt(3));
+      await fixture.whenStable();
+      expect(text(root.querySelector('.lc-stepper__where'))).toBe('Étape 4 sur 5 · Etape 4');
+      expect(root.querySelectorAll('.lc-stepper__bar--on').length).toBe(4);
+    });
+
+    it('CA-17 : seules les étapes avec réponse ou détail ne sont pas marquées « bare » (absentes de la liste repliée)', async () => {
+      const { root } = await rail();
+      expect(railItems(root).map((item) => item.classList.contains('lc-stepper__item--bare'))).toEqual([false, false, true, false, true]);
+    });
+
+    it('CA-17 : compact vrai = classe lc-stepper--compact, faux = lc-stepper--full, auto = aucune', async () => {
+      expect((await rail(RAIL_STEPS, true)).stepper.classList).toContain('lc-stepper--compact');
+      const full = (await rail(RAIL_STEPS, false)).stepper;
+      expect(full.classList).toContain('lc-stepper--full');
+      expect(full.classList).not.toContain('lc-stepper--compact');
+      const auto = (await rail(RAIL_STEPS, 'auto')).stepper;
+      expect(auto.classList).not.toContain('lc-stepper--compact');
+      expect(auto.classList).not.toContain('lc-stepper--full');
+    });
+  });
+
+  describe('CA-17 : bouton « Voir vos réponses »', () => {
+    it('CA-17 : bouton natif (type button) avec le libellé LC_LABELS.stepAnswers, replié au départ', async () => {
+      const { root } = await rail();
+      const button = toggle(root);
+      expect(button.type).toBe('button');
+      expect(text(button)).toBe('Voir vos réponses');
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('CA-17 : libellé anglais « View your answers »', async () => {
+      TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: LC_LABELS_EN }] });
+      const { root } = await rail();
+      expect(text(toggle(root))).toBe('View your answers');
+    });
+
+    it('CA-17 : aria-controls désigne l\'ol des réponses', async () => {
+      const { root } = await rail();
+      const id = toggle(root).getAttribute('aria-controls')!;
+      expect(id).toBeTruthy();
+      expect(answersList(root).id).toBe(id);
+      expect(root.querySelectorAll(`[id="${id}"]`).length).toBe(1);
+    });
+
+    it('CA-17 : deux fils sur la page ont des aria-controls distincts', async () => {
+      const first = (await rail()).root;
+      const second = (await rail()).root;
+      expect(toggle(first).getAttribute('aria-controls')).not.toBe(toggle(second).getAttribute('aria-controls'));
+    });
+
+    it('CA-17 : le clic bascule aria-expanded, l\'icône chevron et le repli de la liste, dans les deux sens', async () => {
+      const { fixture, root } = await rail();
+      expect(iconIn(toggle(root))).toBe('chevron-right');
+      expect(answersList(root).classList).toContain('lc-stepper__answers--collapsed');
+
+      toggle(root).click();
+      await fixture.whenStable();
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('true');
+      expect(iconIn(toggle(root))).toBe('chevron-down');
+      expect(answersList(root).classList).not.toContain('lc-stepper__answers--collapsed');
+
+      toggle(root).click();
+      await fixture.whenStable();
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('false');
+      expect(iconIn(toggle(root))).toBe('chevron-right');
+      expect(answersList(root).classList).toContain('lc-stepper__answers--collapsed');
+    });
+
+    it('CA-17 : déplier ne change ni la liste ni l\'étape en cours (même ol, mêmes items)', async () => {
+      const { fixture, root } = await rail();
+      const list = answersList(root);
+      const before = railItems(root);
+      toggle(root).click();
+      await fixture.whenStable();
+      expect(answersList(root)).toBe(list);
+      expect(railItems(root)).toEqual(before);
+      expect(root.querySelectorAll('[aria-current]').length).toBe(1);
+    });
+  });
+
+  describe('CA-17 : clavier (ordre de tabulation)', () => {
+    it('le bouton précède la liste dans l\'ordre du DOM : il est le premier élément focalisable', async () => {
+      const { root } = await rail();
+      const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE));
+      expect(focusable[0]).toBe(toggle(root));
+      expect(focusable.slice(1).every((element) => answersList(root).contains(element))).toBe(true);
+    });
+
+    it('les actions sont toutes dans l\'ol repliable : repliée, la liste est display:none (hors tabulation) ; dépliée, elle est atteignable', async () => {
+      const { fixture, root } = await rail();
+      const actions = Array.from(root.querySelectorAll<HTMLElement>('.act'));
+      expect(actions.length).toBe(5);
+      expect(actions.every((action) => answersList(root).contains(action))).toBe(true);
+      expect(answersList(root).classList).toContain('lc-stepper__answers--collapsed');
+      expect(cssDecl('.lc-stepper__answers--collapsed', 'display')).toBe('var(--_collapsed, block)');
+      expect(cssDecl(':host(.lc-stepper--rail)', '--_collapsed')).toBe('none');
+
+      toggle(root).click();
+      await fixture.whenStable();
+      expect(answersList(root).classList).not.toContain('lc-stepper__answers--collapsed');
+      expect(actions.every((action) => answersList(root).contains(action))).toBe(true);
+    });
+  });
+
+  describe('CA-17 : règles CSS des deux formes (jsdom n\'évalue pas @container : lecture de la feuille)', () => {
+    it('forme étroite par défaut (aussi sans conteneur) : en-tête affiché, liste repliée, sans pastilles ni liaisons, étapes « bare » masquées', () => {
+      const base = (property: string) => cssDecl(':host(.lc-stepper--rail)', property);
+      expect(base('--_head')).toBe('block');
+      expect(base('--_collapsed')).toBe('none');
+      expect(base('--_marker')).toBe('none');
+      expect(base('--_connector')).toBe('none');
+      expect(base('--_bare')).toBe('none');
+      expect(cssDecl('.lc-stepper__head', 'display')).toBe('var(--_head, none)');
+      expect(cssDecl(':host(.lc-stepper--rail) .lc-stepper__item--bare', 'display')).toBe('var(--_bare, none)');
+      expect(cssDecl(':host(.lc-stepper--rail) .lc-stepper__marker', 'display')).toBe('var(--_marker, none)');
+      expect(cssDecl(':host(.lc-stepper--rail) .lc-stepper__item::before', 'display')).toBe('var(--_connector, none)');
+    });
+
+    it('conteneur de 900 px ou plus : forme large (liste visible, en-tête masqué, pastilles reliées), sauf compact vrai', () => {
+      const wide = (property: string) => cssDecl(':host(.lc-stepper--rail:not(.lc-stepper--compact))', property, '@container (min-width: 900px)');
+      expect(wide('--_head')).toBe('none');
+      expect(wide('--_collapsed')).toBe('block');
+      expect(wide('--_marker')).toBe('flex');
+      expect(wide('--_item')).toBe('grid');
+      expect(wide('--_bare')).toBe('grid');
+      expect(wide('--_connector')).toBe('block');
+    });
+
+    it('compact faux : forme large quelle que soit la largeur du conteneur (règle hors @container)', () => {
+      const full = (property: string) => cssDecl(':host(.lc-stepper--rail.lc-stepper--full)', property);
+      expect(full('--_head')).toBe('none');
+      expect(full('--_collapsed')).toBe('block');
+      expect(full('--_marker')).toBe('flex');
+      expect(full('--_bare')).toBe('grid');
+      expect(full('--_connector')).toBe('block');
+    });
+
+    it('la forme ne dépend que du conteneur : aucune requête de fenêtre ne vise la variante rail', () => {
+      const css = readFileSync(resolve(process.cwd(), STEPPER_CSS), 'utf8');
+      const widths = Array.from(css.matchAll(/@media[^{]*\{/g)).map((match) => blockAt(css, match.index!));
+      for (const media of widths.filter((block) => !block.startsWith('@media (prefers-') && !block.startsWith('@media (forced-colors'))) {
+        expect(media).not.toContain('lc-stepper--rail');
+      }
+      expect(css).toContain('@container (min-width: 900px)');
+    });
+
+    it('la forme étroite conserve le lien entre actions et liste : la liste est le même ol (pas de seconde liste)', async () => {
+      const { root } = await rail();
+      expect(root.querySelectorAll('ol').length).toBe(1);
+    });
+  });
+
+  describe('CA-18 : sans variant, rien ne change', () => {
+    it('CA-18 : `variant` absent ou `default` : mêmes éléments que la v1, answer, detail et gabarit d\'action ignorés', async () => {
+      const fixture = TestBed.createComponent(RailHostComponent);
+      fixture.componentInstance.variant.set('default');
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      expect(root.querySelector('lc-stepper')!.classList).not.toContain('lc-stepper--rail');
+      for (const selector of ['.lc-stepper__head', '.lc-stepper__toggle', '.lc-stepper__answers', '.lc-stepper__where', '.lc-stepper__bars', '.lc-stepper__actions', '.lc-stepper__answer', '.lc-stepper__detail', '.act']) {
+        expect(root.querySelector(selector), selector).toBeNull();
+      }
+      expect(root.querySelector('.lc-stepper__summary')!.textContent!.trim()).toBe('Étape 3 sur 5 : Etape 3');
+      expect(root.querySelectorAll('ol.lc-stepper__list > li').length).toBe(5);
+      expect(root.querySelectorAll('button.lc-stepper__step').length).toBe(2);
+    });
+
+    it('CA-18 : le DOM par défaut est identique avec ou sans answer, detail et gabarit', async () => {
+      const plain = await setup(RAIL_STEPS.map(({ answer, detail, ...step }) => step));
+      const fixture = TestBed.createComponent(RailHostComponent);
+      fixture.componentInstance.variant.set('default');
+      await fixture.whenStable();
+      const strip = (html: string) => html.replace(/\s+/g, ' ').replace(/ ?(ng-reflect|_ngcontent|_nghost|ng-version|id|aria-label)="[^"]*"/g, '');
+      expect(strip(fixture.nativeElement.querySelector('nav').innerHTML)).toBe(strip(plain.element.querySelector('nav')!.innerHTML));
+    });
+
+    it('CA-18 : en variante rail, orientation, linear et stepSelect sont sans effet', async () => {
+      const fixture = TestBed.createComponent(LcStepperComponent);
+      fixture.componentRef.setInput('steps', RAIL_STEPS);
+      fixture.componentRef.setInput('ariaLabel', 'Fil');
+      fixture.componentRef.setInput('variant', 'rail');
+      fixture.componentRef.setInput('orientation', 'vertical');
+      fixture.componentRef.setInput('linear', false);
+      const picked: string[] = [];
+      fixture.componentInstance.stepSelect.subscribe((id) => picked.push(id));
+      await fixture.whenStable();
+      const rootRail = fixture.nativeElement as HTMLElement;
+      expect(rootRail.classList).not.toContain('lc-stepper--vertical');
+      expect(rootRail.querySelector('.lc-stepper__step')).toBeNull();
+      rootRail.querySelectorAll<HTMLElement>('.lc-stepper__title').forEach((title) => title.click());
+      expect(picked).toEqual([]);
+      expect(rootRail.querySelector('.lc-stepper__toggle')).not.toBeNull();
     });
   });
 });
