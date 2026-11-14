@@ -28,6 +28,8 @@ interface SegmentView<T> {
  * Contrôle segmenté (`role="radiogroup"`, options `role="radio"`) : un seul choix parmi quelques options.
  * Focus itinérant : les flèches déplacent le focus et la sélection, Début et Fin vont aux extrémités,
  * Tab sort du groupe. Implémente `FormValueControl<T | null>` (Signal Forms) et `[(value)]`.
+ * L'option active porte une coche (l'état ne tient pas à la seule couleur). Avec `controlled`, un choix n'est qu'une demande
+ * (`valueRequest`) : `value` ne change que quand le parent la modifie (par exemple après confirmation).
  */
 @Component({
   selector: 'lc-segmented-control',
@@ -37,7 +39,9 @@ interface SegmentView<T> {
       <button #segment type="button" role="radio" class="lc-segmented-control__option"
         [attr.aria-checked]="segment.selected" [tabIndex]="segment.tabIndex" [disabled]="segment.disabled"
         (click)="select(segment.option)" (keydown)="onKeydown($event, $index)" (blur)="touch.emit()">
-        @if (segment.option.icon) {
+        @if (segment.selected) {
+          <lc-icon name="check" />
+        } @else if (segment.option.icon) {
           <lc-icon [name]="segment.option.icon" />
         }
         <span>{{ segment.option.label }}</span>
@@ -72,6 +76,10 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   readonly fullWidth = input(false, { transform: booleanAttribute });
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly id = input<string>(lcUniqueId('segmented'));
+  /** Valeur pilotée : un choix émet `valueRequest` sans changer `value` ; l'affichage suit seulement `value`. */
+  readonly controlled = input(false, { transform: booleanAttribute });
+  /** Choix de l'utilisateur en mode `controlled`. */
+  readonly valueRequest = output<T | null>();
   /** Émis quand le focus quitte une option (champ « touché » pour Signal Forms). */
   readonly touch = output<void>();
 
@@ -109,9 +117,9 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   }
 
   protected select(option: LcOption<T>): void {
-    if (!this.disabled() && !option.disabled) {
-      this.value.set(option.value);
-    }
+    if (this.disabled() || option.disabled) return;
+    if (this.controlled()) this.valueRequest.emit(option.value);
+    else this.value.set(option.value);
   }
 
   protected onKeydown(event: KeyboardEvent, index: number): void {

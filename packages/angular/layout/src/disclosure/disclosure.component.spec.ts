@@ -1,7 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureHeadingLevel } from './disclosure.component';
+import {
+  LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, LcDisclosureHeadingLevel,
+} from './disclosure.component';
 
 let created = 0;
 
@@ -37,6 +39,115 @@ class DisclosureHostComponent {
   readonly lazy = signal(false);
   readonly changes: boolean[] = [];
 }
+
+@Component({
+  imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, ProbeComponent],
+  template: `
+    <div lcDisclosureGroup [exclusive]="exclusive()">
+      <lc-disclosure id="ga" [(expanded)]="a"><span lcDisclosureSummary>A</span><p>contenu A</p></lc-disclosure>
+      <lc-disclosure id="gb" [(expanded)]="b"><span lcDisclosureSummary>B</span><p>contenu B</p></lc-disclosure>
+      @if (showC()) {
+        <lc-disclosure id="gc" [(expanded)]="c"><span lcDisclosureSummary>C</span><p>contenu C</p></lc-disclosure>
+      }
+      <lc-disclosure id="gl" lazy [(expanded)]="l">
+        <span lcDisclosureSummary>L</span>
+        <ng-template lcDisclosureContent><lc-probe /></ng-template>
+      </lc-disclosure>
+    </div>
+  `,
+})
+class GroupHostComponent {
+  readonly exclusive = signal(true);
+  readonly showC = signal(true);
+  readonly a = signal(true);
+  readonly b = signal(false);
+  readonly c = signal(false);
+  readonly l = signal(false);
+}
+
+describe('LcDisclosureGroupDirective', () => {
+  async function setupGroup(exclusive = true) {
+    created = 0;
+    const fixture = TestBed.createComponent(GroupHostComponent);
+    fixture.componentInstance.exclusive.set(exclusive);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const button = (id: string) => root.querySelector<HTMLButtonElement>(`#${id} button.lc-disclosure__summary`)!;
+    const open = () => ['ga', 'gb', 'gc', 'gl'].filter((id) => button(id)?.getAttribute('aria-expanded') === 'true');
+    const click = async (id: string) => {
+      button(id).click();
+      await fixture.whenStable();
+    };
+    return { fixture, host: fixture.componentInstance, button, open, click };
+  }
+
+  describe('exclusive', () => {
+    it('ouvrir B referme A : une seule ligne ouverte, focus sur le bouton cliqué', async () => {
+      const { open, click, button } = await setupGroup();
+      expect(open()).toEqual(['ga']);
+      button('gb').focus();
+      await click('gb');
+      expect(open()).toEqual(['gb']);
+      expect(document.activeElement).toBe(button('gb'));
+      await click('gc');
+      expect(open()).toEqual(['gc']);
+    });
+
+    it('referme aussi le modèle expanded du parent', async () => {
+      const { host, click } = await setupGroup();
+      await click('gb');
+      expect(host.a()).toBe(false);
+      expect(host.b()).toBe(true);
+    });
+
+    it('replier la ligne ouverte ne rouvre rien', async () => {
+      const { open, click } = await setupGroup();
+      await click('ga');
+      expect(open()).toEqual([]);
+    });
+
+    it('passer exclusive à vrai ne referme rien d\'office', async () => {
+      const { fixture, host, open, click } = await setupGroup(false);
+      await click('gb');
+      expect(open()).toEqual(['ga', 'gb']);
+      host.exclusive.set(true);
+      await fixture.whenStable();
+      expect(open()).toEqual(['ga', 'gb']);
+      await click('gc');
+      expect(open()).toEqual(['gc']);
+    });
+
+    it('une ligne détruite sort du groupe sans erreur', async () => {
+      const { fixture, host, open, click } = await setupGroup();
+      await click('gc');
+      host.showC.set(false);
+      await fixture.whenStable();
+      await click('gb');
+      expect(open()).toEqual(['gb']);
+    });
+
+    it('le contenu lazy d\'une ligne refermée par le groupe est conservé', async () => {
+      const { open, click, fixture } = await setupGroup();
+      await click('gl');
+      expect(created).toBe(1);
+      await click('gb');
+      expect(open()).toEqual(['gb']);
+      const region = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('#gl .lc-disclosure__region')!;
+      expect(region.hidden).toBe(true);
+      expect(region.querySelector('.probe')).not.toBeNull();
+      expect(created).toBe(1);
+    });
+  });
+
+  describe('non exclusif', () => {
+    it('plusieurs lignes du groupe restent ouvertes', async () => {
+      const { open, click } = await setupGroup(false);
+      await click('gb');
+      await click('gc');
+      expect(open()).toEqual(['ga', 'gb', 'gc']);
+    });
+  });
+});
 
 describe('LcDisclosureComponent', () => {
   async function setup(lazy = false) {
