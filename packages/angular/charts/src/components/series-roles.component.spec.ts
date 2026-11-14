@@ -166,4 +166,44 @@ describe('graphiques : couleur de série par rôle (K6)', () => {
     expect(series.map((item: { itemStyle: { color: string } }) => item.itemStyle.color)).toEqual(['#101010', '#202020']);
     expect(series.every((item: { itemStyle: { decal?: unknown } }) => item.itemStyle.decal === undefined)).toBe(true);
   });
+
+  describe('motif par série (I3) : légende', () => {
+    async function setupPatterns(series: LcCartesianData['series']) {
+      const fixture = TestBed.createComponent(RoleChartsHostComponent);
+      fixture.componentInstance.data.set({ categories: ['2026', '2027'], series });
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve));
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+      const swatches = (chart: string) => [...element.querySelectorAll(`${chart} .lc-chart-frame__legend .lc-chart-frame__swatch`)];
+      return { swatches };
+    }
+
+    it('la pastille rect porte data-pattern pour chaque motif, et le décalque du graphique suit avec patterns "never"', async () => {
+      const { swatches } = await setupPatterns([
+        { id: 'a', label: 'A', values: [1, 2], pattern: 'hatch' },
+        { id: 'b', label: 'B', values: [1, 2], pattern: 'hatch-reverse' },
+        { id: 'c', label: 'C', values: [1, 2], pattern: 'dots' },
+        { id: 'd', label: 'D', values: [1, 2], pattern: 'solid' },
+      ]);
+      expect(swatches('lc-bar-chart').map((swatch) => swatch.getAttribute('data-pattern'))).toEqual(['hatch', 'hatch-reverse', 'dots', 'solid']);
+      const decal = (id: string) => lastOption(0).series.find((series: { id: string }) => series.id === id).itemStyle.decal;
+      expect(decal('a').rotation).toBeCloseTo(Math.PI / 4);
+      expect(decal('b').rotation).toBeCloseTo(-Math.PI / 4);
+      expect(decal('c').symbol).toBe('circle');
+      expect(decal('d')).toBeUndefined();
+    });
+
+    it('sans pattern, la pastille n\'a pas d\'attribut data-pattern', async () => {
+      const { swatches } = await setupPatterns([{ id: 'a', label: 'A', values: [1, 2] }, { id: 'b', label: 'B', values: [1, 2], pattern: 'dots' }]);
+      expect(swatches('lc-bar-chart').map((swatch) => swatch.hasAttribute('data-pattern'))).toEqual([false, true]);
+    });
+
+    it('la légende des courbes (line) n\'a jamais de data-pattern', async () => {
+      const { swatches } = await setupPatterns([{ id: 'a', label: 'A', values: [1, 2], pattern: 'hatch' }, { id: 'b', label: 'B', values: [1, 2], pattern: 'dots' }]);
+      const lineSwatches = swatches('lc-line-chart');
+      expect(lineSwatches.length).toBe(2);
+      expect(lineSwatches.some((swatch) => swatch.hasAttribute('data-pattern'))).toBe(false);
+    });
+  });
 });

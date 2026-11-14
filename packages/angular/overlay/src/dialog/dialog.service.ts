@@ -12,6 +12,13 @@ export interface LcDialogConfig<D> {
   readonly dismissible?: boolean;
   /** Nom accessible ; sinon le titre de `lc-dialog`. */
   readonly ariaLabel?: string;
+  /**
+   * Rôle ARIA du dialogue : `alertdialog` pour un message qui interrompt et attend une réponse (confirmation, action destructive) ;
+   * défaut `dialog`.
+   */
+  readonly role?: 'dialog' | 'alertdialog';
+  /** `id` de l'élément qui décrit le dialogue (le message d'un `alertdialog`) ; relié par `aria-describedby`. */
+  readonly ariaDescribedBy?: string;
 }
 
 export interface LcConfirmOptions {
@@ -34,7 +41,7 @@ export class LcDialogService {
   private readonly dialog = inject(Dialog);
 
   open<C, D = unknown, R = unknown>(component: Type<C>, config: LcDialogConfig<D> = {}): LcDialogRef<R> {
-    return this.openDialog<C, D, R>(component, config, 'dialog');
+    return this.openDialog<C, D, R>(component, config, config.role ?? 'dialog');
   }
 
   /** Demande de confirmation : résout `true` si l'utilisateur confirme, `false` sinon. */
@@ -53,6 +60,7 @@ export class LcDialogService {
       data: config.data ?? null,
       ariaLabel: config.ariaLabel ?? null,
       ariaLabelledBy: config.ariaLabel ? null : context.titleId,
+      ariaDescribedBy: config.ariaDescribedBy ?? null,
       disableClose: !context.dismissible,
       panelClass: ['lc-dialog-panel', `lc-dialog-panel--${config.size ?? 'medium'}`],
       backdropClass: 'lc-dialog-backdrop',

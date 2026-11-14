@@ -1077,5 +1077,40 @@ describe('LcTimelineBarComponent : voies (lanes)', () => {
       expect(line).toContain('background: var(--lc-sys-color-on-surface)');
       expect(line).toContain('inline-size: var(--lc-sys-border-width-thick)');
     });
+
+    describe('liseré des voies rayées (B5)', () => {
+      const rule = (selector: string) => blockAt(css(), css().indexOf(`\n${selector} {`) + 1);
+
+      it('le rayé a un liseré de 2 px (bordure épaisse) par défaut, réglable par --lc-timeline-bar-striped-edge-width', () => {
+        expect(rule('.lc-timeline-bar__swatch--striped')).toMatch(
+          /box-shadow:\s*inset 0 0 0\s+var\(--lc-timeline-bar-striped-edge-width, var\(--lc-sys-border-width-thick\)\)/,
+        );
+      });
+
+      it('la couleur du liseré mêle 30 % d\'encre à celle de l\'emplacement, réglable par --lc-timeline-bar-striped-edge', () => {
+        expect(rule('.lc-timeline-bar__swatch--striped')).toContain(
+          'var(--lc-timeline-bar-striped-edge, color-mix(in srgb, var(--_color) 70%, var(--lc-sys-color-on-surface)))',
+        );
+      });
+
+      it('le rayé garde ses rayures de la couleur d\'emplacement et de surface', () => {
+        const striped = rule('.lc-timeline-bar__swatch--striped');
+        expect(striped).toContain('repeating-linear-gradient');
+        expect(striped).toContain('var(--_color) 0 var(--_stripe)');
+        expect(striped).toContain('var(--lc-sys-chart-surface) var(--_stripe)');
+      });
+
+      it('voie pleine inchangée : aplat de la couleur d\'emplacement, sans liseré', () => {
+        const solid = rule('.lc-timeline-bar__swatch--solid');
+        expect(solid).toContain('background: var(--_color)');
+        expect(solid).not.toContain('box-shadow');
+      });
+
+      it('pointillé inchangé : liseré de 1 px de la couleur d\'emplacement, indépendant des variables du rayé', () => {
+        const dotted = rule('.lc-timeline-bar__swatch--dotted');
+        expect(dotted).toContain('box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_color)');
+        expect(dotted).not.toContain('striped-edge');
+      });
+    });
   });
 });

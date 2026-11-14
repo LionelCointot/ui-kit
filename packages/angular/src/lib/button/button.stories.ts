@@ -45,6 +45,22 @@ export const Tailles: Story = {
   }),
 };
 
+/**
+ * Cible tactile : un bouton de moins de 44 px (taille `small`, icône seule) garde une zone de frappe de 44 px
+ * de haut et de large (pseudo-élément invisible, rendu inchangé). Réglable : `--lc-button-hit-size`.
+ * Les zones de deux boutons voisins se chevauchent s'ils sont espacés de moins de 8 px : laisser au moins 8 px.
+ */
+export const ZoneDeFrappe: Story = {
+  render: () => ({
+    template: `
+      <div style="display:flex;gap:16px;align-items:center">
+        <button lcButton size="small">Modifier</button>
+        <button lcButton size="small" iconOnly fillMode="flat" themeColor="neutral" aria-label="Déplier"><lc-icon name="plus" /></button>
+        <button lcButton>Moyen</button>
+      </div>`,
+  }),
+};
+
 export const Etats: Story = {
   render: () => ({
     template: `<div style="display:flex;gap:8px;flex-wrap:wrap">

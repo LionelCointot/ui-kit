@@ -1,4 +1,4 @@
-import type { LcChartRole, LcChartSeries, LcChartTheme } from '../types';
+import type { LcChartPattern, LcChartRole, LcChartSeries, LcChartTheme } from '../types';
 
 /** Icône (`lc-icon`) de chaque rôle : légende et info-bulle portent le rôle autrement que par la couleur. */
 export const LC_CHART_ROLE_ICONS: Readonly<Record<LcChartRole, string>> = {
@@ -31,10 +31,24 @@ export const roleSymbol = (role: LcChartRole): NonNullable<LcChartSeries['symbol
 export function roleDecal(role: LcChartRole, theme: LcChartTheme): object | undefined {
   switch (role) {
     case 'error':
-      return { symbol: 'rect', symbolSize: 1, dashArrayX: [1, 0], dashArrayY: [2, HATCH_SPACING], rotation: Math.PI / 4, color: theme.surface };
+      return patternDecal('hatch', theme);
     case 'highlight':
-      return { symbol: 'rect', symbolSize: 1, dashArrayX: [1, 0], dashArrayY: [2, HATCH_SPACING], rotation: -Math.PI / 4, color: theme.surface };
+      return patternDecal('hatch-reverse', theme);
     case 'neutral':
+      return patternDecal('dots', theme);
+    default:
+      return undefined;
+  }
+}
+
+/** Décalque d'un motif choisi par série (`LcChartSeries.pattern`) : hachures à 45° ou 135°, pointillé ; `solid` n'en a pas. */
+export function patternDecal(pattern: LcChartPattern, theme: LcChartTheme): object | undefined {
+  switch (pattern) {
+    case 'hatch':
+      return { symbol: 'rect', symbolSize: 1, dashArrayX: [1, 0], dashArrayY: [2, HATCH_SPACING], rotation: Math.PI / 4, color: theme.surface };
+    case 'hatch-reverse':
+      return { symbol: 'rect', symbolSize: 1, dashArrayX: [1, 0], dashArrayY: [2, HATCH_SPACING], rotation: -Math.PI / 4, color: theme.surface };
+    case 'dots':
       return { symbol: 'circle', symbolSize: 1, dashArrayX: [1, DOT_SPACING], dashArrayY: [1, DOT_SPACING], color: theme.surface };
     default:
       return undefined;

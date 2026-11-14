@@ -40,7 +40,9 @@
 .lc-timeline-bar__swatch--slot-8 { --_color: var(--lc-sys-chart-categorical-8); }
 .lc-timeline-bar__swatch--slot-neutral { --_color: var(--lc-sys-color-border-strong); }
 
-/* Motifs : plein ; rayé (rayures de la couleur de surface, bord 1 px de la couleur du segment) ; pointillé. */
+/* Motifs : plein ; rayé (rayures de la couleur de surface, liseré de 2 px) ; pointillé (bord 1 px de la couleur du segment).
+   Le liseré du rayé mêle 30 % d'encre à la couleur du segment : plus sombre en clair, plus clair en sombre, donc ≥ 3:1
+   contre la piste (WCAG 1.4.11) dans les deux thèmes. Réglable : --lc-timeline-bar-striped-edge (couleur), --lc-timeline-bar-striped-edge-width. */
 .lc-timeline-bar__swatch--solid {
   background: var(--_color);
 }
@@ -51,7 +53,9 @@
     var(--_color) 0 var(--_stripe),
     var(--lc-sys-chart-surface) var(--_stripe) calc(var(--_stripe) * 2)
   );
-  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--_color);
+  box-shadow: inset 0 0 0
+    var(--lc-timeline-bar-striped-edge-width, var(--lc-sys-border-width-thick))
+    var(--lc-timeline-bar-striped-edge, color-mix(in srgb, var(--_color) 70%, var(--lc-sys-color-on-surface)));
 }
 
 .lc-timeline-bar__swatch--dotted {

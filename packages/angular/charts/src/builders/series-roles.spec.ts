@@ -199,3 +199,64 @@ describe('couleur de série par rôle (K6)', () => {
     });
   });
 });
+
+describe('motif par série (I3)', () => {
+  const patterned = { ...theme, patterns: true };
+
+  const args = (input: LcChartSeries[], chartTheme: LcChartTheme) => {
+    const prepared = prepareSeries(input, new Map(), chartTheme, 'Autres', new Set()).visible;
+    return {
+      categories: ['2026', '2027', '2028'], series: prepared, summary: 'Résumé', theme: chartTheme, format: TestBed.inject(LcFormatService), seriesCount: prepared.length,
+      directLabels: 'auto' as const, yAxis: { format: 'integer' as const },
+    };
+  };
+  const bar = (input: LcChartSeries[], chartTheme: LcChartTheme = theme) =>
+    buildBarOption({ ...args(input, chartTheme), orientation: 'vertical', stacked: true, totals: false, totalLabel: 'Total' }) as AnyOption;
+  const decals = (option: AnyOption) => option['series'].map((item: AnyOption) => item['itemStyle'].decal);
+
+  it('hatch : hachures à 45° ; hatch-reverse : hachures à 135° ; dots : pointillé, même avec patterns: "never"', () => {
+    expect(theme.patterns).toBe(false);
+    const [hatch, reverse, dots] = decals(bar([series('a', { pattern: 'hatch' }), series('b', { pattern: 'hatch-reverse' }), series('c', { pattern: 'dots' })]));
+    expect(hatch.rotation).toBeCloseTo(Math.PI / 4);
+    expect(reverse.rotation).toBeCloseTo(-Math.PI / 4);
+    expect(dots.symbol).toBe('circle');
+  });
+
+  it('des motifs différents donnent des décalques différents', () => {
+    const [hatch, reverse, dots] = decals(bar([series('a', { pattern: 'hatch' }), series('b', { pattern: 'hatch-reverse' }), series('c', { pattern: 'dots' })]));
+    expect(hatch).not.toEqual(reverse);
+    expect(hatch).not.toEqual(dots);
+    expect(reverse).not.toEqual(dots);
+  });
+
+  it('solid : aucun décalque, même quand les motifs automatiques sont actifs', () => {
+    const [forced, automatic] = decals(bar([series('a', { pattern: 'solid' }), series('b')], patterned));
+    expect(forced).toBeUndefined();
+    expect(automatic).toBeDefined();
+  });
+
+  it('sans pattern : comportement inchangé (aucun décalque si patterns inactifs, alternance par rang sinon)', () => {
+    expect(decals(bar([series('a'), series('b')]))).toEqual([undefined, undefined]);
+    const [first, second] = decals(bar([series('a'), series('b')], patterned));
+    expect(first.rotation).toBeCloseTo(Math.PI / 4);
+    expect(second.rotation).toBeCloseTo(-Math.PI / 4);
+  });
+
+  it('colorRole prioritaire sur pattern (error = hachures 45° même avec pattern "dots" ; success reste plein même avec "hatch")', () => {
+    const [error, success] = decals(bar([series('a', { colorRole: 'error', pattern: 'dots' }), series('b', { colorRole: 'success', pattern: 'hatch' })]));
+    expect(error.rotation).toBeCloseTo(Math.PI / 4);
+    expect(error.symbol).toBe('rect');
+    expect(success).toBeUndefined();
+  });
+
+  it('un motif ne change ni la couleur ni l\'emplacement de la série', () => {
+    const prepared = prepareSeries([series('a', { pattern: 'hatch' }), series('b')], new Map(), theme, 'Autres', new Set());
+    expect(prepared.all.map((item) => [item.color, item.slot, item.pattern])).toEqual([[theme.categorical[0], 1, 'hatch'], [theme.categorical[1], 2, undefined]]);
+  });
+
+  it('aires : le décalque du motif est posé sur la zone', () => {
+    const option = buildAreaOption({ ...args([series('a', { pattern: 'hatch-reverse' }), series('b', { pattern: 'solid' })], patterned), stacked: false }) as AnyOption;
+    expect(option['series'][0].areaStyle.decal.rotation).toBeCloseTo(-Math.PI / 4);
+    expect(option['series'][1].areaStyle.decal).toBeUndefined();
+  });
+});
