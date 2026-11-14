@@ -156,6 +156,122 @@
   color: var(--lc-sys-color-on-surface-muted);
 }
 
+/* Voies (`lanes`) : l'hôte devient conteneur pour que la mise en page suive sa largeur, pas celle de la fenêtre. */
+:host(.lc-timeline-bar--lanes) {
+  --_lane-label: var(--lc-timeline-bar-lane-label-width, calc(var(--lc-sys-space-10) * 4));
+  --_lane-gap: var(--lc-sys-space-3);
+
+  container-type: inline-size;
+}
+
+:host(.lc-timeline-bar--stale) .lc-timeline-bar__lane-track {
+  opacity: var(--lc-timeline-bar-stale-opacity, 0.6);
+}
+
+.lc-timeline-bar__lane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lc-sys-space-1);
+  margin-block-end: var(--lc-sys-space-3);
+}
+
+.lc-timeline-bar__lane-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-timeline-bar__lane-head .lc-timeline-bar__marker {
+  margin-block-start: calc((1lh - var(--lc-sys-space-3)) / 2);
+}
+
+.lc-timeline-bar__lane-name {
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-timeline-bar__lane-caption {
+  display: block;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-regular);
+}
+
+.lc-timeline-bar__lane-track {
+  position: relative;
+  block-size: var(--lc-timeline-bar-lane-height, var(--lc-sys-control-height-md));
+  border-radius: var(--lc-sys-radius-sm);
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-timeline-bar__span {
+  position: absolute;
+  inset-block: 0;
+  min-inline-size: var(--lc-sys-border-width-thick);
+  border-radius: var(--lc-sys-radius-sm);
+}
+
+/* Repère transversal : 2 px en encre, dépasse de la piste pour se lire d'une voie à l'autre. */
+.lc-timeline-bar__reference-line {
+  position: absolute;
+  inset-block: calc(-1 * var(--lc-sys-space-1));
+  inline-size: var(--lc-sys-border-width-thick);
+  margin-inline-start: calc(-1 * var(--lc-sys-border-width-thick) / 2);
+  background: var(--lc-sys-color-on-surface);
+}
+
+.lc-timeline-bar__reference {
+  position: relative;
+  block-size: calc(var(--lc-sys-space-1) + 1lh);
+}
+
+.lc-timeline-bar__reference-anchor {
+  position: absolute;
+  inset-block-start: var(--lc-sys-space-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  inline-size: 0;
+}
+
+.lc-timeline-bar__reference-anchor--start {
+  align-items: flex-start;
+}
+
+.lc-timeline-bar__reference-anchor--end {
+  align-items: flex-end;
+}
+
+.lc-timeline-bar__reference-label {
+  flex: none;
+  white-space: nowrap;
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-timeline-bar__axis-label {
+  margin: var(--lc-sys-space-1) 0 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+/* Dès 700 px : nom de la voie (160 px) à gauche de sa piste ; graduations, repère et légende de l'axe alignés sur les pistes. */
+@container (min-width: 700px) {
+  .lc-timeline-bar__lane {
+    grid-template-columns: var(--_lane-label) minmax(0, 1fr);
+    column-gap: var(--_lane-gap);
+    align-items: center;
+    margin-block-end: var(--lc-sys-space-2);
+  }
+
+  .lc-timeline-bar__reference,
+  :host(.lc-timeline-bar--lanes) .lc-timeline-bar__ticks,
+  :host(.lc-timeline-bar--lanes) .lc-timeline-bar__bounds,
+  :host(.lc-timeline-bar--lanes) .lc-timeline-bar__axis-label {
+    margin-inline-start: calc(var(--_lane-label) + var(--_lane-gap));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lc-timeline-bar__segment {
     transition: none;
@@ -168,7 +284,13 @@
     forced-color-adjust: none;
   }
 
+  .lc-timeline-bar__reference-line {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+
   .lc-timeline-bar__segment,
+  .lc-timeline-bar__span,
   .lc-timeline-bar__marker {
     forced-color-adjust: none;
   }

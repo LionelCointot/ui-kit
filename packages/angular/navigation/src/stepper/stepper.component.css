@@ -255,6 +255,185 @@ button.lc-stepper__step:focus-visible {
   transition-property: block-size;
 }
 
+/* Variante rail (fil du projet). Deux formes décrites par les mêmes propriétés personnalisées : étroite (base, aussi sans conteneur) et large
+   (`compact` faux, ou conteneur d'au moins 900 px sauf `compact` vrai). Étroite : en-tête (« Étape n sur N · nom », segments, bouton) et liste repliable
+   sans pastilles ; large : liste verticale à pastilles reliées. */
+:host(.lc-stepper--rail) {
+  --_head: block;
+  --_collapsed: none;
+  --_marker: none;
+  --_item: block;
+  --_bare: none;
+  --_item-border: var(--lc-sys-border-width-thin);
+  --_item-padding: var(--lc-sys-space-3) 0;
+  --_connector: none;
+  --_marker-height: 0px;
+}
+
+@container (min-width: 900px) {
+  :host(.lc-stepper--rail:not(.lc-stepper--compact)) {
+    --_marker-height: var(--lc-sys-space-10);
+    --_head: none;
+    --_collapsed: block;
+    --_marker: flex;
+    --_item: grid;
+    --_bare: grid;
+    --_item-border: 0;
+    --_item-padding: 0 0 var(--lc-sys-space-4);
+    --_connector: block;
+  }
+}
+
+:host(.lc-stepper--rail.lc-stepper--full) {
+  --_marker-height: var(--lc-sys-space-10);
+  --_head: none;
+  --_collapsed: block;
+  --_marker: flex;
+  --_item: grid;
+  --_bare: grid;
+  --_item-border: 0;
+  --_item-padding: 0 0 var(--lc-sys-space-4);
+  --_connector: block;
+}
+
+.lc-stepper__head {
+  display: var(--_head, none);
+}
+
+.lc-stepper__where {
+  margin: 0 0 var(--lc-sys-space-2);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-stepper__bars {
+  display: flex;
+  gap: var(--lc-sys-space-1);
+}
+
+.lc-stepper__bar {
+  flex: 1;
+  block-size: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-stepper-track, var(--lc-sys-color-border));
+}
+
+.lc-stepper__bar--on {
+  background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
+}
+
+.lc-stepper__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  box-sizing: border-box;
+  min-block-size: var(--lc-sys-control-height-md);
+  padding: 0;
+  border: 0;
+  border-radius: var(--lc-sys-radius-md);
+  background: none;
+  color: var(--lc-sys-color-primary);
+  font: inherit;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  cursor: pointer;
+}
+
+.lc-stepper__toggle:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-stepper__answers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-stepper__answers--collapsed {
+  display: var(--_collapsed, block);
+}
+
+:host(.lc-stepper--rail) .lc-stepper__item {
+  display: var(--_item, block);
+  grid-template-columns: var(--lc-sys-space-10) minmax(0, 1fr);
+  column-gap: var(--lc-sys-space-3);
+  padding: var(--_item-padding);
+  border-block-end: var(--_item-border) solid var(--lc-sys-color-border);
+  text-align: start;
+}
+
+:host(.lc-stepper--rail) .lc-stepper__item--bare {
+  display: var(--_bare, none);
+}
+
+:host(.lc-stepper--rail) .lc-stepper__marker {
+  display: var(--_marker, none);
+}
+
+/* Liaison entre deux pastilles, pleine quand l'étape est faite. */
+:host(.lc-stepper--rail) .lc-stepper__item::before {
+  content: '';
+  display: var(--_connector, none);
+  position: absolute;
+  inset-block: var(--lc-sys-space-10) 0;
+  inset-inline-start: calc(var(--lc-sys-space-10) / 2 - var(--lc-sys-border-width-thick) / 2);
+  inline-size: var(--lc-sys-border-width-thick);
+  background: var(--lc-stepper-track, var(--lc-sys-color-border));
+}
+
+:host(.lc-stepper--rail) .lc-stepper__item--done::before {
+  background: var(--lc-stepper-done-background, var(--lc-sys-color-primary));
+}
+
+:host(.lc-stepper--rail) .lc-stepper__item:last-child::before {
+  display: none;
+}
+
+/* La ligne du nom a la hauteur de la pastille : elles restent alignées. */
+.lc-stepper__title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: var(--_marker-height, 0);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.lc-stepper__answer,
+.lc-stepper__detail {
+  margin: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-stepper__detail {
+  margin-block-start: var(--lc-sys-space-1);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-stepper__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
+  margin-block-start: var(--lc-sys-space-1);
+}
+
+@media (forced-colors: active) {
+  .lc-stepper__bar {
+    background: GrayText;
+  }
+
+  .lc-stepper__bar--on {
+    background: Highlight;
+  }
+
+  :host(.lc-stepper--rail) .lc-stepper__item::before {
+    background: GrayText;
+  }
+
+  :host(.lc-stepper--rail) .lc-stepper__item--done::before {
+    background: Highlight;
+  }
+}
+
 /* Sens du changement : la pastille qui devient « en cours » attend que la piste l'atteigne (avance) ou la quitte (recul). */
 :host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge,
 :host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge {

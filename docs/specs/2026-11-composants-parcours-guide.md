@@ -119,3 +119,40 @@ Demande du porteur du produit : un `lc-stepper` qui ressemble davantage au stepp
 ### 13.9 Écarts constatés (correctifs de revue de conformité du consommateur, 2026-11-13)
 - Carte de choix : le voile de survol restait collé après un toucher et la carte paraissait désactivée ; il n'existe plus que sous `@media (hover: hover)`. La carte cochée a désormais le fond `primary-container` et les textes `on-primary-container` (paire contrôlée en AA par `lc-tokens`, clair et sombre) ; le bord de 2 px reste obtenu par 1 px de bord + 1 px d'ombre interne.
 - Barre de durées : entrée facultative `ticks` ajoutée (graduations décoratives sous la piste). Le masquage des libellés qui se chevauchent est mesuré dans le navigateur (`getBoundingClientRect`, recalculé quand la largeur change via `ResizeObserver`) ; les graduations proches d'une extrémité mais pas à 0 ou au total gardent un libellé centré, qui peut déborder un peu de la barre.
+
+## 14. Évolution : fil du projet (`lc-stepper` variante `rail`) et frise à deux voies (`lc-timeline-bar` `lanes`) (2026-11-14)
+
+Source : tâches T3 et T4 de `finance-rent-vs-buy/docs/specs/2026-11-refonte-fil-du-projet.md` (CA-1, CA-9, CA-26), brief §3, §5, §9, §10, §11. Évolutions **additives** : sans `variant` ni `lanes`, rendu et API inchangés. Décision de T3 : l'extension ne déforme pas l'API du stepper (une variante, deux champs d'étape, un gabarit) ; `lc-step-rail` n'est pas créé.
+
+### 14.1 `lc-stepper` : `variant="rail"`
+| Ajout | Détail |
+|---|---|
+| `variant` (`'default'` \| `'rail'`) | `rail` : liste verticale à pastilles reliées (liaison pleine après une étape faite) quand la forme est large ; sinon « Étape n sur N · nom », une barre de N segments (décorative) et le bouton « Voir vos réponses » (`aria-expanded`, `aria-controls`) qui déplie la **même** liste. |
+| `LcStep.answer`, `LcStep.detail` | Réponse en cours et ligne de détail atténuée, en texte brut (aucun HTML : pas de gras partiel). |
+| Gabarit `ng-template[lcStepAction]` (`let-step`) | Rendu une fois par étape sous la réponse (ex. « Modifier ») ; l'application décide quelles étapes en portent. Directive `LcStepActionDirective`. |
+| `compact` | En `rail` : `'auto'` = forme selon le conteneur ; `true` = étroite ; `false` = large. |
+| `LC_LABELS.stepAnswers` | « Voir vos réponses » / « View your answers ». |
+
+- **Largeur** : requête de conteneur (`@container (min-width: 900px)`), pas de fenêtre. Le conteneur est l'ancêtre le plus proche déclarant `container-type: inline-size` (le cadre de page, pas la colonne de 290 px du fil) ; **sans conteneur, forme étroite**.
+- **Forme étroite** : seules les étapes qui ont une réponse ou un détail figurent dans la liste repliée ; pastilles et liaisons masquées ; les actions restent atteignables au clavier une fois la liste dépliée (liste repliée = `display: none`, hors ordre de tabulation).
+- **Accessibilité** : `nav[aria-label]` > `ol`, `aria-current="step"` sur l'étape en cours, pastilles décoratives, mentions « (à corriger) » / « (facultative) » lues ; en `rail`, `orientation`, `linear` et `stepSelect` sont sans effet (les boutons sont ceux du gabarit) ; le titre est du texte, pas un bouton.
+- CA-16 : en `rail`, chaque étape affiche pastille, titre, `answer`, `detail` et le gabarit d'action ; l'étape en cours porte `aria-current="step"`. CA-17 : `compact` vrai ou conteneur < 900 px : « Étape n sur N · nom » (n = étape en cours, sinon première non faite), N segments dont les n premiers pleins, bouton qui bascule `aria-expanded` et la visibilité de la liste ; `compact` faux ou conteneur ≥ 900 px : liste visible, bouton et en-tête masqués. CA-18 : sans `variant`, aucun changement (CA-10 à CA-15).
+
+### 14.2 `lc-timeline-bar` : `lanes`
+| Ajout | Détail |
+|---|---|
+| `lanes` (`LcTimelineLane[]`) | `{id, label, caption?, colorSlot, marker?, spans: {from, to}[]}` : une voie par ligne sur un axe commun, de 0 à `axisEnd`. Non vide, remplace `segments` (qui devient facultatif, défaut `[]`). Le motif découle de `colorSlot` (impair plein, pair rayé) et le repère de forme de `marker` : forme et motif portent le sens, pas la couleur. `caption` (ex. « devant de 0 à 5 ans », « jamais devant ») vient de l'application. |
+| `axisEnd` | Fin de l'axe (défaut : plus grande fin de période). |
+| `reference` (`{at, label}`) | Repère transversal : trait de 2 px en encre sur chaque voie, étiqueté sous la dernière ; hors de l'axe : ignoré. |
+| `axisLabel` | Légende de l'axe, sous les graduations (`ticks` s'applique à l'axe des voies). |
+| `description` | Texte équivalent de toute la frise : en mode voies, voies et repère sont dans un `role="img"` nommé par `description`. |
+
+- **Largeur** : l'hôte devient conteneur (`container-type: inline-size`, il doit donc être un bloc de pleine largeur). Dès 700 px, le nom de la voie (160 px, `--lc-timeline-bar-lane-label-width`) est à gauche de sa piste ; dessous, il la surmonte. Graduations, repère, bornes et légende de l'axe restent alignés sur les pistes.
+- Tokens : `--lc-sys-color-surface-sunken` (piste), `--lc-sys-chart-categorical-*`, `--lc-sys-color-on-surface` (repère) ; hauteur `--lc-timeline-bar-lane-height` (défaut `control-height-md`). Le liseré du rayé reste celui du kit (1 px de la couleur d'emplacement) ; un liseré plus foncé pour tenir 3:1 se règle par le thème de l'application.
+- CA-19 : deux voies partagent l'axe (`inset-inline-start` et `inline-size` en % de `axisEnd`) ; périodes invalides ou hors axe ignorées ou bornées ; voie sans période = piste vide et légende présente. CA-20 : le repère traverse toutes les voies à `at / axisEnd`, son étiquette est sous la dernière voie. CA-21 : sans `lanes`, rendu et DOM inchangés (CA-5 à CA-7).
+
+### 14.3 Écarts constatés à l'implémentation (T3, T4)
+- Le brief met la première valeur de la réponse en gras (« **{prix}** · … ») : `answer` est du texte brut, la réponse entière est en `on-surface-muted`. Pour un gras partiel, une extension (gabarit de réponse) reste à décider.
+- Le brief nomme « Voir vos réponses » : le libellé est dans `LC_LABELS` (surchargeable), pas une entrée.
+- Le séparateur « · » du résumé étroit diffère du « : » du résumé de la forme compacte par défaut (brief §3).
+- Ni `lc-step-rail` ni nouveau token ne sont créés.

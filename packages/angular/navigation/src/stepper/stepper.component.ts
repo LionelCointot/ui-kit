@@ -1,9 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, output, untracked } from '@angular/core';
-import { LC_LABELS, LcIconComponent } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, computed, contentChild, effect, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
+import { LC_LABELS, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LcStepActionDirective } from './step-action.directive';
 
 export type LcStepState = 'done' | 'current' | 'upcoming';
 export type LcStepperOrientation = 'horizontal' | 'vertical';
+/** `default` : pastilles reliées (horizontal ou vertical) ; `rail` : fil du projet, avec réponse, détail et actions par étape. */
+export type LcStepperVariant = 'default' | 'rail';
 export type LcStepperDirection = 'forward' | 'backward';
 
 export interface LcStep {
@@ -19,6 +22,10 @@ export interface LcStep {
   readonly disabled?: boolean;
   /** Nom d'une icône du registre, affichée à la place du numéro (ni la coche d'une étape faite, ni l'icône d'erreur). */
   readonly icon?: string;
+  /** Variante `rail` : réponse en cours de l'étape, en texte brut. */
+  readonly answer?: string;
+  /** Variante `rail` : ligne de détail, atténuée, sous la réponse. */
+  readonly detail?: string;
 }
 
 type StepGlyph = 'number' | 'check' | 'error' | 'icon';
@@ -46,40 +53,103 @@ interface StepMove {
  * L'étape en cours porte `aria-current="step"`. Le composant ne change jamais lui-même l'étape : le consommateur met `steps` à jour.
  * Au changement d'étape, la classe `lc-stepper--forward` ou `--backward` est posée sur l'hôte le temps de l'animation et `directionChange` est émis.
  * Sous 768 px (`compact` = `auto`), les libellés sont masqués visuellement et « Étape n sur N : nom » s'affiche sous la piste.
+ * `variant="rail"` : « fil du projet » (réponse, détail et actions de chaque étape), voir `variant`.
  */
 @Component({
   selector: 'lc-stepper',
   imports: [LcIconComponent, NgTemplateOutlet],
   template: `
-    <nav [attr.aria-label]="ariaLabel()">
-      <div class="lc-stepper__body" [style.--lc-stepper-count]="steps().length">
-        @if (steps().length > 1) {
-          <span class="lc-stepper__rail" aria-hidden="true">
-            <span class="lc-stepper__rail-fill" [style.--lc-stepper-progress]="progress() + '%'"></span>
-          </span>
-        }
-        <ol class="lc-stepper__list">
+    @if (variant() === 'rail') {
+      <nav [attr.aria-label]="ariaLabel()">
+        <div class="lc-stepper__head">
+          <p class="lc-stepper__where">{{ railSummary() }}</p>
+          <div class="lc-stepper__bars" aria-hidden="true">
+            @for (view of views(); track view.step.id) {
+              <span class="lc-stepper__bar" [class.lc-stepper__bar--on]="$index <= shownIndex()"></span>
+            }
+          </div>
+          <button type="button" class="lc-stepper__toggle" [attr.aria-expanded]="expanded()" [attr.aria-controls]="answersId" (click)="expanded.set(!expanded())">
+            <lc-icon [name]="expanded() ? 'chevron-down' : 'chevron-right'" size="small" />
+            {{ labels.stepAnswers }}
+          </button>
+        </div>
+        <ol class="lc-stepper__answers" [id]="answersId" [class.lc-stepper__answers--collapsed]="!expanded()">
           @for (view of views(); track view.step.id) {
-            <li class="lc-stepper__item" [class]="itemClass(view)" [attr.aria-current]="view.step.state === 'current' ? 'step' : null">
-              @if (view.clickable) {
-                <button type="button" class="lc-stepper__step" [attr.aria-label]="view.buttonName" (click)="select(view)">
-                  <ng-container *ngTemplateOutlet="content; context: { $implicit: view }" />
-                </button>
-              } @else {
-                <span class="lc-stepper__step" [attr.aria-disabled]="view.step.disabled ? 'true' : null">
-                  <ng-container *ngTemplateOutlet="content; context: { $implicit: view }" />
-                  @if (view.hiddenSuffix) {
-                    <span class="lc-stepper__hidden">{{ ' ' + view.hiddenSuffix }}</span>
+            <li
+              class="lc-stepper__item"
+              [class]="itemClass(view)"
+              [class.lc-stepper__item--bare]="!view.step.answer && !view.step.detail"
+              [attr.aria-current]="view.step.state === 'current' ? 'step' : null"
+            >
+              <ng-container *ngTemplateOutlet="marker; context: { $implicit: view }" />
+              <div class="lc-stepper__content">
+                <span class="lc-stepper__title">
+                  <span>
+                    {{ view.step.label }}
+                    @if (view.hiddenSuffix) {
+                      <span class="lc-stepper__hidden">{{ ' ' + view.hiddenSuffix }}</span>
+                    }
+                  </span>
+                  @if (view.step.optional) {
+                    <span class="lc-stepper__optional" aria-hidden="true">{{ labels.stepOptional }}</span>
                   }
                 </span>
-              }
+                @if (view.step.answer) {
+                  <p class="lc-stepper__answer">{{ view.step.answer }}</p>
+                }
+                @if (view.step.detail) {
+                  <p class="lc-stepper__detail">{{ view.step.detail }}</p>
+                }
+                @if (action(); as actionDirective) {
+                  <div class="lc-stepper__actions">
+                    <ng-container *ngTemplateOutlet="actionDirective.template; context: { $implicit: view.step }" />
+                  </div>
+                }
+              </div>
             </li>
           }
         </ol>
-      </div>
-      <p class="lc-stepper__summary">{{ summary() }}</p>
-    </nav>
+      </nav>
+    } @else {
+      <nav [attr.aria-label]="ariaLabel()">
+        <div class="lc-stepper__body" [style.--lc-stepper-count]="steps().length">
+          @if (steps().length > 1) {
+            <span class="lc-stepper__rail" aria-hidden="true">
+              <span class="lc-stepper__rail-fill" [style.--lc-stepper-progress]="progress() + '%'"></span>
+            </span>
+          }
+          <ol class="lc-stepper__list">
+            @for (view of views(); track view.step.id) {
+              <li class="lc-stepper__item" [class]="itemClass(view)" [attr.aria-current]="view.step.state === 'current' ? 'step' : null">
+                @if (view.clickable) {
+                  <button type="button" class="lc-stepper__step" [attr.aria-label]="view.buttonName" (click)="select(view)">
+                    <ng-container *ngTemplateOutlet="content; context: { $implicit: view }" />
+                  </button>
+                } @else {
+                  <span class="lc-stepper__step" [attr.aria-disabled]="view.step.disabled ? 'true' : null">
+                    <ng-container *ngTemplateOutlet="content; context: { $implicit: view }" />
+                    @if (view.hiddenSuffix) {
+                      <span class="lc-stepper__hidden">{{ ' ' + view.hiddenSuffix }}</span>
+                    }
+                  </span>
+                }
+              </li>
+            }
+          </ol>
+        </div>
+        <p class="lc-stepper__summary">{{ summary() }}</p>
+      </nav>
+    }
     <ng-template #content let-view>
+      <ng-container *ngTemplateOutlet="marker; context: { $implicit: view }" />
+      <span class="lc-stepper__text">
+        <span class="lc-stepper__name">{{ view.step.label }}</span>
+        @if (view.step.optional) {
+          <span class="lc-stepper__optional" aria-hidden="true">{{ labels.stepOptional }}</span>
+        }
+      </span>
+    </ng-template>
+    <ng-template #marker let-view>
       <span class="lc-stepper__marker" aria-hidden="true">
         <span class="lc-stepper__badge">
           @switch (view.glyph) {
@@ -90,12 +160,6 @@ interface StepMove {
           }
         </span>
       </span>
-      <span class="lc-stepper__text">
-        <span class="lc-stepper__name">{{ view.step.label }}</span>
-        @if (view.step.optional) {
-          <span class="lc-stepper__optional" aria-hidden="true">{{ labels.stepOptional }}</span>
-        }
-      </span>
     </ng-template>
   `,
   styleUrl: './stepper.component.css',
@@ -104,7 +168,8 @@ interface StepMove {
     class: 'lc-stepper',
     '[class.lc-stepper--compact]': 'compact() === true',
     '[class.lc-stepper--full]': 'compact() === false',
-    '[class.lc-stepper--vertical]': "orientation() === 'vertical'",
+    '[class.lc-stepper--rail]': "variant() === 'rail'",
+    '[class.lc-stepper--vertical]': "orientation() === 'vertical' && variant() !== 'rail'",
     '[class.lc-stepper--forward]': "move()?.direction === 'forward'",
     '[class.lc-stepper--backward]': "move()?.direction === 'backward'",
     '(animationend)': 'onAnimationEnd($event)',
@@ -121,13 +186,26 @@ export class LcStepperComponent {
   /** `true` (défaut) : seules les étapes faites sont cliquables ; `false` : toute étape non désactivée l'est. */
   readonly linear = input<boolean>(true);
   readonly orientation = input<LcStepperOrientation>('horizontal');
+  /**
+   * `rail` : fil du projet. Au-delà de 900 px de large de l'ancêtre le plus proche déclarant `container-type: inline-size`, liste verticale
+   * (pastille, nom, `answer`, `detail`, gabarit `[lcStepAction]`) ; en dessous, ou sans conteneur, « Étape n sur N · nom », une barre de N segments et
+   * le bouton « Voir vos réponses » qui déplie la même liste. `compact` force la forme étroite (`true`) ou large (`false`) ; `orientation`, `linear`
+   * et `stepSelect` sont ignorés (les actions sont celles du gabarit).
+   */
+  readonly variant = input<LcStepperVariant>('default');
   /** Identifiant d'une étape cliquable activée (clic, Entrée, Espace). Jamais émis pour une étape non cliquable. */
   readonly stepSelect = output<string>();
   /** Sens du changement d'étape en cours, émis à chaque changement (jamais au premier rendu). */
   readonly directionChange = output<LcStepperDirection>();
 
+  /** Actions de chaque étape en variante `rail`. */
+  protected readonly action = contentChild(LcStepActionDirective);
+  protected readonly answersId = lcUniqueId('stepper-answers');
+  /** Liste des réponses dépliée (forme étroite de `rail`). */
+  protected readonly expanded = signal(false);
+
   /** Étape affichée par la piste et la forme compacte : l'étape en cours, sinon la première non faite, sinon la dernière. */
-  private readonly shownIndex = computed(() => {
+  protected readonly shownIndex = computed(() => {
     const steps = this.steps();
     const current = steps.findIndex((step) => step.state === 'current');
     if (current >= 0) return current;
@@ -165,6 +243,12 @@ export class LcStepperComponent {
     const steps = this.steps();
     const index = this.shownIndex();
     return index < 0 ? '' : `${this.labels.stepOf(index + 1, steps.length)} : ${steps[index].label}`;
+  });
+
+  protected readonly railSummary = computed(() => {
+    const steps = this.steps();
+    const index = this.shownIndex();
+    return index < 0 ? '' : `${this.labels.stepOf(index + 1, steps.length)} · ${steps[index].label}`;
   });
 
   /** Part de la piste remplie : de la première pastille à celle de l'étape affichée. */

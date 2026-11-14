@@ -29,6 +29,32 @@ export interface LcTimelineSegment {
   readonly marker?: LcTimelineMarker;
 }
 
+/** Période d'une voie, dans l'unité de l'axe (de 0 à `axisEnd`). `to` inférieur ou égal à `from`, ou valeur non finie : ignorée. */
+export interface LcTimelineSpan {
+  readonly from: number;
+  readonly to: number;
+}
+
+/** Voie d'une frise à plusieurs voies : une ligne sur l'axe commun, avec sa légende (repère de forme, nom, texte). */
+export interface LcTimelineLane {
+  readonly id: string;
+  readonly label: string;
+  /** Texte sous le nom (ex. « devant de 0 à 5 ans »), fourni par l'application ; absent : rien. */
+  readonly caption?: string;
+  /** Emplacement de couleur des graphiques ; le motif en découle (impair plein, pair rayé). */
+  readonly colorSlot: LcTimelineColorSlot;
+  /** Repère de forme de la légende (défaut : rond). */
+  readonly marker?: LcTimelineMarker;
+  /** Périodes colorées de la voie ; vide : voie sans partie colorée. */
+  readonly spans: readonly LcTimelineSpan[];
+}
+
+/** Repère transversal : trait vertical qui traverse toutes les voies à `at`, étiqueté sous la dernière. */
+export interface LcTimelineReference {
+  readonly at: number;
+  readonly label: string;
+}
+
 export interface LcTimelineTick {
   /** Position sur la piste, dans la même unité que les poids (de 0 au total des poids dessinés). Hors de cet intervalle ou non finie : graduation ignorée. */
   readonly at: number;
@@ -47,6 +73,22 @@ interface DrawnSegment {
   readonly swatchClass: string;
 }
 
+interface DrawnLane {
+  readonly lane: LcTimelineLane;
+  readonly swatchClass: string;
+  /** Position et largeur de chaque période, en part de l'axe (0 à 1). */
+  readonly spans: readonly { readonly start: number; readonly size: number }[];
+}
+
+interface DrawnReference {
+  readonly label: string;
+  /** Part de l'axe (0 à 1). */
+  readonly position: number;
+}
+
+const swatchClassOf = (slot: LcTimelineColorSlot): string =>
+  `lc-timeline-bar__swatch lc-timeline-bar__swatch--${lcTimelinePattern(slot)} lc-timeline-bar__swatch--slot-${slot}`;
+
 /** Motif d'un emplacement : impairs pleins, pairs rayés, `neutral` pointillé (le codage non coloré des graphiques). */
 export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern {
   if (slot === 'neutral') return 'dotted';
@@ -59,7 +101,8 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
  * (masquée sous `minLabelShare`). La barre est une image (`role="img"`) dont `description` est le texte équivalent complet.
  * `ticks` (facultatif) dessine sous la piste des graduations courtes avec leur libellé, purement décoratives (`aria-hidden`) :
  * le texte équivalent reste `description`. Un libellé qui chevaucherait le précédent est masqué visuellement (la graduation reste).
- * Ne pas confondre avec `lc-segmented-bar` (graphiques : part d'un tout).
+ * `lanes` (frise à plusieurs voies, ex. Louer / Acheter) remplace `segments` : voies alignées sur un même axe, repère transversal (`reference`), légende par voie,
+ * formes et motifs (jamais la couleur seule). Ne pas confondre avec `lc-segmented-bar` (graphiques : part d'un tout).
  */
 @Component({
   selector: 'lc-timeline-bar',
@@ -67,14 +110,47 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
   template: `
     @if (loading()) {
       <lc-skeleton shape="rect" height="var(--lc-sys-space-8)" />
-    } @else if (drawn().length === 0) {
+    } @else if (lanes().length === 0 && drawn().length === 0) {
       <p class="lc-timeline-bar__empty">{{ emptyMessage() ?? labels.noData }}</p>
     } @else {
-      <div class="lc-timeline-bar__track" role="img" [attr.aria-label]="description()">
-        @for (item of drawn(); track item.segment.id) {
-          <span class="lc-timeline-bar__segment" [class]="'lc-timeline-bar__segment ' + item.swatchClass" [style.flex-grow]="item.segment.weight"></span>
-        }
-      </div>
+      @if (lanes().length > 0) {
+        <div class="lc-timeline-bar__lanes" role="img" [attr.aria-label]="description()">
+          @for (item of drawnLanes(); track item.lane.id) {
+            <div class="lc-timeline-bar__lane">
+              <div class="lc-timeline-bar__lane-head">
+                <span class="lc-timeline-bar__marker" [class]="'lc-timeline-bar__marker lc-timeline-bar__marker--' + (item.lane.marker ?? 'circle') + ' ' + item.swatchClass" aria-hidden="true"></span>
+                <span class="lc-timeline-bar__lane-name">
+                  {{ item.lane.label }}
+                  @if (item.lane.caption) {
+                    <span class="lc-timeline-bar__lane-caption">{{ item.lane.caption }}</span>
+                  }
+                </span>
+              </div>
+              <div class="lc-timeline-bar__lane-track">
+                @for (span of item.spans; track $index) {
+                  <span class="lc-timeline-bar__span" [class]="'lc-timeline-bar__span ' + item.swatchClass" [style.inset-inline-start.%]="span.start * 100" [style.inline-size.%]="span.size * 100"></span>
+                }
+                @if (referenceMark(); as mark) {
+                  <span class="lc-timeline-bar__reference-line" [style.inset-inline-start.%]="mark.position * 100"></span>
+                }
+              </div>
+            </div>
+          }
+          @if (referenceMark(); as mark) {
+            <div class="lc-timeline-bar__reference">
+              <span class="lc-timeline-bar__reference-anchor" [class.lc-timeline-bar__reference-anchor--start]="mark.position === 0" [class.lc-timeline-bar__reference-anchor--end]="mark.position === 1" [style.inset-inline-start.%]="mark.position * 100">
+                <span class="lc-timeline-bar__reference-label">{{ mark.label }}</span>
+              </span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="lc-timeline-bar__track" role="img" [attr.aria-label]="description()">
+          @for (item of drawn(); track item.segment.id) {
+            <span class="lc-timeline-bar__segment" [class]="'lc-timeline-bar__segment ' + item.swatchClass" [style.flex-grow]="item.segment.weight"></span>
+          }
+        </div>
+      }
       @if (tickMarks().length > 0) {
         <div class="lc-timeline-bar__ticks" aria-hidden="true">
           @for (tick of tickMarks(); track $index) {
@@ -96,7 +172,10 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
           <span>{{ endLabel() }}</span>
         </div>
       }
-      @if (legend().length > 0) {
+      @if (axisLabel()) {
+        <p class="lc-timeline-bar__axis-label">{{ axisLabel() }}</p>
+      }
+      @if (lanes().length === 0 && legend().length > 0) {
         <ul class="lc-timeline-bar__legend">
           @for (item of legend(); track item.segment.id) {
             <li class="lc-timeline-bar__entry">
@@ -114,6 +193,7 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
     class: 'lc-timeline-bar',
     role: 'group',
     '[class.lc-timeline-bar--stale]': 'stale()',
+    '[class.lc-timeline-bar--lanes]': 'lanes().length > 0',
     '[attr.aria-label]': 'label()',
     '[attr.aria-busy]': "loading() ? 'true' : null",
   },
@@ -121,7 +201,20 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
 export class LcTimelineBarComponent {
   protected readonly labels = inject(LC_LABELS);
 
-  readonly segments = input.required<readonly LcTimelineSegment[]>();
+  /** Segments contigus d'une seule barre. Ignoré quand `lanes` est renseigné. */
+  readonly segments = input<readonly LcTimelineSegment[]>([]);
+  /**
+   * Voies alignées sur un même axe, de 0 à `axisEnd` : une ligne par voie avec sa légende (repère de forme, nom, `caption`) et ses périodes colorées.
+   * Remplace `segments` quand elle n'est pas vide. L'hôte doit être un bloc de pleine largeur : dès 700 px, le nom de la voie est à gauche de sa piste,
+   * en dessous il la surmonte. `description` est le texte équivalent de toute la frise (les voies, `reference` et les graduations sont lues à travers lui).
+   */
+  readonly lanes = input<readonly LcTimelineLane[]>([]);
+  /** Fin de l'axe des voies, dans l'unité des périodes (défaut : la plus grande fin de période). */
+  readonly axisEnd = input<number>();
+  /** Repère transversal des voies (ex. un point d'équilibre) : trait de 2 px sur chaque voie, étiqueté sous la dernière. Hors de l'axe : ignoré. */
+  readonly reference = input<LcTimelineReference>();
+  /** Légende de l'axe des voies, sous les graduations (ex. « Années depuis l'achat »). */
+  readonly axisLabel = input<string>();
   /** Nom accessible de la barre. */
   readonly label = input.required<string>();
   /** Texte équivalent complet, lu à la place de la barre. */
@@ -153,14 +246,43 @@ export class LcTimelineBarComponent {
     return visible.map((segment) => ({
       segment,
       share: segment.weight / total,
-      swatchClass: `lc-timeline-bar__swatch lc-timeline-bar__swatch--${lcTimelinePattern(segment.colorSlot)} lc-timeline-bar__swatch--slot-${segment.colorSlot}`,
+      swatchClass: swatchClassOf(segment.colorSlot),
     }));
   });
 
+  /** Longueur de l'axe : `axisEnd` ou la plus grande fin de période en mode voies, sinon la somme des poids dessinés. */
+  private readonly axisTotal = computed(() => {
+    if (this.lanes().length === 0) return this.drawn().reduce((sum, item) => sum + item.segment.weight, 0);
+    const end = this.axisEnd();
+    if (end !== undefined && Number.isFinite(end)) return Math.max(end, 0);
+    const ends = this.lanes().flatMap((lane) => lane.spans.map((span) => span.to)).filter(Number.isFinite);
+    return Math.max(0, ...ends);
+  });
+
+  protected readonly drawnLanes = computed<readonly DrawnLane[]>(() => {
+    const total = this.axisTotal();
+    return this.lanes().map((lane) => ({
+      lane,
+      swatchClass: swatchClassOf(lane.colorSlot),
+      spans: lane.spans
+        .filter((span) => Number.isFinite(span.from) && Number.isFinite(span.to))
+        .map((span) => ({ from: Math.max(span.from, 0), to: Math.min(span.to, total) }))
+        .filter((span) => span.to > span.from)
+        .map((span) => ({ start: span.from / total, size: (span.to - span.from) / total })),
+    }));
+  });
+
+  protected readonly referenceMark = computed<DrawnReference | null>(() => {
+    const mark = this.reference();
+    const total = this.axisTotal();
+    if (!mark || !Number.isFinite(mark.at) || mark.at < 0 || mark.at > total || total <= 0) return null;
+    return { label: mark.label, position: mark.at / total };
+  });
+
   protected readonly tickMarks = computed<readonly DrawnTick[]>(() => {
-    const total = this.drawn().reduce((sum, item) => sum + item.segment.weight, 0);
+    const total = this.axisTotal();
     return this.ticks()
-      .filter((tick) => Number.isFinite(tick.at) && tick.at >= 0 && tick.at <= total)
+      .filter((tick) => total > 0 && Number.isFinite(tick.at) && tick.at >= 0 && tick.at <= total)
       .map((tick) => ({ label: tick.label, position: tick.at / total }))
       .sort((a, b) => a.position - b.position);
   });

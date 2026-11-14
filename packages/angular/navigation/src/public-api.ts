@@ -4,6 +4,7 @@
 export * from './tabs/tab.component';
 export * from './tabs/tabs.component';
 export * from './stepper/stepper.component';
+export * from './stepper/step-action.directive';
 export * from './nav-list/nav-list.component';
 export * from './nav-list/nav-item.component';
 export * from './nav-group/nav-group.component';
