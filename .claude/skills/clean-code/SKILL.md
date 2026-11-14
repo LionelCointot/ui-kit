@@ -1,6 +1,6 @@
 ---
 name: clean-code
-description: Règles de lisibilité et de maintenabilité du code, tous langages (TypeScript, C#...). À utiliser dès qu'on écrit, modifie, refactore ou relit du code (fonction, classe, composant, service, endpoint), quand l'utilisateur parle de code propre, lisible, maintenable, refactoring, dette technique, code smell, nommage, duplication, ou quand une fonction ou un fichier devient trop long. Complète les skills de stack (angular-best-practices, dotnet-best-practices).
+description: Règles de lisibilité et de maintenabilité du code, tous langages (TypeScript, C#...). À utiliser dès qu'on écrit, modifie, refactore ou relit du code (fonction, classe, composant, service, endpoint), quand l'utilisateur parle de code propre, lisible, maintenable, refactoring, dette technique, code smell, nommage, duplication, ou quand une fonction ou un fichier devient trop long. Complète les skills de stack présents (angular-best-practices, dotnet-best-practices).
 ---
 
 # Clean Code

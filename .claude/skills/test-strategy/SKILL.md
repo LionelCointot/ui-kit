@@ -28,7 +28,7 @@ description: Définit la stratégie de tests et écrit des tests (xUnit pour .NE
 | Composant | n/a | `fixture.componentRef.setInput()`, assertions sur le DOM et les rôles ARIA |
 | E2E | n/a | Playwright, parcours critiques seulement |
 
-Exemples : `dotnet-best-practices/examples/Tests/` et `angular-best-practices/examples/products/*.spec.ts`.
+Exemples : `angular-best-practices/examples/products/*.spec.ts` et, si le skill est présent, `dotnet-best-practices/examples/Tests/`.
 
 ## Qui teste quoi (workflow `delivery-workflow`)
 - `qa-engineer` : **écrit tous les tests** (unitaires, intégration, composant, E2E), à partir de la spec et non de l'implémentation ; chaque `CA-n` a un test, nommé ou commenté avec son identifiant quand le lien n'est pas évident. Matrice `CA-n` → test → résultat ; régressions via `graphify affected "<symbole>"` sur les zones modifiées. Bug : le test qui échoue est écrit avant le correctif.
