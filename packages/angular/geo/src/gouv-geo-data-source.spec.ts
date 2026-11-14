@@ -122,12 +122,12 @@ describe('LcGouvGeoDataSource', () => {
       expect(error).toMatchObject({ kind: 'rate-limited', status: 429 });
     });
 
-    it('réseau coupé : network', async () => {
+    it('réseau coupé : signale une erreur de type « network »', async () => {
       stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
       await expect(create().regions(signal())).rejects.toMatchObject({ kind: 'network' });
     });
 
-    it('délai dépassé : timeout', async () => {
+    it('délai dépassé : signale une erreur de type « timeout »', async () => {
       stubFetch((_url, init) => new Promise<Response>((_resolve, reject) => {
         init.signal?.addEventListener('abort', () => reject(init.signal?.reason));
       }));
