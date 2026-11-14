@@ -1,7 +1,7 @@
 import { LC_DEFAULT_ICONS, LcFormatService, LcValueFormat, isoToLocalDate } from '@lionelcointot/ui-angular';
 import type { LcCartesianData, LcChartTheme, LcChartValue, LcResolvedSeries, LcValueAxis } from '../types';
 import { escapeHtml } from './escape-html';
-import { LC_CHART_ROLE_ICONS, roleDecal, roleOutline } from './series-roles';
+import { LC_CHART_ROLE_ICONS, patternDecal, roleDecal, roleOutline } from './series-roles';
 
 export const GRID_BOTTOM = 32;
 export const GRID_LEFT = 56;
@@ -59,9 +59,14 @@ export function decalFor(index: number, theme: LcChartTheme): object | undefined
   };
 }
 
-/** Décalque d'une série : celui de son rôle (toujours appliqué), sinon l'alternance par rang (si les motifs sont actifs). */
+/**
+ * Décalque d'une série : celui de son rôle, sinon son motif imposé (`pattern`, `solid` = aplat) ; l'un et l'autre
+ * toujours appliqués. Sinon l'alternance par rang (si les motifs sont actifs).
+ */
 export function seriesDecal(item: LcResolvedSeries, theme: LcChartTheme): object | undefined {
-  return item.role ? roleDecal(item.role, theme) : decalFor(item.patternIndex, theme);
+  if (item.role) return roleDecal(item.role, theme);
+  if (item.pattern) return patternDecal(item.pattern, theme);
+  return decalFor(item.patternIndex, theme);
 }
 
 /** Bordure des marques pleines : couleur de surface (séparation), ou contour d'encre pour le rôle `warning`. */

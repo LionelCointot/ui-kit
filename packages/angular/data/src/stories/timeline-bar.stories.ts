@@ -97,7 +97,11 @@ const lanesStory = (width: string): Story => ({
   }),
 });
 
-/** Deux voies alignées sur un même axe (carré rayé / rond plein), « devant de … à … » sous le nom, repère transversal étiqueté. Dès 700 px, le nom est à gauche de la piste. */
+/**
+ * Deux voies alignées sur un même axe (carré rayé / rond plein), « devant de … à … » sous le nom, repère transversal étiqueté. Dès 700 px, le nom est à gauche de la piste.
+ * Le liseré de la voie rayée fait 2 px, d'une teinte plus sombre en clair et plus claire en sombre (≥ 3:1 contre la piste) ;
+ * réglable par `--lc-timeline-bar-striped-edge` (couleur) et `--lc-timeline-bar-striped-edge-width`.
+ */
 export const DeuxVoies: Story = lanesStory('60rem');
 
 /** 360 px : le nom et le texte de chaque voie surmontent sa piste ; graduations et repère restent alignés sur les pistes. */

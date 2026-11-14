@@ -148,7 +148,7 @@ Source : tâches T3 et T4 de `finance-rent-vs-buy/docs/specs/2026-11-refonte-fil
 | `description` | Texte équivalent de toute la frise : en mode voies, voies et repère sont dans un `role="img"` nommé par `description`. |
 
 - **Largeur** : l'hôte devient conteneur (`container-type: inline-size`, il doit donc être un bloc de pleine largeur). Dès 700 px, le nom de la voie (160 px, `--lc-timeline-bar-lane-label-width`) est à gauche de sa piste ; dessous, il la surmonte. Graduations, repère, bornes et légende de l'axe restent alignés sur les pistes.
-- Tokens : `--lc-sys-color-surface-sunken` (piste), `--lc-sys-chart-categorical-*`, `--lc-sys-color-on-surface` (repère) ; hauteur `--lc-timeline-bar-lane-height` (défaut `control-height-md`). Le liseré du rayé reste celui du kit (1 px de la couleur d'emplacement) ; un liseré plus foncé pour tenir 3:1 se règle par le thème de l'application.
+- Tokens : `--lc-sys-color-surface-sunken` (piste), `--lc-sys-chart-categorical-*`, `--lc-sys-color-on-surface` (repère) ; hauteur `--lc-timeline-bar-lane-height` (défaut `control-height-md`). Le liseré du rayé fait 2 px et mêle 30 % de `--lc-sys-color-on-surface` à la couleur d'emplacement (plus sombre en clair, plus clair en sombre : ≥ 3,5:1 contre la piste pour les emplacements rayés 2, 4, 6 et 8 dans les deux thèmes) ; réglable par `--lc-timeline-bar-striped-edge` et `--lc-timeline-bar-striped-edge-width`. La voie pleine est inchangée.
 - CA-19 : deux voies partagent l'axe (`inset-inline-start` et `inline-size` en % de `axisEnd`) ; périodes invalides ou hors axe ignorées ou bornées ; voie sans période = piste vide et légende présente. CA-20 : le repère traverse toutes les voies à `at / axisEnd`, son étiquette est sous la dernière voie. CA-21 : sans `lanes`, rendu et DOM inchangés (CA-5 à CA-7).
 
 ### 14.3 Écarts constatés à l'implémentation (T3, T4)
@@ -156,3 +156,9 @@ Source : tâches T3 et T4 de `finance-rent-vs-buy/docs/specs/2026-11-refonte-fil
 - Le brief nomme « Voir vos réponses » : le libellé est dans `LC_LABELS` (surchargeable), pas une entrée.
 - Le séparateur « · » du résumé étroit diffère du « : » du résumé de la forme compacte par défaut (brief §3).
 - Ni `lc-step-rail` ni nouveau token ne sont créés.
+
+### 14.4 Correctifs de la revue de conformité du consommateur (`fix/refonte-conformite`, 2026-11-14)
+- **Cibles tactiles (B4)** : `lcButton` garde une zone de frappe de 44 px dans les deux axes quand il est plus petit (taille `small`, icône seule) : pseudo-élément `::before` invisible, rendu inchangé, valeur réglable par `--lc-button-hit-size`. L'ancien `::before` de `small` tombait à 42 px (il ne comptait pas la bordure). Les champs n'ont pas changé : `--lc-sys-control-height-md` vaut déjà 44 px dans le kit (taille `small` : 36 px, sans zone étendue).
+- **Liseré de la voie rayée (B5)** : voir 14.2.
+- **Motif par série (I3)** : `LcChartSeries.pattern` (`'solid' | 'hatch' | 'hatch-reverse' | 'dots'`) pour les barres et les aires ; appliqué à l'écran et à l'impression, même avec `patterns: 'never'` ; la pastille `rect` de la légende le reproduit. Le rôle (`colorRole`) reste prioritaire ; sans `pattern`, comportement inchangé.
+- **Rôle du dialogue (I7)** : `LcDialogConfig.role` (`'dialog' | 'alertdialog'`, défaut `dialog`) et `LcDialogConfig.ariaDescribedBy` (id du message) ; `confirm()` reste un `alertdialog`.

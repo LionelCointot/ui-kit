@@ -76,6 +76,7 @@ export abstract class LcCartesianChartBase {
     this.prepared().all.map((item) => ({
       id: item.id, label: item.label, color: item.color, shape: this.legendShape, hidden: this.hidden().has(item.id),
       icon: item.role ? LC_CHART_ROLE_ICONS[item.role] : undefined,
+      pattern: this.legendShape === 'rect' ? item.pattern : undefined,
       dashed: item.lineStyle === 'dashed', symbol: item.symbol,
     })));
 

@@ -6,6 +6,12 @@ export type LcColorSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 /** Rôle sémantique d'une série : couleur du thème (`--lc-sys-chart-role-*`), décalque et icône stables, indépendants du rang. */
 export type LcChartRole = 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'highlight';
 
+/**
+ * Motif de remplissage d'une série d'aires ou de barres : `solid` aplat, `hatch` hachures à 45°, `hatch-reverse` hachures à 135°,
+ * `dots` pointillé. Ton sur ton (couleur de surface), donc lisible en noir et blanc.
+ */
+export type LcChartPattern = 'solid' | 'hatch' | 'hatch-reverse' | 'dots';
+
 export interface LcChartSeries {
   /** Identité stable : la couleur suit l'entité, jamais son rang. */
   readonly id: string;
@@ -19,6 +25,12 @@ export interface LcChartSeries {
    * reçoit un décalque propre au rôle (même avec `patterns: 'never'`) et une icône dans la légende et l'info-bulle.
    */
   readonly colorRole?: LcChartRole;
+  /**
+   * Motif propre à la série (aires et barres), appliqué à l'écran comme à l'impression, même avec `patterns: 'never'`,
+   * et repris par la pastille de la légende. `solid` force l'aplat (y compris quand les motifs automatiques sont actifs).
+   * Sans valeur : motif automatique selon `patterns`. Le rôle (`colorRole`) reste prioritaire.
+   */
+  readonly pattern?: LcChartPattern;
   /** Groupe d'empilement. */
   readonly stack?: string;
   /** Style du trait (courbes) : plein (défaut) ou tirets, pour distinguer une série sans la couleur seule. */
@@ -129,6 +141,8 @@ export interface LcResolvedSeries {
   readonly slot: LcColorSlot | null;
   /** Rôle de couleur de la série (voir `LcChartSeries.colorRole`). */
   readonly role?: LcChartRole;
+  /** Motif imposé (voir `LcChartSeries.pattern`). */
+  readonly pattern?: LcChartPattern;
   /** Rang d'affichage (pour alterner les motifs). */
   readonly patternIndex: number;
   readonly stack?: string;
@@ -144,6 +158,8 @@ export interface LcLegendItem {
   readonly hidden: boolean;
   /** Icône du rôle de la série (nom `lc-icon`), jamais la couleur seule. */
   readonly icon?: string;
+  /** Motif de la série : la pastille `rect` le reproduit. */
+  readonly pattern?: LcChartPattern;
   readonly dashed?: boolean;
   readonly symbol?: LcChartSeries['symbol'];
 }

@@ -153,6 +153,43 @@ export const AiresParRole: Story = {
   }),
 };
 
+const paid: LcCartesianData = {
+  categories: ['5 ans', '10 ans', '15 ans', '20 ans'],
+  series: [
+    { id: 'buy', label: 'En achetant', values: [58000, 96000, 131000, 160000], colorSlot: 1, pattern: 'solid' },
+    { id: 'rent', label: 'En louant', values: [42000, 88000, 140000, 198000], colorSlot: 2, pattern: 'hatch' },
+  ],
+};
+
+/**
+ * Motif par série (`pattern`) : « En achetant » plein, « En louant » hachuré à 45°, à l'écran comme à l'impression
+ * (même avec `patterns: 'never'`). La pastille de la légende reprend le motif.
+ */
+export const BarresParMotif: Story = {
+  render: () => ({
+    props: { data: paid },
+    template: `<lc-bar-chart title="Ce que vous payez" description="Cumul par durée" [data]="data" [yAxis]="{ format: 'money' }" />`,
+  }),
+};
+
+/** Les quatre motifs : aplat, hachures à 45°, hachures à 135°, pointillé. */
+export const QuatreMotifs: Story = {
+  render: () => ({
+    props: {
+      data: {
+        categories: ['A', 'B', 'C'],
+        series: [
+          { id: 'a', label: 'Plein', values: [4, 6, 5], colorSlot: 1, pattern: 'solid' },
+          { id: 'b', label: 'Hachures 45°', values: [3, 5, 6], colorSlot: 2, pattern: 'hatch' },
+          { id: 'c', label: 'Hachures 135°', values: [5, 4, 3], colorSlot: 3, pattern: 'hatch-reverse' },
+          { id: 'd', label: 'Pointillé', values: [2, 3, 4], colorSlot: 4, pattern: 'dots' },
+        ],
+      } satisfies LcCartesianData,
+    },
+    template: `<lc-bar-chart title="Quatre motifs" [data]="data" />`,
+  }),
+};
+
 /** `yAxis.format: 'integer'` : les graduations restent entières (pas minimal de 1), même sur de petits comptes. */
 export const AxeEnEntiers: Story = {
   render: () => ({

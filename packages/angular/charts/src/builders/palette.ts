@@ -82,6 +82,7 @@ export function prepareSeries(
       color: role ? roleColor(role, theme) : slot ? theme.categorical[slot - 1] : theme.ink.muted,
       slot,
       role,
+      pattern: item.pattern,
       patternIndex: index,
       stack: item.stack,
       lineStyle: item.lineStyle ?? (role === 'neutral' ? 'dashed' : undefined),

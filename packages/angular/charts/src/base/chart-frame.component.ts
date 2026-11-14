@@ -24,7 +24,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
               <button type="button" class="lc-chart-frame__legend-item" [attr.aria-pressed]="!item.hidden"
                 [class.lc-chart-frame__legend-item--off]="item.hidden" (click)="legendToggle.emit(item.id)">
                 <span class="lc-chart-frame__swatch" [class.lc-chart-frame__swatch--line]="item.shape === 'line'"
-                  [class.lc-chart-frame__swatch--dashed]="item.dashed" [style.--lc-swatch-color]="item.color">
+                  [class.lc-chart-frame__swatch--dashed]="item.dashed" [attr.data-pattern]="item.pattern ?? null" [style.--lc-swatch-color]="item.color">
                   @if (item.shape === 'line' && item.symbol) {
                     <span class="lc-chart-frame__symbol" [class]="'lc-chart-frame__symbol--' + item.symbol"></span>
                   }
@@ -37,7 +37,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
             } @else {
               <span class="lc-chart-frame__legend-item">
                 <span class="lc-chart-frame__swatch" [class.lc-chart-frame__swatch--line]="item.shape === 'line'"
-                  [class.lc-chart-frame__swatch--dashed]="item.dashed" [style.--lc-swatch-color]="item.color">
+                  [class.lc-chart-frame__swatch--dashed]="item.dashed" [attr.data-pattern]="item.pattern ?? null" [style.--lc-swatch-color]="item.color">
                   @if (item.shape === 'line' && item.symbol) {
                     <span class="lc-chart-frame__symbol" [class]="'lc-chart-frame__symbol--' + item.symbol"></span>
                   }

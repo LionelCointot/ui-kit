@@ -158,18 +158,22 @@
   --_fg: var(--lc-button-flat-neutral-fg, var(--lc-sys-color-on-surface));
 }
 
-/* Tailles : `small` garde une zone cliquable de 44 px (pseudo-élément) pour les zones denses. */
+/* Cible tactile : tout bouton plus petit que 44 px (taille small, icône seule) garde une zone de frappe de 44 px
+   dans les deux axes (pseudo-élément invisible, rendu inchangé). Le pseudo-élément se place sur la boîte de remplissage (bordure exclue) :
+   le % est celui de cette boîte, et la hauteur obtenue est exactement `--lc-button-hit-size`. */
+:host::before {
+  content: '';
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--lc-button-hit-size, 44px)) / 2));
+  inset-inline: min(0px, calc((100% - var(--lc-button-hit-size, 44px)) / 2));
+}
+
+/* Tailles. */
 :host(.lc-button--small) {
   --_height: var(--lc-button-height-sm, var(--lc-sys-control-height-sm));
   --_padding: var(--lc-button-padding-inline-sm, var(--lc-sys-space-3));
   --lc-icon-size: var(--lc-sys-icon-size-sm);
   font-size: var(--lc-sys-font-size-sm);
-}
-
-:host(.lc-button--small)::before {
-  content: '';
-  position: absolute;
-  inset: calc((var(--_height) - var(--lc-sys-control-height-md)) / 2) 0;
 }
 
 :host(.lc-button--large) {
