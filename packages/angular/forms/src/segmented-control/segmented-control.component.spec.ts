@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { LcIconComponent, LcOption } from '@lionelcointot/ui-angular';
+import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcSegmentedControlComponent } from './segmented-control.component';
 
 type View = 'total' | 'loan' | 'year';
@@ -35,7 +36,57 @@ class ControlledHostComponent {
   readonly changes: (View | null)[] = [];
 }
 
+@Component({
+  imports: [LcSegmentedControlComponent],
+  template: '<lc-segmented-control ariaLabel="Vue" [options]="options" [extraDescribedBy]="extra()" />',
+})
+class ExtraDescribedByHostComponent {
+  readonly options: readonly LcOption<View>[] = [{ value: 'total', label: 'Cumul' }];
+  readonly extra = signal<string | null>('aide-1 aide-2');
+}
+
+@Component({
+  imports: [LcFormFieldComponent, LcSegmentedControlComponent],
+  template: `<lc-form-field label="Vue" hint="Choisissez une vue">
+    <lc-segmented-control [options]="options" [extraDescribedBy]="extra()" />
+  </lc-form-field>`,
+})
+class ExtraDescribedByInFieldHostComponent {
+  readonly options: readonly LcOption<View>[] = [{ value: 'total', label: 'Cumul' }];
+  readonly extra = signal<string | null>('aide-externe');
+}
+
 describe('LcSegmentedControlComponent', () => {
+  describe('aria-describedby (extraDescribedBy)', () => {
+    it('seul, expose les identifiants fournis, puis retire l\'attribut quand ils disparaissent', async () => {
+      const fixture = TestBed.createComponent(ExtraDescribedByHostComponent);
+      await fixture.whenStable();
+      const group = (fixture.nativeElement as HTMLElement).querySelector('lc-segmented-control')!;
+      expect(group.getAttribute('aria-describedby')).toBe('aide-1 aide-2');
+      fixture.componentInstance.extra.set(null);
+      await fixture.whenStable();
+      expect(group.hasAttribute('aria-describedby')).toBe(false);
+    });
+
+    it('dans un lc-form-field, ajoute les identifiants après ceux du champ', async () => {
+      const fixture = TestBed.createComponent(ExtraDescribedByInFieldHostComponent);
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+      const group = element.querySelector('lc-segmented-control')!;
+      const hint = element.querySelector('.lc-form-field__hint')!;
+      expect(group.getAttribute('aria-describedby')).toBe(`${hint.id} aide-externe`);
+      fixture.componentInstance.extra.set(null);
+      await fixture.whenStable();
+      expect(group.getAttribute('aria-describedby')).toBe(hint.id);
+    });
+
+    it('sans extraDescribedBy ni champ, n\'a pas d\'aria-describedby', async () => {
+      const fixture = TestBed.createComponent(SegmentedHostComponent);
+      await fixture.whenStable();
+      expect((fixture.nativeElement as HTMLElement).querySelector('lc-segmented-control')!.hasAttribute('aria-describedby')).toBe(false);
+    });
+  });
+
   describe('coche de l\'option active', () => {
     it('seule l\'option active affiche la coche (à la place de son icône) et aria-checked', async () => {
       const fixture = TestBed.createComponent(SegmentedHostComponent);

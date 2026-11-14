@@ -14,7 +14,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
-import { LC_DEFAULTS, LcIconComponent, LcOption, LcSize, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_DEFAULTS, LcIconComponent, LcOption, LcSize, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
 interface SegmentView<T> {
@@ -57,7 +57,7 @@ interface SegmentView<T> {
     '[attr.id]': 'id()',
     '[attr.aria-label]': 'ariaLabel() || null',
     '[attr.aria-labelledby]': 'ariaLabel() ? null : (field?.labelId ?? null)',
-    '[attr.aria-describedby]': 'field?.describedBy() ?? null',
+    '[attr.aria-describedby]': 'describedBy()',
     '[attr.aria-disabled]': "disabled() ? 'true' : null",
     '[class]': "'lc-segmented-control--' + resolvedSize()",
     '[class.lc-segmented-control--full-width]': 'fullWidth()',
@@ -72,6 +72,8 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   readonly value = model<T | null>(null);
   /** Nom accessible du groupe (obligatoire hors de `lc-form-field`, sinon le libellé du champ est utilisé). */
   readonly ariaLabel = input<string>();
+  /** Identifiants supplémentaires ajoutés à `aria-describedby` du groupe (aide fournie par un composant parent). */
+  readonly extraDescribedBy = input<string | null>(null);
   readonly size = input<LcSize | undefined>(undefined);
   readonly fullWidth = input(false, { transform: booleanAttribute });
   readonly disabled = input(false, { transform: booleanAttribute });
@@ -88,6 +90,7 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
 
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('segment');
   protected readonly resolvedSize = computed(() => this.size() ?? this.defaults.size);
+  protected readonly describedBy = computed(() => joinIds(this.field?.describedBy(), this.extraDescribedBy()));
 
   protected readonly segments = computed<readonly SegmentView<T>[]>(() => {
     const options = this.options();
