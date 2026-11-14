@@ -1,17 +1,40 @@
 :host {
   display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .lc-tabs__list {
+  --lc-tabs-fade-left: 0px;
+  --lc-tabs-fade-right: 0px;
   display: flex;
   gap: var(--lc-sys-space-1);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: var(--lc-sys-space-8);
   border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  /* Fondu de bord : estompe (masque alpha, sans couleur ni ombre) du côté où des onglets sont cachés. */
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--lc-tabs-fade-left),
+    #000 calc(100% - var(--lc-tabs-fade-right)),
+    transparent
+  );
+}
+
+.lc-tabs__list--fade-left {
+  --lc-tabs-fade-left: var(--lc-sys-space-8);
+}
+
+.lc-tabs__list--fade-right {
+  --lc-tabs-fade-right: var(--lc-sys-space-8);
 }
 
 .lc-tabs__tab {
   display: inline-flex;
   flex: none;
+  white-space: nowrap;
   align-items: center;
   gap: var(--lc-sys-space-2);
   min-height: var(--lc-sys-control-height-md);
