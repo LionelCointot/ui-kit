@@ -79,7 +79,7 @@ const patrimony: LcCartesianData = {
   ],
 };
 
-/** Repère vertical (3 au plus) et point annoté ; `lineStyle` et `symbol` distinguent les séries sans la couleur seule. */
+/** Repère vertical (3 au plus) et point annoté (`labelPosition` : côté de l'étiquette, `left` sur la dernière catégorie) ; `lineStyle` et `symbol` distinguent les séries sans la couleur seule. */
 export const RepereEtAnnotations: Story = {
   render: () => ({
     props: {
@@ -88,9 +88,10 @@ export const RepereEtAnnotations: Story = {
       annotations: [
         { seriesId: 'buy', categoryIndex: 10, label: 'Achat rattrape la location', emphasis: 'primary' },
         { seriesId: 'rent', categoryIndex: 3, label: 'Année 4', emphasis: 'secondary' },
+        { seriesId: 'rent', categoryIndex: years.length - 1, label: 'Fin de projection', emphasis: 'primary', labelPosition: 'left' },
       ],
     },
-    template: `<lc-line-chart title="Patrimoine net" description="Un repère et deux points annotés" [data]="data" [yAxis]="{ format: 'money' }"
+    template: `<lc-line-chart title="Patrimoine net" description="Un repère et trois points annotés" [data]="data" [yAxis]="{ format: 'money' }"
       [markers]="markers" [annotations]="annotations" [showDataTable]="true" />`,
   }),
 };

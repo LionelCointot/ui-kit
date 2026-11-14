@@ -28,10 +28,15 @@ export class LcMenuTriggerDirective implements OnDestroy {
 
   protected toggle(): void {
     if (this.expanded()) this.close(true);
-    else this.open('none');
+    else this.open('first');
   }
 
   protected onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.expanded()) {
+      event.preventDefault();
+      this.close(true);
+      return;
+    }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (!this.expanded()) this.open(event.key === 'ArrowUp' ? 'last' : 'first');
