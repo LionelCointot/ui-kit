@@ -75,4 +75,60 @@ describe('LcMenu', () => {
     expect(lastAction).toBe('delete');
     expect(panel()).toBeNull();
   });
+
+  describe('navigation clavier du déclencheur et des éléments', () => {
+    // Le gestionnaire de focus du CDK lit `keyCode` : 38 = flèche haut, 40 = flèche bas.
+    const keyCodes: Record<string, number> = { ArrowUp: 38, ArrowDown: 40 };
+    const key = (target: HTMLElement, name: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: name, keyCode: keyCodes[name], bubbles: true, cancelable: true }));
+    const enabledItems = () => Array.from(panel()!.querySelectorAll<HTMLElement>('[role="menuitem"]')).filter((item) => !item.hasAttribute('disabled') && item.getAttribute('aria-disabled') !== 'true');
+
+    it('un clic sur le déclencheur place le focus sur le premier élément non désactivé', async () => {
+      const { fixture, trigger } = await setup();
+      trigger.click();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(enabledItems()[0]);
+      expect((document.activeElement as HTMLElement).textContent).toContain('Renommer');
+    });
+
+    it('Échap sur le déclencheur, après ouverture au clic, ferme le menu et garde le focus sur le déclencheur', async () => {
+      const { fixture, trigger } = await setup();
+      trigger.click();
+      await fixture.whenStable();
+      trigger.focus();
+      const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      trigger.dispatchEvent(event);
+      await fixture.whenStable();
+      expect(event.defaultPrevented).toBe(true);
+      expect(panel()).toBeNull();
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    it('Échap sur le déclencheur quand le menu est fermé ne fait rien', async () => {
+      const { fixture, trigger } = await setup();
+      trigger.focus();
+      const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      trigger.dispatchEvent(event);
+      await fixture.whenStable();
+      expect(event.defaultPrevented).toBe(false);
+      expect(panel()).toBeNull();
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    it('flèche haut sur le premier élément : dernier élément ; flèche bas sur le dernier : premier (désactivés sautés)', async () => {
+      const { fixture, trigger } = await setup();
+      trigger.click();
+      await fixture.whenStable();
+      const [first, last] = enabledItems();
+      expect(last.textContent).toContain('Supprimer');
+      first.focus();
+      key(first, 'ArrowUp');
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(last);
+      key(last, 'ArrowDown');
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(first);
+    });
+  });
 });

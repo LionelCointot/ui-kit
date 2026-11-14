@@ -42,8 +42,9 @@
 
 th,
 td {
-  --_cell-padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
-  padding: var(--_cell-padding);
+  --_cell-padding-block: var(--lc-sys-space-3);
+  --_cell-padding-inline: var(--lc-table-cell-padding-inline, var(--lc-sys-space-4));
+  padding: var(--_cell-padding-block) var(--_cell-padding-inline);
   border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
   background: var(--lc-table-background, var(--lc-sys-color-surface-raised));
   white-space: nowrap;
@@ -51,7 +52,8 @@ td {
 
 :host(.lc-table--compact) th,
 :host(.lc-table--compact) td {
-  --_cell-padding: var(--lc-sys-space-1) var(--lc-sys-space-3);
+  --_cell-padding-block: var(--lc-sys-space-1);
+  --_cell-padding-inline: var(--lc-table-cell-padding-inline, var(--lc-sys-space-3));
 }
 
 thead th {

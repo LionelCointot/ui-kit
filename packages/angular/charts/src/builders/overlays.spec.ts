@@ -116,6 +116,33 @@ describe('repères, annotations, style de trait et symbole', () => {
       expect(overlays.annotations[0].y).toBe(110 + 105);
     });
 
+    describe('position de l\'étiquette et réserve en haut du tracé', () => {
+      const annotate = (extra: AnyOption = {}, emphasis: 'primary' | 'secondary' = 'primary') =>
+        resolveOverlays([], [{ seriesId: 'buy', categoryIndex: 2, label: 'Équilibre', emphasis, ...extra }], [rent, buy], 4, false);
+      const build = (overlays?: AnyOption) => buildLineOption({ ...base([rent, buy], overlays), showPoints: 'auto' }) as AnyOption;
+      const labelPosition = (overlays: AnyOption) => build(overlays)['series'][1].markPoint.data[0].label.position;
+
+      it('labelPosition : « top » par défaut, « left » et « bottom » transmis', () => {
+        expect(labelPosition(annotate())).toBe('top');
+        expect(labelPosition(annotate({ labelPosition: 'left' }))).toBe('left');
+        expect(labelPosition(annotate({ labelPosition: 'bottom' }))).toBe('bottom');
+      });
+
+      it('grid.top réserve 36 avec une annotation primary en haut ou un repère, 16 sinon', () => {
+        const marker = resolveOverlays([{ id: 'eq', categoryIndex: 2, label: 'Repère' }], [], [rent, buy], 4, false);
+        expect(build(annotate())['grid'].top).toBe(36);
+        expect(build(marker)['grid'].top).toBe(36);
+        expect(build(annotate({ labelPosition: 'left' }))['grid'].top).toBe(16);
+        expect(build(annotate({ labelPosition: 'bottom' }))['grid'].top).toBe(16);
+        expect(build(annotate({}, 'secondary'))['grid'].top).toBe(16);
+      });
+
+      it('sans annotation ni repère, rien ne change (grid.top 16)', () => {
+        expect(build()['grid'].top).toBe(16);
+        expect(build(resolveOverlays([], [], [rent, buy], 4, false))['grid'].top).toBe(16);
+      });
+    });
+
     it('série inconnue, catégorie hors limites ou valeur absente : ignoré avec avertissement', () => {
       const gap = resolved('gap', [1, null, 3, 4], '#111');
       const overlays = resolveOverlays([], [

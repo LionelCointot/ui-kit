@@ -43,6 +43,8 @@ export interface LcChartPointAnnotation {
   readonly label: string;
   /** `primary` : point plein d'au moins 8 px et étiquette ; `secondary` : rond creux discret. */
   readonly emphasis: 'primary' | 'secondary';
+  /** Côté du point où s'affiche l'étiquette d'un point `primary` (défaut `top`). `left` évite de rogner une étiquette sur la dernière catégorie. */
+  readonly labelPosition?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 export interface LcCartesianData {

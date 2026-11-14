@@ -10,6 +10,7 @@ import {
  * Tableau de données : `<table>` natif, tri côté client (en-tête-bouton, `aria-sort`), groupes repliables
  * avec sous-totaux, ligne de totaux, en-tête et première colonne collants. Limité à 2 000 lignes (ADR-0004).
  * Cellules personnalisées par `<ng-template lcCell="idColonne" let-row>`.
+ * Espacement horizontal des cellules : variable CSS `--lc-table-cell-padding-inline` (défaut `space-4`, `space-3` en `compact`), à poser sur `lc-table` ou un ancêtre.
  */
 @Component({
   selector: 'lc-table',

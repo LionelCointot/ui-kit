@@ -40,6 +40,14 @@ export const Defaut: Story = {
   }),
 };
 
+/** Beaucoup de colonnes dans une largeur fixe : `--lc-table-cell-padding-inline` règle l'espacement horizontal des cellules (sans `::ng-deep`). */
+export const EspacementResserre: Story = {
+  render: () => ({
+    props: { data: payments.slice(0, 12), columns, trackBy: (row: Payment) => row.id },
+    template: `<lc-table caption="Échéancier resserré" style="--lc-table-cell-padding-inline: var(--lc-sys-space-1)" [data]="data" [columns]="columns" [trackBy]="trackBy" />`,
+  }),
+};
+
 export const GroupesEtTotaux: Story = {
   render: () => ({
     props: {

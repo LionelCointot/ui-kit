@@ -59,11 +59,13 @@ export function buildLineOption(args: LineBuildArgs): EChartsCoreOption {
   const truncated = !area && (yAxis?.min !== undefined ? yAxis.min > 0 : lineAxisIsTruncated(series));
   const showPoints = !area && (args.showPoints === 'always' || (args.showPoints === 'auto' && categories.length <= MAX_POINTS_AUTO));
   const directLabels = showDirectLabels(args.directLabels, args.seriesCount);
+  // Réserve en haut de la zone de tracé : étiquette de repère ou étiquette d'annotation au-dessus d'un point (ex. à 100 %).
   const hasMarkers = (args.overlays?.markers.length ?? 0) > 0;
+  const hasTopLabels = hasMarkers || (args.overlays?.annotations ?? []).some((a) => a.emphasis === 'primary' && (a.labelPosition ?? 'top') === 'top');
 
   return {
     ...baseOption(theme, args.summary, args.animate ?? true),
-    grid: { left: GRID_LEFT, right: directLabels ? DIRECT_LABEL_MARGIN : 16, top: hasMarkers ? 16 + MARKER_LABEL_HEIGHT : 16, bottom: GRID_BOTTOM, containLabel: false },
+    grid: { left: GRID_LEFT, right: directLabels ? DIRECT_LABEL_MARGIN : 16, top: hasTopLabels ? 16 + MARKER_LABEL_HEIGHT : 16, bottom: GRID_BOTTOM, containLabel: false },
     tooltip: {
       ...tooltipBase(theme),
       trigger: 'axis',
@@ -154,7 +156,7 @@ function pointAnnotations(item: LcResolvedSeries, args: LineBuildArgs): object |
           ? { color: item.color, borderColor: theme.surface, borderWidth: SERIES_STROKE }
           : { color: theme.surface, borderColor: item.color, borderWidth: SERIES_STROKE },
         label: primary
-          ? { show: true, position: 'top', distance: 6, formatter: () => annotation.label, ...textStyle(theme, theme.ink.primary) }
+          ? { show: true, position: annotation.labelPosition ?? 'top', distance: 6, formatter: () => annotation.label, ...textStyle(theme, theme.ink.primary) }
           : { show: false },
       };
     }),

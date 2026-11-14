@@ -311,6 +311,10 @@ const THEME_BUILDER_FR: LcThemeBuilderLabels = {
   },
 };
 
+/** Nombres affichés dans les libellés de pagination : « 1 234 » (espace insécable en français). */
+const frNumber = new Intl.NumberFormat('fr-FR');
+const enNumber = new Intl.NumberFormat('en-US');
+
 export const LC_LABELS_FR: LcLabels = {
   close: 'Fermer',
   loading: 'Chargement',
@@ -342,8 +346,8 @@ export const LC_LABELS_FR: LcLabels = {
   previousPage: 'Précédent',
   nextPage: 'Suivant',
   pageSize: 'Éléments par page',
-  pageRange: (first, last, total) => (total === 0 ? '0 sur 0' : `${first} à ${last} sur ${total}`),
-  pageStatus: (page, pageCount) => `Page ${page} sur ${pageCount}`,
+  pageRange: (first, last, total) => (total === 0 ? '0 sur 0' : `${frNumber.format(first)} à ${frNumber.format(last)} sur ${frNumber.format(total)}`),
+  pageStatus: (page, pageCount) => `Page ${frNumber.format(page)} sur ${frNumber.format(pageCount)}`,
   stepOf: (current, total) => `Étape ${current} sur ${total}`,
   stepBack: (name) => `Revenir à : ${name}`,
   stepGoTo: (position, name) => `Aller à l'étape ${position} : ${name}`,
@@ -495,8 +499,8 @@ export const LC_LABELS_EN: LcLabels = {
   previousPage: 'Previous',
   nextPage: 'Next',
   pageSize: 'Items per page',
-  pageRange: (first, last, total) => (total === 0 ? '0 of 0' : `${first} to ${last} of ${total}`),
-  pageStatus: (page, pageCount) => `Page ${page} of ${pageCount}`,
+  pageRange: (first, last, total) => (total === 0 ? '0 of 0' : `${enNumber.format(first)} to ${enNumber.format(last)} of ${enNumber.format(total)}`),
+  pageStatus: (page, pageCount) => `Page ${enNumber.format(page)} of ${enNumber.format(pageCount)}`,
   stepOf: (current, total) => `Step ${current} of ${total}`,
   stepBack: (name) => `Back to: ${name}`,
   stepGoTo: (position, name) => `Go to step ${position}: ${name}`,
