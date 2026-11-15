@@ -1,0 +1,84 @@
+:host {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  position: relative;
+  display: flex;
+  gap: var(--lc-sys-space-3);
+  padding-block-end: var(--_gap, var(--lc-sys-space-4));
+  color: var(--lc-sys-color-on-surface);
+}
+
+/* Trait de liaison : de sous la pastille jusqu'à la suivante ; le dernier élément n'en a pas. */
+:host::before {
+  content: '';
+  position: absolute;
+  inset-block: calc(var(--_dot-size, var(--lc-sys-space-6)) + var(--lc-sys-space-1)) var(--lc-sys-space-1);
+  inset-inline-start: calc(var(--_dot-size, var(--lc-sys-space-6)) / 2 - var(--lc-sys-border-width-thin) / 2);
+  border-inline-start: var(--lc-sys-border-width-thin) solid var(--lc-activity-item-line-color, var(--lc-sys-color-border));
+}
+
+:host(:last-child) {
+  padding-block-end: 0;
+}
+
+:host(:last-child)::before {
+  content: none;
+}
+
+.lc-activity-item__dot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--_dot-size, var(--lc-sys-space-6));
+  block-size: var(--_dot-size, var(--lc-sys-space-6));
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-activity-item-dot-background, var(--lc-sys-color-surface-sunken));
+  color: var(--lc-activity-item-dot-color, var(--lc-sys-color-on-surface-muted));
+}
+
+.lc-activity-item__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+}
+
+.lc-activity-item__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
+}
+
+.lc-activity-item__heading {
+  min-inline-size: 0;
+  margin: 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.lc-activity-item__date {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-activity-item__content {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.lc-activity-item__content:empty {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  :host::before {
+    border-inline-start-color: CanvasText;
+  }
+
+  .lc-activity-item__dot {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
+}

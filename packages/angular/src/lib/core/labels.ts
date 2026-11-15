@@ -61,6 +61,10 @@ export interface LcLabels {
   readonly logEmpty: string;
   readonly logLevelError: string;
   readonly logLevelInfo: string;
+  /** Message (`lc-message`) : variante annoncée avant l'auteur ; la note à diffusion restreinte l'affiche aussi à l'écran. */
+  readonly messageReceived: string;
+  readonly messageSent: string;
+  readonly messageRestricted: string;
   /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
   /** Liste filtrable (`lc-combobox`) et champs géographiques. */
   readonly comboboxNoResults: string;
@@ -367,6 +371,9 @@ export const LC_LABELS_FR: LcLabels = {
   logEmpty: 'Aucune sortie pour l\'instant.',
   logLevelError: 'err',
   logLevelInfo: 'info',
+  messageReceived: 'Message reçu',
+  messageSent: 'Message envoyé',
+  messageRestricted: 'Note à diffusion restreinte',
   comboboxNoResults: 'Aucun résultat',
   comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
   comboboxSearching: 'Recherche en cours',
@@ -521,6 +528,9 @@ export const LC_LABELS_EN: LcLabels = {
   logEmpty: 'No output yet.',
   logLevelError: 'err',
   logLevelInfo: 'info',
+  messageReceived: 'Received message',
+  messageSent: 'Sent message',
+  messageRestricted: 'Restricted note',
   comboboxNoResults: 'No results',
   comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
   comboboxSearching: 'Searching',

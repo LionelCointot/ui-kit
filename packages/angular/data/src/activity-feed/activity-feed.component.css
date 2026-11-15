@@ -1,0 +1,15 @@
+:host {
+  --_dot-size: var(--lc-activity-feed-dot-size, var(--lc-sys-space-6));
+  --_gap: var(--lc-activity-feed-gap, var(--lc-sys-space-4));
+
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:host(.lc-activity-feed--compact) {
+  --_dot-size: var(--lc-activity-feed-dot-size, var(--lc-sys-space-5));
+  --_gap: var(--lc-activity-feed-gap, var(--lc-sys-space-2));
+}
