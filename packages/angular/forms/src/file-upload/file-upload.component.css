@@ -1,0 +1,234 @@
+/*
+ * Dépôt de fichiers : uniquement des variables CSS (--lc-file-upload-* avec repli sur --lc-sys-*).
+ * Sous 768 px (valeur littérale : une variable CSS est inutilisable dans une media query) la zone de dépôt
+ * n'a ni cadre ni phrase d'invite : le bouton prend toute la largeur ; le dépôt reste possible, seul le rendu s'allège.
+ */
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.lc-file-upload__zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lc-sys-space-3);
+  box-sizing: border-box;
+  border: var(--lc-sys-border-width-thin) solid transparent;
+  border-radius: var(--lc-file-upload-zone-radius, var(--lc-sys-radius-lg));
+}
+
+.lc-file-upload__hint {
+  display: none;
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-file-upload__choose {
+  inline-size: 100%;
+}
+
+.lc-file-upload__zone--active {
+  border-color: var(--lc-file-upload-zone-active-border-color, var(--lc-sys-color-primary));
+  background: var(--lc-file-upload-zone-active-background, var(--lc-sys-color-primary-container));
+}
+
+:host(.lc-file-upload--invalid) .lc-file-upload__zone {
+  border-color: var(--lc-file-upload-error-color, var(--lc-sys-color-error));
+}
+
+:host(.lc-file-upload--disabled) .lc-file-upload__zone {
+  opacity: var(--lc-sys-state-disabled-opacity);
+}
+
+@media (min-width: 768px) {
+  .lc-file-upload__zone {
+    padding: var(--lc-sys-space-4);
+    border-style: dashed;
+    border-color: var(--lc-file-upload-zone-border-color, var(--lc-sys-color-border-strong));
+    background: var(--lc-file-upload-zone-background, var(--lc-sys-color-surface-sunken));
+  }
+
+  .lc-file-upload__zone--active {
+    border-color: var(--lc-file-upload-zone-active-border-color, var(--lc-sys-color-primary));
+    background: var(--lc-file-upload-zone-active-background, var(--lc-sys-color-primary-container));
+  }
+
+  :host(.lc-file-upload--invalid) .lc-file-upload__zone {
+    border-color: var(--lc-file-upload-error-color, var(--lc-sys-color-error));
+  }
+
+  .lc-file-upload__hint {
+    display: inline;
+  }
+
+  .lc-file-upload__choose {
+    inline-size: auto;
+  }
+}
+
+.lc-file-upload__limit {
+  margin: var(--lc-sys-space-2) 0 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-file-upload__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  margin: var(--lc-sys-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-file-upload__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--lc-sys-space-3);
+  padding: var(--lc-sys-space-3);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-file-upload-row-border-color, var(--lc-sys-color-border));
+  border-radius: var(--lc-file-upload-row-radius, var(--lc-sys-radius-md));
+  background: var(--lc-file-upload-row-background, var(--lc-sys-color-surface-raised));
+}
+
+.lc-file-upload__row--error {
+  border-color: var(--lc-file-upload-error-color, var(--lc-sys-color-error));
+}
+
+.lc-file-upload__preview {
+  --lc-icon-size: var(--lc-sys-icon-size-lg);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  inline-size: var(--lc-file-upload-preview-size, calc(var(--lc-sys-space-12) + var(--lc-sys-space-2)));
+  block-size: var(--lc-file-upload-preview-size, calc(var(--lc-sys-space-12) + var(--lc-sys-space-2)));
+  border-radius: var(--lc-sys-radius-sm);
+  background: var(--lc-file-upload-preview-background, var(--lc-sys-color-surface-sunken));
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-file-upload__preview img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.lc-file-upload__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+}
+
+/* Nom long : seul le radical est coupé (…), l'extension reste visible ; le nom entier est dans le titre. */
+.lc-file-upload__name {
+  display: flex;
+  max-inline-size: 100%;
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-file-upload__stem {
+  overflow: hidden;
+  min-inline-size: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lc-file-upload__extension {
+  flex: none;
+}
+
+.lc-file-upload__meta {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.lc-file-upload__status--done {
+  color: var(--lc-sys-color-success);
+}
+
+.lc-file-upload__error {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
+  margin: 0;
+  color: var(--lc-file-upload-error-color, var(--lc-sys-color-on-error-container));
+  font-size: var(--lc-sys-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.lc-file-upload__error lc-icon {
+  margin-block-start: calc((1lh - var(--lc-sys-icon-size-sm)) / 2);
+}
+
+.lc-file-upload__retry {
+  margin-block-start: var(--lc-sys-space-1);
+}
+
+/* Barre de progression : même rendu que `lc-progress-bar` (`feedback`), recopié car `forms` n'importe pas `feedback`. */
+.lc-file-upload__bar {
+  position: relative;
+  overflow: hidden;
+  inline-size: 100%;
+  block-size: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-file-upload__bar-fill {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--lc-file-upload-bar-color, var(--lc-sys-color-primary));
+  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-file-upload__bar--indeterminate .lc-file-upload__bar-fill {
+  width: 40%;
+  animation: lc-file-upload-slide calc(var(--lc-sys-duration-slow) * 5) var(--lc-sys-easing-standard) infinite;
+}
+
+@keyframes lc-file-upload-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-file-upload__bar--indeterminate .lc-file-upload__bar-fill {
+    width: 100%;
+    opacity: var(--lc-sys-state-disabled-opacity);
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-file-upload__zone,
+  .lc-file-upload__row {
+    border-color: CanvasText;
+  }
+
+  .lc-file-upload__bar {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
+
+  .lc-file-upload__bar-fill {
+    background: Highlight;
+  }
+}

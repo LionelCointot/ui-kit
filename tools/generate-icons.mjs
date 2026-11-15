@@ -29,6 +29,8 @@ const ICONS = [
   'bell', 'bell-off', 'inbox', 'message-square', 'send', 'history', 'building-2', 'layout-dashboard',
   'arrow-right-left', 'hourglass', 'timer', 'mail', 'image', 'image-plus', 'circle-help', 'sliders-horizontal',
   'list', 'list-checks', 'file-text', 'wrench',
+  // Ajouts : aperçu indisponible et état désactivé (dépôt de fichiers, listes modifiables).
+  'image-off', 'circle-off',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */
