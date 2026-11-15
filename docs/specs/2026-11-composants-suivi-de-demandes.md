@@ -1,6 +1,6 @@
 # Spec : composants et extensions pour un suivi de demandes (D1 à D6)
 
-- **Statut** : Validée (demande du projet consommateur `copro-ticket`, dont la spec `2026-11-premiere-tranche.md` et les maquettes ont été validées par l'utilisateur le 2026-11-15)
+- **Statut** : Implémentée (demande du projet consommateur `copro-ticket`, dont la spec `2026-11-premiere-tranche.md` et les maquettes ont été validées par l'utilisateur le 2026-11-15)
 - **Date** : 2026-11-15
 - **Source** : maquettes `copro-ticket/docs/design/explorations/2026-11-direction-a-amelioree/` (page `index.html`, section des besoins du ui-kit) ; tâche T0 de la première tranche de copro-ticket
 - **Liés** : `2026-11-catalogue-composants.md`, `2026-11-composants-dashboard.md`, `DESIGN.md` (« Actions et icônes »)
@@ -73,20 +73,20 @@ Référence visuelle : les maquettes de copro-ticket citées en source (fil « C
 - Visuel : captures des stories dans les deux thèmes.
 
 ## 10. Critères d'acceptation
-- [ ] CA-D1 : les vingt icônes sont dans le registre par défaut, s'affichent par `lc-icon`, et viennent de la même source que les icônes existantes.
-- [ ] CA-D2 : le fil d'historique est une liste ordonnée ; chaque élément porte icône, titre, contenu et date ; le dernier n'a pas de trait de liaison ; deux densités ; aucune valeur en dur.
-- [ ] CA-D3 : le message rend ses trois variantes, distinguées autrement que par la seule couleur ; un contenu long ne déborde pas ; l'auteur et la date sont lisibles par un lecteur d'écran.
-- [ ] CA-D4 : une colonne triable de `lc-table` se trie au clavier et à la souris, suit le cycle sans tri, croissant, décroissant, expose `aria-sort`, et son modèle se lie dans les deux sens ; une table sans colonne triable se comporte comme avant.
-- [ ] CA-D5 : une info-bulle demandée au-dessus d'un élément collé en haut de la fenêtre s'affiche entière ailleurs ; les positions de côté ont un écart visible avec l'élément ; les positions existantes ne changent pas quand la place suffit.
-- [ ] CA-D6 : `lcButton` à l'état enfoncé expose `aria-pressed="true"` et un style distinct ; sans cet état, aucun `aria-pressed` n'est posé ; fonctionne avec `iconOnly`.
-- [ ] CA-D7 : chaque élément a sa story dans les deux thèmes ; `npx ng test ui-angular --watch=false` et `npm run build` réussissent ; aucun vocabulaire métier ; libellés par `LC_LABELS`.
-- [ ] CA-D8 : après `npm run build`, le projet consommateur installe le paquet reconstruit (`npm run deps:refresh`) et son build passe.
+- [x] CA-D1 : les vingt icônes sont dans le registre par défaut, s'affichent par `lc-icon`, et viennent de la même source que les icônes existantes.
+- [x] CA-D2 : le fil d'historique est une liste ordonnée ; chaque élément porte icône, titre, contenu et date ; le dernier n'a pas de trait de liaison ; deux densités ; aucune valeur en dur.
+- [x] CA-D3 : le message rend ses trois variantes, distinguées autrement que par la seule couleur ; un contenu long ne déborde pas ; l'auteur et la date sont lisibles par un lecteur d'écran.
+- [x] CA-D4 : une colonne triable de `lc-table` se trie au clavier et à la souris, suit le cycle sans tri, croissant, décroissant, expose `aria-sort`, et son modèle se lie dans les deux sens ; une table sans colonne triable se comporte comme avant.
+- [x] CA-D5 : une info-bulle demandée au-dessus d'un élément collé en haut de la fenêtre s'affiche entière ailleurs ; les positions de côté ont un écart visible avec l'élément ; les positions existantes ne changent pas quand la place suffit.
+- [x] CA-D6 : `lcButton` à l'état enfoncé expose `aria-pressed="true"` et un style distinct ; sans cet état, aucun `aria-pressed` n'est posé ; fonctionne avec `iconOnly`.
+- [x] CA-D7 : chaque élément a sa story dans les deux thèmes ; `npx ng test ui-angular --watch=false` et `npm run build` réussissent ; aucun vocabulaire métier ; libellés par `LC_LABELS`.
+- [x] CA-D8 : après `npm run build`, le projet consommateur installe le paquet reconstruit (`npm run deps:refresh`) et son build passe.
 
 ## 11. Découpage en tâches
 - [x] U1 : icônes (D1), bouton à état enfoncé (D6), info-bulle près d'un bord (D5) (M, couvre CA-D1, CA-D5, CA-D6)
 - [x] U2 : tri de colonne dans `lc-table` (D4) (M, couvre CA-D4)
 - [x] U3 : fil d'historique (D2) et message (D3) (M, couvre CA-D2, CA-D3)
-- [ ] U4 : stories restantes, build, vérification chez le consommateur (S, couvre CA-D7, CA-D8)
+- [x] U4 : stories restantes, build, vérification chez le consommateur (S, couvre CA-D7, CA-D8)
 
 ## 12. Risques et questions ouvertes
 - Changer la stratégie de position de `lcTooltip` touche tous les consommateurs : les positions actuelles doivent rester identiques quand la place suffit.
