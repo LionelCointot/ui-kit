@@ -6,6 +6,7 @@ import {
   afterNextRender,
   booleanAttribute,
   computed,
+  effect,
   inject,
   input,
   isDevMode,
@@ -30,6 +31,7 @@ import { LcFillMode, LcRounded, LcSize, LcThemeColor } from '../core/types';
     '[class.lc-button--loading]': 'loading()',
     '[class.lc-button--icon-only]': 'iconOnly()',
     '[class.lc-button--full-width]': 'fullWidth()',
+    '[class.lc-button--pressed]': 'pressed() === true',
     '[attr.aria-busy]': "loading() ? 'true' : null",
   },
 })
@@ -46,6 +48,13 @@ export class LcButtonComponent {
   /** Bouton carré sans texte : `aria-label` obligatoire. */
   readonly iconOnly = input(false, { transform: booleanAttribute });
   readonly fullWidth = input(false, { transform: booleanAttribute });
+  /**
+   * Bouton à bascule : `true` ou `false` pose `aria-pressed` et, si `true`, un style enfoncé (anneau et fond teinté) ;
+   * non fourni, aucun `aria-pressed` n'est posé. Le consommateur inverse la valeur au clic.
+   */
+  readonly pressed = input<boolean | undefined>(undefined);
+
+  private ownsPressedAttribute = false;
 
   protected readonly variantClasses = computed(() => {
     const fillMode = this.fillMode() ?? this.defaults.fillMode;
@@ -65,6 +74,18 @@ export class LcButtonComponent {
     };
     this.element.addEventListener('click', blockClick, true);
     inject(DestroyRef).onDestroy(() => this.element.removeEventListener('click', blockClick, true));
+
+    // Attribut posé ici plutôt que par `host` : un `[attr.aria-pressed]` du consommateur sur le même bouton reste intact.
+    effect(() => {
+      const pressed = this.pressed();
+      if (pressed !== undefined) {
+        this.element.setAttribute('aria-pressed', String(pressed));
+        this.ownsPressedAttribute = true;
+      } else if (this.ownsPressedAttribute) {
+        this.element.removeAttribute('aria-pressed');
+        this.ownsPressedAttribute = false;
+      }
+    });
 
     this.secureExternalLink();
     if (isDevMode()) {

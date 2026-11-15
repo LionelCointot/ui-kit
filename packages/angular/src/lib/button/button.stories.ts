@@ -61,6 +61,29 @@ export const ZoneDeFrappe: Story = {
   }),
 };
 
+/**
+ * État enfoncé : `[pressed]` pose `aria-pressed` et un style distinct (anneau et fond teinté). Sans `[pressed]`, aucun
+ * `aria-pressed`. Le consommateur inverse la valeur au clic. Avec `iconOnly`, le nom accessible reste obligatoire.
+ */
+export const Enfonce: Story = {
+  render: () => ({
+    props: { notifications: true },
+    template: `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        <button lcButton fillMode="outline" themeColor="neutral" [pressed]="false">Non enfoncé</button>
+        <button lcButton fillMode="outline" themeColor="neutral" [pressed]="true">Enfoncé</button>
+        <button lcButton [pressed]="true">Plein enfoncé</button>
+        <button lcButton fillMode="flat" themeColor="neutral" [pressed]="true">Plat enfoncé</button>
+        <button lcButton iconOnly fillMode="flat" themeColor="neutral" [pressed]="false" aria-label="Notifications"><lc-icon name="bell" /></button>
+        <button lcButton iconOnly fillMode="flat" themeColor="neutral" [pressed]="true" aria-label="Notifications"><lc-icon name="bell-off" /></button>
+        <button lcButton iconOnly fillMode="outline" themeColor="neutral" [pressed]="notifications" (click)="notifications = !notifications"
+          aria-label="Notifications"><lc-icon [name]="notifications ? 'bell' : 'bell-off'" /></button>
+        <button lcButton fillMode="outline" themeColor="neutral">Sans état (aucun aria-pressed)</button>
+        <button lcButton fillMode="outline" themeColor="neutral" [pressed]="true" disabled>Désactivé enfoncé</button>
+      </div>`,
+  }),
+};
+
 export const Etats: Story = {
   render: () => ({
     template: `<div style="display:flex;gap:8px;flex-wrap:wrap">
