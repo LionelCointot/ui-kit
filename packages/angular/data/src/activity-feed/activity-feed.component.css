@@ -1,5 +1,6 @@
 :host {
-  --_dot-size: var(--lc-activity-feed-dot-size, var(--lc-sys-space-6));
+  --_dot-size: var(--lc-activity-feed-dot-size, var(--lc-sys-space-8));
+  --_icon-size: var(--lc-sys-icon-size-md);
   --_gap: var(--lc-activity-feed-gap, var(--lc-sys-space-4));
 
   display: flex;
@@ -10,6 +11,7 @@
 }
 
 :host(.lc-activity-feed--compact) {
-  --_dot-size: var(--lc-activity-feed-dot-size, var(--lc-sys-space-5));
+  --_dot-size: var(--lc-activity-feed-dot-size, var(--lc-sys-space-6));
+  --_icon-size: var(--lc-sys-icon-size-sm);
   --_gap: var(--lc-activity-feed-gap, var(--lc-sys-space-2));
 }

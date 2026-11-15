@@ -13,7 +13,7 @@ const meta: Meta<LcMessageComponent> = {
   render: (args) => ({
     props: args,
     template: `<div style="max-width:32rem"><lc-message [variant]="variant" [author]="author" [date]="date" [dateTime]="dateTime">
-      Bonjour, voici les informations demandées.</lc-message></div>`,
+      Bonjour, voici les détails complémentaires.</lc-message></div>`,
   }),
 };
 export default meta;

@@ -16,7 +16,7 @@ export type LcMessageVariant = 'received' | 'sent' | 'restricted';
   imports: [LcIconComponent],
   template: `
     @if (variant() !== 'restricted') {
-      <span class="lc-message__sr">{{ variantLabel() }}</span>
+      <span class="lc-visually-hidden">{{ variantLabel() }}</span>
     }
     <div class="lc-message__header">
       @if (variant() === 'restricted') {

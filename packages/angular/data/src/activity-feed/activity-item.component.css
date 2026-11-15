@@ -1,5 +1,5 @@
 :host {
-  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  --lc-icon-size: var(--_icon-size, var(--lc-sys-icon-size-md));
 
   position: relative;
   display: flex;
@@ -8,13 +8,13 @@
   color: var(--lc-sys-color-on-surface);
 }
 
-/* Trait de liaison : de sous la pastille jusqu'à la suivante ; le dernier élément n'en a pas. */
+/* Trait de liaison : de sous la pastille jusqu'à la suivante ; le dernier élément n'en a pas. Bordure renforcée : 3:1 sur le fond de page (3,4:1 clair, 5,4:1 sombre). */
 :host::before {
   content: '';
   position: absolute;
-  inset-block: calc(var(--_dot-size, var(--lc-sys-space-6)) + var(--lc-sys-space-1)) var(--lc-sys-space-1);
-  inset-inline-start: calc(var(--_dot-size, var(--lc-sys-space-6)) / 2 - var(--lc-sys-border-width-thin) / 2);
-  border-inline-start: var(--lc-sys-border-width-thin) solid var(--lc-activity-item-line-color, var(--lc-sys-color-border));
+  inset-block: calc(var(--_dot-size, var(--lc-sys-space-8)) + var(--lc-sys-space-1)) var(--lc-sys-space-1);
+  inset-inline-start: calc(var(--_dot-size, var(--lc-sys-space-8)) / 2 - var(--lc-sys-border-width-thick) / 2);
+  border-inline-start: var(--lc-sys-border-width-thick) solid var(--lc-activity-item-line-color, var(--lc-sys-color-border-strong));
 }
 
 :host(:last-child) {
@@ -30,10 +30,12 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  inline-size: var(--_dot-size, var(--lc-sys-space-6));
-  block-size: var(--_dot-size, var(--lc-sys-space-6));
+  box-sizing: border-box;
+  inline-size: var(--_dot-size, var(--lc-sys-space-8));
+  block-size: var(--_dot-size, var(--lc-sys-space-8));
+  border: var(--lc-sys-border-width-thin) solid var(--lc-activity-item-dot-border-color, var(--lc-sys-color-border-strong));
   border-radius: var(--lc-sys-radius-full);
-  background: var(--lc-activity-item-dot-background, var(--lc-sys-color-surface-sunken));
+  background: var(--lc-activity-item-dot-background, var(--lc-sys-color-surface-raised));
   color: var(--lc-activity-item-dot-color, var(--lc-sys-color-on-surface-muted));
 }
 
@@ -79,6 +81,6 @@
   }
 
   .lc-activity-item__dot {
-    border: var(--lc-sys-border-width-thin) solid CanvasText;
+    border-color: CanvasText;
   }
 }

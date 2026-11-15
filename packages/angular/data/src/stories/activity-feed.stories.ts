@@ -17,7 +17,7 @@ const meta: Meta<LcActivityFeedComponent> = {
       <li lcActivityItem icon="pencil" heading="Valeur modifiée" date="10 mars 2026" dateTime="2026-03-10">
         <s>Brouillon</s> → <strong>Publié</strong>
       </li>
-      <li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08" />
+      <li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08"></li>
     </ol>`,
   }),
 };
@@ -34,7 +34,7 @@ export const Densites: Story = {
       @for (density of ['comfortable', 'compact']; track density) {
         <ol lcActivityFeed [density]="density">
           <li lcActivityItem icon="check" heading="Étape validée" date="12 mars 2026" dateTime="2026-03-12">Le contrôle est terminé.</li>
-          <li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08" />
+          <li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08"></li>
         </ol>
       }</div>`,
   }),
@@ -48,7 +48,7 @@ export const Vide: Story = {
 /** Un seul élément : pas de trait orphelin. */
 export const UnSeulElement: Story = {
   render: () => ({
-    template: `<ol lcActivityFeed style="max-width:32rem"><li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08" /></ol>`,
+    template: `<ol lcActivityFeed style="max-width:32rem"><li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08"></li></ol>`,
   }),
 };
 
@@ -57,8 +57,8 @@ export const CasLimites: Story = {
   render: () => ({
     props: { long: LONG },
     template: `<ol lcActivityFeed style="max-width:24rem">
-      <li lcActivityItem heading="Sans icône ni date" />
-      <li lcActivityItem icon="clock" heading="Date sans valeur machine" date="hier" />
+      <li lcActivityItem heading="Sans icône ni date"></li>
+      <li lcActivityItem icon="clock" heading="Date sans valeur machine" date="hier"></li>
       <li lcActivityItem icon="pencil" [heading]="long" date="12 mars 2026" dateTime="2026-03-12">{{ long }}</li>
     </ol>`,
   }),
