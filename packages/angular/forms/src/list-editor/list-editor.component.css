@@ -1,0 +1,158 @@
+/*
+ * Liste modifiable : uniquement des variables CSS (--lc-list-editor-* avec repli sur --lc-sys-*).
+ * Une ligne = le libellé et ses notes, puis les commandes (en dessous sous 768 px, à côté au-delà : valeur littérale,
+ * une variable CSS est inutilisable dans une media query). Les champs de saisie reprennent `.lc-input` (feuille globale).
+ */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-3);
+  min-inline-size: 0;
+}
+
+.lc-list-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-list-editor__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-3);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-list-editor-row-border-color, var(--lc-sys-color-border));
+  border-radius: var(--lc-list-editor-row-radius, var(--lc-sys-radius-md));
+  background: var(--lc-list-editor-row-background, var(--lc-sys-color-surface-raised));
+}
+
+.lc-list-editor__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+}
+
+.lc-list-editor__name-line {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-2);
+  min-inline-size: 0;
+}
+
+.lc-list-editor__name {
+  min-inline-size: 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+/* Ligne désactivée : le libellé s'efface, et le badge « Désactivé » le dit (jamais la couleur seule). */
+.lc-list-editor__row--inactive .lc-list-editor__name {
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-list-editor__badge {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  padding: 0 var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-list-editor-badge-background, var(--lc-sys-color-surface-sunken));
+  color: var(--lc-list-editor-badge-color, var(--lc-sys-color-on-surface));
+  font-size: var(--lc-sys-font-size-xs);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-list-editor__detail {
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.lc-list-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-2);
+}
+
+.lc-list-editor__edit,
+.lc-list-editor__add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  inline-size: 100%;
+}
+
+.lc-list-editor__edit-input,
+.lc-list-editor__add-input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.lc-list-editor__add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+}
+
+.lc-list-editor__add-label {
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-list-editor__empty {
+  margin: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-list-editor__error {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
+  margin: 0;
+  color: var(--lc-list-editor-error-color, var(--lc-sys-color-on-error-container));
+  font-size: var(--lc-sys-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.lc-list-editor__error lc-icon {
+  margin-block-start: calc((1lh - var(--lc-sys-icon-size-sm)) / 2);
+}
+
+:host(.lc-list-editor--disabled) .lc-list-editor__list,
+:host(.lc-list-editor--disabled) .lc-list-editor__add {
+  opacity: var(--lc-sys-state-disabled-opacity);
+}
+
+@media (min-width: 768px) {
+  .lc-list-editor__row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--lc-sys-space-4);
+  }
+
+  .lc-list-editor__actions {
+    flex: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-list-editor__row,
+  .lc-list-editor__badge {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
+}
