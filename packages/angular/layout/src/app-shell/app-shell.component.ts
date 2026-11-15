@@ -57,7 +57,7 @@ export class LcAppShellComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly breakpoints = inject(BreakpointObserver);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
+  private readonly menuButton = viewChild('menuButton', { read: ElementRef<HTMLButtonElement> });
 
   /** `auto` : latéral ≥ 1024 px, tiroir en dessous. `none` : ni bouton de menu, ni `<nav>`, ni tiroir (pages sans navigation, comme la connexion). */
   readonly navMode = input<'auto' | 'side' | 'drawer' | 'none'>('auto');

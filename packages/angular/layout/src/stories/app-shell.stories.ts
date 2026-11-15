@@ -15,8 +15,8 @@ const meta: Meta<LcAppShellComponent> = {
       <lc-app-shell [navMode]="navMode" [navLabel]="navLabel">
         <strong lcShellHeader>Application</strong>
         <ul lcShellNav style="margin:0;padding:0;list-style:none">
-          <li>Première page</li>
-          <li>Seconde page</li>
+          <li><a href="#">Première page</a></li>
+          <li><a href="#">Seconde page</a></li>
         </ul>
         <p style="padding:16px">Contenu principal.</p>
       </lc-app-shell>`,
