@@ -1,0 +1,120 @@
+# Spec : dépôt de fichiers, liste modifiable et icônes pour un suivi de demandes (K1, K9, K11)
+
+- **Statut** : Validée (demande du projet consommateur copro-ticket, deuxième tranche, 2026-11-16)
+- **Date** : 2026-11-16
+- **Source** : brief de design de la deuxième tranche de copro-ticket, section « Besoins du ui-kit » (entrées K1, K9 et K11 ; les autres entrées K ne font pas partie de ce lot)
+- **Liés** : `2026-11-composants-suivi-de-demandes.md` (premier lot), `2026-11-catalogue-composants.md`, `DESIGN.md`
+
+Tout est **générique** : aucun vocabulaire métier dans les API, les libellés, les tokens ni les stories. Limites, types acceptés et textes propres au consommateur sont des entrées ou des libellés par défaut neutres.
+
+## 1. Contexte et problème
+Les écrans de la deuxième tranche de copro-ticket joignent des fichiers à un formulaire et administrent une liste de valeurs (ajout, renommage, ordre, activation). Le kit n'a ni composant de dépôt de fichiers ni liste modifiable, et il lui manque deux icônes. Sans eux, le consommateur écrirait ces composants chez lui, ce que sa règle interdit.
+
+## 2. Objectifs
+| Id | Élément | Point d'entrée | Besoin |
+|---|---|---|---|
+| K1 | `lc-file-upload` | `forms` | Choisir des fichiers (bouton qui ouvre le sélecteur natif, zone de dépôt) et afficher l'état que l'application lui donne : une ligne par fichier avec aperçu, nom, taille, progression, erreur, « Retirer » et « Réessayer ». **Ne dépose rien** : aucun appel réseau dans le kit. |
+| K9 | `lc-list-editor` | `forms` | Liste modifiable et réordonnable : ajout, renommage en place, déplacement (monter, descendre), activation et désactivation, lignes verrouillées, minimum d'éléments actifs ; toutes les écritures sortent en événements, l'application garde la liste. Pas de glisser-déposer. |
+| K11 | Icônes | principal | `image-off`, `circle-off` ajoutées au registre par défaut ; les onze autres icônes citées par le brief existent déjà. |
+
+## 3. Hors périmètre (non-objectifs)
+- Le dépôt lui-même, la réduction d'image, le contrôle de taille, la création ou la révocation d'adresses d'aperçu : à la charge de l'application.
+- La visionneuse et la grille de vignettes, le champ de recherche, les onglets pilotés par l'adresse (autres entrées du brief, lots suivants).
+- Le glisser-déposer pour réordonner (K9) ; tout contenu ou libellé propre à copro-ticket.
+- Un `FormValueControl` pour `lc-file-upload` : la valeur est la liste `items` de l'application, pas un champ.
+
+## 4. Utilisateurs et cas d'usage
+**Utilisateur principal** : le développeur d'un projet consommateur, qui compose ses écrans avec le kit.
+
+| Acteur | Cas d'usage | Résultat attendu |
+|---|---|---|
+| Développeur | Joindre jusqu'à N fichiers d'un type donné à un formulaire | Un composant à lier : il reçoit les fichiers choisis, déposés par l'application, qui lui rend l'état |
+| Développeur | Montrer l'avancement et les échecs d'un dépôt | Barre, message d'erreur, « Réessayer » et « Retirer » sans CSS à écrire |
+| Développeur | Administrer une liste de valeurs ordonnée | Un composant, des événements, aucune mutation interne |
+
+## 5. Solution proposée
+### 5.1 Vue d'ensemble de l'architecture
+Conventions du kit (`CLAUDE.md`) : composants autonomes, signaux, OnPush, tokens `--lc-<composant>-*` avec repli sur `--lc-sys-*`, libellés par `LC_LABELS` (français et anglais), aucun `innerHTML`, aucune dépendance, aucun import entre points d'entrée secondaires hors exceptions admises. `forms` n'importe donc pas `feedback` : la barre de progression de `lc-file-upload` est un `role="progressbar"` interne au composant (CSS recopié de `lc-progress-bar`). Les deux composants sont de présentation : l'application possède l'état et reçoit des sorties.
+
+### 5.2 Modèle de données
+Modèle d'élément de K1 : section « Livré ». Modèle de K9 : fixé à l'implémentation de V2, avec identifiant, libellé, état actif, verrouillé, et un texte secondaire facultatif (le brief le nomme `trace`).
+
+### 5.3 API / interfaces
+K1 : section « Livré ». K9 (cible) : entrées `items`, `minActive` ; sorties `add(label)`, `rename(id, label)`, `move(id, direction)`, `toggle(id, active)` ; erreurs par ligne et d'ajout fournies par l'application ; libellés par `LC_LABELS` ; contrat avec `lc-form-field` décidé comme pour K1.
+
+### 5.4 Interface utilisateur
+Référence : les écrans du brief (bloc de dépôt de photos ; réglages d'une liste). Le rendu suit `DESIGN.md` : tokens seulement, deux thèmes, cibles de 44 px, focus visible, utilisable à 360 et 320 px sans défilement horizontal. Chaque composant a ses stories (vide, états, cas limites, dans `lc-form-field`).
+
+## 6. Cas limites et gestion des erreurs
+- Nom de fichier très long ou sans espace : le radical est coupé, l'extension reste visible, pas de défilement horizontal.
+- Aperçu qui ne se charge pas : la ligne passe à l'icône « image indisponible ».
+- Limite atteinte : le choix est inactif et le dit ; un dépôt à la souris est refusé (`rejected`, raison `count`).
+- Fichiers refusés (type, nombre) : le composant ne dit rien de plus que ses sorties ; l'application choisit son message.
+- Composant désactivé : choix, dépôt, « Retirer » et « Réessayer » inertes.
+- Usage incorrect non bloquant (pas de nom accessible hors de `lc-form-field`) : avertissement console en développement seulement.
+
+## 7. Sécurité, performance, observabilité
+- Sécurité : aucun `innerHTML` ; aucun appel réseau ; le composant ne crée ni ne révoque d'adresse d'objet (les aperçus viennent de l'application) ; la vérification du type par `accept` est un confort, la vérité est côté serveur.
+- Performance : aucune dépendance ajoutée.
+- Logs / métriques : N/A.
+
+## 8. Alternatives envisagées
+| Option | Avantages | Inconvénients | Retenue ? |
+|---|---|---|---|
+| Écrire ces composants dans copro-ticket | Plus rapide | Contraire à la règle du consommateur ; non réutilisable | Non |
+| Faire déposer les fichiers par le composant (service HTTP injectable) | Moins de code chez le consommateur | Réseau, authentification et réduction d'image dans une bibliothèque de présentation | Non |
+| Importer `lc-progress-bar` depuis `feedback` | Pas de doublon de CSS | Nouvelle exception à la règle d'import entre points d'entrée | Non |
+| `FormValueControl<File[]>` pour K1 | Branchement direct à Signal Forms | La liste affichée (états, progression) n'est pas la valeur du champ | Non |
+
+## 9. Plan de test
+- Unitaires et de composant (Vitest) : filtrage par `accept`, limite et `multiple`, sorties, états de ligne, annonces, focus après retrait, intégration `lc-form-field`.
+- Storybook : une story par état, contrôle d'accessibilité.
+- Visuel : captures des stories dans les deux thèmes, à 360 et 320 px.
+
+## 10. Critères d'acceptation
+- [ ] CA-L2-1 : `image-off` et `circle-off` sont dans le registre par défaut, s'affichent par `lc-icon`, et viennent de la même source et de la même version que les autres (Lucide, `lucide-static`).
+- [ ] CA-L2-2 : `lc-file-upload` n'effectue aucun appel réseau et ne crée ni ne révoque d'adresse d'objet ; il n'importe aucun autre point d'entrée.
+- [ ] CA-L2-3 : le bouton ouvre le sélecteur natif (`accept` et `multiple` transmis) ; un dépôt à la souris donne le même résultat ; `filesAdded` n'émet que des fichiers de type accepté et dans la limite de `maxFiles` (un seul fichier par choix sans `multiple`).
+- [ ] CA-L2-4 : `rejected` émet chaque fichier refusé avec la raison `type` ou `count` ; rien n'est émis quand tout est accepté.
+- [ ] CA-L2-5 : au maximum atteint, le bouton porte `aria-disabled="true"` (il reste atteignable au clavier), un texte visible le dit, il est relié au bouton par `aria-describedby` et annoncé ; ni le sélecteur ni un dépôt n'ajoutent de fichier.
+- [ ] CA-L2-6 : chaque ligne montre un aperçu (ou une icône), le nom (radical coupé, extension visible), la taille lisible dans la langue des libellés, et selon l'état : en attente, barre de progression avec `aria-valuenow` (indéterminée sans valeur), terminé, ou message d'erreur.
+- [ ] CA-L2-7 : « Retirer » (nom accessible « Retirer {nom} ») et, en erreur, « Réessayer » émettent `remove` et `retry` avec l'identifiant de la ligne ; le composant ne modifie jamais `items`.
+- [ ] CA-L2-8 : tout se fait au clavier ; la progression est annoncée au début et à la fin, jamais à chaque pourcentage ; une erreur est annoncée (`role="alert"`) ; après un retrait, le focus va à la ligne suivante, sinon à la précédente, sinon au bouton de choix.
+- [ ] CA-L2-9 : dans `lc-form-field`, le libellé nomme le groupe, l'aide et l'erreur sont reliées par `aria-describedby`, un clic sur le libellé met le focus sur le bouton de choix ; hors du champ, `ariaLabel` nomme le groupe.
+- [ ] CA-L2-10 : tokens `--lc-file-upload-*` avec repli sur `--lc-sys-*`, aucune valeur en dur, deux thèmes ; libellés par `LC_LABELS` (français et anglais) ; aucune dépendance ajoutée.
+- [ ] CA-L2-11 : à 360 px et à 320 px, aucun défilement horizontal, cibles de 44 px.
+- [ ] CA-L2-12 : `lc-list-editor` (V2) : ajout, renommage (Entrée valide, Échap annule), déplacement, activation, ligne verrouillée sans commandes, interrupteur inactif sur le dernier élément actif (`minActive`), états chargement, erreur, vide et désactivé, clavier complet, annonces de position et d'état, focus qui suit la commande après un déplacement ; tout sort en événements.
+- [ ] CA-L2-13 : chaque composant a ses stories ; `npx ng test ui-angular --watch=false`, `npm run build` et `npm run build-storybook` réussissent ; aucun vocabulaire métier.
+
+## 11. Découpage en tâches
+- [x] V1 : icônes (K11) et dépôt de fichiers (K1), stories, documentation (M, couvre CA-L2-1 à CA-L2-11, CA-L2-13 pour V1 ; tests écrits ensuite par la QA)
+- [ ] V2 : liste modifiable (K9), stories, documentation (M, couvre CA-L2-12 et CA-L2-13 pour V2)
+
+## 12. Risques et questions ouvertes
+- Un nom qui se termine par un point ou une longue « extension » n'est pas séparé : le nom entier est coupé alors.
+- Le retrait annoncé et le focus après retrait supposent que l'application retire la ligne de `items` en réponse à `remove` ; si elle demande d'abord une confirmation, rien n'est annoncé ni déplacé tant que la ligne reste.
+- Les tailles utilisent des unités décimales (1 Ko = 1 000 octets), comme l'affichage courant en français.
+- Pour K9, la forme du texte secondaire (`trace` dans le brief) est à fixer avec le consommateur avant V2.
+
+## Livré (V1)
+
+| Id | Élément | Point d'entrée | API |
+|---|---|---|---|
+| K11 | icônes | principal | Ajoutées : `image-off`, `circle-off`. Déjà présentes : `log-in`, `pencil`, `save`, `arrow-up`, `arrow-down`, `search`, `chevron-left`, `chevron-right`, `rotate-ccw`, `x`, `check`. Générées par `tools/generate-icons.mjs` (Lucide, `lucide-static` 1.70.0) |
+| K1 | `lc-file-upload` (`LcFileUploadComponent`) | `forms` | Voir ci-dessous |
+
+**Entrées** : `items: readonly LcFileUploadItem[]` (défaut vide) ; `accept: string` (format de l'attribut natif : types MIME, `type/*`, extensions ; vide = tous) ; `multiple: boolean` (défaut `false`, comme le natif : sans lui, un seul fichier est pris par choix ; il ne limite pas le total, c'est `maxFiles`) ; `maxFiles: number | null` (défaut `null`, sans limite ; compté sur `items`) ; `disabled: boolean` ; `ariaLabel: string` (nom du groupe hors de `lc-form-field`) ; `id: string` (généré).
+
+**Sorties** : `filesAdded: File[]` (fichiers acceptés) ; `rejected: LcFileUploadRejection[]` (`{ file, reason: 'type' | 'count' }`, un événement par choix ou dépôt, seulement s'il y a des refus ; un événement et non un par fichier, pour qu'une application annonce un seul message) ; `remove: string` et `retry: string` (identifiant de la ligne).
+
+**Modèle d'élément** `LcFileUploadItem` : `id`, `name`, `size` (octets), `status: 'pending' | 'uploading' | 'done' | 'error'`, `progress?: number | null` (0 à 100 ; absent ou `null` : barre indéterminée), `errorMessage?` (texte par défaut « Échec de l'envoi »), `previewUrl?` (adresse d'une image, fournie par l'application), `statusLabel?` (remplace le texte d'état hors erreur, par exemple une étape de préparation que l'application connaît).
+
+**Rendu** : zone de dépôt entourant le bouton (cadre en tirets et phrase d'invite à partir de 768 px ; en dessous, bouton pleine largeur, le dépôt reste possible) ; liste `<ul>` de lignes (aperçu de 56 px ou icône `file-text`, `image-off` si l'aperçu échoue ; nom dont le radical est coupé ; taille et état ; barre ; message d'erreur en `role="alert"` ; « Réessayer » ; « Retirer » en bouton icône). Cible de 44 px (`lcButton`). Annonces par une zone `role="status"` masquée : début d'envoi, fin d'envoi, retrait, limite atteinte.
+
+**`lc-form-field`** : intégré. `lc-file-upload` se fournit sous `LC_FORM_FIELD_CONTROL` avec `labelable = false` : le groupe (`role="group"`) est nommé par `aria-labelledby` vers le libellé du champ, relié à l'aide et aux erreurs par `aria-describedby`, un clic sur le libellé met le focus sur le bouton de choix ; l'état invalide (`errors`) colore la zone. Le composant n'est pas un `FormValueControl` (pas de valeur de champ).
+
+**Tokens** (repli `--lc-sys-*`) : `--lc-file-upload-zone-background`, `-zone-border-color`, `-zone-active-background`, `-zone-active-border-color`, `-zone-radius`, `-row-background`, `-row-border-color`, `-row-radius`, `-preview-size`, `-preview-background`, `-bar-color`, `-error-color`.
+
+**Libellés `LC_LABELS`** (FR et EN) : `fileUploadChoose`, `fileUploadChooseMany`, `fileUploadDropHint`, `fileUploadList`, `fileUploadLimitReached(max)`, `fileUploadRemove(nom)`, `fileUploadRetry(nom)`, `fileUploadPending`, `fileUploadUploading(progression)`, `fileUploadDone`, `fileUploadFailed`, `fileUploadProgress(nom)`, `fileUploadAnnounceDone(nom)`, `fileUploadAnnounceRemoved(nom)`, `fileSizeUnits` ; le texte visible de « Réessayer » est le libellé existant `retry`.
+
+Stories : `Formulaires/Dépôt de fichiers` (`Vide`, `UnFichierEnCours`, `EtatsMeles`, `ErreurAvecReessayer`, `MaximumAtteint`, `Desactive`, `NomsTresLongs`, `DansUnChamp`, `Interactif` avec un dépôt simulé par minuterie, sans réseau).

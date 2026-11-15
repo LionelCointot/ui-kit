@@ -65,6 +65,23 @@ export interface LcLabels {
   readonly messageReceived: string;
   readonly messageSent: string;
   readonly messageRestricted: string;
+  /** Dépôt de fichiers (`lc-file-upload`) : choix, zone de dépôt, limite, état et actions de chaque ligne, annonces. */
+  readonly fileUploadChoose: string;
+  readonly fileUploadChooseMany: string;
+  readonly fileUploadDropHint: string;
+  readonly fileUploadList: string;
+  readonly fileUploadLimitReached: (max: number) => string;
+  readonly fileUploadRemove: (name: string) => string;
+  readonly fileUploadRetry: (name: string) => string;
+  readonly fileUploadPending: string;
+  readonly fileUploadUploading: (progress: number | null) => string;
+  readonly fileUploadDone: string;
+  readonly fileUploadFailed: string;
+  readonly fileUploadProgress: (name: string) => string;
+  readonly fileUploadAnnounceDone: (name: string) => string;
+  readonly fileUploadAnnounceRemoved: (name: string) => string;
+  /** Unités de taille de fichier, de l'octet au gigaoctet. */
+  readonly fileSizeUnits: readonly [string, string, string, string];
   /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
   /** Liste filtrable (`lc-combobox`) et champs géographiques. */
   readonly comboboxNoResults: string;
@@ -374,6 +391,21 @@ export const LC_LABELS_FR: LcLabels = {
   messageReceived: 'Message reçu',
   messageSent: 'Message envoyé',
   messageRestricted: 'Note à diffusion restreinte',
+  fileUploadChoose: 'Choisir un fichier',
+  fileUploadChooseMany: 'Choisir des fichiers',
+  fileUploadDropHint: 'Glissez vos fichiers ici, ou',
+  fileUploadList: 'Fichiers sélectionnés',
+  fileUploadLimitReached: (max) => `Maximum atteint : ${max} ${max === 1 ? 'fichier' : 'fichiers'}. Vous ne pouvez plus en ajouter.`,
+  fileUploadRemove: (name) => `Retirer ${name}`,
+  fileUploadRetry: (name) => `Réessayer ${name}`,
+  fileUploadPending: 'En attente',
+  fileUploadUploading: (progress) => (progress === null ? 'Envoi en cours…' : `Envoi en cours… ${progress} %`),
+  fileUploadDone: 'Terminé',
+  fileUploadFailed: 'Échec de l\'envoi',
+  fileUploadProgress: (name) => `Envoi de ${name}`,
+  fileUploadAnnounceDone: (name) => `${name} : envoi terminé`,
+  fileUploadAnnounceRemoved: (name) => `${name} retiré`,
+  fileSizeUnits: ['o', 'Ko', 'Mo', 'Go'],
   comboboxNoResults: 'Aucun résultat',
   comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
   comboboxSearching: 'Recherche en cours',
@@ -531,6 +563,21 @@ export const LC_LABELS_EN: LcLabels = {
   messageReceived: 'Received message',
   messageSent: 'Sent message',
   messageRestricted: 'Restricted note',
+  fileUploadChoose: 'Choose a file',
+  fileUploadChooseMany: 'Choose files',
+  fileUploadDropHint: 'Drag your files here, or',
+  fileUploadList: 'Selected files',
+  fileUploadLimitReached: (max) => `Limit reached: ${max} ${max === 1 ? 'file' : 'files'}. You cannot add more.`,
+  fileUploadRemove: (name) => `Remove ${name}`,
+  fileUploadRetry: (name) => `Retry ${name}`,
+  fileUploadPending: 'Waiting',
+  fileUploadUploading: (progress) => (progress === null ? 'Uploading…' : `Uploading… ${progress}%`),
+  fileUploadDone: 'Done',
+  fileUploadFailed: 'Upload failed',
+  fileUploadProgress: (name) => `Uploading ${name}`,
+  fileUploadAnnounceDone: (name) => `${name}: upload complete`,
+  fileUploadAnnounceRemoved: (name) => `${name} removed`,
+  fileSizeUnits: ['B', 'KB', 'MB', 'GB'],
   comboboxNoResults: 'No results',
   comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
   comboboxSearching: 'Searching',

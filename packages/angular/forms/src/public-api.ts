@@ -24,3 +24,4 @@ export * from './combobox/highlight.component';
 export * from './combobox/combobox-option.directive';
 export * from './combobox/combobox.component';
 export * from './slider/slider.component';
+export * from './file-upload/file-upload.component';
