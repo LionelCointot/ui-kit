@@ -149,6 +149,12 @@ tbody tr:not(.lc-table__group):hover td {
   inset-inline: min(0px, calc((100% - var(--lc-button-hit-size, 44px)) / 2));
 }
 
+/* Densité compacte : les lignes sont plus basses que 44 px, la zone s'arrête à la boîte du bouton pour ne pas déborder sur la ligne voisine. */
+:host(.lc-table--compact) .lc-table__sort::before,
+:host(.lc-table--compact) .lc-table__toggle::before {
+  --lc-button-hit-size: 100%;
+}
+
 .lc-table__sort,
 .lc-table__toggle {
   position: relative;

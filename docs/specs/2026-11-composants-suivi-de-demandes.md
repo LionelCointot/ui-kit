@@ -105,4 +105,5 @@ Stories : `Actions/Icône` (trois galeries), `Actions/Bouton` > `Enfonce`, `Supe
 
 Correctifs sur U1 (constats de QA) :
 - D5, écart : l'écart de 4 px n'est plus un `offsetX`/`offsetY` du CDK (nombre de px, appliqué en `translate` après la poussée, donc une info-bulle poussée dépassait la fenêtre de 4 px). C'est un remplissage transparent du panneau (`--lc-sys-space-1`, dans l'hôte `lc-tooltip-panel`), compté dans sa taille : choix de la position et poussée en tiennent compte, l'info-bulle reste entière dans la fenêtre et plus aucune taille n'est en dur. Le rendu visible de l'info-bulle (`.lc-tooltip__box`) est inchangé.
+- D4, zone de frappe : l'en-tête triable et le bouton de repli de groupe de `lc-table` ont une zone de 44 px (pseudo-élément, `--lc-button-hit-size`, comme `lcButton`) ; en densité `compact`, les lignes étant plus basses, la zone s'arrête à la boîte du bouton, compromis de cette densité.
 - D6, CSS : les deux sélecteurs `:host(.lc-button--pressed…)` sont conservés (non redondants : le premier gagne sur `:hover`/`:active`, le second couvre l'état désactivé que le premier exclut) ; le commentaire le dit.
