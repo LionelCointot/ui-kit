@@ -50,7 +50,9 @@
 }
 
 /* État enfoncé (bascule) : fond teinté et anneau intérieur dans la couleur du texte (la forme porte l'état, pas la seule couleur).
-   Le premier sélecteur égale la spécificité de :hover et :active pour garder la teinte pendant le survol. */
+   Les deux sélecteurs ne sont pas redondants : le premier égale la spécificité de :hover et :active (déclaré après eux, il garde
+   la teinte pendant le survol) mais exclut les boutons désactivés ; le second, moins spécifique, les couvre (ni :hover ni :active
+   ne leur sont appliqués). Un seul sélecteur perdrait le survol ou l'état enfoncé d'un bouton désactivé. */
 :host(.lc-button--pressed:not(:disabled):not([aria-disabled='true'])),
 :host(.lc-button--pressed) {
   background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-pressed-opacity) * 100%), var(--_bg));

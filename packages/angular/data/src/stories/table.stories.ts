@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcTableComponent } from '../table/table.component';
-import { LcTableColumn } from '../table/table-model';
+import { LcSort, LcTableColumn, sortRows } from '../table/table-model';
 import { LcDescriptionListComponent } from '../description-list/description-list.component';
 import { LcKpiCardComponent } from '../kpi-card/kpi-card.component';
 
@@ -61,6 +61,27 @@ export const GroupesEtTotaux: Story = {
     },
     template: `<lc-table caption="Échéancier par année" [data]="data" [columns]="columns" [trackBy]="trackBy" [groupBy]="grouping" [footer]="footer" [stickyHeader]="true">
       <ng-template lcCell="status" let-row><strong>{{ row.status }}</strong></ng-template></lc-table>`,
+  }),
+};
+
+/** Tri par colonne : clic ou Entrée/Espace sur l'en-tête ; sens croissant, décroissant, puis retour à l'ordre d'origine. `[(sort)]` se lie dans les deux sens. */
+export const Tri: Story = {
+  render: () => ({
+    props: { data: payments.slice(0, 12), columns, trackBy: (row: Payment) => row.id, sort: { columnId: 'capital', direction: 'desc' } as LcSort | null },
+    template: `<lc-table caption="Échéancier triable" [data]="data" [columns]="columns" [trackBy]="trackBy" [(sort)]="sort" />
+      <p>Tri demandé : {{ sort ? sort.columnId + ' ' + sort.direction : 'aucun' }}</p>`,
+  }),
+};
+
+/** Tri fait ailleurs (serveur) : `sortMode="external"` n'émet que le tri demandé ; ici `sortRows` joue le rôle du serveur. */
+export const TriExterne: Story = {
+  render: () => ({
+    props: {
+      source: payments.slice(0, 12), columns, trackBy: (row: Payment) => row.id, sort: null as LcSort | null,
+      serverSorted(source: readonly Payment[], sort: LcSort | null) { return sortRows(source, columns, sort); },
+    },
+    template: `<lc-table caption="Échéancier trié par le serveur" sortMode="external" [data]="serverSorted(source, sort)"
+      [columns]="columns" [trackBy]="trackBy" [(sort)]="sort" />`,
   }),
 };
 

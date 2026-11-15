@@ -7,7 +7,7 @@ import {
 } from './table-model';
 
 /**
- * Tableau de données : `<table>` natif, tri côté client (en-tête-bouton, `aria-sort`), groupes repliables
+ * Tableau de données : `<table>` natif, tri côté client par défaut, ou émis seulement avec `sortMode="external"` (en-tête-bouton, `aria-sort`, `[(sort)]`), groupes repliables
  * avec sous-totaux, ligne de totaux, en-tête et première colonne collants. Limité à 2 000 lignes (ADR-0004).
  * Cellules personnalisées par `<ng-template lcCell="idColonne" let-row>`.
  * Espacement horizontal des cellules : variable CSS `--lc-table-cell-padding-inline` (défaut `space-4`, `space-3` en `compact`), à poser sur `lc-table` ou un ancêtre.
@@ -114,6 +114,8 @@ export class LcTableComponent<T> {
   readonly groupBy = input<LcTableGrouping<T>>();
   readonly footer = input<Readonly<Record<string, unknown>>>();
   readonly sort = model<LcSort | null>(null);
+  /** `client` (défaut) : le tableau trie `data` selon `sort`. `external` : il n'émet que le tri demandé (tri fait par le serveur) et affiche `data` dans son ordre. */
+  readonly sortMode = input<'client' | 'external'>('client');
   readonly stickyHeader = input(false, { transform: booleanAttribute });
   readonly density = input<'comfortable' | 'compact'>('comfortable');
   readonly emptyMessage = input<string>();
@@ -128,7 +130,7 @@ export class LcTableComponent<T> {
     data: this.data(),
     columns: this.columns(),
     trackBy: this.trackBy(),
-    sort: this.sort(),
+    sort: this.sortMode() === 'client' ? this.sort() : null,
     grouping: this.groupBy(),
     expandedOverrides: this.expandedOverrides(),
   }));
@@ -155,7 +157,7 @@ export class LcTableComponent<T> {
 
   protected sortIcon(column: LcTableColumn<T>): string {
     const sort = this.sort();
-    if (sort?.columnId !== column.id) return 'chevron-down';
+    if (sort?.columnId !== column.id) return 'arrow-up-down';
     return sort.direction === 'asc' ? 'chevron-up' : 'chevron-down';
   }
 

@@ -139,8 +139,25 @@ tbody tr:not(.lc-table__group):hover td {
   text-align: center;
 }
 
+/* Cible tactile : même procédé que `button.component.css` (pseudo-élément invisible, rendu inchangé) pour garder une zone de frappe
+   de `--lc-button-hit-size` (44 px par défaut) même si le bouton est plus petit. */
+.lc-table__sort::before,
+.lc-table__toggle::before {
+  content: '';
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--lc-button-hit-size, 44px)) / 2));
+  inset-inline: min(0px, calc((100% - var(--lc-button-hit-size, 44px)) / 2));
+}
+
+/* Densité compacte : les lignes sont plus basses que 44 px, la zone s'arrête à la boîte du bouton pour ne pas déborder sur la ligne voisine. */
+:host(.lc-table--compact) .lc-table__sort::before,
+:host(.lc-table--compact) .lc-table__toggle::before {
+  --lc-button-hit-size: 100%;
+}
+
 .lc-table__sort,
 .lc-table__toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--lc-sys-space-2);

@@ -83,8 +83,8 @@ Référence visuelle : les maquettes de copro-ticket citées en source (fil « C
 - [ ] CA-D8 : après `npm run build`, le projet consommateur installe le paquet reconstruit (`npm run deps:refresh`) et son build passe.
 
 ## 11. Découpage en tâches
-- [ ] U1 : icônes (D1), bouton à état enfoncé (D6), info-bulle près d'un bord (D5) (M, couvre CA-D1, CA-D5, CA-D6)
-- [ ] U2 : tri de colonne dans `lc-table` (D4) (M, couvre CA-D4)
+- [x] U1 : icônes (D1), bouton à état enfoncé (D6), info-bulle près d'un bord (D5) (M, couvre CA-D1, CA-D5, CA-D6)
+- [x] U2 : tri de colonne dans `lc-table` (D4) (M, couvre CA-D4)
 - [ ] U3 : fil d'historique (D2) et message (D3) (M, couvre CA-D2, CA-D3)
 - [ ] U4 : stories restantes, build, vérification chez le consommateur (S, couvre CA-D7, CA-D8)
 
@@ -98,6 +98,13 @@ Référence visuelle : les maquettes de copro-ticket citées en source (fil « C
 |---|---|---|---|
 | D1 | icônes | principal | `bell`, `bell-off`, `inbox`, `message-square`, `send`, `history`, `building-2`, `layout-dashboard`, `arrow-right-left`, `hourglass`, `timer`, `mail`, `image`, `image-plus`, `circle-help`, `sliders-horizontal`, `list`, `list-checks`, `file-text`, `wrench` ; mêmes source et version que les existantes (Lucide, `lucide-static` 1.70.0), générées par `tools/generate-icons.mjs` |
 | D5 | `lcTooltip` | `overlay` | `lcTooltipPosition` inchangé (`above`, `below`, `start`, `end`) ; si la position demandée sort de la fenêtre, repli dans l'ordre : opposé, puis les deux autres (`above` : `below`, `end`, `start` ; `below` : `above`, `end`, `start` ; `start` : `end`, `above`, `below` ; `end` : `start`, `above`, `below`) ; sans place nulle part, l'info-bulle est poussée dans la fenêtre ; écart de 4 px avec l'élément dans les quatre directions (les côtés avaient 0) |
+| D4 | `lc-table` | `data` | Constat : le tri client existait déjà (`sortable` sur `LcTableColumn`, en-tête-bouton, `aria-sort`, `[(sort)]`). Modèle : `LcSort` (`{ columnId, direction: 'asc' \| 'desc' }`, `table-model.ts`), le même que `lc-tree-table` (aucun second type, aucun déplacement). Cycle (`nextSort`) : sans tri, `asc`, `desc`, sans tri (`null`). Ajouté : `sortMode: 'client' \| 'external'` (défaut `client`). `client` : `lc-table` trie lui-même `data` (tri stable, valeurs absentes en dernier, à l'intérieur de chaque groupe). `external` : `lc-table` n'émet que `sort` (tri fait par le serveur) et affiche `data` dans l'ordre reçu ; `aria-sort` et l'indicateur suivent quand même `sort`. Indicateur : `arrow-up-down` sans tri, `chevron-up` croissant, `chevron-down` décroissant (l'état « sans tri » ne se distingue plus du décroissant par la seule opacité). `aria-sort` posé seulement sur la colonne triée (absent sinon) ; l'en-tête est un `<button>` natif (Entrée et Espace). Une table sans colonne `sortable` ne change pas. `lc-tree-table` garde son indicateur d'origine et n'a pas `sortMode` (hors périmètre). |
 | D6 | `lcButton` | principal | `pressed: boolean \| undefined` (défaut `undefined`) ; `true` ou `false` pose `aria-pressed`, `true` ajoute la classe `lc-button--pressed` (anneau intérieur et fond teinté, tokens `--lc-sys-*` de la couleur de texte, état et bordure) ; `undefined` : aucun `aria-pressed` (un `[attr.aria-pressed]` du consommateur reste intact) ; compatible `iconOnly` |
 
-Stories : `Actions/Icône` (trois galeries), `Actions/Bouton` > `Enfonce`, `Superpositions/Info-bulle` (`Positions`, `PresDesBords`).
+Stories : `Actions/Icône` (trois galeries), `Actions/Bouton` > `Enfonce`, `Superpositions/Info-bulle` (`Positions`, `PresDesBords`), `Données/Tableau` > `Tri`, `TriExterne`.
+
+Correctifs sur U1 (constats de QA) :
+- D5, écart : l'écart de 4 px n'est plus un `offsetX`/`offsetY` du CDK (nombre de px, appliqué en `translate` après la poussée, donc une info-bulle poussée dépassait la fenêtre de 4 px). C'est un remplissage transparent du panneau (`--lc-sys-space-1`, dans l'hôte `lc-tooltip-panel`), compté dans sa taille : choix de la position et poussée en tiennent compte, l'info-bulle reste entière dans la fenêtre et plus aucune taille n'est en dur. Le rendu visible de l'info-bulle (`.lc-tooltip__box`) est inchangé.
+- D4, zone de frappe : l'en-tête triable et le bouton de repli de groupe de `lc-table` ont une zone de 44 px (pseudo-élément, `--lc-button-hit-size`, comme `lcButton`) ; en densité `compact`, les lignes étant plus basses, la zone s'arrête à la boîte du bouton, compromis de cette densité.
+- D6, CSS : les deux sélecteurs `:host(.lc-button--pressed…)` sont conservés (non redondants : le premier gagne sur `:hover`/`:active`, le second couvre l'état désactivé que le premier exclut) ; le commentaire le dit.
+- D4, reste connu : en densité `compact`, la boîte du bouton d'en-tête (36 px) dépasse la ligne (33 px) de 1 à 4 px ; ce débord existait avant U2, n'empêche aucun clic et n'est pas traité dans ce lot.
