@@ -4,8 +4,6 @@ import { ChangeDetectionStrategy, Component, DestroyRef, Directive, ElementRef, 
 import { lcUniqueId } from '@lionelcointot/ui-angular';
 
 const SHOW_DELAY_MS = 500;
-/** Écart (px) entre l'info-bulle et son élément, dans les quatre directions. */
-const GAP_PX = 4;
 
 type Direction = 'above' | 'below' | 'start' | 'end';
 
@@ -17,19 +15,27 @@ const ORDER: Record<Direction, Direction[]> = {
   end: ['end', 'start', 'above', 'below'],
 };
 
+/* Aucun `offsetX`/`offsetY` : le CDK les applique en `translate` après la poussée dans la fenêtre, et ce sont des nombres de px
+   (pas de token). L'écart avec l'élément est donc un remplissage transparent du panneau (token `space-1`), compté dans sa taille :
+   il est pris en compte pour le choix de la position et pour la poussée, et l'info-bulle reste entière dans la fenêtre. */
 const POSITIONS: Record<Direction, ConnectedPosition> = {
-  above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom', offsetY: -GAP_PX },
-  below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: GAP_PX },
-  start: { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center', offsetX: -GAP_PX },
-  end: { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center', offsetX: GAP_PX },
+  above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' },
+  below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' },
+  start: { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' },
+  end: { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' },
 };
 
-/** Panneau de l'info-bulle (interne). */
+/** Panneau de l'info-bulle (interne) : l'hôte porte l'écart transparent, `.lc-tooltip__box` la partie visible. */
 @Component({
   selector: 'lc-tooltip-panel',
-  template: '{{ text() }}',
+  template: '<span class="lc-tooltip__box">{{ text() }}</span>',
   styles: `
     :host {
+      display: block;
+      padding: var(--lc-sys-space-1);
+      pointer-events: none;
+    }
+    .lc-tooltip__box {
       display: block;
       max-width: calc(var(--lc-sys-space-16) * 4);
       padding: var(--lc-sys-space-1) var(--lc-sys-space-2);
@@ -37,10 +43,9 @@ const POSITIONS: Record<Direction, ConnectedPosition> = {
       background: var(--lc-tooltip-background, var(--lc-sys-color-on-surface));
       color: var(--lc-tooltip-color, var(--lc-sys-color-surface));
       font-size: var(--lc-sys-font-size-sm);
-      pointer-events: none;
     }
     @media (forced-colors: active) {
-      :host { border: 1px solid CanvasText; }
+      .lc-tooltip__box { border: 1px solid CanvasText; }
     }`,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { role: 'tooltip', '[id]': 'id' },
