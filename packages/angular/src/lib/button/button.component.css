@@ -49,6 +49,14 @@
   background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-pressed-opacity) * 100%), var(--_bg));
 }
 
+/* État enfoncé (bascule) : fond teinté et anneau intérieur dans la couleur du texte (la forme porte l'état, pas la seule couleur).
+   Le premier sélecteur égale la spécificité de :hover et :active pour garder la teinte pendant le survol. */
+:host(.lc-button--pressed:not(:disabled):not([aria-disabled='true'])),
+:host(.lc-button--pressed) {
+  background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-pressed-opacity) * 100%), var(--_bg));
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thick) var(--_fg);
+}
+
 :host(:focus-visible) {
   outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
   outline-offset: var(--lc-sys-focus-ring-offset);

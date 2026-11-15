@@ -1,9 +1,28 @@
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ChangeDetectionStrategy, Component, DestroyRef, Directive, ElementRef, inject, input, signal } from '@angular/core';
 import { lcUniqueId } from '@lionelcointot/ui-angular';
 
 const SHOW_DELAY_MS = 500;
+/** Écart (px) entre l'info-bulle et son élément, dans les quatre directions. */
+const GAP_PX = 4;
+
+type Direction = 'above' | 'below' | 'start' | 'end';
+
+/** Position demandée d'abord, puis son opposé, puis les deux autres : la première qui tient dans la fenêtre est retenue. */
+const ORDER: Record<Direction, Direction[]> = {
+  above: ['above', 'below', 'end', 'start'],
+  below: ['below', 'above', 'end', 'start'],
+  start: ['start', 'end', 'above', 'below'],
+  end: ['end', 'start', 'above', 'below'],
+};
+
+const POSITIONS: Record<Direction, ConnectedPosition> = {
+  above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom', offsetY: -GAP_PX },
+  below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: GAP_PX },
+  start: { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center', offsetX: -GAP_PX },
+  end: { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center', offsetX: GAP_PX },
+};
 
 /** Panneau de l'info-bulle (interne). */
 @Component({
@@ -69,16 +88,9 @@ export class LcTooltipDirective {
   }
 
   private show(): void {
-    const position = this.lcTooltipPosition();
-    const origin = {
-      above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' },
-      below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' },
-      start: { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' },
-      end: { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' },
-    }[position] as { originX: 'start' | 'center' | 'end'; originY: 'top' | 'center' | 'bottom'; overlayX: 'start' | 'center' | 'end'; overlayY: 'top' | 'center' | 'bottom' };
     this.overlayRef = this.overlay.create({
       positionStrategy: this.overlay.position().flexibleConnectedTo(this.element.nativeElement)
-        .withPositions([origin]).withPush(true).withDefaultOffsetY(position === 'above' ? -4 : position === 'below' ? 4 : 0),
+        .withPositions(ORDER[this.lcTooltipPosition()].map((position) => POSITIONS[position])).withPush(true),
       scrollStrategy: this.overlay.scrollStrategies.close(),
     });
     const ref = this.overlayRef.attach(new ComponentPortal(LcTooltipPanelComponent));

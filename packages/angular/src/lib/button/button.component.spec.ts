@@ -39,6 +39,19 @@ class HighlightButtonHostComponent {
   readonly disabled = signal(false);
 }
 
+@Component({
+  imports: [LcButtonComponent, LcIconComponent],
+  template: `
+    <button lcButton id="toggle" [pressed]="pressed()">Bascule</button>
+    <button lcButton id="icon-toggle" iconOnly aria-label="Alerte" [pressed]="pressed()"><lc-icon name="bell" /></button>
+    <button lcButton id="own" [attr.aria-pressed]="own()">Consommateur</button>
+  `,
+})
+class PressedHostComponent {
+  readonly pressed = signal<boolean | undefined>(undefined);
+  readonly own = signal<string | null>('true');
+}
+
 describe('LcButtonComponent', () => {
   async function setup() {
     const fixture = TestBed.createComponent(ButtonHostComponent);
@@ -128,6 +141,96 @@ describe('LcButtonComponent', () => {
       await fixture.whenStable();
       expect(warn).toHaveBeenCalled();
       warn.mockRestore();
+    });
+  });
+
+  describe('état enfoncé (D6)', () => {
+    async function setupPressed() {
+      const fixture = TestBed.createComponent(PressedHostComponent);
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+      return {
+        fixture,
+        toggle: element.querySelector<HTMLButtonElement>('#toggle')!,
+        iconToggle: element.querySelector<HTMLButtonElement>('#icon-toggle')!,
+        own: element.querySelector<HTMLButtonElement>('#own')!,
+      };
+    }
+
+    it('CA-D6 : sans [pressed], ni aria-pressed ni classe enfoncée', async () => {
+      const { toggle } = await setupPressed();
+      expect(toggle.hasAttribute('aria-pressed')).toBe(false);
+      expect(toggle.classList).not.toContain('lc-button--pressed');
+    });
+
+    it('CA-D6 : pressed=true pose aria-pressed="true" et la classe enfoncée', async () => {
+      const { fixture, toggle } = await setupPressed();
+      fixture.componentInstance.pressed.set(true);
+      await fixture.whenStable();
+      expect(toggle.getAttribute('aria-pressed')).toBe('true');
+      expect(toggle.classList).toContain('lc-button--pressed');
+    });
+
+    it('CA-D6 : pressed=false pose aria-pressed="false", sans classe enfoncée', async () => {
+      const { fixture, toggle } = await setupPressed();
+      fixture.componentInstance.pressed.set(false);
+      await fixture.whenStable();
+      expect(toggle.getAttribute('aria-pressed')).toBe('false');
+      expect(toggle.classList).not.toContain('lc-button--pressed');
+    });
+
+    it('CA-D6 : repasser de true à undefined retire aria-pressed et la classe', async () => {
+      const { fixture, toggle } = await setupPressed();
+      fixture.componentInstance.pressed.set(true);
+      await fixture.whenStable();
+      fixture.componentInstance.pressed.set(undefined);
+      await fixture.whenStable();
+      expect(toggle.hasAttribute('aria-pressed')).toBe(false);
+      expect(toggle.classList).not.toContain('lc-button--pressed');
+    });
+
+    it('CA-D6 : suit les bascules true, false, true', async () => {
+      const { fixture, toggle } = await setupPressed();
+      const seen: (string | null)[] = [];
+      for (const value of [true, false, true]) {
+        fixture.componentInstance.pressed.set(value);
+        await fixture.whenStable();
+        seen.push(toggle.getAttribute('aria-pressed'));
+      }
+      expect(seen).toEqual(['true', 'false', 'true']);
+    });
+
+    it('CA-D6 : fonctionne avec iconOnly (aria-pressed, classe, nom accessible conservé)', async () => {
+      const { fixture, iconToggle } = await setupPressed();
+      expect(iconToggle.hasAttribute('aria-pressed')).toBe(false);
+      fixture.componentInstance.pressed.set(true);
+      await fixture.whenStable();
+      expect(iconToggle.classList).toContain('lc-button--icon-only');
+      expect(iconToggle.classList).toContain('lc-button--pressed');
+      expect(iconToggle.getAttribute('aria-pressed')).toBe('true');
+      expect(iconToggle.getAttribute('aria-label')).toBe('Alerte');
+    });
+
+    it('CA-D6 : un [attr.aria-pressed] du consommateur sans [pressed] n\'est ni écrasé ni retiré', async () => {
+      const { fixture, own } = await setupPressed();
+      expect(own.getAttribute('aria-pressed')).toBe('true');
+      fixture.componentInstance.own.set('false');
+      await fixture.whenStable();
+      expect(own.getAttribute('aria-pressed')).toBe('false');
+      expect(own.classList).not.toContain('lc-button--pressed');
+      fixture.componentInstance.own.set(null);
+      await fixture.whenStable();
+      expect(own.hasAttribute('aria-pressed')).toBe(false);
+    });
+
+    it('CA-D6 : la feuille du bouton définit un style distinct pour l\'état enfoncé, en tokens seulement', () => {
+      const source = readFileSync(resolve(process.cwd(), 'packages/angular/src/lib/button/button.component.css'), 'utf8');
+      const start = source.indexOf(':host(.lc-button--pressed');
+      expect(start).toBeGreaterThan(-1);
+      const rules = source.slice(start, source.indexOf('\n\n', start));
+      expect(rules).toContain('background');
+      expect(rules).toContain('box-shadow');
+      expect(rules).not.toMatch(/#[0-9a-f]{3,8}\b|\b\d+px\b/i);
     });
   });
 

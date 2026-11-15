@@ -25,6 +25,10 @@ const ICONS = [
   'git-branch', 'git-commit-horizontal', 'activity', 'refresh-cw',
   // Ajouts : lancement, arrêt et états d'attente (pilotage d'une tâche).
   'play', 'square', 'circle-dashed', 'clock',
+  // Ajouts : suivi de demandes (notifications, échanges, navigation, pièces jointes, réglages).
+  'bell', 'bell-off', 'inbox', 'message-square', 'send', 'history', 'building-2', 'layout-dashboard',
+  'arrow-right-left', 'hourglass', 'timer', 'mail', 'image', 'image-plus', 'circle-help', 'sliders-horizontal',
+  'list', 'list-checks', 'file-text', 'wrench',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */

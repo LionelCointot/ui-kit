@@ -313,6 +313,8 @@ En cas de doute, confirmer. Une action à faible impact reste annoncée (règle 
 - Bouton icône seule : `aria-label` = verbe + objet + nom, identique au titre visible de la ligne (« Supprimer le placement 1 : Livret A »). Un mot générique (« Supprimer ») ne suffit pas quand plusieurs lignes coexistent.
 - Bouton à texte visible : le nom accessible **contient** le texte visible (« Voir » → « Voir le détail de l'échec de test_x »).
 - Icône décorative à côté d'un texte : `lc-icon` sans `label` (déjà `aria-hidden`).
+- Bouton à bascule : `[pressed]` (`true` ou `false`) pose `aria-pressed` et, si `true`, l'anneau et le fond teinté ; le nom accessible **ne change pas** avec l'état (« Notifications », pas « Notifications activées »). Si l'icône change aussi (cloche, cloche barrée), elle reste décorative.
+- Info-bulle : `lcTooltipPosition` donne la position souhaitée ; près d'un bord de la fenêtre, l'info-bulle se replie sur la première position qui tient (opposé, puis côtés). Elle ne porte jamais d'information indispensable.
 
 ## Vérifier la cohérence
 
