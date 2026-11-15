@@ -85,7 +85,7 @@ Référence visuelle : les maquettes de copro-ticket citées en source (fil « C
 ## 11. Découpage en tâches
 - [x] U1 : icônes (D1), bouton à état enfoncé (D6), info-bulle près d'un bord (D5) (M, couvre CA-D1, CA-D5, CA-D6)
 - [x] U2 : tri de colonne dans `lc-table` (D4) (M, couvre CA-D4)
-- [ ] U3 : fil d'historique (D2) et message (D3) (M, couvre CA-D2, CA-D3)
+- [x] U3 : fil d'historique (D2) et message (D3) (M, couvre CA-D2, CA-D3)
 - [ ] U4 : stories restantes, build, vérification chez le consommateur (S, couvre CA-D7, CA-D8)
 
 ## 12. Risques et questions ouvertes
