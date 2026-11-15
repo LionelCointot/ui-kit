@@ -1,3 +1,6 @@
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { FlexibleConnectedPositionStrategy, Overlay } from '@angular/cdk/overlay';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -55,10 +58,49 @@ describe('LcTooltipDirective : positions de repli (D5)', () => {
       expect(strategy.positions.map(directionOf)).toEqual(FALLBACK[requested]);
     });
 
-    it('CA-D5 : chaque position porte un écart de 4 px dans la direction qui éloigne l\'info-bulle de son élément', () => {
+    it('CA-D5 : aucune position ne porte d\'offsetX ni d\'offsetY (le CDK les applique après la poussée, l\'info-bulle dépasserait la fenêtre)', () => {
       const { strategy } = showTooltip('above');
-      const offsets = Object.fromEntries(strategy.positions.map((p) => [directionOf(p), [p.offsetX ?? 0, p.offsetY ?? 0]]));
-      expect(offsets).toEqual({ above: [0, -4], below: [0, 4], start: [-4, 0], end: [4, 0] });
+      expect(strategy.positions).toHaveLength(4);
+      for (const position of strategy.positions) {
+        expect(position.offsetX ?? 0, directionOf(position)).toBe(0);
+        expect(position.offsetY ?? 0, directionOf(position)).toBe(0);
+      }
+    });
+
+    describe('écart avec l\'élément : remplissage transparent du panneau (tokens lus dans les sources de tokens)', () => {
+      const tokens = (file: string) => JSON.parse(readFileSync(resolve(process.cwd(), 'packages/tokens/src', file), 'utf8'));
+
+      /** Feuille du panneau injectée dans le document, sans espaces. */
+      function panelStyles(): string {
+        const { fixture } = showTooltip('end');
+        fixture.detectChanges();
+        expect(document.querySelector('[role="tooltip"]')).not.toBeNull();
+        const own = Array.from(document.querySelectorAll('style')).map((style) => style.textContent ?? '').find((css) => css.includes('lc-tooltip__box'));
+        expect(own).toBeDefined();
+        return own!.replace(/\s+/g, '');
+      }
+
+      it('CA-D5 : l\'écart vaut 4 px (space-1) : le jeton système renvoie au jeton de référence de 4 px', () => {
+        expect(tokens('ref/scale.tokens.json').ref.space['1'].$value).toBe('4px');
+        expect(tokens('sys/default.tokens.json').sys.space['1'].$value).toBe('{ref.space.1}');
+      });
+
+      it('CA-D5 : l\'hôte du panneau réserve space-1 sur ses quatre côtés (donc dans les quatre directions), sans fond ni bordure', () => {
+        // Angular réécrit `:host` en `[_nghost-…]` et `.classe` en `.classe[_ngcontent-…]`.
+        const host = /\[_nghost[^\]]*\]\{([^}]*)\}/.exec(panelStyles())?.[1] ?? '';
+        expect(host).toMatch(/(^|;)padding:var\(--lc-sys-space-1\)(;|$)/);
+        expect(host).not.toMatch(/background|border|box-shadow/);
+        expect(host).toContain('pointer-events:none');
+      });
+
+      it('CA-D5 : la partie visible est .lc-tooltip__box (fond, texte), l\'écart ne se voit pas', () => {
+        const box = /\.lc-tooltip__box\[[^\]]*\]\{([^}]*)\}/.exec(panelStyles())?.[1] ?? '';
+        expect(box).toMatch(/background:var\(--lc-tooltip-background,var\(--lc-sys-color-on-surface\)\)/);
+        expect(box).toMatch(/color:var\(--lc-tooltip-color,var\(--lc-sys-color-surface\)\)/);
+        const tip = document.querySelector('[role="tooltip"]')!;
+        expect(tip.querySelector('.lc-tooltip__box')!.textContent).toContain('Infos');
+        expect(tip.children).toHaveLength(1);
+      });
     });
 
     it('CA-D5 : la première position est exactement celle d\'avant (ancrages et recouvrement inchangés)', () => {
@@ -81,6 +123,8 @@ describe('LcTooltipDirective : positions de repli (D5)', () => {
   describe('placement réel (jsdom : rectangles et fenêtre simulés)', () => {
     const VIEWPORT = { width: 1000, height: 800 };
     const TIP = { width: 100, height: 30 };
+    /** Écart transparent réservé par le panneau sur chaque côté (space-1 = 4 px, vérifié plus haut) : la taille mesurée par le CDK l'inclut. */
+    const GAP = 4;
 
     function rect(left: number, top: number, width: number, height: number): DOMRect {
       return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) } as DOMRect;
@@ -95,7 +139,7 @@ describe('LcTooltipDirective : positions de repli (D5)', () => {
       vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
         if (this.id === 'b') return rect(left, top, size.width, size.height);
         if (this.classList.contains('cdk-overlay-pane') || this.classList.contains('cdk-overlay-connected-position-bounding-box')) {
-          return rect(0, 0, tip.width, tip.height);
+          return rect(0, 0, tip.width + 2 * GAP, tip.height + 2 * GAP);
         }
         return rect(0, 0, 0, 0);
       });
@@ -147,17 +191,18 @@ describe('LcTooltipDirective : positions de repli (D5)', () => {
       expect(await chosen('above')).toBe('end');
     });
 
-    it('CA-D5 : sans place d\'aucun côté, l\'info-bulle est poussée dans la fenêtre', async () => {
+    it('CA-D5 : sans place d\'aucun côté, l\'info-bulle est poussée entièrement dans la fenêtre, écart compris (aucun translate ne la ressort)', async () => {
       const tip = { width: 900, height: 30 };
       place(450, 0, { width: 32, height: VIEWPORT.height }, tip);
       await chosen('above');
       const pane = document.querySelector<HTMLElement>('.cdk-overlay-pane')!;
-      const left = parseFloat(pane.style.left);
-      const top = parseFloat(pane.style.top);
+      const translate = (axis: 'X' | 'Y') => parseFloat(new RegExp(`translate${axis}\\((-?[\\d.]+)px\\)`).exec(pane.style.transform)?.[1] ?? '0');
+      const left = parseFloat(pane.style.left) + translate('X');
+      const top = parseFloat(pane.style.top) + translate('Y');
       expect(left).toBeGreaterThanOrEqual(0);
-      expect(left + tip.width).toBeLessThanOrEqual(VIEWPORT.width);
+      expect(left + tip.width + 2 * GAP).toBeLessThanOrEqual(VIEWPORT.width);
       expect(top).toBeGreaterThanOrEqual(0);
-      expect(top + tip.height).toBeLessThanOrEqual(VIEWPORT.height);
+      expect(top + tip.height + 2 * GAP).toBeLessThanOrEqual(VIEWPORT.height);
     });
   });
 });
