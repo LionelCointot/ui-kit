@@ -16,31 +16,35 @@ import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lion
   template: `
     <a class="lc-shell__skip" href="#lc-main" (click)="focusMain($event)">{{ labels.skipToContent }}</a>
     <header class="lc-shell__header">
-      @if (isDrawer()) {
-        <button #menuButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
-          [attr.aria-label]="navOpen() ? labels.closeNavigation : labels.openNavigation"
-          [attr.aria-expanded]="navOpen()" [attr.aria-controls]="navId" (click)="navOpen.set(!navOpen())">
-          <lc-icon name="menu" />
-        </button>
-      } @else {
-        <button lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
-          [attr.aria-label]="navCollapsed() ? labels.openNavigation : labels.closeNavigation"
-          [attr.aria-expanded]="!navCollapsed()" [attr.aria-controls]="navId" (click)="navCollapsed.set(!navCollapsed())">
-          <lc-icon name="menu" />
-        </button>
+      @if (navMode() !== 'none') {
+        @if (isDrawer()) {
+          <button #menuButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
+            [attr.aria-label]="navOpen() ? labels.closeNavigation : labels.openNavigation"
+            [attr.aria-expanded]="navOpen()" [attr.aria-controls]="navId" (click)="navOpen.set(!navOpen())">
+            <lc-icon name="menu" />
+          </button>
+        } @else {
+          <button lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
+            [attr.aria-label]="navCollapsed() ? labels.openNavigation : labels.closeNavigation"
+            [attr.aria-expanded]="!navCollapsed()" [attr.aria-controls]="navId" (click)="navCollapsed.set(!navCollapsed())">
+            <lc-icon name="menu" />
+          </button>
+        }
       }
       <div class="lc-shell__header-content"><ng-content select="[lcShellHeader]" /></div>
     </header>
     <div class="lc-shell__body">
-      <nav class="lc-shell__nav" [id]="navId" [attr.aria-label]="navLabel() || null"
-        [class.lc-shell__nav--drawer]="isDrawer()" [class.lc-shell__nav--open]="navOpen()"
-        [class.lc-shell__nav--collapsed]="!isDrawer() && navCollapsed()"
-        [cdkTrapFocus]="isDrawer() && navOpen()" [cdkTrapFocusAutoCapture]="isDrawer() && navOpen()"
-        (keydown.escape)="closeDrawer()">
-        <ng-content select="[lcShellNav]" />
-      </nav>
-      @if (isDrawer() && navOpen()) {
-        <div class="lc-shell__backdrop" (click)="closeDrawer()"></div>
+      @if (navMode() !== 'none') {
+        <nav class="lc-shell__nav" [id]="navId" [attr.aria-label]="navLabel() || null"
+          [class.lc-shell__nav--drawer]="isDrawer()" [class.lc-shell__nav--open]="navOpen()"
+          [class.lc-shell__nav--collapsed]="!isDrawer() && navCollapsed()"
+          [cdkTrapFocus]="isDrawer() && navOpen()" [cdkTrapFocusAutoCapture]="isDrawer() && navOpen()"
+          (keydown.escape)="closeDrawer()">
+          <ng-content select="[lcShellNav]" />
+        </nav>
+        @if (isDrawer() && navOpen()) {
+          <div class="lc-shell__backdrop" (click)="closeDrawer()"></div>
+        }
       }
       <main class="lc-shell__main" id="lc-main" tabindex="-1"><ng-content /></main>
     </div>
@@ -53,10 +57,10 @@ export class LcAppShellComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly breakpoints = inject(BreakpointObserver);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
+  private readonly menuButton = viewChild('menuButton', { read: ElementRef<HTMLButtonElement> });
 
-  /** `auto` : latéral ≥ 1024 px, tiroir en dessous. */
-  readonly navMode = input<'auto' | 'side' | 'drawer'>('auto');
+  /** `auto` : latéral ≥ 1024 px, tiroir en dessous. `none` : ni bouton de menu, ni `<nav>`, ni tiroir (pages sans navigation, comme la connexion). */
+  readonly navMode = input<'auto' | 'side' | 'drawer' | 'none'>('auto');
   /** Tiroir ouvert (mode tiroir). */
   readonly navOpen = model(false);
   /** Navigation latérale réduite aux icônes. */
