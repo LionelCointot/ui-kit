@@ -1,0 +1,81 @@
+:host {
+  --_bg: var(--lc-message-background, var(--lc-sys-color-surface-raised));
+  --_fg: var(--lc-message-color, var(--lc-sys-color-on-surface));
+  --_border: var(--lc-message-border-color, var(--lc-sys-color-border));
+  --_radius: var(--lc-message-radius, var(--lc-sys-radius-lg));
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  box-sizing: border-box;
+  inline-size: fit-content;
+  max-inline-size: var(--lc-message-max-width, 100%);
+  min-inline-size: 0;
+  margin-inline-end: auto;
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  border: var(--lc-sys-border-width-thin) solid var(--_border);
+  border-radius: var(--_radius);
+  background: var(--_bg);
+  color: var(--_fg);
+}
+
+/* Envoyé : fond de la couleur principale, aligné à la fin. */
+:host(.lc-message--sent) {
+  --_bg: var(--lc-message-background, var(--lc-sys-color-primary-container));
+  --_fg: var(--lc-message-color, var(--lc-sys-color-on-primary-container));
+  --_border: var(--lc-message-border-color, transparent);
+
+  margin-inline: auto 0;
+}
+
+/* Note restreinte : trait en tirets, coins moins arrondis, icône et texte (jamais la couleur seule). */
+:host(.lc-message--restricted) {
+  --_bg: var(--lc-message-background, var(--lc-sys-color-warning-container));
+  --_fg: var(--lc-message-color, var(--lc-sys-color-on-warning-container));
+  --_border: var(--lc-message-border-color, var(--lc-sys-color-warning));
+  --_radius: var(--lc-message-radius, var(--lc-sys-radius-sm));
+
+  border-style: dashed;
+}
+
+.lc-message__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-2);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-message__header:empty {
+  display: none;
+}
+
+.lc-message__author {
+  min-inline-size: 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.lc-message__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-message__content {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.lc-message__content:empty {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+}

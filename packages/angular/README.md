@@ -48,11 +48,11 @@ bootstrapApplication(AppComponent, {
 | `@lionelcointot/ui-angular` | types communs, `provideLcUiKit`, `LC_LABELS`, `LcFormatService`, pipes, `LcThemeService`, `button[lcButton]`, `a[lcButton]`, `lc-button-group`, `lc-icon`, `provideLcIcons`, `lc-spinner`, `lc-skeleton` |
 | `…/forms` | `lc-form-field`, `input[lcInput]`, `textarea[lcInput]`, `select[lcSelect]`, `input[type=checkbox][lcCheckbox]`, `lc-radio-group` + `input[type=radio][lcRadio]`, `button[lcSwitch]`, `lc-money-input`, `lc-percent-input`, `lc-number-input`, `lc-date-input`, `lc-password-input`, `lc-segmented-control`, `lc-combobox` (+ `[lcComboboxOption]`, `lcHighlight`, `lcFilterOptions`), `lc-slider` |
 | `…/geo` | `provideLcGeo`, `LcGeoDataSource`, `lc-region-select`, `lc-department-select`, `lc-commune-input`, `lc-address-input` (régions, départements, communes et adresses françaises depuis les API officielles ; importe `forms` ; [README](geo/README.md)) |
-| `…/feedback` | `lc-alert`, `LcToastService` + `lc-toast-outlet`, `lc-badge`, `lc-status-badge`, `lc-progress-bar`, `lc-meter`, `lc-empty-state`, `lc-error-state` |
+| `…/feedback` | `lc-alert`, `LcToastService` + `lc-toast-outlet`, `lc-badge`, `lc-status-badge`, `lc-progress-bar`, `lc-meter`, `lc-message`, `lc-empty-state`, `lc-error-state` |
 | `…/overlay` | `LcDialogService`, `lc-dialog`, `LC_DIALOG_DATA`, `LcDialogRef`, `[lcTooltip]` |
 | `…/layout` | `lc-app-shell`, `lc-page`, `lc-stack`, `lc-grid` + `lc-grid-item`, `lc-card` + `lc-card-header`, `lc-divider` |
 | `…/navigation` | `lc-tabs` + `lc-tab` (`lcTabContent`), `lc-nav-list`, `lc-nav-group`, `a[lcNavItem]`, `lc-menu`, `[lcMenuTriggerFor]`, `button[lcMenuItem]` |
-| `…/data` | `lc-table` (+ `lcCell`), `lc-tree-table`, `lc-paginator` + `lcPageSlice`, `lc-code-block`, `lc-description-list`, `lc-kpi-card` |
+| `…/data` | `lc-table` (+ `lcCell`), `lc-tree-table`, `lc-paginator` + `lcPageSlice`, `lc-code-block`, `lc-description-list`, `lc-kpi-card`, `ol[lcActivityFeed]` + `li[lcActivityItem]` |
 | `…/charts` | `lc-line-chart`, `lc-area-chart`, `lc-bar-chart`, `lc-segmented-bar`, `lc-sparkline`, `lc-chart`, `provideLcCharts`, `LcChartThemeService` (ECharts 6, dépendance pair optionnelle `echarts`) |
 | `…/theme-builder` | `lc-theme-builder`, `lc-theme-editor`, `lc-theme-contrast-report`, `lc-theme-preview` (éditeur de thème en direct, export `.tokens.json` / `.css` ; à charger à la demande ; requiert `echarts`) |
 
