@@ -134,12 +134,17 @@
 .lc-file-upload__stem {
   overflow: hidden;
   min-inline-size: 0;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .lc-file-upload__extension {
   flex: none;
+}
+
+/* Le radical est coupé net (pas de text-overflow : « … » laisserait un vide avant l'extension) ; le composant pose
+   la classe `--cut` quand le radical déborde. */
+.lc-file-upload__name--cut .lc-file-upload__extension::before {
+  content: '…';
 }
 
 .lc-file-upload__meta {

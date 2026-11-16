@@ -82,6 +82,28 @@ export interface LcLabels {
   readonly fileUploadAnnounceRemoved: (name: string) => string;
   /** Unités de taille de fichier, de l'octet au gigaoctet. */
   readonly fileSizeUnits: readonly [string, string, string, string];
+  /** Liste modifiable (`lc-list-editor`) : champ d'ajout, commandes et état de chaque ligne, erreurs détectées, annonces. */
+  readonly listEditorList: string;
+  readonly listEditorAddLabel: string;
+  readonly listEditorAdd: string;
+  readonly listEditorEmpty: string;
+  readonly listEditorMoveUp: (label: string) => string;
+  readonly listEditorMoveDown: (label: string) => string;
+  readonly listEditorRename: (label: string) => string;
+  readonly listEditorRenameField: (label: string) => string;
+  readonly listEditorSave: string;
+  readonly listEditorToggle: (label: string) => string;
+  readonly listEditorActive: string;
+  readonly listEditorInactive: string;
+  readonly listEditorLocked: string;
+  readonly listEditorMinActive: (min: number) => string;
+  readonly listEditorRequired: string;
+  readonly listEditorTooLong: (max: number) => string;
+  readonly listEditorDuplicate: string;
+  readonly listEditorPosition: (label: string, position: number, total: number) => string;
+  readonly listEditorAnnounceAdded: (label: string, position: number) => string;
+  readonly listEditorAnnounceActive: (label: string) => string;
+  readonly listEditorAnnounceInactive: (label: string) => string;
   /** Tableau hiérarchique (`lc-tree-table`) : bascule d'une ligne parente. */
   /** Liste filtrable (`lc-combobox`) et champs géographiques. */
   readonly comboboxNoResults: string;
@@ -406,6 +428,27 @@ export const LC_LABELS_FR: LcLabels = {
   fileUploadAnnounceDone: (name) => `${name} : envoi terminé`,
   fileUploadAnnounceRemoved: (name) => `${name} retiré`,
   fileSizeUnits: ['o', 'Ko', 'Mo', 'Go'],
+  listEditorList: 'Éléments',
+  listEditorAddLabel: 'Nouvel élément',
+  listEditorAdd: 'Ajouter',
+  listEditorEmpty: 'Aucun élément.',
+  listEditorMoveUp: (label) => `Monter ${label}`,
+  listEditorMoveDown: (label) => `Descendre ${label}`,
+  listEditorRename: (label) => `Renommer ${label}`,
+  listEditorRenameField: (label) => `Nouveau nom de ${label}`,
+  listEditorSave: 'Enregistrer',
+  listEditorToggle: (label) => `Actif : ${label}`,
+  listEditorActive: 'Actif',
+  listEditorInactive: 'Désactivé',
+  listEditorLocked: 'Protégé',
+  listEditorMinActive: (min) => (min === 1 ? 'Seul élément actif : il ne peut pas être désactivé.' : `Au moins ${min} éléments doivent rester actifs.`),
+  listEditorRequired: 'Saisissez un libellé.',
+  listEditorTooLong: (max) => `Le libellé ne peut pas dépasser ${max} caractères.`,
+  listEditorDuplicate: 'Ce libellé existe déjà.',
+  listEditorPosition: (label, position, total) => `${label}, position ${position} sur ${total}`,
+  listEditorAnnounceAdded: (label, position) => `${label} ajouté en position ${position}.`,
+  listEditorAnnounceActive: (label) => `${label} est actif.`,
+  listEditorAnnounceInactive: (label) => `${label} est désactivé.`,
   comboboxNoResults: 'Aucun résultat',
   comboboxResultsCount: (count) => (count === 1 ? '1 résultat disponible' : `${count} résultats disponibles`),
   comboboxSearching: 'Recherche en cours',
@@ -578,6 +621,27 @@ export const LC_LABELS_EN: LcLabels = {
   fileUploadAnnounceDone: (name) => `${name}: upload complete`,
   fileUploadAnnounceRemoved: (name) => `${name} removed`,
   fileSizeUnits: ['B', 'KB', 'MB', 'GB'],
+  listEditorList: 'Items',
+  listEditorAddLabel: 'New item',
+  listEditorAdd: 'Add',
+  listEditorEmpty: 'No items.',
+  listEditorMoveUp: (label) => `Move ${label} up`,
+  listEditorMoveDown: (label) => `Move ${label} down`,
+  listEditorRename: (label) => `Rename ${label}`,
+  listEditorRenameField: (label) => `New name for ${label}`,
+  listEditorSave: 'Save',
+  listEditorToggle: (label) => `Active: ${label}`,
+  listEditorActive: 'Active',
+  listEditorInactive: 'Disabled',
+  listEditorLocked: 'Protected',
+  listEditorMinActive: (min) => (min === 1 ? 'Only active item: it cannot be disabled.' : `At least ${min} items must stay active.`),
+  listEditorRequired: 'Enter a label.',
+  listEditorTooLong: (max) => `The label cannot exceed ${max} characters.`,
+  listEditorDuplicate: 'This label already exists.',
+  listEditorPosition: (label, position, total) => `${label}, position ${position} of ${total}`,
+  listEditorAnnounceAdded: (label, position) => `${label} added at position ${position}.`,
+  listEditorAnnounceActive: (label) => `${label} is active.`,
+  listEditorAnnounceInactive: (label) => `${label} is disabled.`,
   comboboxNoResults: 'No results',
   comboboxResultsCount: (count) => (count === 1 ? '1 result available' : `${count} results available`),
   comboboxSearching: 'Searching',

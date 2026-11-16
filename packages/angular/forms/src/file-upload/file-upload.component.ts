@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   afterNextRender,
   afterRenderEffect,
@@ -122,8 +123,8 @@ function splitName(name: string): { stem: string; extension: string } {
               }
             </div>
             <div class="lc-file-upload__info">
-              <span class="lc-file-upload__name" [attr.title]="row.item.name">
-                <span class="lc-file-upload__stem">{{ row.stem }}</span><span class="lc-file-upload__extension">{{ row.extension }}</span>
+              <span class="lc-file-upload__name" [class.lc-file-upload__name--cut]="cutNames().has(row.item.id)" [attr.title]="row.item.name">
+                <span #stem class="lc-file-upload__stem">{{ row.stem }}</span><span class="lc-file-upload__extension">{{ row.extension }}</span>
               </span>
               <span class="lc-file-upload__meta">
                 @if (row.metaIcon) {
@@ -212,6 +213,9 @@ export class LcFileUploadComponent implements LcFormFieldControl {
   /** Adresses d'aperçu qui n'ont pas pu se charger : la ligne passe à l'icône d'image indisponible. */
   private readonly brokenPreviews = signal<ReadonlySet<string>>(new Set());
   private removal: { id: string; index: number } | null = null;
+  private readonly stems = viewChildren('stem', { read: ElementRef<HTMLElement> });
+  /** Lignes dont le radical du nom est coupé : elles affichent « … » juste avant l'extension (voir `measureNames`). */
+  protected readonly cutNames = signal<ReadonlySet<string>>(new Set());
 
   protected readonly full = computed(() => this.isFull(this.items().length));
   protected readonly describedBy = computed(() => joinIds(this.field?.describedBy()));
@@ -285,6 +289,15 @@ export class LcFileUploadComponent implements LcFormFieldControl {
       (buttons[Math.min(removal.index, buttons.length - 1)] ?? this.chooseButton()).nativeElement.focus();
     });
 
+    afterRenderEffect(() => this.measureNames());
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(() => this.measureNames());
+      observer.observe(this.host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+
     if (isDevMode()) {
       afterNextRender(() => {
         if (!this.ariaLabel() && !this.field && !this.host.hasAttribute('aria-labelledby')) {
@@ -296,6 +309,21 @@ export class LcFileUploadComponent implements LcFormFieldControl {
 
   focus(options?: FocusOptions): void {
     this.chooseButton().nativeElement.focus(options);
+  }
+
+  /**
+   * Repère les noms dont le radical déborde. `text-overflow: ellipsis` laisserait un vide (jusqu'à un caractère) entre « … »
+   * et l'extension : le radical est donc coupé net et le « … » est posé contre l'extension (`--cut`).
+   */
+  private measureNames(): void {
+    const rows = this.rows();
+    const cut = new Set<string>();
+    this.stems().forEach((stem, index) => {
+      const element = stem.nativeElement;
+      if (element.scrollWidth > element.clientWidth && rows[index]) cut.add(rows[index].item.id);
+    });
+    const current = this.cutNames();
+    if (cut.size !== current.size || [...cut].some((id) => !current.has(id))) this.cutNames.set(cut);
   }
 
   protected open(): void {
@@ -361,10 +389,13 @@ export class LcFileUploadComponent implements LcFormFieldControl {
   private sizeText(bytes: number): string {
     let value = Number.isFinite(bytes) ? Math.max(0, bytes) : 0;
     let unit = 0;
-    while (value >= 1000 && unit < 3) {
+    let shown = Math.round(value);
+    // On passe à l'unité supérieure quand la valeur arrondie atteint 1 000 (999 999 o : « 1 Mo », pas « 1 000 Ko »).
+    while (shown >= 1000 && unit < 3) {
       value /= 1000;
       unit += 1;
+      shown = Number(value.toFixed(value >= 100 ? 0 : 1)); // décimale nulle omise : « 2 Mo », pas « 2,0 Mo »
     }
-    return `${this.format.number(value, unit === 0 || value >= 100 ? 0 : 1)} ${this.labels.fileSizeUnits[unit]}`;
+    return `${this.format.number(shown)} ${this.labels.fileSizeUnits[unit]}`;
   }
 }

@@ -370,7 +370,15 @@ describe('LcFileUploadComponent', () => {
       [0, '0 o'],
       [980, '980 o'],
       [999, '999 o'],
+      [1000, '1 Ko'],
       [1500, '1,5 Ko'],
+      [5000, '5 Ko'],
+      [999_999, '1 Mo'],
+      [1_000_000, '1 Mo'],
+      [1_500_000, '1,5 Mo'],
+      [2_000_000, '2 Mo'],
+      [999_999_999, '1 Go'],
+      [2_000_000_000, '2 Go'],
       [640_000, '640 Ko'],
       [2_300_000, '2,3 Mo'],
       [12_400_000, '12,4 Mo'],
@@ -391,10 +399,62 @@ describe('LcFileUploadComponent', () => {
         ],
       });
       const { root, host, settle } = await setup();
-      host.items.set([item('a', { size: 2_300_000 }), item('b', { size: 640_000 }), item('c', { size: 12 })]);
+      host.items.set([
+        item('a', { size: 2_300_000 }), item('b', { size: 640_000 }), item('c', { size: 12 }),
+        item('d', { size: 999_999 }), item('e', { size: 2_000_000 }), item('f', { size: 999 }),
+      ]);
       await settle();
       const metas = Array.from(root.querySelectorAll('.lc-file-upload__meta')).map((meta) => meta.textContent!.replace(/\s+/g, ' ').trim());
-      expect(metas).toEqual(['2.3 MB · Done', '640 KB · Done', '12 B · Done']);
+      expect(metas).toEqual(['2.3 MB · Done', '640 KB · Done', '12 B · Done', '1 MB · Done', '2 MB · Done', '999 B · Done']);
+    });
+
+    describe('nom coupé (CA-L2-15)', () => {
+      let observers: Array<() => void>;
+      let stemWidths: { scroll: number; client: number };
+      const originalScroll = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
+      const originalClient = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth');
+
+      beforeEach(() => {
+        observers = [];
+        stemWidths = { scroll: 300, client: 100 };
+        vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { observers.push(cb); } observe(): void {} disconnect(): void {} });
+        const isStem = (el: Element) => el.classList.contains('lc-file-upload__stem');
+        Object.defineProperty(Element.prototype, 'scrollWidth', { configurable: true, get(this: Element) { return isStem(this) ? stemWidths.scroll : 0; } });
+        Object.defineProperty(Element.prototype, 'clientWidth', { configurable: true, get(this: Element) { return isStem(this) ? stemWidths.client : 0; } });
+      });
+
+      afterEach(() => {
+        vi.unstubAllGlobals();
+        if (originalScroll) Object.defineProperty(Element.prototype, 'scrollWidth', originalScroll);
+        if (originalClient) Object.defineProperty(Element.prototype, 'clientWidth', originalClient);
+      });
+
+      it('un radical qui déborde reçoit la classe --cut (« … » contre l\'extension) ; le nom complet reste en titre', async () => {
+        const { root, host, settle } = await setup();
+        host.items.set([item('l', { name: `${'a'.repeat(100)}.pdf` })]);
+        await settle();
+        const name = root.querySelector('.lc-file-upload__name')!;
+        expect(name.classList).toContain('lc-file-upload__name--cut');
+        expect(name.getAttribute('title')).toBe(`${'a'.repeat(100)}.pdf`);
+        expect(root.querySelector('.lc-file-upload__extension')!.textContent).toBe('.pdf');
+      });
+
+      it('un nom qui tient n\'est pas marqué, et le redimensionnement de la fenêtre remet la mesure à jour dans les deux sens', async () => {
+        const { root, host, settle } = await setup();
+        stemWidths = { scroll: 50, client: 50 };
+        host.items.set([item('l', { name: 'court.pdf' })]);
+        await settle();
+        const name = () => root.querySelector('.lc-file-upload__name')!;
+        expect(name().classList).not.toContain('lc-file-upload__name--cut');
+        stemWidths = { scroll: 300, client: 100 };
+        observers.forEach((notify) => notify());
+        await settle();
+        expect(name().classList).toContain('lc-file-upload__name--cut');
+        stemWidths = { scroll: 100, client: 100 };
+        observers.forEach((notify) => notify());
+        await settle();
+        expect(name().classList).not.toContain('lc-file-upload__name--cut');
+      });
     });
 
     it('aperçu fourni : image décorative ; sans aperçu : icône de fichier', async () => {
