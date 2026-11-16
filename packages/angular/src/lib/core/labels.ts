@@ -73,6 +73,8 @@ export interface LcLabels {
   readonly fileUploadLimitReached: (max: number) => string;
   readonly fileUploadRemove: (name: string) => string;
   readonly fileUploadRetry: (name: string) => string;
+  /** Mot visible du bouton de retrait (`removeLabelVisible`) ; le nom accessible reste `fileUploadRemove(nom)`. */
+  readonly fileUploadRemoveShort: string;
   readonly fileUploadPending: string;
   readonly fileUploadUploading: (progress: number | null) => string;
   readonly fileUploadDone: string;
@@ -420,6 +422,7 @@ export const LC_LABELS_FR: LcLabels = {
   fileUploadLimitReached: (max) => `Maximum atteint : ${max} ${max === 1 ? 'fichier' : 'fichiers'}. Vous ne pouvez plus en ajouter.`,
   fileUploadRemove: (name) => `Retirer ${name}`,
   fileUploadRetry: (name) => `Réessayer ${name}`,
+  fileUploadRemoveShort: 'Retirer',
   fileUploadPending: 'En attente',
   fileUploadUploading: (progress) => (progress === null ? 'Envoi en cours…' : `Envoi en cours… ${progress} %`),
   fileUploadDone: 'Terminé',
@@ -613,6 +616,7 @@ export const LC_LABELS_EN: LcLabels = {
   fileUploadLimitReached: (max) => `Limit reached: ${max} ${max === 1 ? 'file' : 'files'}. You cannot add more.`,
   fileUploadRemove: (name) => `Remove ${name}`,
   fileUploadRetry: (name) => `Retry ${name}`,
+  fileUploadRemoveShort: 'Remove',
   fileUploadPending: 'Waiting',
   fileUploadUploading: (progress) => (progress === null ? 'Uploading…' : `Uploading… ${progress}%`),
   fileUploadDone: 'Done',

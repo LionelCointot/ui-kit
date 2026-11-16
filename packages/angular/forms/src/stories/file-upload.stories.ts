@@ -88,14 +88,18 @@ const meta: Meta<LcFileUploadComponent> = {
   title: 'Formulaires/Dépôt de fichiers',
   component: LcFileUploadComponent,
   decorators: [moduleMetadata({ imports: [LcFileUploadComponent, LcFormFieldComponent, FileUploadDemoComponent] })],
-  args: { items: [], accept: '', multiple: true, maxFiles: null, disabled: false, ariaLabel: 'Pièces jointes' },
+  args: {
+    items: [], accept: '', multiple: true, maxFiles: null, disabled: false, ariaLabel: 'Pièces jointes',
+    showSize: true, chooseIcon: 'upload', errorPlaceholderIcon: 'file-text', fullWidthMobile: false, removeLabelVisible: false,
+  },
   argTypes: { maxFiles: { control: 'number' } },
   render: (args) => ({
     props: args,
     template: `
       <div style="max-width:36rem">
         <lc-file-upload [items]="items" [accept]="accept" [multiple]="multiple" [maxFiles]="maxFiles"
-          [disabled]="disabled" [ariaLabel]="ariaLabel" />
+          [disabled]="disabled" [ariaLabel]="ariaLabel" [showSize]="showSize" [chooseIcon]="chooseIcon"
+          [errorPlaceholderIcon]="errorPlaceholderIcon" [fullWidthMobile]="fullWidthMobile" [removeLabelVisible]="removeLabelVisible" />
       </div>`,
   }),
 };
@@ -126,6 +130,54 @@ export const NomsTresLongs: Story = {
       { id: 'l3', name: 'image-avec-un-nom-vraiment-tres-long-pour-verifier-la-coupure.png', size: 8_100_000, status: 'error', errorMessage: 'Le format de ce fichier n\'est pas pris en charge, merci d\'en choisir un autre.' },
     ],
   },
+};
+
+/** `showSize` à faux : la ligne ne garde que l'état, sans poids. */
+export const SansPoids: Story = { args: { items: [DONE, UPLOADING, PENDING], showSize: false } };
+
+/** `retryable: false` : la ligne en erreur n'a que « Retirer » (l'envoi ne peut pas être refait tel quel). */
+export const ErreurNonReessayable: Story = { args: { items: [{ ...FAILED, retryable: false }] } };
+
+/** `chooseIcon` et `errorPlaceholderIcon` : icônes du kit (`image-plus`, `image-off`) pour des photos. */
+export const IconesPersonnalisees: Story = {
+  args: {
+    items: [{ id: 'bad', name: 'IMG_0042.jpg', size: 3_100_000, status: 'error', errorMessage: 'Ce fichier n\'est pas une photo.' }],
+    accept: 'image/*', chooseIcon: 'image-plus', errorPlaceholderIcon: 'image-off',
+  },
+};
+
+/** `removeLabelVisible` : le retrait est un bouton « Retirer » (nom accessible inchangé : « Retirer {nom} »). */
+export const RetraitAvecMot: Story = { args: { items: [DONE, FAILED], removeLabelVisible: true } };
+
+/** `fullWidthMobile` : sous 480 px de largeur disponible (ici 400 px, même sur un grand écran), le bouton prend toute la largeur. */
+export const BoutonPleineLargeur: Story = {
+  args: { fullWidthMobile: true },
+  render: (args) => ({
+    props: args,
+    template: `<div style="max-width:400px"><lc-file-upload [items]="items" ariaLabel="Photos" [fullWidthMobile]="fullWidthMobile" /></div>`,
+  }),
+};
+
+/** Étroit (360 px) : photos sans poids, erreurs non réessayables, mot « Retirer » visible, message d'erreur en pleine largeur sous la vignette. */
+export const PhotosSansPoidsErreursNonReessayables360: Story = {
+  render: () => ({
+    props: {
+      items: [
+        { id: 'p1', name: 'photo-cuisine.jpg', size: 4_800_000, status: 'uploading', progress: 45, previewUrl: PREVIEW },
+        { id: 'p2', name: 'photo-entree.jpg', size: 2_100_000, status: 'done', previewUrl: PREVIEW },
+        { id: 'p3', name: 'photo-toiture-avec-un-nom-long.heic', size: 12_400_000, status: 'error', retryable: false,
+          errorMessage: 'Cette photo est trop lourde. Choisissez-en une plus légère.' },
+        { id: 'p4', name: 'photo-cave.jpg', size: 3_000_000, status: 'error', errorMessage: 'L\'envoi a échoué.', previewUrl: PREVIEW },
+      ],
+    },
+    template: `
+      <div style="max-width:360px;border:1px dashed #888;padding:8px">
+        <lc-form-field label="Photos" hint="Ajoutez des photos du problème." hintPlacement="above">
+          <lc-file-upload accept="image/*" multiple [items]="items" [showSize]="false" chooseIcon="image-plus"
+            errorPlaceholderIcon="image-off" [fullWidthMobile]="true" [removeLabelVisible]="true" />
+        </lc-form-field>
+      </div>`,
+  }),
 };
 
 /** Dans `lc-form-field` : le libellé nomme le groupe, l'aide et l'erreur lui sont reliées (`aria-describedby`). */
