@@ -2,7 +2,7 @@ import type { EChartsCoreOption } from 'echarts/core';
 import { LcFormatService, LcLabels, LcValueFormat } from '@lionelcointot/ui-angular';
 import type { LcChartTheme, LcColorSlot, LcPart } from '../types';
 import { assignColorSlots } from './palette';
-import { baseOption, formatFull, readableOn, textStyle, tooltipBase, tooltipHtml } from './shared';
+import { baseOption, contrastRatio, formatFull, readableOn, textStyle, tooltipBase, tooltipHtml } from './shared';
 
 export const MAX_SEGMENTS = 6;
 export const OTHER_PART_ID = '__other__';
@@ -33,6 +33,7 @@ export function prepareParts(
   memory: Map<string, LcColorSlot>,
   theme: LcChartTheme,
   labels: Pick<LcLabels, 'other' | 'unallocated'>,
+  palette: 'categorical' | 'sequential' = 'categorical',
 ): PreparedParts {
   const positive = parts.filter((part) => Number.isFinite(part.value) && part.value > 0);
   const folded = positive.length > MAX_SEGMENTS
@@ -44,11 +45,13 @@ export function prepareParts(
   const slots = assignColorSlots(folded.map((part) => ({ id: part.id, label: part.label, values: [], colorSlot: part.colorSlot })), memory);
   const sum = folded.reduce((acc, part) => acc + part.value, 0);
   const reference = total !== undefined && total > sum ? total : sum;
-  const resolved: ResolvedPart[] = folded.map((part) => {
+  const ramp = palette === 'sequential' ? sequentialSteps(theme, folded.filter((part) => part.id !== OTHER_PART_ID).length) : [];
+  const resolved: ResolvedPart[] = folded.map((part, index) => {
     const slot = slots.get(part.id);
+    const color = part.id === OTHER_PART_ID ? theme.ink.muted : palette === 'sequential' ? ramp[index] : slot ? theme.categorical[slot - 1] : theme.ink.muted;
     return {
       id: part.id, label: part.label, value: part.value,
-      color: part.id === OTHER_PART_ID || !slot ? theme.ink.muted : theme.categorical[slot - 1],
+      color,
       share: reference > 0 ? part.value / reference : 0,
     };
   });
@@ -56,6 +59,22 @@ export function prepareParts(
     resolved.push({ id: UNALLOCATED_PART_ID, label: labels.unallocated, value: total - sum, color: theme.axis, share: (total - sum) / reference });
   }
   return { parts: resolved, total: reference, inconsistentTotal: total !== undefined && total < sum };
+}
+
+/**
+ * `count` pas de l'échelle séquentielle, du moins au plus contrasté avec la surface (clair → foncé en thème clair,
+ * l'inverse en thème sombre), répartis du 3e pas au dernier (2e au-delà de 5 parts) : « plus loin » = « plus marqué ».
+ */
+export function sequentialSteps(theme: LcChartTheme, count: number): string[] {
+  const first = theme.sequential[0];
+  const last = theme.sequential[theme.sequential.length - 1];
+  const ramp = (contrastRatio(first, theme.surface) ?? 0) > (contrastRatio(last, theme.surface) ?? 0)
+    ? [...theme.sequential].reverse()
+    : [...theme.sequential];
+  const end = ramp.length - 1;
+  const start = Math.max(0, Math.min(2, ramp.length - count));
+  if (count <= 1) return count === 1 ? [ramp[end]] : [];
+  return Array.from({ length: count }, (_, index) => ramp[Math.round(start + (index * (end - start)) / (count - 1))]);
 }
 
 export interface SegmentedBuildArgs {
@@ -68,6 +87,8 @@ export interface SegmentedBuildArgs {
   readonly theme: LcChartTheme;
   readonly format: LcFormatService;
   readonly animate?: boolean;
+  /** `sequential` : filet de surface de 2 px entre segments (nuances voisines peu contrastées entre elles). */
+  readonly palette?: 'categorical' | 'sequential';
 }
 
 /** Texte imprimé sur un segment : valeur si elle tient, sinon part en %, rien si le segment est trop étroit. */
@@ -99,7 +120,7 @@ export function buildSegmentedBarOption(args: SegmentedBuildArgs): EChartsCoreOp
         stack: 'total',
         barWidth: '100%',
         data: [part.value],
-        itemStyle: { color: part.color, borderColor: theme.surface, borderWidth: 1 },
+        itemStyle: { color: part.color, borderColor: theme.surface, borderWidth: args.palette === 'sequential' ? 2 : 1 },
         emphasis: { focus: 'none', itemStyle: { opacity: 0.85 } },
         label: {
           show: text !== null,

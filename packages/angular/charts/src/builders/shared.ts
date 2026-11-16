@@ -244,6 +244,13 @@ function luminance(color: string): number | null {
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
+/** Rapport de contraste WCAG entre deux couleurs (hex ou rgb), `null` si l'une est illisible. */
+export function contrastRatio(first: string, second: string): number | null {
+  const a = luminance(first);
+  const b = luminance(second);
+  return a === null || b === null ? null : (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 /** Texte lisible sur une couleur de série : le plus contrasté entre l'encre principale et la surface (tokens). */
 export function readableOn(background: string, theme: LcChartTheme): string {
   const back = luminance(background);

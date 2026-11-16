@@ -162,4 +162,6 @@ export interface LcLegendItem {
   readonly pattern?: LcChartPattern;
   readonly dashed?: boolean;
   readonly symbol?: LcChartSeries['symbol'];
+  /** Valeur formatée affichée en fin d'entrée (légende en grille). */
+  readonly value?: string;
 }

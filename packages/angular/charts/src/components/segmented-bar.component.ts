@@ -17,7 +17,7 @@ import type { LcChartPointSelect, LcColorSlot, LcLegendItem, LcPart } from '../t
   template: `
     <lc-chart-frame [title]="title()" [titleHidden]="titleHidden()" [description]="description()" [height]="resolvedHeight()"
       [loading]="loading()" [stale]="stale()" [empty]="empty()" [emptyMessage]="emptyMessage()"
-      [legend]="legend()" [legendToggleable]="false" [table]="table()" [(showDataTable)]="showDataTable" [option]="option()"
+      [legend]="legend()" [legendToggleable]="false" [legendPosition]="resolvedLegendPosition() === 'bottom' ? 'bottom' : 'top'" [table]="table()" [(showDataTable)]="showDataTable" [option]="option()"
       [navigation]="navigation()" (pointSelect)="pointSelect.emit($event)" />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,11 +44,18 @@ export class LcSegmentedBarComponent {
   readonly variant = input<'tall' | 'thin'>('tall');
   /** Total de référence : si supérieur à la somme des parts, un segment « Non réparti » est ajouté. */
   readonly total = input<number>();
+  /** `sequential` : nuances d'une seule teinte dans l'ordre des parts, la dernière la plus marquée (états ordonnés). */
+  readonly palette = input<'categorical' | 'sequential'>('categorical');
+  /** Défaut : `top` (`tall`) ou `none` (`thin`). */
+  readonly legendPosition = input<'top' | 'bottom' | 'none'>();
+  /** Affiche la valeur de chaque part (formatée par `format`) en fin d'entrée de légende, en grille. */
+  readonly legendValues = input(false, { transform: booleanAttribute });
   readonly pointSelect = output<LcChartPointSelect>();
 
   protected readonly resolvedHeight = computed(() => this.height() ?? (this.variant() === 'tall' ? '72px' : '20px'));
+  protected readonly resolvedLegendPosition = computed(() => this.legendPosition() ?? (this.variant() === 'tall' ? 'top' : 'none'));
   private readonly prepared = computed(() => {
-    const prepared = prepareParts(this.parts(), this.total(), this.colorMemory, this.themeService.theme(), this.labels);
+    const prepared = prepareParts(this.parts(), this.total(), this.colorMemory, this.themeService.theme(), this.labels, this.palette());
     if (isDevMode()) {
       if (this.parts().length > 6) console.warn(`[lc-segmented-bar] Plus de 6 parts : les dernières sont regroupées en « ${this.labels.other} ».`);
       if (prepared.inconsistentTotal) console.error('[lc-segmented-bar] `total` est inférieur à la somme des parts.');
@@ -58,7 +65,10 @@ export class LcSegmentedBarComponent {
 
   protected readonly empty = computed(() => this.prepared().parts.length === 0);
   protected readonly legend = computed<readonly LcLegendItem[]>(() =>
-    this.variant() === 'thin' ? [] : this.prepared().parts.map((part) => ({ id: part.id, label: part.label, color: part.color, shape: 'rect', hidden: false })));
+    this.resolvedLegendPosition() === 'none' ? [] : this.prepared().parts.map((part) => ({
+      id: part.id, label: part.label, color: part.color, shape: 'rect', hidden: false,
+      value: this.legendValues() ? this.formatService.format(part.value, this.format()) : undefined,
+    })));
   protected readonly table = computed(() => buildPartsTable(this.prepared().parts, this.format(), this.formatService, this.labels));
   protected readonly navigation = computed(() => this.prepared().parts.map((part) => ({ id: part.id, values: [part.value] })));
 
@@ -70,7 +80,7 @@ export class LcSegmentedBarComponent {
       .join(', ')}.`;
     return buildSegmentedBarOption({
       prepared, valueFormat: this.format(), variant: this.variant(), summary, shareLabel: this.labels.share,
-      theme: this.themeService.theme(), format: this.formatService,
+      theme: this.themeService.theme(), format: this.formatService, palette: this.palette(),
     });
   });
 }
