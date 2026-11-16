@@ -57,6 +57,16 @@ export const BarreSegmentee: Story = {
   }),
 };
 
+/** États ordonnés : nuances d'une seule teinte (plus avancé = plus marqué), légende sous la barre avec le nombre de chaque état. */
+export const EtatsOrdonnes: Story = {
+  render: () => ({
+    template: `<lc-segmented-bar title="Tâches ouvertes, par état" variant="thin" format="integer" palette="sequential" legendPosition="bottom" [legendValues]="true" [parts]="[
+      { id: 'new', label: 'Nouvelle', value: 4 }, { id: 'acknowledged', label: 'Prise en compte', value: 7 },
+      { id: 'planned', label: 'Planifiée', value: 5 }, { id: 'in-progress', label: 'En cours', value: 9 },
+      { id: 'review', label: 'À valider', value: 3 }]" />`,
+  }),
+};
+
 export const Sparkline: Story = {
   render: () => ({
     template: `<div style="width:160px"><lc-sparkline ariaLabel="Capital restant dû sur 12 mois, en baisse" [values]="[10,9.6,9.2,8.7,8.5,8,7.4,7,6.5,6,5.2,4.9]" [showEndPoint]="true" /></div>`,

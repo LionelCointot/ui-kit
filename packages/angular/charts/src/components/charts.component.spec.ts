@@ -197,6 +197,96 @@ describe('graphiques', () => {
       expect(frame.querySelector('.lc-chart-frame__data-toggle')).not.toBeNull();
     });
 
+    describe('barre segmentée : palette, position et valeurs de la légende', () => {
+      @Component({
+        imports: [LcSegmentedBarComponent],
+        template: `<lc-segmented-bar title="États" [format]="format()" [variant]="variant()" [palette]="palette()" [legendPosition]="position()"
+          [legendValues]="values()" [parts]="parts()" [(showDataTable)]="showTable" />`,
+      })
+      class SegmentedHostComponent {
+        readonly format = signal<'integer' | 'money'>('integer');
+        readonly variant = signal<'tall' | 'thin'>('tall');
+        readonly palette = signal<'categorical' | 'sequential'>('categorical');
+        readonly position = signal<'top' | 'bottom' | 'none' | undefined>(undefined);
+        readonly values = signal(false);
+        readonly showTable = signal(true);
+        readonly parts = signal([
+          { id: 'new', label: 'Nouvelle', value: 1234 }, { id: 'planned', label: 'Planifiée', value: 7 }, { id: 'done', label: 'Close', value: 3 },
+        ]);
+      }
+
+      async function segmented(configure: (host: SegmentedHostComponent) => void = () => undefined) {
+        const fixture = TestBed.createComponent(SegmentedHostComponent);
+        configure(fixture.componentInstance);
+        await fixture.whenStable();
+        await new Promise((resolve) => setTimeout(resolve));
+        await fixture.whenStable();
+        const element = fixture.nativeElement as HTMLElement;
+        return {
+          fixture, element,
+          legend: element.querySelector('.lc-chart-frame__legend'),
+          plot: element.querySelector('.lc-chart-frame__plot')!,
+          option: () => charts.at(-1)!.setOption.mock.calls.at(-1)![0],
+          rows: () => Array.from(element.querySelectorAll('tbody tr')).map((row) => row.textContent!.replace(/\s/g, ' ').trim()),
+        };
+      }
+      const follows = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      const borderWidths = (option: { series: { itemStyle: { borderWidth: number } }[] }) => option.series.map((item) => item.itemStyle.borderWidth);
+
+      it('défauts inchangés : tall → légende au-dessus du tracé, sans valeurs ; catégoriel, filet de 1 px', async () => {
+        const { legend, plot, option, element } = await segmented();
+        expect(legend).not.toBeNull();
+        expect(follows(legend!, plot)).toBe(true);
+        expect(legend!.classList).not.toContain('lc-chart-frame__legend--values');
+        expect(element.querySelector('.lc-chart-frame__legend-value')).toBeNull();
+        expect(borderWidths(option())).toEqual([1, 1, 1]);
+      });
+
+      it('défauts inchangés : thin → aucune légende', async () => {
+        const { element } = await segmented((host) => host.variant.set('thin'));
+        expect(element.querySelector('.lc-chart-frame__legend')).toBeNull();
+      });
+
+      it('legendPosition bottom : légende après le tracé et avant « Voir les données » ; none : aucune légende', async () => {
+        const bottom = await segmented((host) => { host.variant.set('thin'); host.position.set('bottom'); });
+        expect(bottom.legend).not.toBeNull();
+        expect(bottom.element.querySelectorAll('.lc-chart-frame__legend').length).toBe(1);
+        expect(follows(bottom.plot, bottom.legend!)).toBe(true);
+        expect(follows(bottom.legend!, bottom.element.querySelector('.lc-chart-frame__data-toggle')!)).toBe(true);
+        const none = await segmented((host) => host.position.set('none'));
+        expect(none.element.querySelector('.lc-chart-frame__legend')).toBeNull();
+        const top = await segmented((host) => { host.variant.set('thin'); host.position.set('top'); });
+        expect(follows(top.legend!, top.plot)).toBe(true);
+      });
+
+      it('legendValues : valeur formatée par `format` après le libellé, classe de grille posée, dans l\'ordre des parts', async () => {
+        const { legend } = await segmented((host) => host.values.set(true));
+        expect(legend!.classList).toContain('lc-chart-frame__legend--values');
+        const items = Array.from(legend!.querySelectorAll('li'));
+        // Ordre de lecture : libellé puis valeur, entrée par entrée.
+        expect(items.map((item) => Array.from(item.querySelectorAll('.lc-chart-frame__legend-item > span'))
+          .map((span) => span.textContent!.replace(/\s/g, ' ').trim()).filter(Boolean)))
+          .toEqual([['Nouvelle', '1 234'], ['Planifiée', '7'], ['Close', '3']]);
+        expect(items.every((item) => item.lastElementChild!.lastElementChild!.classList.contains('lc-chart-frame__legend-value'))).toBe(true);
+        const money = await segmented((host) => { host.values.set(true); host.format.set('money'); });
+        expect(money.legend!.querySelector('.lc-chart-frame__legend-value')!.textContent!.replace(/\s/g, ' ')).toBe('1 234,00 €');
+      });
+
+      it('légende masquée sous 2 entrées, même avec valeurs', async () => {
+        const { element } = await segmented((host) => { host.values.set(true); host.parts.set([{ id: 'only', label: 'Seule', value: 5 }]); });
+        expect(element.querySelector('.lc-chart-frame__legend')).toBeNull();
+      });
+
+      it('séquentiel : filet de 2 px ; texte équivalent et vue tableau identiques au rendu par défaut', async () => {
+        const reference = await segmented();
+        const changed = await segmented((host) => { host.palette.set('sequential'); host.position.set('bottom'); host.values.set(true); });
+        expect(borderWidths(changed.option())).toEqual([2, 2, 2]);
+        expect(changed.option().aria.label.description).toBe(reference.option().aria.label.description);
+        expect(changed.rows().length).toBe(3);
+        expect(changed.rows()).toEqual(reference.rows());
+      });
+    });
+
     it('un repère s\'affiche sur la courbe et la vue tableau contient la ligne « Repère »', async () => {
       @Component({
         imports: [LcLineChartComponent],

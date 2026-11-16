@@ -5,9 +5,9 @@ import { buildAreaOption } from './area.builder';
 import { buildBarOption, categoryTotals, endOfStackIndex, radius } from './bar.builder';
 import { escapeHtml } from './escape-html';
 import { buildLineOption, lineAxisIsTruncated, showDirectLabels } from './line.builder';
-import { buildSegmentedBarOption, prepareParts, segmentLabel } from './segmented-bar.builder';
+import { buildSegmentedBarOption, prepareParts, segmentLabel, sequentialSteps } from './segmented-bar.builder';
 import { buildSparklineOption } from './sparkline.builder';
-import { formatTick, readableOn } from './shared';
+import { contrastRatio, formatTick, readableOn } from './shared';
 import { buildCartesianTable } from './table';
 
 const theme: LcChartTheme = {
@@ -229,6 +229,76 @@ describe('builders de graphiques', () => {
       const html = tall['tooltip'].formatter({ seriesIndex: 0 }) as string;
       expect(html).toContain('&lt;b&gt;x&lt;/b&gt;');
       expect(html.replace(/\s/g, ' ')).toContain('50,0');
+    });
+
+    describe('palette séquentielle', () => {
+      // Rampe du clair (100) au foncé (700), comme les tokens du thème clair.
+      const ramp = ['#eef4fc', '#d2e2f7', '#a9c8ef', '#78a8e3', '#4a86d2', '#2a63ab', '#163f73'];
+      const light: LcChartTheme = { ...theme, sequential: ramp };
+      const dark: LcChartTheme = { ...theme, sequential: ramp, surface: '#171716' };
+      const darkInverted: LcChartTheme = { ...dark, sequential: [...ramp].reverse() };
+      const five = Array.from({ length: 5 }, (_, index) => ({ id: `s${index}`, label: `S${index}`, value: 10 }));
+
+      it('contrastRatio : rapport WCAG, null si une couleur est illisible', () => {
+        expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5);
+        expect(contrastRatio('#ffffff', '#000000')).toBeCloseTo(21, 5);
+        expect(contrastRatio('#777777', '#777777')).toBe(1);
+        expect(contrastRatio('pas une couleur', '#ffffff')).toBeNull();
+      });
+
+      it('thème clair : du clair au foncé, du 3e au 7e pas ; 6 parts : du 2e au 7e', () => {
+        expect(sequentialSteps(light, 5)).toEqual([ramp[2], ramp[3], ramp[4], ramp[5], ramp[6]]);
+        expect(sequentialSteps(light, 6)).toEqual([ramp[1], ramp[2], ramp[3], ramp[4], ramp[5], ramp[6]]);
+        expect(sequentialSteps(light, 3)).toEqual([ramp[2], ramp[4], ramp[6]]);
+        expect(sequentialSteps(light, 2)).toEqual([ramp[2], ramp[6]]);
+        expect(sequentialSteps(light, 1)).toEqual([ramp[6]]);
+        expect(sequentialSteps(light, 0)).toEqual([]);
+        const four = sequentialSteps(light, 4);
+        expect(four.length).toBe(4);
+        expect(new Set(four).size).toBe(4);
+        expect(four[0]).toBe(ramp[2]);
+        expect(four[3]).toBe(ramp[6]);
+      });
+
+      it('thème sombre : du foncé au clair (le plus contrasté avec la surface en dernier), quel que soit l\'ordre des tokens', () => {
+        expect(sequentialSteps(dark, 5)).toEqual([ramp[4], ramp[3], ramp[2], ramp[1], ramp[0]]);
+        expect(sequentialSteps(darkInverted, 5)).toEqual([ramp[4], ramp[3], ramp[2], ramp[1], ramp[0]]);
+        expect(sequentialSteps(dark, 1)).toEqual([ramp[0]]);
+      });
+
+      it('le contraste avec la surface croît d\'une part à la suivante (clair et sombre)', () => {
+        for (const surfaceTheme of [light, dark, darkInverted]) {
+          for (let count = 2; count <= 6; count++) {
+            const ratios = sequentialSteps(surfaceTheme, count).map((color) => contrastRatio(color, surfaceTheme.surface)!);
+            ratios.slice(1).forEach((ratio, index) => expect(ratio).toBeGreaterThan(ratios[index]));
+          }
+        }
+      });
+
+      it('prepareParts séquentiel : parts sur la rampe, « Autres » et « Non réparti » gardent leurs couleurs', () => {
+        expect(prepareParts(five, undefined, new Map(), light, labels, 'sequential').parts.map((part) => part.color))
+          .toEqual([ramp[2], ramp[3], ramp[4], ramp[5], ramp[6]]);
+        const many = Array.from({ length: 8 }, (_, index) => ({ id: `p${index}`, label: `P${index}`, value: 10 }));
+        const folded = prepareParts(many, 100, new Map(), light, labels, 'sequential');
+        expect(folded.parts.map((part) => part.label)).toEqual(['P0', 'P1', 'P2', 'P3', 'P4', 'Autres', 'Non réparti']);
+        expect(folded.parts.map((part) => part.color)).toEqual([ramp[2], ramp[3], ramp[4], ramp[5], ramp[6], theme.ink.muted, theme.axis]);
+        const six = Array.from({ length: 6 }, (_, index) => ({ id: `q${index}`, label: `Q${index}`, value: 10 }));
+        expect(prepareParts(six, undefined, new Map(), light, labels, 'sequential').parts.map((part) => part.color))
+          .toEqual(ramp.slice(1));
+      });
+
+      it('par défaut (catégoriel) : couleurs catégorielles inchangées, filet de 1 px ; séquentiel : 2 px', () => {
+        const byDefault = prepareParts(parts, undefined, new Map(), light, labels);
+        expect(byDefault.parts.map((part) => part.color)).toEqual(theme.categorical.slice(0, 3));
+        const common = { valueFormat: 'integer' as const, summary: 's', shareLabel: 'Part', theme: light, format, variant: 'thin' as const };
+        const widths = (option: AnyOption) => option['series'].map((item: AnyOption) => item['itemStyle'].borderWidth);
+        expect(widths(buildSegmentedBarOption({ ...common, prepared: byDefault }) as AnyOption)).toEqual([1, 1, 1]);
+        expect(widths(buildSegmentedBarOption({ ...common, prepared: byDefault, palette: 'categorical' }) as AnyOption)).toEqual([1, 1, 1]);
+        const sequential = prepareParts(parts, undefined, new Map(), light, labels, 'sequential');
+        const option = buildSegmentedBarOption({ ...common, prepared: sequential, palette: 'sequential' }) as AnyOption;
+        expect(widths(option)).toEqual([2, 2, 2]);
+        expect(option['series'].every((item: AnyOption) => item['itemStyle'].borderColor === light.surface)).toBe(true);
+      });
     });
   });
 

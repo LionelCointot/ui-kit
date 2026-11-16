@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, model, output } from '@angular/core';
 import { LC_LABELS, LcIconComponent, LcSkeletonComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 import type { EChartsCoreOption } from '../echarts-registry';
@@ -10,14 +11,18 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
  */
 @Component({
   selector: 'lc-chart-frame',
-  imports: [LcChartHostComponent, LcIconComponent, LcSkeletonComponent],
+  imports: [NgTemplateOutlet, LcChartHostComponent, LcIconComponent, LcSkeletonComponent],
   template: `
     <p class="lc-chart-frame__title" [id]="titleId" [class.lc-chart-frame__hidden]="titleHidden()">{{ title() }}</p>
     @if (description()) {
       <p class="lc-chart-frame__description" [id]="descriptionId" [class.lc-chart-frame__hidden]="titleHidden()">{{ description() }}</p>
     }
+    @if (legendPosition() === 'top') {
+      <ng-container [ngTemplateOutlet]="legendTemplate" />
+    }
+    <ng-template #legendTemplate>
     @if (legend().length >= 2) {
-      <ul class="lc-chart-frame__legend">
+      <ul class="lc-chart-frame__legend" [class.lc-chart-frame__legend--values]="hasLegendValues()">
         @for (item of legend(); track item.id) {
           <li>
             @if (legendToggleable()) {
@@ -33,6 +38,9 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
                   <lc-icon class="lc-chart-frame__role-icon" [name]="item.icon" />
                 }
                 <span>{{ item.label }}</span>
+                @if (item.value !== undefined) {
+                  <span class="lc-chart-frame__legend-value">{{ item.value }}</span>
+                }
               </button>
             } @else {
               <span class="lc-chart-frame__legend-item">
@@ -46,12 +54,16 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
                   <lc-icon class="lc-chart-frame__role-icon" [name]="item.icon" />
                 }
                 <span>{{ item.label }}</span>
+                @if (item.value !== undefined) {
+                  <span class="lc-chart-frame__legend-value">{{ item.value }}</span>
+                }
               </span>
             }
           </li>
         }
       </ul>
     }
+    </ng-template>
     <div class="lc-chart-frame__plot" [style.min-height]="height()">
       @if (loading()) {
         <lc-skeleton shape="rect" width="100%" [height]="height()" />
@@ -63,6 +75,9 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
           (pointSelect)="pointSelect.emit($event)" />
       }
     </div>
+    @if (legendPosition() === 'bottom') {
+      <ng-container [ngTemplateOutlet]="legendTemplate" />
+    }
     @if (table() && !empty() && !loading()) {
       <button type="button" class="lc-chart-frame__data-toggle" [attr.aria-expanded]="showDataTable()" [attr.aria-controls]="tableId"
         (click)="showDataTable.set(!showDataTable())">
@@ -123,6 +138,8 @@ export class LcChartFrameComponent {
   readonly emptyMessage = input<string>();
   readonly legend = input<readonly LcLegendItem[]>([]);
   readonly legendToggleable = input(true, { transform: booleanAttribute });
+  readonly legendPosition = input<'top' | 'bottom'>('top');
+  protected readonly hasLegendValues = computed(() => this.legend().some((item) => item.value !== undefined));
   readonly table = input<LcChartTable | null>(null);
   readonly showDataTable = model(false);
   readonly option = input<EChartsCoreOption | null>(null);

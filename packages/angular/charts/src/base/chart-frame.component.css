@@ -56,6 +56,24 @@ button.lc-chart-frame__legend-item {
   cursor: pointer;
 }
 
+/* Légende avec valeurs : grille qui passe sur plusieurs colonnes selon la largeur, valeur alignée en fin de ligne. */
+.lc-chart-frame__legend--values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--lc-sys-space-16) * 2), 1fr));
+}
+
+.lc-chart-frame__legend--values .lc-chart-frame__legend-item {
+  display: flex;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.lc-chart-frame__legend-value {
+  margin-inline-start: auto;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
 button.lc-chart-frame__legend-item:hover {
   background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
 }
