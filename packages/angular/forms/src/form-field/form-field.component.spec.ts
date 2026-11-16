@@ -42,6 +42,19 @@ class SignalFormsHostComponent {
   ];
 }
 
+@Component({
+  imports: [LcFormFieldComponent, LcInputDirective],
+  template: `
+    <lc-form-field label="Photos" hint="Trois au plus" [hintPlacement]="placement()" [errors]="errors()">
+      <input lcInput id="photos" />
+    </lc-form-field>
+  `,
+})
+class HintPlacementHostComponent {
+  readonly placement = signal<'below' | 'above'>('below');
+  readonly errors = signal<readonly string[]>([]);
+}
+
 function state(touched: boolean, invalid: boolean, messages: string[], isRequired = false): LcFieldStateLike {
   return {
     touched: () => touched,
@@ -114,6 +127,69 @@ describe('LcFormFieldComponent', () => {
     expect(fixture.componentInstance.model().amount).toBe(250000);
     expect(input.value).toBe('250 000');
     expect(element.querySelector('.lc-form-field__errors')).toBeNull();
+  });
+
+  describe('hintPlacement', () => {
+    async function setupPlacement(init?: (host: HintPlacementHostComponent) => void) {
+      const fixture = TestBed.createComponent(HintPlacementHostComponent);
+      init?.(fixture.componentInstance);
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+      return {
+        fixture,
+        element,
+        input: element.querySelector('input')!,
+        hint: () => element.querySelector('.lc-form-field__hint')!,
+        row: () => element.querySelector('.lc-form-field__row')!,
+        /** Éléments du corps du champ, dans l'ordre du DOM (aide, contrôle, messages). */
+        order: () => Array.from(element.querySelector('.lc-form-field__body')!.children).map((child) => child.className.split(' ')[0]),
+      };
+    }
+
+    it('défaut (non lié) : l\'aide est sous le contrôle', async () => {
+      const fixture = TestBed.createComponent(NativeHostComponent);
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+      const hint = element.querySelector('.lc-form-field__hint')!;
+      const row = element.querySelector('.lc-form-field__row')!;
+      expect(row.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('« below » : contrôle, aide, messages ; « above » : aide, contrôle, messages ; une seule aide dans les deux cas', async () => {
+      const { fixture, element, order } = await setupPlacement();
+      expect(order()).toEqual(['lc-form-field__row', 'lc-form-field__hint', 'lc-form-field__messages']);
+      fixture.componentInstance.placement.set('above');
+      await fixture.whenStable();
+      expect(order()).toEqual(['lc-form-field__hint', 'lc-form-field__row', 'lc-form-field__messages']);
+      expect(element.querySelectorAll('.lc-form-field__hint').length).toBe(1);
+    });
+
+    it('« above » : l\'aide reste entre le libellé et le contrôle', async () => {
+      const { element, hint, row } = await setupPlacement((h) => { h.placement.set('above'); });
+      const label = element.querySelector('label')!;
+      expect(label.compareDocumentPosition(hint()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(hint().compareDocumentPosition(row()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('sans aide, rien n\'est rendu quelle que soit la place', async () => {
+      @Component({ imports: [LcFormFieldComponent, LcInputDirective], template: '<lc-form-field label="X" hintPlacement="above"><input lcInput /></lc-form-field>' })
+      class NoHintHostComponent {}
+      const fixture = TestBed.createComponent(NoHintHostComponent);
+      await fixture.whenStable();
+      expect((fixture.nativeElement as HTMLElement).querySelector('.lc-form-field__hint')).toBeNull();
+    });
+
+    it.each([['below'], ['above']] as const)('« %s » : aria-describedby relie l\'aide puis l\'erreur, et l\'erreur est annoncée', async (placement) => {
+      const { fixture, element, input, hint } = await setupPlacement((h) => { h.placement.set(placement); });
+      expect(input.getAttribute('aria-describedby')).toBe(hint().id);
+      fixture.componentInstance.errors.set(['Montant refusé.']);
+      await fixture.whenStable();
+      const errors = element.querySelector('.lc-form-field__errors')!;
+      expect(input.getAttribute('aria-describedby')).toBe(`${hint().id} ${errors.id}`);
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(errors.closest('[aria-live=polite]')).not.toBeNull();
+      expect(errors.textContent).toContain('Montant refusé.');
+    });
   });
 
   it('relie le libellé d\'un contrôle non étiquetable par aria-labelledby', async () => {

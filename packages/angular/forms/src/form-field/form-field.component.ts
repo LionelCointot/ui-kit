@@ -19,12 +19,15 @@ import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFieldStateLike, LcFormFieldCont
       {{ label() }}@if (isRequired()) {<span class="lc-form-field__required" aria-hidden="true">*</span>}
     </label>
     <div class="lc-form-field__body">
+      @if (hint() && hintPlacement() === 'above') {
+        <p class="lc-form-field__hint" [id]="hintId">{{ hint() }}</p>
+      }
       <div class="lc-form-field__row">
         <ng-content select="[lcPrefix]" />
         <div class="lc-form-field__control"><ng-content /></div>
         <ng-content select="[lcSuffix]" />
       </div>
-      @if (hint()) {
+      @if (hint() && hintPlacement() === 'below') {
         <p class="lc-form-field__hint" [id]="hintId">{{ hint() }}</p>
       }
       <div class="lc-form-field__messages" aria-live="polite">
@@ -50,6 +53,8 @@ import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFieldStateLike, LcFormFieldCont
 export class LcFormFieldComponent implements LcFormFieldContext {
   readonly label = input.required<string>();
   readonly hint = input<string>();
+  /** `'above'` : l'aide se place entre le libellé et le contrôle (`aria-describedby` inchangé). */
+  readonly hintPlacement = input<'below' | 'above'>('below');
   /** Messages supplémentaires (ex. erreurs serveur), toujours affichés. */
   readonly errors = input<readonly string[]>([]);
   readonly required = input(false, { transform: booleanAttribute });

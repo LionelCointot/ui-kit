@@ -49,10 +49,22 @@ class FormsDemoComponent {
 
 const meta: Meta = {
   title: 'Formulaires/Champs',
-  decorators: [moduleMetadata({ imports: [FormsDemoComponent] })],
+  decorators: [moduleMetadata({ imports: [FormsDemoComponent, LcFormFieldComponent, LcInputDirective] })],
   render: () => ({ template: '<lc-forms-demo />' }),
 };
 export default meta;
 type Story = StoryObj;
 
 export const Defaut: Story = {};
+
+/** `hintPlacement="above"` : l'aide se lit entre le libellé et le contrôle (toujours reliée par `aria-describedby`). */
+export const AideAuDessus: Story = {
+  render: () => ({
+    template: `
+      <div style="max-width:28rem">
+        <lc-form-field label="Nom du scénario" hint="Visible dans la barre de scénarios" hintPlacement="above">
+          <input lcInput type="text" />
+        </lc-form-field>
+      </div>`,
+  }),
+};

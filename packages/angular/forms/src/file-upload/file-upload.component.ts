@@ -40,6 +40,8 @@ export interface LcFileUploadItem {
   readonly previewUrl?: string;
   /** Remplace le texte d'état par défaut (hors erreur). */
   readonly statusLabel?: string;
+  /** Faux : une ligne en erreur n'affiche pas « Réessayer ». Défaut : réessayable. */
+  readonly retryable?: boolean;
 }
 
 /** Raison du refus d'un fichier : type non accepté, ou nombre maximal de fichiers dépassé. */
@@ -63,6 +65,7 @@ interface RowView {
   readonly progressLabel: string;
   readonly removeLabel: string;
   readonly retryLabel: string;
+  readonly retryable: boolean;
 }
 
 /** Vrai si le fichier correspond à `accept` (types MIME, `type/*` ou extensions, comme l'attribut natif). */
@@ -105,7 +108,7 @@ function splitName(name: string): { stem: string; extension: string } {
       <button #choose lcButton type="button" fillMode="outline" themeColor="primary" class="lc-file-upload__choose"
         [disabled]="disabled()" [attr.aria-disabled]="full() ? 'true' : null" [attr.aria-describedby]="full() ? limitId : null"
         (click)="open()">
-        <lc-icon name="upload" />{{ chooseLabel() }}
+        <lc-icon [name]="chooseIcon()" />{{ chooseLabel() }}
       </button>
     </div>
     @if (full()) {
@@ -126,12 +129,14 @@ function splitName(name: string): { stem: string; extension: string } {
               <span class="lc-file-upload__name" [class.lc-file-upload__name--cut]="cutNames().has(row.item.id)" [attr.title]="row.item.name">
                 <span #stem class="lc-file-upload__stem">{{ row.stem }}</span><span class="lc-file-upload__extension">{{ row.extension }}</span>
               </span>
-              <span class="lc-file-upload__meta">
-                @if (row.metaIcon) {
-                  <lc-icon [name]="row.metaIcon" [class]="'lc-file-upload__status lc-file-upload__status--' + row.item.status" />
-                }
-                {{ row.meta }}
-              </span>
+              @if (row.meta) {
+                <span class="lc-file-upload__meta">
+                  @if (row.metaIcon) {
+                    <lc-icon [name]="row.metaIcon" [class]="'lc-file-upload__status lc-file-upload__status--' + row.item.status" />
+                  }
+                  {{ row.meta }}
+                </span>
+              }
               @if (row.item.status === 'uploading') {
                 <div class="lc-file-upload__bar" [class.lc-file-upload__bar--indeterminate]="row.progress === null"
                   role="progressbar" aria-valuemin="0" aria-valuemax="100"
@@ -141,16 +146,25 @@ function splitName(name: string): { stem: string; extension: string } {
               }
               @if (row.item.status === 'error') {
                 <p class="lc-file-upload__error" role="alert"><lc-icon name="circle-alert" /><span>{{ row.errorText }}</span></p>
-                <button lcButton type="button" fillMode="outline" themeColor="neutral" size="small" class="lc-file-upload__retry"
-                  [disabled]="disabled()" [attr.aria-label]="row.retryLabel" (click)="retry.emit(row.item.id)">
-                  <lc-icon name="rotate-ccw" />{{ labels.retry }}
-                </button>
+                @if (row.retryable) {
+                  <button lcButton type="button" fillMode="outline" themeColor="neutral" size="small" class="lc-file-upload__retry"
+                    [disabled]="disabled()" [attr.aria-label]="row.retryLabel" (click)="retry.emit(row.item.id)">
+                    <lc-icon name="rotate-ccw" />{{ labels.retry }}
+                  </button>
+                }
               }
             </div>
-            <button #removeButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
-              [disabled]="disabled()" [attr.aria-label]="row.removeLabel" (click)="onRemove(row.item.id, index)">
-              <lc-icon name="x" />
-            </button>
+            @if (removeLabelVisible()) {
+              <button #removeButton lcButton type="button" fillMode="outline" themeColor="neutral" size="small" class="lc-file-upload__remove"
+                [disabled]="disabled()" [attr.aria-label]="row.removeLabel" (click)="onRemove(row.item.id, index)">
+                {{ labels.fileUploadRemoveShort }}
+              </button>
+            } @else {
+              <button #removeButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
+                [disabled]="disabled()" [attr.aria-label]="row.removeLabel" (click)="onRemove(row.item.id, index)">
+                <lc-icon name="x" />
+              </button>
+            }
           </li>
         }
       </ul>
@@ -169,6 +183,7 @@ function splitName(name: string): { stem: string; extension: string } {
     '[attr.aria-describedby]': 'describedBy()',
     '[attr.aria-disabled]': "disabled() ? 'true' : null",
     '[class.lc-file-upload--disabled]': 'disabled()',
+    '[class.lc-file-upload--full-width-mobile]': 'fullWidthMobile()',
     '[class.lc-file-upload--invalid]': 'field?.showInvalid() ?? false',
   },
 })
@@ -188,6 +203,16 @@ export class LcFileUploadComponent implements LcFormFieldControl {
   /** Nombre maximal de fichiers dans `items` ; atteint, le choix est inactif et le texte de limite s'affiche. `null` : sans limite. */
   readonly maxFiles = input<number | null>(null);
   readonly disabled = input(false, { transform: booleanAttribute });
+  /** Faux : le poids du fichier n'est ni affiché ni annoncé ; la ligne garde seulement son état. */
+  readonly showSize = input(true, { transform: booleanAttribute });
+  /** Icône du bouton de choix. */
+  readonly chooseIcon = input('upload');
+  /** Icône d'une ligne en erreur sans vignette. */
+  readonly errorPlaceholderIcon = input('file-text');
+  /** Vrai : sous 480 px de largeur disponible, le bouton de choix prend toute la largeur. */
+  readonly fullWidthMobile = input(false, { transform: booleanAttribute });
+  /** Vrai : le retrait est un bouton avec son mot visible (`labels.fileUploadRemoveShort`) au lieu de la seule croix. */
+  readonly removeLabelVisible = input(false, { transform: booleanAttribute });
   /** Nom accessible hors de `lc-form-field` (sinon le libellé du champ est utilisé). */
   readonly ariaLabel = input<string>();
   readonly id = input<string>(lcUniqueId('file-upload'));
@@ -234,21 +259,23 @@ export class LcFileUploadComponent implements LcFormFieldControl {
         done: this.labels.fileUploadDone,
         error: '',
       }[item.status];
-      const size = this.sizeText(item.size);
+      const state = item.statusLabel || status;
+      const size = this.showSize() ? this.sizeText(item.size) : '';
       const preview = item.previewUrl && !broken.has(item.previewUrl) ? item.previewUrl : null;
       return {
         item,
         stem,
         extension,
         preview,
-        previewIcon: item.previewUrl ? 'image-off' : 'file-text',
-        meta: error ? size : `${size} · ${item.statusLabel || status}`,
+        previewIcon: item.previewUrl ? 'image-off' : error ? this.errorPlaceholderIcon() : 'file-text',
+        meta: error ? size : [size, state].filter(Boolean).join(' · '),
         metaIcon: { pending: 'clock', uploading: null, done: 'circle-check', error: null }[item.status],
         progress,
         errorText: item.errorMessage || this.labels.fileUploadFailed,
         progressLabel: this.labels.fileUploadProgress(item.name),
         removeLabel: this.labels.fileUploadRemove(item.name),
         retryLabel: this.labels.fileUploadRetry(item.name),
+        retryable: item.retryable !== false,
       };
     });
   });

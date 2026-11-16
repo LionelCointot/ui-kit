@@ -3,9 +3,13 @@
  * Sous 768 px (valeur littérale : une variable CSS est inutilisable dans une media query) la zone de dépôt
  * n'a ni cadre ni phrase d'invite : le bouton prend toute la largeur ; le dépôt reste possible, seul le rendu s'allège.
  */
+/* Pleine largeur disponible (sans `inline-size`, un parent flex donnerait la largeur du contenu) ; le composant est aussi le
+   conteneur des requêtes de largeur « étroit » (< 480 px, valeur littérale) ci-dessous. */
 :host {
   display: block;
+  inline-size: 100%;
   min-inline-size: 0;
+  container-type: inline-size;
 }
 
 .lc-file-upload__zone {
@@ -178,8 +182,65 @@
   margin-block-start: calc((1lh - var(--lc-sys-icon-size-sm)) / 2);
 }
 
+/* Boutons de la ligne : 44 px de haut visibles (cible tactile), pas seulement une zone de frappe invisible. */
+.lc-file-upload__retry,
+.lc-file-upload__remove {
+  --lc-button-height-sm: var(--lc-button-hit-size, 44px);
+}
+
 .lc-file-upload__retry {
   margin-block-start: var(--lc-sys-space-1);
+}
+
+/* Étroit : la vignette ne garde que le nom et l'état ; le message d'erreur et « Réessayer » passent en pleine largeur dessous
+   (`display: contents` rend les enfants de `.info` placables dans la grille de la ligne). */
+@container (width < 480px) {
+  .lc-file-upload__row--error {
+    row-gap: 0;
+  }
+
+  .lc-file-upload__row--error .lc-file-upload__info {
+    display: contents;
+  }
+
+  .lc-file-upload__row--error .lc-file-upload__preview {
+    grid-row: 1 / span 2;
+  }
+
+  .lc-file-upload__row--error .lc-file-upload__name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .lc-file-upload__row--error .lc-file-upload__meta {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    margin-block-start: var(--lc-sys-space-1);
+  }
+
+  .lc-file-upload__row--error .lc-file-upload__error {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-block-start: var(--lc-sys-space-3);
+  }
+
+  /* Rangée d'actions, dans l'ordre du DOM : « Réessayer » (large) puis « Retirer » ; sans « Réessayer », « Retirer » reste à droite. */
+  .lc-file-upload__row--error .lc-file-upload__retry {
+    grid-column: 1 / 3;
+    grid-row: 4;
+    margin-block-start: var(--lc-sys-space-3);
+  }
+
+  .lc-file-upload__row--error > button {
+    grid-column: 3;
+    grid-row: 4;
+    margin-block-start: var(--lc-sys-space-3);
+  }
+
+  :host(.lc-file-upload--full-width-mobile) .lc-file-upload__choose {
+    inline-size: 100%;
+  }
 }
 
 /* Barre de progression : même rendu que `lc-progress-bar` (`feedback`), recopié car `forms` n'importe pas `feedback`. */

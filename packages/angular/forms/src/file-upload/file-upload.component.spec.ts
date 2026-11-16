@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { LC_LABELS, LC_LABELS_EN, LC_LABELS_FR, LC_LOCALE, LC_DEFAULT_ICONS, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
@@ -32,6 +32,23 @@ class UploadHostComponent {
 class UploadInFieldHostComponent {
   readonly items: readonly LcFileUploadItem[] = [{ id: 'a', name: 'a.pdf', size: 10, status: 'done' }];
   readonly errors = signal<readonly string[]>([]);
+}
+
+/** Hôte des compléments : chaque entrée est liée et démarre à sa valeur par défaut (les hôtes ci-dessus ne lient rien). */
+@Component({
+  imports: [LcFileUploadComponent],
+  template: `<lc-file-upload ariaLabel="Pièces" [items]="items()" [showSize]="showSize()" [chooseIcon]="chooseIcon()"
+    [errorPlaceholderIcon]="errorPlaceholderIcon()" [fullWidthMobile]="fullWidthMobile()" [removeLabelVisible]="removeLabelVisible()"
+    (remove)="removed.push($event)" />`,
+})
+class OptionsHostComponent {
+  readonly items = signal<readonly LcFileUploadItem[]>([]);
+  readonly showSize = signal(true);
+  readonly chooseIcon = signal('upload');
+  readonly errorPlaceholderIcon = signal('file-text');
+  readonly fullWidthMobile = signal(false);
+  readonly removeLabelVisible = signal(false);
+  readonly removed: string[] = [];
 }
 
 const item = (id: string, change: Partial<LcFileUploadItem> = {}): LcFileUploadItem =>
@@ -768,7 +785,7 @@ describe('LcFileUploadComponent', () => {
 
     it('les libellés FR et EN ont la même forme (aucun libellé de dépôt oublié)', () => {
       const keys = Object.keys(LC_LABELS_FR).filter((key) => key.startsWith('fileUpload') || key === 'fileSizeUnits');
-      expect(keys.length).toBe(15);
+      expect(keys.length).toBe(16);
       expect(Object.keys(LC_LABELS_EN).filter((key) => key.startsWith('fileUpload') || key === 'fileSizeUnits').sort()).toEqual(keys.sort());
     });
 
@@ -779,6 +796,226 @@ describe('LcFileUploadComponent', () => {
       expect(root.querySelector('.lc-file-upload__row img')).toBeNull();
       expect(root.querySelector('.lc-file-upload__stem')!.textContent).toBe('<img src=x onerror=alert(1)>');
       expect(root.querySelector('[role=alert] b')).toBeNull();
+    });
+  });
+
+  describe('compléments : valeurs par défaut et options', () => {
+    async function setupOptions(init?: (host: OptionsHostComponent) => void) {
+      const fixture = TestBed.createComponent(OptionsHostComponent);
+      init?.(fixture.componentInstance);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      return {
+        fixture,
+        host: fixture.componentInstance,
+        root,
+        settle: () => fixture.whenStable(),
+        group: () => root.querySelector<HTMLElement>('lc-file-upload')!,
+        choose: () => root.querySelector<HTMLButtonElement>('.lc-file-upload__choose')!,
+        rows: () => Array.from(root.querySelectorAll<HTMLElement>('.lc-file-upload__row')),
+        removeButtons: () => Array.from(root.querySelectorAll<HTMLButtonElement>('.lc-file-upload__row > button')),
+        metas: () => Array.from(root.querySelectorAll('.lc-file-upload__meta')).map((meta) => meta.textContent!.replace(/\s+/g, ' ').trim()),
+        status: () => root.querySelector('[role=status]')!.textContent!.trim(),
+      };
+    }
+
+    /** Nom de la première icône `lc-icon` contenue dans `element`. */
+    const iconIn = (fixture: ComponentFixture<unknown>, element: HTMLElement) =>
+      fixture.debugElement.queryAll(By.directive(LcIconComponent)).find((d) => element.contains(d.nativeElement))?.componentInstance.name();
+
+    it('sans aucune option liée : poids affiché, icônes d\'origine, croix seule, « Réessayer » présent, pas de classe pleine largeur', async () => {
+      const { fixture, root, settle, host } = await setup();
+      host.items.set([item('a'), item('e', { status: 'error' })]);
+      await settle();
+      const [done, error] = Array.from(root.querySelectorAll<HTMLElement>('.lc-file-upload__row'));
+      expect(iconIn(fixture, root.querySelector<HTMLElement>('.lc-file-upload__choose')!)).toBe('upload');
+      expect(iconIn(fixture, error.querySelector<HTMLElement>('.lc-file-upload__preview')!)).toBe('file-text');
+      expect(Array.from(root.querySelectorAll('.lc-file-upload__meta')).map((meta) => meta.textContent!.replace(/\s+/g, ' ').trim()))
+        .toEqual(['1,5 Ko · Terminé', '1,5 Ko']);
+      for (const row of [done, error]) {
+        const remove = row.querySelector<HTMLButtonElement>(':scope > button')!;
+        expect(remove.textContent!.trim()).toBe('');
+        expect(iconIn(fixture, remove)).toBe('x');
+        expect(remove.classList).not.toContain('lc-file-upload__remove');
+      }
+      expect(done.querySelector('.lc-file-upload__retry')).toBeNull();
+      expect(error.querySelector('.lc-file-upload__retry')!.textContent!.trim()).toBe('Réessayer');
+      expect(root.querySelector('lc-file-upload')!.classList).not.toContain('lc-file-upload--full-width-mobile');
+    });
+
+    describe('showSize', () => {
+      const states = () => [
+        item('p', { status: 'pending' }),
+        item('u', { status: 'uploading', progress: 30 }),
+        item('d'),
+        item('s', { status: 'uploading', progress: 10, statusLabel: 'Réduction de l\'image' }),
+        item('e', { status: 'error' }),
+      ];
+
+      it('à false : ni poids ni séparateur dans la ligne, qui garde son état ; une ligne en erreur n\'a plus d\'élément meta', async () => {
+        const { root, host, rows, metas } = await setupOptions((h) => { h.showSize.set(false); h.items.set(states()); });
+        expect(metas()).toEqual(['En attente', 'Envoi en cours… 30 %', 'Terminé', 'Réduction de l\'image']);
+        expect(root.textContent).not.toMatch(/\d+(,\d)? ?[KMG]?o\b/);
+        const error = rows()[4];
+        expect(error.querySelector('.lc-file-upload__meta')).toBeNull();
+        expect(error.querySelector('[role=alert]')!.textContent!.trim()).toBe('Échec de l\'envoi');
+        expect(error.querySelector('.lc-file-upload__retry')).not.toBeNull();
+        expect(host.showSize()).toBe(false);
+      });
+
+      it('à true (défaut) : le poids précède l\'état, et une ligne en erreur ne montre que le poids', async () => {
+        const { metas } = await setupOptions((h) => { h.items.set(states()); });
+        expect(metas()).toEqual(['1,5 Ko · En attente', '1,5 Ko · Envoi en cours… 30 %', '1,5 Ko · Terminé', '1,5 Ko · Réduction de l\'image', '1,5 Ko']);
+      });
+
+      it('repasser à true réaffiche le poids', async () => {
+        const { host, settle, metas } = await setupOptions((h) => { h.showSize.set(false); h.items.set([item('d')]); });
+        expect(metas()).toEqual(['Terminé']);
+        host.showSize.set(true);
+        await settle();
+        expect(metas()).toEqual(['1,5 Ko · Terminé']);
+      });
+
+      it.each([[true], [false]])('showSize %s : les annonces sont les mêmes (le poids n\'est jamais annoncé)', async (showSize) => {
+        const { host, status, settle } = await setupOptions((h) => { h.showSize.set(showSize); h.items.set([item('u', { name: 'photo.jpg', status: 'pending' })]); });
+        host.items.set([item('u', { name: 'photo.jpg', status: 'uploading', progress: 0 })]);
+        await settle();
+        expect(status()).toBe('Envoi de photo.jpg');
+        host.items.set([item('u', { name: 'photo.jpg', status: 'done' })]);
+        await settle();
+        expect(status()).toBe('photo.jpg : envoi terminé');
+      });
+    });
+
+    it('chooseIcon : « upload » par défaut, remplacée sans changer le libellé du bouton', async () => {
+      const { fixture, host, choose, settle } = await setupOptions();
+      expect(iconIn(fixture, choose())).toBe('upload');
+      host.chooseIcon.set('image-plus');
+      await settle();
+      expect(iconIn(fixture, choose())).toBe('image-plus');
+      expect(choose().textContent!.trim()).toBe('Choisir un fichier');
+    });
+
+    it('errorPlaceholderIcon : « file-text » par défaut ; ne vaut que pour une ligne en erreur sans aperçu', async () => {
+      const items = [
+        item('e', { status: 'error' }),
+        item('d'),
+        item('o', { status: 'error', previewUrl: 'data:image/png;base64,AAAA' }),
+        item('b', { status: 'error', previewUrl: 'https://exemple.invalid/x.png' }),
+      ];
+      const { fixture, root, host, rows, settle } = await setupOptions((h) => { h.items.set(items); });
+      const preview = (index: number) => rows()[index].querySelector<HTMLElement>('.lc-file-upload__preview')!;
+      expect(iconIn(fixture, preview(0))).toBe('file-text');
+      host.errorPlaceholderIcon.set('triangle-alert');
+      await settle();
+      expect(iconIn(fixture, preview(0))).toBe('triangle-alert');
+      expect(iconIn(fixture, preview(1))).toBe('file-text');
+      expect(preview(2).querySelector('img')).not.toBeNull();
+      expect(iconIn(fixture, preview(2))).toBeUndefined();
+      root.querySelectorAll('.lc-file-upload__preview img')[1].dispatchEvent(new Event('error'));
+      await settle();
+      expect(iconIn(fixture, preview(3))).toBe('image-off');
+    });
+
+    it('fullWidthMobile : la classe de l\'hôte suit l\'entrée', async () => {
+      const { host, group, settle } = await setupOptions();
+      expect(group().classList).not.toContain('lc-file-upload--full-width-mobile');
+      host.fullWidthMobile.set(true);
+      await settle();
+      expect(group().classList).toContain('lc-file-upload--full-width-mobile');
+      host.fullWidthMobile.set(false);
+      await settle();
+      expect(group().classList).not.toContain('lc-file-upload--full-width-mobile');
+    });
+
+    describe('removeLabelVisible', () => {
+      it('à true : bouton avec le mot « Retirer », sans croix, nom accessible inchangé, émet l\'identifiant ; à false : la croix seule', async () => {
+        const { fixture, host, removeButtons, settle } = await setupOptions((h) => {
+          h.removeLabelVisible.set(true);
+          h.items.set([item('a'), item('e', { status: 'error' })]);
+        });
+        expect(removeButtons().map((button) => button.textContent!.trim())).toEqual(['Retirer', 'Retirer']);
+        expect(removeButtons().map((button) => button.getAttribute('aria-label'))).toEqual(['Retirer a.pdf', 'Retirer e.pdf']);
+        expect(removeButtons().every((button) => button.classList.contains('lc-file-upload__remove') && !button.querySelector('lc-icon'))).toBe(true);
+        removeButtons()[1].click();
+        expect(host.removed).toEqual(['e']);
+        host.removeLabelVisible.set(false);
+        await settle();
+        expect(removeButtons().map((button) => button.getAttribute('aria-label'))).toEqual(['Retirer a.pdf', 'Retirer e.pdf']);
+        expect(removeButtons().map((button) => button.textContent!.trim())).toEqual(['', '']);
+        expect(removeButtons().map((button) => iconIn(fixture, button))).toEqual(['x', 'x']);
+      });
+
+      it('en anglais : le mot est « Remove » et le nom accessible « Remove {nom} »', async () => {
+        TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: LC_LABELS_EN }] });
+        const { removeButtons } = await setupOptions((h) => { h.removeLabelVisible.set(true); h.items.set([item('a')]); });
+        expect(removeButtons()[0].textContent!.trim()).toBe('Remove');
+        expect(removeButtons()[0].getAttribute('aria-label')).toBe('Remove a.pdf');
+      });
+
+      it('le mot se surcharge par LC_LABELS sans toucher au nom accessible', async () => {
+        TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: { ...LC_LABELS_FR, fileUploadRemoveShort: 'Supprimer' } }] });
+        const { removeButtons } = await setupOptions((h) => { h.removeLabelVisible.set(true); h.items.set([item('a')]); });
+        expect(removeButtons()[0].textContent!.trim()).toBe('Supprimer');
+        expect(removeButtons()[0].getAttribute('aria-label')).toBe('Retirer a.pdf');
+      });
+
+      it('fileUploadRemoveShort : « Retirer » en français, « Remove » en anglais', () => {
+        expect([LC_LABELS_FR.fileUploadRemoveShort, LC_LABELS_EN.fileUploadRemoveShort]).toEqual(['Retirer', 'Remove']);
+      });
+
+      it.each([[false], [true]])('ligne en erreur (mot visible : %s) : « Réessayer » précède « Retirer » dans le DOM, donc au clavier', async (word) => {
+        const { rows } = await setupOptions((h) => { h.removeLabelVisible.set(word); h.items.set([item('e', { status: 'error' })]); });
+        expect(Array.from(rows()[0].querySelectorAll('button')).map((button) => button.getAttribute('aria-label'))).toEqual(['Réessayer e.pdf', 'Retirer e.pdf']);
+      });
+    });
+
+    describe('retryable', () => {
+      it.each([
+        ['absent', undefined, true],
+        ['true', true, true],
+        ['false', false, false],
+      ])('retryable %s : « Réessayer » présent = %s', async (_name, retryable, present) => {
+        const { root, host, removeButtons, settle } = await setupOptions((h) => {
+          h.items.set([item('e', { status: 'error', ...(retryable === undefined ? {} : { retryable }) })]);
+        });
+        expect(root.querySelectorAll('.lc-file-upload__retry').length).toBe(present ? 1 : 0);
+        expect(root.querySelector('[role=alert]')).not.toBeNull();
+        expect(removeButtons().length).toBe(1);
+        host.items.set([item('d', { retryable })]);
+        await settle();
+        expect(root.querySelector('.lc-file-upload__retry')).toBeNull();
+      });
+    });
+
+    describe('focus après retrait', () => {
+      it.each([
+        [false, true], [false, false], [true, true], [true, false],
+      ])('retrait d\'une ligne en erreur (mot visible : %s, réessayable : %s) : le focus va à la ligne suivante', async (word, retryable) => {
+        const { host, removeButtons, settle } = await setupOptions((h) => {
+          h.removeLabelVisible.set(word);
+          h.items.set([item('a'), item('b', { status: 'error', retryable }), item('c')]);
+        });
+        removeButtons()[1].focus();
+        removeButtons()[1].click();
+        host.items.set([item('a'), item('c')]);
+        await settle();
+        expect(host.removed).toEqual(['b']);
+        expect(document.activeElement).toBe(removeButtons()[1]);
+        expect(removeButtons()[1].getAttribute('aria-label')).toBe('Retirer c.pdf');
+      });
+
+      it.each([[false], [true]])('retrait de la seule ligne en erreur (mot visible : %s) : le focus va au bouton de choix', async (word) => {
+        const { host, removeButtons, choose, settle } = await setupOptions((h) => {
+          h.removeLabelVisible.set(word);
+          h.items.set([item('e', { status: 'error' })]);
+        });
+        removeButtons()[0].focus();
+        removeButtons()[0].click();
+        host.items.set([]);
+        await settle();
+        expect(document.activeElement).toBe(choose());
+      });
     });
   });
 
