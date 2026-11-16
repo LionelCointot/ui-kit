@@ -1,5 +1,6 @@
 import { Component, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import {
   LcListEditorComponent,
@@ -24,7 +25,7 @@ const LONG: readonly LcListEditorItem[] = Array.from({ length: 20 }, (_, index) 
 /** Liste dont l'état est tenu ici : chaque demande du composant est appliquée, comme le ferait une application. */
 @Component({
   selector: 'lc-list-editor-demo',
-  imports: [LcListEditorComponent, LcFormFieldComponent],
+  imports: [LcListEditorComponent, LcFormFieldComponent, LcButtonComponent],
   template: `
     <lc-form-field label="Éléments à gérer" hint="Alt + flèche haut ou bas déplace la ligne depuis n'importe quel contrôle.">
       <lc-list-editor #editor [items]="items()" [savedItems]="saved()" [minActive]="minActive()" [maxLength]="20"
@@ -33,13 +34,13 @@ const LONG: readonly LcListEditorItem[] = Array.from({ length: 20 }, (_, index) 
     </lc-form-field>
     <p style="margin-top:12px">
       {{ editor.modified() ? 'Modifié depuis le dernier enregistrement.' : 'Aucune modification.' }}
-      <button type="button" (click)="saved.set(items())" [disabled]="!editor.modified()">Enregistrer</button>
+      <button lcButton type="button" themeColor="primary" (click)="saved.set(items())" [disabled]="!editor.modified()">Enregistrer</button>
     </p>
   `,
 })
 class ListEditorDemoComponent {
   readonly minActive = input(1);
-  protected readonly items = signal<readonly LcListEditorItem[]>([...SHORT, { id: 'p', label: 'Toujours présent', active: true, locked: true, lockedReason: 'Fourni par le système.' }]);
+  protected readonly items = signal<readonly LcListEditorItem[]>([...SHORT, { id: 'p', label: 'Toujours présent', active: true, locked: true, lockedReason: 'Fourni par le système.', lockedLabel: 'Toujours actif' }]);
   protected readonly saved = signal<readonly LcListEditorItem[]>(this.items());
   protected readonly addError = signal<string | null>(null);
   private nextId = 0;

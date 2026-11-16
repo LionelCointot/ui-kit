@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, forwardRef, inject, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, computed, forwardRef, inject, input, model, output } from '@angular/core';
 import type { FormCheckboxControl } from '@angular/forms/signals';
-import { lcUniqueId } from '@lionelcointot/ui-angular';
+import { joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
 /**
@@ -23,7 +23,7 @@ import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../for
     role: 'switch',
     '[attr.id]': 'id()',
     '[attr.aria-checked]': 'checked()',
-    '[attr.aria-describedby]': 'field?.describedBy() ?? null',
+    '[attr.aria-describedby]': 'describedBy()',
     '[disabled]': 'disabled()',
     '[class.lc-switch--checked]': 'checked()',
     '(click)': 'toggle()',
@@ -37,6 +37,9 @@ export class LcSwitchComponent implements FormCheckboxControl, LcFormFieldContro
   readonly checked = model(false);
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly id = input<string>(lcUniqueId('switch'));
+  /** Identifiants supplémentaires ajoutés à `aria-describedby` (description fournie par un composant parent). */
+  readonly extraDescribedBy = input<string | null>(null);
+  protected readonly describedBy = computed(() => joinIds(this.field?.describedBy(), this.extraDescribedBy()));
   /** Émis quand le focus quitte l'interrupteur (champ « touché » pour Signal Forms). */
   readonly touch = output<void>();
 

@@ -32,6 +32,8 @@ export interface LcListEditorItem {
   readonly locked?: boolean;
   /** Raison de la protection, affichée sous le libellé (texte de l'application). */
   readonly lockedReason?: string;
+  /** Texte du badge d'un élément protégé (défaut : libellé `listEditorLocked`). */
+  readonly lockedLabel?: string;
   /** Texte secondaire facultatif sous le libellé. */
   readonly detail?: string;
   /** Une opération sur cette ligne est en cours : ses commandes sont inertes. */
@@ -135,7 +137,7 @@ function sameList(a: readonly LcListEditorItem[], b: readonly LcListEditorItem[]
                   }
                   <span class="lc-list-editor__name">{{ row.item.label }}</span>
                   @if (row.locked) {
-                    <span class="lc-list-editor__badge">{{ labels.listEditorLocked }}</span>
+                    <span class="lc-list-editor__badge">{{ row.item.lockedLabel || labels.listEditorLocked }}</span>
                   } @else if (!row.item.active) {
                     <span class="lc-list-editor__badge lc-list-editor__badge--off"><lc-icon name="circle-off" />{{ labels.listEditorInactive }}</span>
                   }
@@ -173,7 +175,7 @@ function sameList(a: readonly LcListEditorItem[], b: readonly LcListEditorItem[]
                 </button>
                 <button #toggleSwitch lcSwitch data-command="toggle" [checked]="row.item.active" [disabled]="disabled()"
                   [attr.aria-disabled]="row.blocked || row.keepActive ? 'true' : null"
-                  [attr.aria-describedby]="row.keepActive ? row.reasonId : null" [attr.aria-label]="row.toggleLabel"
+                  [extraDescribedBy]="row.keepActive ? row.reasonId : null" [attr.aria-label]="row.toggleLabel"
                   (checkedChange)="onToggle(row, $event, toggleSwitch)">{{ labels.listEditorActive }}</button>
               }
             </div>
@@ -279,6 +281,7 @@ export class LcListEditorComponent implements LcFormFieldControl {
   private readonly addInput = viewChild.required<ElementRef<HTMLInputElement>>('addInput');
   private readonly rowElements = viewChildren('rowItem', { read: ElementRef<HTMLElement> });
   private pending: Pending | null = null;
+  private resyncing = false;
 
   protected readonly describedBy = computed(() => joinIds(this.field?.describedBy()));
 
@@ -441,11 +444,16 @@ export class LcListEditorComponent implements LcFormFieldControl {
 
   /** L'interrupteur change seul de position : on le remet d'accord avec `items` si l'application n'a pas suivi (refus). */
   protected onToggle(row: RowView, active: boolean, control: LcSwitchComponent): void {
+    if (this.resyncing) return; // écho de la remise d'accord ci-dessous : jamais une demande de l'utilisateur
     this.pending = { kind: 'toggle', id: row.item.id, active };
     this.toggle.emit({ id: row.item.id, active });
-    afterNextRender(() => control.checked.set(this.items().find((item) => item.id === row.item.id)?.active ?? !active), {
-      injector: this.injector,
-    });
+    afterNextRender(() => {
+      const current = this.items().find((item) => item.id === row.item.id)?.active ?? !active;
+      if (control.checked() === current) return;
+      this.resyncing = true;
+      control.checked.set(current);
+      this.resyncing = false;
+    }, { injector: this.injector });
   }
 
   /** Libellé valide ? Renvoie le message d'erreur, ou `null`. */
