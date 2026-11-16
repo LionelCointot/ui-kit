@@ -122,6 +122,8 @@ Référence : les écrans du brief (bloc de dépôt de photos ; réglages d'une 
 
 Stories : `Formulaires/Dépôt de fichiers` (`Vide`, `UnFichierEnCours`, `EtatsMeles`, `ErreurAvecReessayer`, `MaximumAtteint`, `Desactive`, `NomsTresLongs`, `DansUnChamp`, `Interactif` avec un dépôt simulé par minuterie, sans réseau).
 
+**Compléments** (usage réel : joindre des photos à une demande ; valeurs par défaut sans effet sur les usages existants). `lc-file-upload` : `showSize` (`true` ; faux : ni poids affiché, ni poids dans la ligne, qui garde l'état), `chooseIcon` (`'upload'`), `errorPlaceholderIcon` (`'file-text'`, icône d'une ligne en erreur sans vignette), `fullWidthMobile` (`false` ; vrai : bouton de choix pleine largeur sous 480 px de largeur disponible), `removeLabelVisible` (`false` ; vrai : bouton « Retirer » avec son mot, libellé `fileUploadRemoveShort` FR et EN, nom accessible inchangé). `LcFileUploadItem.retryable?: boolean` (défaut réessayable ; faux : pas de « Réessayer »). « Réessayer » et le bouton « Retirer » avec mot font 44 px de haut. Correction : le composant, sa zone et sa liste occupent 100 % de la largeur disponible (il est aussi conteneur de requêtes) ; sous 480 px, le message d'erreur et « Réessayer » passent en pleine largeur sous la vignette. `lc-form-field` : `hintPlacement: 'below' | 'above'` (`'below'`), `'above'` place l'aide entre le libellé et le contrôle, `aria-describedby` inchangé. Stories : `SansPoids`, `ErreurNonReessayable`, `IconesPersonnalisees`, `RetraitAvecMot`, `BoutonPleineLargeur`, `PhotosSansPoidsErreursNonReessayables360`, et `Formulaires/Champs` : `AideAuDessus`.
+
 ## Livré (V2)
 
 | Id | Élément | Point d'entrée | API |
