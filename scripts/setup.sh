@@ -13,11 +13,13 @@ step() { printf '\n==> %s\n' "$1"; }
 warn() { printf '  ! %s\n' "$1" >&2; }
 
 step "graphify"
+# Version épinglée sur celle du skill recopié dans le repo : pas de « dernière version » installée à l'aveugle.
+gv="$(cat .claude/skills/graphify/.graphify_version 2>/dev/null || true)"
 if ! command -v graphify >/dev/null 2>&1; then
   if command -v uv >/dev/null 2>&1; then
-    uv tool install graphifyy
+    uv tool install "graphifyy${gv:+==$gv}"
   elif command -v pipx >/dev/null 2>&1; then
-    pipx install graphifyy
+    pipx install "graphifyy${gv:+==$gv}"
   else
     warn "Ni uv ni pipx trouvés. Installez uv (brew install uv) puis relancez ce script."
     exit 1

@@ -15,12 +15,15 @@ description: Initialise un nouveau projet à partir de ce template. À utiliser 
    - Niveau de rigueur : prototype ou production ?
    - Contraintes : sécurité, conformité, performance, budget ?
 4. Si l'utilisateur hésite sur la stack, proposer 2 options avec avantages / inconvénients et en recommander une.
-5. Remplir `CLAUDE.md` : contexte, stack, commandes réelles (install, dev, test, lint, build), conventions. Ne laisser aucun `[...]` sans demander. Les commandes doivent être exactes et non interactives : `qa-engineer` les exécute telles quelles pour son verdict.
+5. Remplir `CONSTRAINTS.md` (barre de qualité : commandes du plancher, seuils) et créer `scripts/check.sh`, qui enchaîne ces commandes et `scripts/check-tests-not-weakened.sh` ; brancher l'intégration continue dessus.
+5 bis. Remplir `CLAUDE.md` : contexte, stack, commandes réelles (install, dev, test, lint, build), conventions. Ne laisser aucun `[...]` sans demander. Les commandes doivent être exactes et non interactives : `qa-engineer` les exécute telles quelles pour son verdict.
 6. **Adapter les skills à la stack** (supprimer le dossier du skill inutile) :
-   - Pas de front → supprimer `angular-best-practices`, `frontend-guidelines`, `impeccable` (et ses hooks dans `.claude/settings.json`, ses agents dans `.claude/agents/`).
+   - Pas de front → supprimer `angular-best-practices`, `angular-developer`, `frontend-guidelines`, `ui-kit`, `impeccable` (et ses hooks dans `.claude/settings.json`, ses agents dans `.claude/agents/`).
    - Front non Angular → remplacer `angular-best-practices` par un skill équivalent pour le framework choisi (même structure : couches, état, accès API, exemples).
-   - Pas de .NET → remplacer `dotnet-best-practices` par l'équivalent de la stack backend.
-   - Reporter chaque suppression ou remplacement dans le champ `skills:` des agents `.claude/agents/senior-developer.md`, `ui-ux-designer.md` et `qa-engineer.md` (aucun skill préchargé ne doit manquer). Les trois agents restent, même sans front : le designer y rendra « pas d'impact UI ».
+   - Claude Octopus non souhaité (pas d'autre fournisseur d'IA, budget de tokens serré) → retirer `extraKnownMarketplaces` et `enabledPlugins` de `.claude/settings.json`.
+   - Pas de .NET → supprimer `dotnet-best-practices`, `dotnet-webapi` et `optimizing-ef-core-queries`, et les remplacer par l'équivalent de la stack backend. Pas d'EF Core → supprimer `optimizing-ef-core-queries`.
+   - Front qui ne consomme pas le ui-kit → supprimer `ui-kit`.
+   - Reporter chaque suppression ou remplacement dans la ligne « Code » de la section Skills de `CLAUDE.md` : les agents y lisent les skills de stack à charger. Les agents eux-mêmes ne se modifient pas (ils sont recopiés du template par `scripts/sync-skills.sh`) ; sans front, le designer rend « pas d'impact UI ».
 7. **Front Angular** : proposer d'ajouter le serveur MCP Angular CLI (`claude mcp add angular-cli --scope project -- npx -y @angular/cli mcp`) et, une fois l'app créée, de lancer `/impeccable init` pour le contexte design (`PRODUCT.md`).
 8. Ajouter les skills spécifiques au projet (conventions métier, règles propres) dans `.claude/skills/` de ce repo, pas dans le template.
 9. Créer la structure de dossiers de base adaptée à la stack (voir les skills de stack), sans code métier.

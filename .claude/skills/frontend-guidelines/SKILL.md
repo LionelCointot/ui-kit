@@ -13,7 +13,9 @@ Qui fait quoi :
   - Revue : `/impeccable critique` (design) et `/impeccable audit` (accessibilité, performance, responsive).
   - Finition : `/impeccable polish`, `/impeccable harden` (états d'erreur, textes longs, cas limites).
   - Le hook d'impeccable vérifie automatiquement chaque fichier UI modifié par Claude.
+- **Règles d'interface détaillées** (icônes, cibles tactiles, responsive, mode sombre, formulaires) : skill `ui-ux-pro-max` s'il est présent dans le projet, pour ses règles seulement ; ses palettes et ses polices ne s'appliquent pas, `DESIGN.md` fait foi.
 - **Rôle** : le sous-agent `ui-ux-designer` porte ce travail (triage, exploration, conception, conformité) dans `delivery-workflow` ; le sous-agent `novice-user` vérifie que l'écran se comprend sans connaître le domaine.
+- **Cadre visuel** (composants et tokens disponibles, quoi faire quand il en manque) : skill `ui-kit`, s'il est présent dans le projet.
 - **Ce skill** : le socle non négociable ci-dessous, quel que soit le design.
 
 ## Impact UI (critère de triage)
@@ -40,6 +42,7 @@ Il y a impact UI dès que la tâche change ce que l'utilisateur voit ou manipule
 - Hiérarchie visuelle claire ; taille de texte de base ≥ 16px ; contraste suffisant.
 - Cibles tactiles ≥ 44px ; retour visuel sur chaque action (chargement, bouton désactivé contre le double clic).
 - Réutiliser les composants existants (`shared/ui`) avant d'en créer.
+- Actions utilitaires d'en-tête (thème, compte, notifications, aide) : bouton icône avec nom accessible et info-bulle, pas de libellé. Une action principale garde son libellé. Sur écran tactile une info-bulle n'existe pas : une action qui doit se comprendre sans survol garde un texte visible.
 - Nombres et montants : format français (`1 159,92 €`), alignés à droite dans les tableaux, police à chiffres tabulaires.
 
 ## Accessibilité (obligatoire, WCAG AA)
@@ -48,6 +51,50 @@ Il y a impact UI dès que la tâche change ce que l'utilisateur voit ou manipule
 - `aria-*` seulement quand le HTML natif ne suffit pas ; `role="status"` / `role="alert"` pour les messages dynamiques.
 - Ne jamais transmettre une information par la seule couleur (graphiques compris).
 - Formulaires : labels associés, erreurs explicites liées au champ (`aria-describedby`), focus sur la première erreur à la soumission.
+
+## Ergonomie détaillée (liste de contrôle du designer et du relecteur)
+Une règle par ligne, vérifiable sur l'écran rendu ou dans le fichier.
+
+**Formulaires**
+- Chaque champ a le bon `type`, `inputmode` et `autocomplete` (e-mail, téléphone, code postal, mot de passe) : le clavier du téléphone et le remplissage automatique en dépendent.
+- Ne jamais bloquer le collage dans un champ. Ne pas effacer une saisie refusée : la garder et dire ce qui ne va pas.
+- Le bouton d'envoi reste actif jusqu'à l'envoi, puis montre l'attente et refuse le double envoi ; « Entrée » envoie le formulaire.
+- Erreur affichée près du champ, en mots (pas un code), avec le moyen de la corriger ; à l'envoi, focus sur la première erreur.
+- Quitter une page avec une saisie non enregistrée : prévenir, ou conserver le brouillon.
+- Action destructrice : confirmation qui nomme ce qui sera perdu, ou annulation possible. Jamais sur un simple clic.
+
+**Navigation et état**
+- L'adresse reflète l'état : filtres, onglet, page, élément ouvert. Un lien copié rouvre le même écran ; « Précédent » revient à l'état précédent.
+- Un lien est un lien (`<a>`, ouvrable dans un nouvel onglet), une action est un bouton.
+- Après un chargement de plus ou un changement de filtre, le focus et la position de lecture ne sont pas perdus.
+
+**Contenu**
+- Tout texte venu de l'utilisateur peut être long, vide ou sans espace : césure ou coupe prévue (`overflow-wrap`, coupe à n lignes avec le texte complet accessible), jamais de débordement.
+- Les quatre états existent pour chaque liste ou bloc de données : chargement (squelette à la forme du contenu), vide (avec l'action suivante), erreur (avec « Réessayer »), nominal.
+- Liste qui peut dépasser une cinquantaine d'éléments : pagination, chargement à la demande ou liste virtuelle.
+- Dates, nombres et montants par les outils de la plateforme (`Intl`, pipes Angular) dans la langue de l'écran ; espace insécable avant l'unité et dans les grands nombres.
+
+**Tactile et petits écrans**
+- Aucune action accessible seulement au survol. Une info-bulle ne porte jamais une information indispensable.
+- Zones sûres des téléphones respectées pour ce qui est collé à un bord (`env(safe-area-inset-*)`).
+- Aucun défilement horizontal de la page à 360 px ; un tableau large défile dans son propre conteneur ou devient une liste de cartes.
+- Le zoom du navigateur n'est jamais désactivé ; la mise en page tient à 200 %.
+
+**Focus et mouvement**
+- Focus toujours visible (`:focus-visible`), jamais `outline: none` sans remplacement. Une boîte de dialogue retient le focus et le rend à son déclencheur en se fermant.
+- `prefers-reduced-motion` respecté : une animation non essentielle s'arrête ou se réduit à un fondu.
+- Animer seulement `transform` et `opacity` ; une animation ne retarde jamais une action.
+
+**Images et stabilité**
+- Largeur et hauteur déclarées pour chaque image et chaque bloc chargé plus tard : la page ne saute pas.
+
+Source d'inspiration de cette liste : les *Web Interface Guidelines* de Vercel, relues et adaptées (règles propres à React retirées).
+
+## Contrôles automatiques
+Ce qui peut se vérifier par une commande ne repose pas sur un regard :
+- Les parcours de bout en bout se jouent aussi à 360 px pour les écrans du grand public, et vérifient l'absence de défilement horizontal (`document.documentElement.scrollWidth <= clientWidth`).
+- Si le projet a un contrôle d'accessibilité automatique (axe dans Playwright ou dans Storybook), il fait partie du contrôle complet (`scripts/check.sh`). Il ne remplace ni la navigation au clavier ni le test `novice-user`.
+- Couleurs et tailles en dur : test d'architecture du front, quand le projet en a un.
 
 ## Performance
 - Code splitting par route, `@defer` pour les blocs lourds (graphiques), images optimisées (`NgOptimizedImage`).

@@ -26,21 +26,25 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md` (chacune se termine par ses écarts constatés à l'implémentation)
 - ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
-- Direction visuelle : `PRODUCT.md` et `DESIGN.md` (pas encore créés : `/impeccable init` puis `/impeccable document`, tâche T2)
+- Direction visuelle : `DESIGN.md` (système visuel de référence des projets consommateurs) ; `PRODUCT.md` pas encore créé (`/impeccable init`)
 
 ## Workflow (spec d'abord, code ensuite : skill `delivery-workflow`)
-La session principale orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (sonnet par défaut ; haiku : recherche, tâches mécaniques ; opus seulement sur accord de l'utilisateur).
-Mode **`ponytail`** (skill `ponytail`, niveau full, recopié dans `.claude/skills/ponytail/`) actif par défaut pour la session principale et tous les sous-agents sauf `novice-user` : le changement le plus petit qui résout complètement la tâche, des rendus courts, moins de tokens. Exception : le développeur n'écrit aucun test (la QA les écrit).
-1. Cadrage, puis spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), validée par l'utilisateur avant de coder ; choix d'architecture dans `docs/adr/` (skill `adr`).
-2. Design : `ui-ux-designer` conçoit avec `impeccable` (`shape` avant, `critique` et `audit` après) ou déclare « pas d'impact UI ». Nouvel écran ou refonte : utilisateur principal confirmé dans `PRODUCT.md`, 2 ou 3 directions maquettées, **l'utilisateur choisit** avant la spec ; `novice-user` teste le brief, puis l'écran réel.
-3. Implémentation : `senior-developer` (code de production, aucun test), une tâche de la spec par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
-4. Tests et QA : `qa-engineer` écrit les tests, puis rend GO / NO-GO avec preuves (build, tests, lint et a11y Storybook, `CA-n`, `review-checklist`) ; NO-GO = retour au développeur.
-5. Revue `/code-review`, puis PR décrite avec `pr-description`.
-6. Correctif trivial : workflow allégé (développeur + QA, le designer déclare « pas d'impact UI »).
+La session principale cadre avec l'utilisateur, écrit la spec, orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (sonnet par défaut ; haiku : recherche, triage ; opus seulement sur accord de l'utilisateur). Le travail mécanique passe par un script relu, pas par un agent.
+Mode **`ponytail`** (skill recopié dans `.claude/skills/ponytail/`) actif par défaut : niveau full pour la session principale, `senior-developer`, `qa-engineer` et `ui-ux-designer` ; niveau ultra pour `cadreur` et `architect` ; contrôlé par `code-reviewer` ; jamais pour `security-reviewer` ni `novice-user`. En cas de conflit, ce fichier et `delivery-workflow` priment sur les skills tiers.
+0. Tri : taille (correctif, tâche, fonctionnalité) et angles ouverts (architecture, écran, sécurité et données). Les angles décident des rôles appelés.
+1. Cadrage : questions une à la fois ; fiche de cadrage en tête de la spec, avec la demande mot pour mot ; `cadreur` relève les ambiguïtés.
+2. Conception : spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), ADR dans `docs/adr/` (skill `adr`), relue en parallèle par `architect`, `security-reviewer`, `qa-engineer` (plan de test) et `cadreur` selon les angles. Écran : 2 ou 3 directions maquettées, **l'utilisateur choisit**, brief de `ui-ux-designer`, test `novice-user`. **Spec validée par l'utilisateur avant de coder.**
+3. Réalisation : `qa-engineer` écrit les tests d'acceptation (`CA-n`) à partir de la spec ; `senior-developer` écrit le code et ses tests unitaires, une tâche par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
+4. Vérification, en parallèle : `qa-engineer` (GO / NO-GO avec preuves), `code-reviewer`, et les rôles des angles ouverts ; un bloquant renvoie au développeur.
+5. Livraison : `cadreur` compare le résultat à la spec ; critères cochés et écarts écrits dans la spec ; PR décrite avec `pr-description`.
+Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-reviewer`. Barre de qualité : `CONSTRAINTS.md` et `scripts/check.sh` quand ils existent, sinon les commandes ci-dessus.
 
 ## Agents (`.claude/agents/`)
-- Livraison : `senior-developer` (sonnet), `ui-ux-designer` (sonnet, `impeccable`), `novice-user` (sonnet, regard d'un débutant sur les écrans), `qa-engineer` (sonnet).
+- Besoin et conception : `cadreur` (gardien du besoin), `architect` (relecteur d'architecture), `security-reviewer` (sécurité et données personnelles).
+- Écrans : `ui-ux-designer` (`impeccable`), `novice-user` (regard d'un débutant sur les écrans).
+- Réalisation et vérification : `senior-developer` (code et tests unitaires), `qa-engineer` (tests d'acceptation, verdict), `code-reviewer` (qualité du code).
 - Design : `impeccable-*` (lancés par la session principale à la demande du playbook impeccable).
+- Tous en sonnet, identiques dans tous les dépôts : les modifier dans `project-template`, puis `scripts/sync-skills.sh`.
 
 ## Conventions
 - Commits : Conventional Commits. SemVer : les tokens (noms et rôles), sélecteurs, entrées et sorties sont le **contrat public** (renommer = version majeure, alias déprécié pendant au moins une mineure).
@@ -67,14 +71,15 @@ Mode **`ponytail`** (skill `ponytail`, niveau full, recopié dans `.claude/skill
 ## Skills (`.claude/skills/`)
 - Processus : `delivery-workflow`, `project-init`, `spec-writer`, `adr`, `pr-description`
 - Conception : `web-architecture`, `api-design`, `frontend-guidelines`
-- Code : `clean-code`, `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici)
+- Code : `clean-code` ; conventions du projet : `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici) ; skills officiels recopiés tels quels : `angular-developer` (équipe Angular)
 - Qualité : `review-checklist`, `security-checklist`, `test-strategy`
+- Méthode (superpowers, recopiés tels quels) : `systematic-debugging`, `verification-before-completion`
 - Outils : `graphify` (graphe du code), `impeccable` (design front : `/impeccable init`, `shape`, `critique`, `audit`, `polish`) ; `ponytail` (mode développeur senior économe, actif par défaut)
 - Global utile : `dataviz` (règles et validation de palette des graphiques)
 
 ## Outils
 - **graphify** : graphe de connaissances du code dans `graphify-out/` (non versionné), reconstruit automatiquement après chaque commit par les hooks git. Installation sur un nouveau poste : `./scripts/setup.sh`.
-- **impeccable** : son hook vérifie chaque fichier UI modifié. Contexte design dans `PRODUCT.md` et `DESIGN.md` (pas encore créés ici).
+- **impeccable** : son hook vérifie chaque fichier UI modifié. Contexte design dans `DESIGN.md` ; `PRODUCT.md` n'existe pas encore ici.
 - Mise à jour des deux outils : `./scripts/update-tools.sh`.
 
 ## graphify

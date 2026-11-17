@@ -31,8 +31,10 @@ description: Définit la stratégie de tests et écrit des tests (xUnit pour .NE
 Exemples : `angular-best-practices/examples/products/*.spec.ts` et, si le skill est présent, `dotnet-best-practices/examples/Tests/`.
 
 ## Qui teste quoi (workflow `delivery-workflow`)
-- `qa-engineer` : **écrit tous les tests** (unitaires, intégration, composant, E2E), à partir de la spec et non de l'implémentation ; chaque `CA-n` a un test, nommé ou commenté avec son identifiant quand le lien n'est pas évident. Matrice `CA-n` → test → résultat ; régressions via `graphify affected "<symbole>"` sur les zones modifiées. Bug : le test qui échoue est écrit avant le correctif.
-- `senior-developer` : n'écrit ni ne modifie aucun test. Il livre un code testable (dépendances injectées) et une liste « À tester » ; il lance les tests existants.
+- `senior-developer` : **tests unitaires** du code qu'il écrit (fonction, classe, composant isolé). Toute logique nouvelle non triviale a son test ; pour un bug, le test qui échoue d'abord. Il livre un code testable (dépendances injectées).
+- `qa-engineer` : **tests d'acceptation**, écrits à partir de la spec et non de l'implémentation, avant ou pendant le code : chaque `CA-n` a un test, nommé ou commenté avec son identifiant, au niveau le plus bas qui le prouve (API, service, composant). Il écrit aussi les **parcours de bout en bout** et les **tests d'architecture** proposés par `architect`. Matrice `CA-n` → test → résultat dans son verdict.
+- Le développeur ne modifie jamais un test qui porte un `CA-n` ni un parcours de bout en bout : s'il le juge faux, il le signale.
+- `code-reviewer` vérifie que les tests du développeur existent et testent un comportement.
 
 ## Interdits (tous rôles)
 - Désactiver, ignorer ou assouplir un test pour passer au vert : `skip`, `.only`, `xit`, `[Fact(Skip = ...)]`, assertion supprimée ou élargie, seuil de couverture baissé, valeur de référence recopiée depuis la sortie du code testé.

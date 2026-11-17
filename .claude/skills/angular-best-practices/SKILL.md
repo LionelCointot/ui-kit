@@ -1,11 +1,12 @@
 ---
 name: angular-best-practices
-description: Conventions Angular du projet (Angular 21+) : architecture en couches (composants, store à signaux, couche data-access qui représente le backend), signaux, services, injection, RxJS, formulaires, routing, tests. À utiliser dès qu'on crée, modifie ou relit du code Angular (composant, service, store, intercepteur, guard, route, formulaire, template, fichier .ts/.html d'une app Angular), même si l'utilisateur ne dit pas "Angular".
+description: Conventions Angular du projet (Angular 21 et plus) : architecture en couches (composants, store à signaux, couche data-access qui représente le backend), signaux, services, injection, RxJS, formulaires, routing, tests. À utiliser dès qu'on crée, modifie ou relit du code Angular (composant, service, store, intercepteur, guard, route, formulaire, template, fichier .ts/.html d'une app Angular), même si l'utilisateur ne dit pas "Angular".
 ---
 
 # Angular : bonnes pratiques
 
-Appliquer aussi `clean-code`. Pour le rendu visuel (typo, couleurs, layout), utiliser `impeccable`.
+Appliquer aussi `clean-code`. Pour le rendu visuel (typo, couleurs, layout), utiliser `impeccable` ; pour les composants et tokens disponibles, le skill `ui-kit` s'il est présent.
+Ce skill porte les **conventions du projet** (couches, store, accès à l'API, tests). Pour le détail d'une API Angular (signaux, `resource`, Signal Forms, routage, tests de composant), charger le skill officiel de l'équipe Angular, `angular-developer`, et la fiche de `references/` qui correspond. En cas de conflit, `CLAUDE.md` et ce skill priment : par exemple l'emplacement des tests et le choix du CDK plutôt que d'Angular Aria, quand le projet les a fixés.
 Exemples complets à imiter : [examples/products/](examples/products/).
 
 ## 0. Avant de coder
