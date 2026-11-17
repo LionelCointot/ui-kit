@@ -93,10 +93,10 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `lc-address-input` | LcAddressInputComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, kind, postalCode, cityCode, debounceMs | selectionChange, touch |
-| `lc-commune-input` | LcCommuneInputComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, departmentCode, debounceMs | selectionChange, touch |
-| `lc-department-select` | LcDepartmentSelectComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, regionCode | selectionChange, touch |
-| `lc-region-select` | LcRegionSelectComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors | selectionChange, touch |
+| `lc-address-input` | LcAddressInputComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, value (model), kind, postalCode, cityCode, debounceMs | selectionChange, touch |
+| `lc-commune-input` | LcCommuneInputComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, value (model), departmentCode, debounceMs | selectionChange, touch |
+| `lc-department-select` | LcDepartmentSelectComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, value (model), regionCode | selectionChange, touch |
+| `lc-region-select` | LcRegionSelectComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, value (model) | selectionChange, touch |
 
 ## `@lionelcointot/ui-angular/layout`
 

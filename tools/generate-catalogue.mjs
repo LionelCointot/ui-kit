@@ -44,7 +44,7 @@ export function extractClasses(src) {
     const inputs = [];
     const outputs = [];
     // Membres publics seulement : un membre `protected` ou `private` n'est pas une entrée publique.
-    const member = /^  (?:readonly\s+)?(\w+)\s*=\s*(input|model|output)(\.required)?\s*[<(]/gm;
+    const member = /^  (?:override\s+)?(?:readonly\s+)?(\w+)\s*=\s*(input|model|output)(\.required)?\s*[<(]/gm;
     for (const f of body.matchAll(member)) {
       // shortcut: l'instruction s'arrête au premier ";\n", un type générique contenant ";" la tronquerait.
       const stmt = body.slice(f.index, body.indexOf(';\n', f.index));

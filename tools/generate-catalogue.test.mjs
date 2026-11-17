@@ -107,6 +107,7 @@ test('héritage : une base, une chaîne de deux bases, membre redéclaré une fo
 @Component({ selector: 'lc-leaf' })
 export class Leaf<T extends object> extends Mid {
   readonly step = input(1);
+  override readonly value = model<number | null>(null);
   readonly touch = output<string>();
 }
 @Component({ selector: 'lc-single' })
