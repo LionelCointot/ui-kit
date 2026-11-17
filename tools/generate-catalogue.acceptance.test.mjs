@@ -190,3 +190,73 @@ test('cas limite : fichier exporté introuvable, le script échoue avec le chemi
     rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+// CA-6 et CA-7 : entrées et sorties héritées. Calcul indépendant : index des classes par nom (tout le paquet hors specs et stories),
+// corps de classe = de sa ligne `class` à la première ligne `}` en colonne 0, chaîne `extends` remontée à la main.
+const tsFiles = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) return e.name === 'node_modules' ? [] : tsFiles(p);
+    return /\.ts$/.test(e.name) && !/\.(spec|stories)\.ts$/.test(e.name) ? [p] : [];
+  });
+const classIndex = () => {
+  const idx = new Map();
+  for (const f of tsFiles(PKG)) {
+    const lines = readFileSync(f, 'utf8').split('\n');
+    lines.forEach((l, i) => {
+      const m = l.match(/^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)(?:<[^{]*?>)?(?:\s+extends\s+(\w+))?/);
+      if (!m) return;
+      let end = i + 1;
+      while (!l.trimEnd().endsWith('}') && end < lines.length && lines[end] !== '}') end++;
+      idx.set(m[1], { parent: m[2], body: lines.slice(i, end + 1) });
+    });
+  }
+  return idx;
+};
+/** Membres publics input/model/output de la classe et de ses bases : { ins: Set, outs: Set } (un override compte une fois). */
+const publicMembers = (idx, cls) => {
+  const ins = new Set();
+  const outs = new Set();
+  for (let c = cls; c; c = idx.get(c)?.parent) {
+    for (const l of idx.get(c)?.body ?? []) {
+      const m = l.match(/^\s+((?:(?:public|override|readonly|protected|private)\s+)*)(\w+)\s*=\s*(input|model|output)(?:\.required)?\s*[<(]/);
+      if (!m || /\b(private|protected)\b/.test(m[1]) || m[2].startsWith('#')) continue;
+      (m[3] === 'output' ? outs : ins).add(m[2]);
+    }
+  }
+  return { ins, outs };
+};
+const cellNames = (cell) => (cell === '–' ? [] : cell.split(/, (?![^(]*\))/).map((s) => s.replace(/ \((requis|model|requis, model)\)$/, '')));
+const rowOf = (catalogue, cls) => [...catalogue.values()].map((m) => m.get(cls)).find(Boolean);
+
+test('CA-6 : lc-money-input, lc-region-select, lc-line-chart listent leurs entrées et sorties héritées', () => {
+  const catalogue = parseCatalogue(readFileSync(CATALOGUE, 'utf8'));
+  const idx = classIndex();
+  for (const cls of ['LcMoneyInputComponent', 'LcRegionSelectComponent', 'LcLineChartComponent']) {
+    const row = rowOf(catalogue, cls);
+    const exp = publicMembers(idx, cls);
+    assert.deepEqual(new Set(cellNames(row.inputs)), exp.ins, `${cls} entrées`);
+    assert.deepEqual(new Set(cellNames(row.outputs)), exp.outs, `${cls} sorties`);
+  }
+  // Valeurs de la spec.
+  const money = cellNames(rowOf(catalogue, 'LcMoneyInputComponent').inputs);
+  for (const n of ['value', 'disabled', 'min', 'max']) assert.ok(money.includes(n), `money-input : ${n}`);
+  assert.ok(cellNames(rowOf(catalogue, 'LcRegionSelectComponent').outputs).includes('selectionChange'));
+});
+
+test('CA-7 : pour chaque classe du catalogue, nombre d\'entrées et de sorties = déclarations dans sa source et ses bases', () => {
+  const catalogue = parseCatalogue(readFileSync(CATALOGUE, 'utf8'));
+  const idx = classIndex();
+  const gaps = [];
+  let n = 0;
+  for (const m of catalogue.values())
+    for (const [cls, row] of m) {
+      n++;
+      const exp = publicMembers(idx, cls);
+      const got = { ins: cellNames(row.inputs), outs: cellNames(row.outputs) };
+      if (got.ins.length !== exp.ins.size) gaps.push(`${cls} entrées : ${got.ins.length} listées, ${exp.ins.size} déclarées, manque ${[...exp.ins].filter((x) => !got.ins.includes(x))}`);
+      if (got.outs.length !== exp.outs.size) gaps.push(`${cls} sorties : ${got.outs.length} listées, ${exp.outs.size} déclarées, manque ${[...exp.outs].filter((x) => !got.outs.includes(x))}`);
+    }
+  assert.ok(n > 40);
+  assert.deepEqual(gaps, []);
+});
