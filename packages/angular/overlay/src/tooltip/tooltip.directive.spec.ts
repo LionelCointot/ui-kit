@@ -29,4 +29,16 @@ describe('LcTooltipDirective', () => {
     expect(document.querySelector('[role="tooltip"]')).toBeNull();
     expect(button.getAttribute('aria-describedby')).toBeNull();
   });
+
+  // Défaut trouvé par la QA de lc-data-table : le focus rendu à un entonnoir puis la destruction du tableau dans les 500 ms levaient NG0205.
+  it('détruit avant la fin du délai : n\'ouvre rien et ne lève aucune erreur', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(TooltipHostComponent);
+    fixture.detectChanges();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('#b')!;
+    button.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    fixture.destroy();
+    expect(() => vi.advanceTimersByTime(500)).not.toThrow();
+    expect(document.querySelector('[role="tooltip"]')).toBeNull();
+  });
 });
