@@ -57,7 +57,7 @@ Mode **`ponytail`** (skill `ponytail`, niveau full, recopié dans `.claude/skill
 ## À ne pas faire
 - Ne pas écrire de couleur, taille ou durée en dur dans un composant ; ne pas utiliser `--lc-ref-*` hors des thèmes.
 - Ne pas utiliser `innerHTML` (exception : SVG d'icônes enregistrés par le code ; info-bulles de graphiques échappées).
-- Ne pas importer un point d'entrée secondaire depuis un autre (exceptions : `data` → `feedback` ; `theme-builder` → `forms`, `navigation`, `feedback`, `data`, `layout`, `charts`, car il compose l'aperçu et l'éditeur de thème avec ces composants, et aucun autre point d'entrée ne l'importe ; `geo` → `forms`, car il compose `lc-combobox`, ADR 0007, et aucun autre point d'entrée n'importe `geo`).
+- Ne pas importer un point d'entrée secondaire depuis un autre (exceptions : `data` → `feedback`, et `data` → `overlay` pour l'info-bulle des entonnoirs de `lc-data-table` ; `theme-builder` → `forms`, `navigation`, `feedback`, `data`, `layout`, `charts`, car il compose l'aperçu et l'éditeur de thème avec ces composants, et aucun autre point d'entrée ne l'importe ; `geo` → `forms`, car il compose `lc-combobox`, ADR 0007, et aucun autre point d'entrée n'importe `geo`).
 - Aucune liste de régions, départements ou communes dans le code : `geo` lit les API officielles (tests : `fetch` simulé ou source factice, jamais le réseau).
 - Ne pas ajouter de vocabulaire métier (finance, prêt…) ni de composant sans consommateur identifié.
 - Ne pas utiliser de fonctionnalité CSS hors Baseline 2024 (pas d'*anchor positioning*).

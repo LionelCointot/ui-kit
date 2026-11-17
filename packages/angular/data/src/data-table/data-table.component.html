@@ -1,0 +1,208 @@
+<!-- Téléphone : bouton du panneau et tri -->
+<div class="lc-data-table__tools">
+  <button lcButton type="button" fillMode="outline" themeColor="neutral" aria-haspopup="dialog" [id]="uid + '-filters'"
+    [attr.aria-label]="text.filtersButtonLabel(activeColumns().length)" (click)="openPanel()">
+    <lc-icon name="funnel" />{{ text.filters(activeColumns().length) }}
+  </button>
+  @if (sortableColumns().length) {
+    <label class="lc-data-table__hidden" [for]="uid + '-sort'">{{ text.sort }}</label>
+    <select class="lc-select lc-data-table__sort-select" [id]="uid + '-sort'" (change)="onSortSelect($any($event.target).value)">
+      <option value="" [selected]="sortValue() === ''">{{ text.defaultOrder }}</option>
+      @for (column of sortableColumns(); track column.key) {
+        <option [value]="column.key + ':asc'" [selected]="sortValue() === column.key + ':asc'">{{ text.sortOption(column.label, 'asc') }}</option>
+        <option [value]="column.key + ':desc'" [selected]="sortValue() === column.key + ':desc'">{{ text.sortOption(column.label, 'desc') }}</option>
+      }
+    </select>
+  }
+</div>
+
+<!-- Ordinateur : ligne de résumé, seulement si un filtre est actif -->
+@if (activeColumns().length) {
+  <div class="lc-data-table__summary">
+    <p><b>{{ count() }}</b> {{ text.rowNoun(count()) }} {{ text.ofTotal(total()) }}</p>
+    <button lcButton type="button" fillMode="flat" themeColor="neutral" size="small" (click)="clearAll()">
+      <lc-icon name="funnel-x" />{{ text.clearFilters }}
+    </button>
+  </div>
+}
+
+<!-- Pastilles (téléphone avec chips='auto', partout avec 'always') et nombre de lignes -->
+<div class="lc-data-table__chips" role="region" [attr.aria-label]="text.activeFilters">
+  @if (chips() !== 'never') {
+    @if (chipViews().length) {
+      <ul class="lc-data-table__chip-list">
+        @for (chip of chipViews(); track chip.key) {
+          <li class="lc-data-table__chip">
+            <button type="button" class="lc-data-table__chip-edit" [id]="uid + '-chip-' + chip.key"
+              [attr.aria-label]="text.editFilter(chip.column.label, chip.summary)" (click)="editChip(chip.column)">
+              <span class="lc-data-table__chip-key">{{ chip.label }} :</span><span class="lc-data-table__chip-value">{{ chip.shortSummary }}</span>
+            </button>
+            <button type="button" class="lc-data-table__chip-remove" [attr.aria-label]="text.removeFilter(chip.column.label)" (click)="removeChip(chip.key)">
+              <lc-icon name="x" />
+            </button>
+          </li>
+        }
+      </ul>
+      <button lcButton type="button" fillMode="flat" themeColor="neutral" size="small" (click)="clearAll()">
+        <lc-icon name="funnel-x" />{{ text.clearAll }}
+      </button>
+    } @else {
+      <p class="lc-data-table__no-filter"><lc-icon name="funnel" /><span>{{ text.noFilter }}</span></p>
+    }
+  }
+  <p class="lc-data-table__count"><b>{{ count() }}</b> {{ text.rowNoun(count()) }}@if (activeColumns().length) { {{ text.ofTotal(total()) }}}</p>
+</div>
+
+<div class="lc-data-table__scroll">
+  <table class="lc-data-table__table" [style.--lc-data-table-min-width]="minWidth()" [attr.aria-busy]="result.isLoading() || null">
+    <caption class="lc-data-table__caption" [class.lc-data-table__hidden]="captionHidden()">{{ captionText() }}</caption>
+    <colgroup>
+      @for (column of columns(); track column.key) {
+        <col [class.lc-data-table__card-only]="column.cardOnly" [style.inline-size]="column.width ?? null" />
+      }
+    </colgroup>
+    <thead>
+      <tr>
+        @for (header of headers(); track header.column.key) {
+          <th scope="col" [class]="'lc-data-table__cell lc-data-table__cell--' + align(header.column)" [class.lc-data-table__card-only]="header.column.cardOnly"
+            [class.lc-data-table__th--filtered]="header.active" [attr.aria-sort]="header.ariaSort">
+            <!-- Seul le début du libellé peut passer à la ligne : le dernier mot, l'icône de tri et l'entonnoir restent ensemble
+                 (un bouton ne se coupe pas : le début du libellé est hors du bouton de tri, cliquable aussi à la souris). -->
+            @if (header.column.sortable) {
+              <span class="lc-data-table__th-head lc-data-table__th-head--sortable" (click)="toggleSort(header.column)">{{ header.labelHead }}</span><button type="button" class="lc-data-table__sort"
+                [attr.aria-label]="header.column.label + text.sortHint(header.sortState)" (click)="toggleSort(header.column)">{{ header.labelTail }}<lc-icon [name]="header.sortIcon" /></button>
+            } @else {
+              <span class="lc-data-table__th-head">{{ header.labelHead }}</span>{{ header.labelTail }}
+            }
+            @if (header.column.filter) {
+                <button type="button" class="lc-data-table__funnel" [class.lc-data-table__funnel--on]="header.active" [id]="uid + '-funnel-' + header.column.key"
+                  aria-haspopup="dialog" [attr.aria-expanded]="menuColumn()?.key === header.column.key"
+                  [attr.aria-controls]="menuColumn()?.key === header.column.key ? uid + '-menu' : null"
+                  [attr.aria-label]="header.funnelLabel" [lcTooltip]="header.funnelTip" (click)="toggleMenu(header.column, $any($event.currentTarget))">
+                  <lc-icon name="funnel" />
+                </button>
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @if (result.error()) {
+        <tr class="lc-data-table__state">
+          <td [attr.colspan]="span()">
+            <lc-alert kind="error" [title]="text.rowsError" [live]="true">
+              <button lcButton type="button" fillMode="outline" themeColor="neutral" size="small" (click)="result.reload()">
+                <lc-icon name="refresh-cw" />{{ labels.retry }}
+              </button>
+            </lc-alert>
+          </td>
+        </tr>
+      } @else if (!loaded()) {
+        @for (line of [0, 1, 2]; track line) {
+          <tr class="lc-data-table__state">
+            <td [attr.colspan]="span()"><lc-skeleton [lines]="2" /></td>
+          </tr>
+        }
+      } @else {
+        @for (row of rows(); track trackBy()(row)) {
+          <tr>
+            @for (column of columns(); track column.key; let first = $first) {
+              <td [class]="'lc-data-table__cell lc-data-table__cell--' + align(column)" [class.lc-data-table__card-only]="column.cardOnly"
+                [class.lc-data-table__title]="first" [attr.data-label]="first || column.cardOnly ? null : column.label">
+                @if (cellTemplates().get(column.key); as template) {
+                  <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: row, column: $any(column) }" />
+                } @else {
+                  {{ cellText(column, row) }}
+                }
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr class="lc-data-table__state">
+            <td [attr.colspan]="span()">
+              @if (activeColumns().length) {
+                <lc-empty-state icon="search-x" [title]="text.noResultsTitle" [description]="text.noResultsHint">
+                  <button lcEmptyActions lcButton type="button" fillMode="outline" themeColor="neutral" (click)="clearAll()">
+                    <lc-icon name="funnel-x" />{{ text.clearFilters }}
+                  </button>
+                </lc-empty-state>
+              } @else {
+                <p class="lc-data-table__empty">{{ emptyMessage() ?? labels.noData }}</p>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+@if (truncated()) {
+  <p class="lc-data-table__notice" role="status">{{ labels.truncatedRows(rows().length) }}</p>
+}
+
+<!-- Menu de filtre (ordinateur) : boîte de dialogue non modale ancrée sous l'entonnoir -->
+<ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="menuOrigin()" [cdkConnectedOverlayOpen]="!!menuColumn()"
+  [cdkConnectedOverlayPositions]="menuPositions" [cdkConnectedOverlayPush]="true" cdkConnectedOverlayPanelClass="lc-data-table__overlay"
+  (overlayOutsideClick)="onMenuOutsideClick($event)" (overlayKeydown)="onMenuKeydown($event)" (detach)="closeMenu(false)">
+  @if (menuColumn(); as column) {
+    <div class="lc-data-table__menu" role="dialog" aria-modal="false" tabindex="-1" cdkTrapFocus [id]="uid + '-menu'"
+      [attr.aria-labelledby]="uid + '-menu-title'" [attr.aria-busy]="menuFilter.loading() || null">
+      <div class="lc-data-table__menu-head">
+        <h2 class="lc-data-table__menu-title" [id]="uid + '-menu-title'">{{ text.menuTitle(column.label) }}</h2>
+        @if (column.filter?.type === 'multi') {
+          <p>{{ text.multiHint }}</p>
+        }
+      </div>
+      <lc-column-filter #menuFilter class="lc-data-table__menu-body" [column]="column" [source]="dataSource()" [context]="query()"
+        [applied]="activeColumns().includes(column)" [idPrefix]="uid + '-menu'" [(value)]="menuDraft"
+        (submitted)="applyMenu()" (valuesLoaded)="rememberLabels(column.key, $event)" />
+      <div class="lc-data-table__menu-foot">
+        <button lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!menuCanClear()" (click)="clearMenu()">{{ text.clear }}</button>
+        <button lcButton type="button" [disabled]="!menuFilter.canApply()" (click)="applyMenu()">{{ text.apply }}</button>
+      </div>
+    </div>
+  }
+</ng-template>
+
+<!-- Panneau des filtres (téléphone) : dialogue modal plein écran, rien n'est appliqué avant « Afficher » -->
+<dialog #panel class="lc-data-table__panel" tabindex="-1" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()"
+  (keydown.escape)="$event.preventDefault(); closePanel()">
+  @if (panelOpen()) {
+    <div class="lc-data-table__panel-head">
+      <h2 class="lc-data-table__panel-title" [id]="uid + '-panel-title'">{{ text.filters(0) }}</h2>
+      <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" [attr.aria-label]="text.closeWithoutApplying" (click)="closePanel()">
+        <lc-icon name="x" />
+      </button>
+    </div>
+    <div class="lc-data-table__panel-body">
+      @for (section of panelSections(); track section.column.key) {
+        <section class="lc-data-table__section">
+          <h3 class="lc-data-table__section-title">
+            <button type="button" class="lc-data-table__section-toggle" [attr.aria-expanded]="section.open"
+              [attr.aria-controls]="uid + '-section-' + section.column.key" (click)="toggleSection(section.column.key)">
+              <span>{{ section.column.label }}
+                <span class="lc-data-table__section-summary" [class.lc-data-table__section-summary--on]="section.active">{{ section.summary }}</span>
+              </span>
+              <lc-icon name="chevron-down" />
+            </button>
+          </h3>
+          <div class="lc-data-table__section-body" [id]="uid + '-section-' + section.column.key" [hidden]="!section.open">
+            @if (section.open) {
+              <lc-column-filter [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
+                [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
+                [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
+                (valuesLoaded)="rememberLabels(section.column.key, $event)" />
+            }
+          </div>
+        </section>
+      }
+    </div>
+    <div class="lc-data-table__panel-foot">
+      <button lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
+      <button lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
+        {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
+      </button>
+    </div>
+    <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
+  }
+</dialog>
