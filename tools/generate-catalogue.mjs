@@ -25,34 +25,74 @@ export function parseExports(src) {
   return out;
 }
 
-/** Déclarations `@Component|@Directive|@Pipe` d'une classe exportée, avec sélecteur, entrées et sorties. */
-export function extractDeclarations(src) {
-  const decls = [];
-  const re = /@(Component|Directive|Pipe)\(\{([\s\S]*?)\}\)\s*export\s+(?:abstract\s+)?class\s+(\w+)/g;
+/** Classes exportées d'un fichier (décorées ou non) : sélecteur éventuel, classe parente, entrées et sorties propres. */
+export function extractClasses(src) {
+  const classes = [];
+  const re = /(?:@(Component|Directive|Pipe)\((?:\{([\s\S]*?)\})?\)\s*)?export\s+(?:abstract\s+)?class\s+(\w+)([^{]*)\{/g;
   for (const m of src.matchAll(re)) {
-    const [, decorator, meta, className] = m;
+    const [, decorator, meta = '', className, header] = m;
     const selector =
       decorator === 'Pipe'
         ? meta.match(/\bname:\s*(['"`])(.+?)\1/)?.[2]
         : meta.match(/\bselector:\s*(['"`])(.+?)\1/)?.[2];
-    if (!selector) continue;
+    // Génériques retirés (`<T extends X>`) pour ne garder que le `extends` de la classe.
+    const parent = header.replace(/<[^<>]*(?:<[^<>]*>[^<>]*)*>/g, '').match(/\bextends\s+(\w+)/)?.[1];
     // Le corps de la classe s'arrête à la première accolade fermante en colonne 0.
     const start = m.index + m[0].length;
     const end = src.indexOf('\n}', start);
     const body = src.slice(start, end < 0 ? undefined : end);
     const inputs = [];
     const outputs = [];
+    // Membres publics seulement : un membre `protected` ou `private` n'est pas une entrée publique.
     const member = /^  (?:readonly\s+)?(\w+)\s*=\s*(input|model|output)(\.required)?\s*[<(]/gm;
     for (const f of body.matchAll(member)) {
       // shortcut: l'instruction s'arrête au premier ";\n", un type générique contenant ";" la tronquerait.
       const stmt = body.slice(f.index, body.indexOf(';\n', f.index));
       const alias = stmt.match(/\balias:\s*'([^']+)'/)?.[1];
-      const entry = { name: alias ?? f[1], alias: alias ? f[1] : undefined, required: !!f[3], model: f[2] === 'model' };
+      const entry = { key: f[1], name: alias ?? f[1], alias: alias ? f[1] : undefined, required: !!f[3], model: f[2] === 'model' };
       (f[2] === 'output' ? outputs : inputs).push(entry);
     }
-    decls.push({ className, kind: KINDS[decorator], selector, inputs, outputs });
+    classes.push({ className, kind: decorator && KINDS[decorator], selector, parent, inputs, outputs });
   }
-  return decls;
+  return classes;
+}
+
+/** Entrées et sorties d'une classe et de toute sa chaîne de bases : bases d'abord, un membre redéclaré une seule fois. */
+function mergeMembers(cls, index) {
+  const chain = [];
+  for (let c = cls, seen = new Set(); c && !seen.has(c.className); c = index.get(c.parent)) {
+    seen.add(c.className);
+    chain.unshift(c);
+  }
+  const merged = { inputs: new Map(), outputs: new Map() };
+  for (const c of chain) {
+    for (const kind of ['inputs', 'outputs']) for (const e of c[kind]) merged[kind].set(e.key, e);
+  }
+  const strip = ({ key, ...rest }) => rest;
+  return { inputs: [...merged.inputs.values()].map(strip), outputs: [...merged.outputs.values()].map(strip) };
+}
+
+/** Déclarations `@Component|@Directive|@Pipe` d'un source, entrées et sorties héritées comprises (bases de `extra` incluses). */
+export function extractDeclarations(src, extra = []) {
+  const classes = extractClasses(src);
+  const index = new Map([...extra, ...classes].map((c) => [c.className, c]));
+  return classes
+    .filter((c) => c.kind && c.selector)
+    .map((c) => ({ className: c.className, kind: c.kind, selector: c.selector, ...mergeMembers(c, index) }));
+}
+
+/** Toutes les classes des `.ts` de dir (hors tests et stories), pour retrouver les classes de base. */
+export function buildClassIndex(dir) {
+  const out = [];
+  const walk = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) e.name !== 'node_modules' && e.name !== 'dist' && walk(p);
+      else if (/\.ts$/.test(e.name) && !/\.(spec|stories)\.ts$/.test(e.name)) out.push(...extractClasses(readFileSync(p, 'utf8')));
+    }
+  };
+  walk(dir);
+  return out;
 }
 
 function resolveSource(dir, from) {
@@ -62,12 +102,12 @@ function resolveSource(dir, from) {
 }
 
 /** Déclarations publiques d'un point d'entrée, triées par sélecteur. */
-export function collectEntryPoint(publicApiPath) {
+export function collectEntryPoint(publicApiPath, bases = buildClassIndex(path.dirname(publicApiPath))) {
   const dir = path.dirname(publicApiPath);
   const byClass = new Map();
   for (const { from, names } of parseExports(readFileSync(publicApiPath, 'utf8'))) {
     const file = resolveSource(dir, from);
-    for (const d of extractDeclarations(readFileSync(file, 'utf8'))) {
+    for (const d of extractDeclarations(readFileSync(file, 'utf8'), bases)) {
       if (!names || names.includes(d.className)) byClass.set(d.className, d);
     }
   }
@@ -107,8 +147,9 @@ function build() {
   const points = [{ name, file: path.join(PKG_DIR, 'src', 'public-api.ts') }].concat(
     secondary.map((d) => ({ name: `${name}/${d}`, file: path.join(PKG_DIR, d, 'src', 'public-api.ts') })),
   );
+  const bases = buildClassIndex(PKG_DIR);
   const entryPoints = points.map(({ name: n, file }) => {
-    const decls = collectEntryPoint(file);
+    const decls = collectEntryPoint(file, bases);
     console.log(`${n} : ${decls.length}`);
     return { name: n, decls };
   });

@@ -23,10 +23,10 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `lc-area-chart` | LcAreaChartComponent | composant | stacked, directLabels | – |
-| `lc-bar-chart` | LcBarChartComponent | composant | orientation, stacked, totals | – |
+| `lc-area-chart` | LcAreaChartComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), data (requis), yAxis, markers, annotations, stacked, directLabels | pointSelect |
+| `lc-bar-chart` | LcBarChartComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), data (requis), yAxis, orientation, stacked, totals | pointSelect |
 | `lc-chart` | LcChartComponent | composant | options (requis), ariaLabel (requis), table, title, description, height, loading, stale, showDataTable (model) | pointSelect |
-| `lc-line-chart` | LcLineChartComponent | composant | showPoints, directLabels | – |
+| `lc-line-chart` | LcLineChartComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), data (requis), yAxis, markers, annotations, showPoints, directLabels | pointSelect |
 | `lc-segmented-bar` | LcSegmentedBarComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), parts (requis), format, variant, total, palette, legendPosition, legendValues | pointSelect |
 | `lc-sparkline` | LcSparklineComponent | composant | values (requis), ariaLabel (requis), height, showEndPoint | – |
 
@@ -79,10 +79,10 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-file-upload` | LcFileUploadComponent | composant | items, accept, multiple, maxFiles, disabled, showSize, chooseIcon, errorPlaceholderIcon, fullWidthMobile, removeLabelVisible, ariaLabel, id | filesAdded, rejected, remove, retry |
 | `lc-form-field` | LcFormFieldComponent | composant | label (requis), hint, hintPlacement, errors, required, state, layout | – |
 | `lc-list-editor` | LcListEditorComponent | composant | items, savedItems, minActive, maxLength, isDuplicate, addLabel, addButtonLabel, addError, emptyText, listLabel, disabled, busy, ariaLabel, id | add, rename, move, toggle |
-| `lc-money-input` | LcMoneyInputComponent | composant | decimals | – |
-| `lc-number-input` | LcNumberInputComponent | composant | decimals, step, unit, showStepper | – |
+| `lc-money-input` | LcMoneyInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals | touch |
+| `lc-number-input` | LcNumberInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals, step, unit, showStepper | touch |
 | `lc-password-input` | LcPasswordInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, autocomplete, placeholder, inputId, ariaLabel | touch |
-| `lc-percent-input` | LcPercentInputComponent | composant | decimals, step | – |
+| `lc-percent-input` | LcPercentInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals, step | touch |
 | `lc-radio-group` | LcRadioGroupComponent | composant | legend (requis), orientation | – |
 | `lc-segmented-control` | LcSegmentedControlComponent | composant | options (requis), value (model), ariaLabel, extraDescribedBy, size, fullWidth, disabled, id, controlled | valueRequest, touch |
 | `lc-slider` | LcSliderComponent | composant | value (model), min, max, step, unit, decimals, showValue, marks, valueText, inputId, ariaLabel, size, themeColor, disabled, readonly, invalid, touched, required, errors | committed, touch |
@@ -93,10 +93,10 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `lc-address-input` | LcAddressInputComponent | composant | kind, postalCode, cityCode, debounceMs | – |
-| `lc-commune-input` | LcCommuneInputComponent | composant | departmentCode, debounceMs | – |
-| `lc-department-select` | LcDepartmentSelectComponent | composant | regionCode | – |
-| `lc-region-select` | LcRegionSelectComponent | composant | – | – |
+| `lc-address-input` | LcAddressInputComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, kind, postalCode, cityCode, debounceMs | selectionChange, touch |
+| `lc-commune-input` | LcCommuneInputComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, departmentCode, debounceMs | selectionChange, touch |
+| `lc-department-select` | LcDepartmentSelectComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors, regionCode | selectionChange, touch |
+| `lc-region-select` | LcRegionSelectComponent | composant | placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors | selectionChange, touch |
 
 ## `@lionelcointot/ui-angular/layout`
 
