@@ -19,6 +19,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Tests : `npx ng test ui-angular --watch=false` (Vitest) ; pas encore : `test:visual` (Playwright), `lint` (ESLint, stylelint)
 - Storybook statique : `npm run build-storybook` (sortie `dist/storybook`)
 - Build : `npm run build` (tokens puis bibliothèque)
+- Catalogue des composants (livré dans le paquet) : `npm run catalogue:build` régénère `packages/angular/CATALOGUE.md` · `npm run catalogue:check` échoue s'il est périmé · tests `npm run catalogue:test`
 - Tokens : `npm run tokens:build` · `npx lc-tokens check --theme <fichier.tokens.json>` · tests `npm test --workspace @lionelcointot/ui-tokens`
 - Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
 

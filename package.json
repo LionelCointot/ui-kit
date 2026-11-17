@@ -4,7 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "npm run tokens:build && npm run build:lib",
+    "build": "npm run tokens:build && npm run catalogue:build && npm run build:lib",
+    "catalogue:build": "node tools/generate-catalogue.mjs",
+    "catalogue:check": "node tools/generate-catalogue.mjs --check",
+    "catalogue:test": "node --test tools/generate-catalogue.test.mjs tools/generate-catalogue.acceptance.test.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "tokens:build": "npm run build --workspace @lionelcointot/ui-tokens",
