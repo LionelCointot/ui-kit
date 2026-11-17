@@ -130,7 +130,211 @@ export interface LcLabels {
   /** Résumé lu par les technologies d'assistance pour un graphique. */
   readonly chartSummary: (info: LcChartSummaryInfo) => string;
   readonly themeBuilder: LcThemeBuilderLabels;
+  /** Tableau filtrable (`lc-data-table`). Pour nommer les lignes (« demandes »), remplacer `rows`, `rowNoun`, `showRows`, `noResultsTitle`. */
+  readonly dataTable: LcDataTableLabels;
 }
+
+/** Textes du tableau filtrable (`lc-data-table`). */
+export interface LcDataTableLabels {
+  /** « 3 résultats », « 1 résultat », « aucun résultat ». */
+  readonly rows: (count: number) => string;
+  /** Nom des lignes après un nombre en gras : « résultats ». */
+  readonly rowNoun: (count: number) => string;
+  readonly ofTotal: (total: number) => string;
+  readonly showRows: (count: number) => string;
+  readonly noResultsTitle: string;
+  readonly noResultsHint: string;
+  readonly rowsError: string;
+  /** Nom de l'entonnoir : `state` vaut null sans filtre actif. */
+  readonly filterColumn: (column: string, state: string | null) => string;
+  readonly valuesChosen: (count: number) => string;
+  readonly filterTooltip: string;
+  readonly activeFilterTooltip: (summary: string) => string;
+  readonly menuTitle: (column: string) => string;
+  readonly multiHint: string;
+  readonly apply: string;
+  readonly clear: string;
+  readonly clearFilters: string;
+  readonly clearAll: string;
+  readonly loadingValues: string;
+  readonly announceLoadingValues: (column: string) => string;
+  readonly valuesAvailable: (count: number) => string;
+  readonly noValues: string;
+  readonly noValuesHint: string;
+  readonly valuesError: string;
+  readonly valuesErrorKept: string;
+  readonly valuesErrorUnchanged: string;
+  readonly retrying: string;
+  readonly searchValues: string;
+  readonly selectAll: string;
+  readonly selectResults: (count: number) => string;
+  readonly noMatch: (query: string) => string;
+  readonly valuesNote: (count: number) => string;
+  readonly valuesGroup: (column: string) => string;
+  readonly emptyValue: string;
+  /** Texte cherché, dans le résumé d'un filtre texte. */
+  readonly quoted: (text: string) => string;
+  readonly lastDays: (days: number) => string;
+  readonly chosenPeriod: string;
+  readonly from: string;
+  readonly to: string;
+  readonly since: (date: string) => string;
+  readonly until: (date: string) => string;
+  readonly datesNote: string;
+  readonly dateOrderError: string;
+  readonly filters: (active: number) => string;
+  readonly filtersButtonLabel: (active: number) => string;
+  readonly closeWithoutApplying: string;
+  readonly all: string;
+  readonly activeFilters: string;
+  readonly noFilter: string;
+  readonly editFilter: (column: string, summary: string) => string;
+  readonly removeFilter: (column: string) => string;
+  readonly sort: string;
+  readonly defaultOrder: string;
+  readonly sortOption: (column: string, direction: 'asc' | 'desc') => string;
+  /** Texte masqué du bouton de tri, selon l'état courant. */
+  readonly sortHint: (state: 'none' | 'asc' | 'desc') => string;
+  /** Fin de la légende cachée : « filtré par État (Qualifiée) » ou « sans filtre ». */
+  readonly captionFilters: (filters: string | null) => string;
+  readonly announceApplied: (column: string) => string;
+  readonly announceCleared: (column: string) => string;
+  readonly announceRemoved: (column: string) => string;
+  readonly announceAllCleared: string;
+  readonly announceFiltersApplied: string;
+  readonly announceDraftCleared: string;
+}
+
+const DATA_TABLE_FR: LcDataTableLabels = {
+  rows: (count) => (count === 0 ? 'aucun résultat' : count === 1 ? '1 résultat' : `${count} résultats`),
+  rowNoun: (count) => (count > 1 ? 'résultats' : 'résultat'),
+  ofTotal: (total) => `sur ${total}`,
+  showRows: (count) => (count === 0 ? 'Aucun résultat' : `Afficher ${count === 1 ? '1 résultat' : `${count} résultats`}`),
+  noResultsTitle: 'Aucun résultat ne correspond à ces filtres',
+  noResultsHint: 'Modifiez un filtre depuis son entonnoir, ou effacez-les tous pour tout revoir.',
+  rowsError: 'Impossible de charger les lignes.',
+  filterColumn: (column, state) => (state ? `Filtrer la colonne ${column} (${state})` : `Filtrer la colonne ${column}`),
+  valuesChosen: (count) => (count === 1 ? '1 valeur choisie' : `${count} valeurs choisies`),
+  filterTooltip: 'Filtrer',
+  activeFilterTooltip: (summary) => `Filtre actif : ${summary}`,
+  menuTitle: (column) => `Filtrer : ${column}`,
+  multiHint: 'Valeurs présentes dans le tableau, selon les autres filtres.',
+  apply: 'Appliquer',
+  clear: 'Effacer',
+  clearFilters: 'Effacer les filtres',
+  clearAll: 'Tout effacer',
+  loadingValues: 'Chargement des valeurs…',
+  announceLoadingValues: (column) => `Chargement des valeurs de ${column}`,
+  valuesAvailable: (count) => (count === 1 ? '1 valeur disponible' : `${count} valeurs disponibles`),
+  noValues: 'Aucune valeur avec les autres filtres',
+  noValuesHint: 'Les autres filtres actifs ne laissent aucune ligne. Retirez-en un pour retrouver des valeurs ici.',
+  valuesError: 'Impossible de charger les valeurs',
+  valuesErrorKept: 'La liste n\'a pas pu être obtenue. Le filtre déjà appliqué reste en place.',
+  valuesErrorUnchanged: 'La liste n\'a pas pu être obtenue. Le tableau n\'est pas modifié.',
+  retrying: 'Nouvel essai',
+  searchValues: 'Rechercher une valeur',
+  selectAll: 'Tout sélectionner',
+  selectResults: (count) => (count === 1 ? 'Sélectionner le résultat' : `Sélectionner les ${count} résultats`),
+  noMatch: (query) => `Aucune valeur ne contient « ${query} ».`,
+  valuesNote: (count) => `${count === 1 ? '1 valeur' : `${count} valeurs`}. Nombres calculés avec les autres filtres actifs.`,
+  valuesGroup: (column) => `Valeurs de ${column}`,
+  emptyValue: '(vide)',
+  quoted: (text) => `« ${text} »`,
+  lastDays: (days) => `${days} derniers jours`,
+  chosenPeriod: 'Période choisie',
+  from: 'Du',
+  to: 'Au',
+  since: (date) => `depuis le ${date}`,
+  until: (date) => `jusqu'au ${date}`,
+  datesNote: 'Dates incluses. Une date vide ne borne pas la période.',
+  dateOrderError: 'La date de fin est avant la date de début.',
+  filters: (active) => (active ? `Filtres (${active})` : 'Filtres'),
+  filtersButtonLabel: (active) => (active === 0 ? 'Filtres' : `Filtres, ${active} ${active > 1 ? 'actifs' : 'actif'}`),
+  closeWithoutApplying: 'Fermer sans appliquer',
+  all: 'Tout',
+  activeFilters: 'Filtres actifs',
+  noFilter: 'Aucun filtre. Touchez « Filtres » pour filtrer.',
+  editFilter: (column, summary) => `Modifier le filtre ${column} : ${summary}`,
+  removeFilter: (column) => `Retirer le filtre ${column}`,
+  sort: 'Trier',
+  defaultOrder: 'Ordre par défaut',
+  sortOption: (column, direction) => `${column} : ${direction === 'asc' ? 'ordre croissant' : 'ordre décroissant'}`,
+  sortHint: (state) => (state === 'none' ? ', trier par ordre croissant'
+    : state === 'asc' ? ', trié par ordre croissant, activer pour l\'ordre décroissant'
+      : ', trié par ordre décroissant, activer pour revenir à l\'ordre par défaut'),
+  captionFilters: (filters) => (filters ? `filtré par ${filters}` : 'sans filtre'),
+  announceApplied: (column) => `Filtre ${column} appliqué.`,
+  announceCleared: (column) => `Filtre ${column} effacé.`,
+  announceRemoved: (column) => `Filtre ${column} retiré.`,
+  announceAllCleared: 'Filtres effacés.',
+  announceFiltersApplied: 'Filtres appliqués.',
+  announceDraftCleared: 'Tous les choix sont effacés.',
+};
+
+const DATA_TABLE_EN: LcDataTableLabels = {
+  rows: (count) => (count === 0 ? 'no results' : count === 1 ? '1 result' : `${count} results`),
+  rowNoun: (count) => (count === 1 ? 'result' : 'results'),
+  ofTotal: (total) => `of ${total}`,
+  showRows: (count) => (count === 0 ? 'No results' : `Show ${count === 1 ? '1 result' : `${count} results`}`),
+  noResultsTitle: 'No results match these filters',
+  noResultsHint: 'Change a filter from its funnel, or clear them all to see everything again.',
+  rowsError: 'The rows could not be loaded.',
+  filterColumn: (column, state) => (state ? `Filter the ${column} column (${state})` : `Filter the ${column} column`),
+  valuesChosen: (count) => (count === 1 ? '1 value selected' : `${count} values selected`),
+  filterTooltip: 'Filter',
+  activeFilterTooltip: (summary) => `Active filter: ${summary}`,
+  menuTitle: (column) => `Filter: ${column}`,
+  multiHint: 'Values present in the table, given the other filters.',
+  apply: 'Apply',
+  clear: 'Clear',
+  clearFilters: 'Clear filters',
+  clearAll: 'Clear all',
+  loadingValues: 'Loading values…',
+  announceLoadingValues: (column) => `Loading the values of ${column}`,
+  valuesAvailable: (count) => (count === 1 ? '1 value available' : `${count} values available`),
+  noValues: 'No values with the other filters',
+  noValuesHint: 'The other active filters leave no rows. Remove one to get values back here.',
+  valuesError: 'The values could not be loaded',
+  valuesErrorKept: 'The list could not be retrieved. The filter already applied stays in place.',
+  valuesErrorUnchanged: 'The list could not be retrieved. The table is unchanged.',
+  retrying: 'Trying again',
+  searchValues: 'Search for a value',
+  selectAll: 'Select all',
+  selectResults: (count) => (count === 1 ? 'Select the result' : `Select the ${count} results`),
+  noMatch: (query) => `No value contains “${query}”.`,
+  valuesNote: (count) => `${count === 1 ? '1 value' : `${count} values`}. Counts take the other active filters into account.`,
+  valuesGroup: (column) => `Values of ${column}`,
+  emptyValue: '(empty)',
+  quoted: (text) => `“${text}”`,
+  lastDays: (days) => `Last ${days} days`,
+  chosenPeriod: 'Custom period',
+  from: 'From',
+  to: 'To',
+  since: (date) => `since ${date}`,
+  until: (date) => `until ${date}`,
+  datesNote: 'Dates included. An empty date leaves the period open.',
+  dateOrderError: 'The end date is before the start date.',
+  filters: (active) => (active ? `Filters (${active})` : 'Filters'),
+  filtersButtonLabel: (active) => (active === 0 ? 'Filters' : `Filters, ${active} active`),
+  closeWithoutApplying: 'Close without applying',
+  all: 'All',
+  activeFilters: 'Active filters',
+  noFilter: 'No filter. Tap “Filters” to filter.',
+  editFilter: (column, summary) => `Edit the ${column} filter: ${summary}`,
+  removeFilter: (column) => `Remove the ${column} filter`,
+  sort: 'Sort',
+  defaultOrder: 'Default order',
+  sortOption: (column, direction) => `${column}: ${direction === 'asc' ? 'ascending' : 'descending'}`,
+  sortHint: (state) => (state === 'none' ? ', sort ascending'
+    : state === 'asc' ? ', sorted ascending, activate for descending' : ', sorted descending, activate to restore the default order'),
+  captionFilters: (filters) => (filters ? `filtered by ${filters}` : 'no filter'),
+  announceApplied: (column) => `${column} filter applied.`,
+  announceCleared: (column) => `${column} filter cleared.`,
+  announceRemoved: (column) => `${column} filter removed.`,
+  announceAllCleared: 'Filters cleared.',
+  announceFiltersApplied: 'Filters applied.',
+  announceDraftCleared: 'All choices cleared.',
+};
 
 /** Textes d'exemple de l'aperçu du theme builder. */
 export interface LcThemePreviewSamples {
@@ -470,6 +674,7 @@ export const LC_LABELS_FR: LcLabels = {
   chartAnnotation: 'Point annoté',
   chartSummary: summaryFr,
   themeBuilder: THEME_BUILDER_FR,
+  dataTable: DATA_TABLE_FR,
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -664,6 +869,7 @@ export const LC_LABELS_EN: LcLabels = {
   chartAnnotation: 'Annotated point',
   chartSummary: summaryEn,
   themeBuilder: THEME_BUILDER_EN,
+  dataTable: DATA_TABLE_EN,
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });

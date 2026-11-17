@@ -31,6 +31,8 @@ const ICONS = [
   'list', 'list-checks', 'file-text', 'wrench',
   // Ajouts : aperçu indisponible et état désactivé (dépôt de fichiers, listes modifiables).
   'image-off', 'circle-off',
+  // Ajouts : filtres de colonne du tableau filtrable (entonnoir, effacement, aucun résultat).
+  'funnel', 'funnel-x', 'search-x',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */

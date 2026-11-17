@@ -81,7 +81,8 @@ export class LcTooltipDirective {
   readonly lcTooltipPosition = input<'above' | 'below' | 'start' | 'end'>('above');
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.dispose());
+    // `hide()` annule aussi le délai d'affichage en cours : sinon l'info-bulle s'ouvrirait après la destruction.
+    inject(DestroyRef).onDestroy(() => this.hide());
   }
 
   protected scheduleShow(): void {

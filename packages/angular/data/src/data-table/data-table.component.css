@@ -1,0 +1,629 @@
+/*
+ * lc-data-table : sans encapsulation (le menu vit dans un panneau CDK, le SVG des icônes est inséré par lc-icon),
+ * toutes les classes sont préfixées `lc-data-table__`. Rupture 48em (768 px), celle du kit.
+ */
+lc-data-table {
+  display: block;
+  overflow: clip;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-data-table-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-data-table-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-data-table__hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Ordinateur : ligne de résumé ---------- */
+.lc-data-table__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-2) var(--lc-sys-space-4);
+  padding: var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-1) var(--lc-sys-space-4);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-data-table__summary p,
+.lc-data-table__count,
+.lc-data-table__no-filter {
+  margin: 0;
+}
+
+.lc-data-table__summary b,
+.lc-data-table__count b {
+  color: var(--lc-sys-color-on-surface);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-data-table--chips-always .lc-data-table__summary {
+  display: none;
+}
+
+/* ---------- Pastilles et nombre de lignes ---------- */
+.lc-data-table__chips {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lc-sys-space-2) var(--lc-sys-space-3);
+  padding: var(--lc-sys-space-2) var(--lc-sys-space-4);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-data-table--chips-always .lc-data-table__chips {
+  display: flex;
+}
+
+.lc-data-table__chip-list {
+  display: contents;
+  list-style: none;
+}
+
+.lc-data-table__no-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-data-table__count {
+  margin-inline-start: auto;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  white-space: nowrap;
+}
+
+.lc-data-table__chip {
+  display: inline-flex;
+  align-items: stretch;
+  max-inline-size: 100%;
+  min-block-size: var(--lc-sys-control-height-sm);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-secondary-container);
+  color: var(--lc-sys-color-on-secondary-container);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-data-table__chip button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Cible tactile de 44 px sans changer le rendu. */
+.lc-data-table__chip button::before {
+  content: '';
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--lc-button-hit-size, 44px)) / 2));
+  inset-inline: 0;
+}
+
+.lc-data-table__chip button:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+}
+
+.lc-data-table__chip button:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-data-table__chip-edit {
+  padding-inline: var(--lc-sys-space-3) var(--lc-sys-space-1);
+  border-radius: var(--lc-sys-radius-full) 0 0 var(--lc-sys-radius-full);
+  text-align: start;
+}
+
+.lc-data-table__chip-key {
+  font-weight: var(--lc-sys-font-weight-semibold);
+  white-space: nowrap;
+}
+
+.lc-data-table__chip-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lc-data-table__chip-remove {
+  justify-content: center;
+  inline-size: var(--lc-sys-space-8);
+  border-radius: 0 var(--lc-sys-radius-full) var(--lc-sys-radius-full) 0;
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+/* ---------- Téléphone : outils ---------- */
+.lc-data-table__tools {
+  display: none;
+}
+
+/* ---------- Tableau ---------- */
+.lc-data-table__scroll {
+  overflow-x: auto;
+}
+
+.lc-data-table__table {
+  inline-size: 100%;
+  min-inline-size: var(--lc-data-table-min-width, 0);
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-data-table__caption {
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  font-weight: var(--lc-sys-font-weight-semibold);
+  text-align: start;
+}
+
+.lc-data-table__table th,
+.lc-data-table__table td {
+  position: relative;
+  padding: var(--lc-sys-space-2) var(--lc-data-table-cell-padding-inline, var(--lc-sys-space-1));
+  overflow-wrap: anywhere;
+}
+
+.lc-data-table__table th:first-child,
+.lc-data-table__table td:first-child {
+  padding-inline-start: var(--lc-sys-space-4);
+}
+
+.lc-data-table__table td {
+  border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  font-size: var(--lc-sys-font-size-sm);
+  vertical-align: middle;
+}
+
+.lc-data-table__table tbody tr:not(.lc-data-table__state):hover td {
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-data-table__cell--start { text-align: start; }
+.lc-data-table__cell--center { text-align: center; }
+.lc-data-table__cell--end { text-align: end; }
+
+/*
+ * En-tête en ligne : seul le début du libellé (`__th-head`) peut passer à la ligne ; son dernier mot, l'icône de tri et l'entonnoir
+ * ne se séparent pas et suivent donc la fin de la dernière ligne. Hauteur de ligne = hauteur de l'entonnoir et cellule alignée
+ * en bas : tous les entonnoirs sont sur la même ligne horizontale. Un espacement net (`space-3`) précède l'entonnoir.
+ */
+.lc-data-table__table th {
+  background: var(--lc-data-table-header-background, var(--lc-sys-color-surface-sunken));
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
+  line-height: var(--lc-sys-space-6);
+  vertical-align: bottom;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.lc-data-table__th-head {
+  white-space: normal;
+}
+
+.lc-data-table__table th.lc-data-table__th--filtered {
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-data-table__th-head--sortable {
+  cursor: pointer;
+}
+
+.lc-data-table__th-head--sortable:hover,
+.lc-data-table__th-head--sortable:hover + .lc-data-table__sort,
+.lc-data-table__sort:hover {
+  text-decoration: underline;
+}
+
+.lc-data-table__sort {
+  padding: 0;
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.lc-data-table__sort lc-icon {
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  margin-inline-start: var(--lc-sys-space-1);
+  margin-block-end: calc((var(--lc-sys-space-6) - var(--lc-sys-icon-size-sm)) / 2);
+  vertical-align: bottom;
+}
+
+.lc-data-table__funnel {
+  position: relative;
+  display: inline-flex;
+  margin-inline-start: var(--lc-sys-space-3);
+  vertical-align: bottom;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--lc-sys-space-6);
+  block-size: var(--lc-sys-space-6);
+  padding: 0;
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: var(--lc-sys-color-on-surface-muted);
+  cursor: pointer;
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  transition: background-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+/* Zone de clic de 44 px de haut pour une icône de 24 px. */
+.lc-data-table__funnel::before {
+  content: '';
+  position: absolute;
+  inset: calc((var(--lc-button-hit-size, 44px) - var(--lc-sys-space-6)) / -2) calc(var(--lc-sys-space-1) * -1);
+}
+
+.lc-data-table__funnel:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-data-table__funnel[aria-expanded='true'] {
+  background: var(--lc-sys-color-surface-raised);
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-sys-color-border-strong);
+  color: var(--lc-sys-color-on-surface);
+}
+
+/* Filtre actif : entonnoir plein sur fond primaire (la forme pleine porte l'information, pas la couleur seule). */
+.lc-data-table__funnel--on,
+.lc-data-table__funnel--on[aria-expanded='true'] {
+  background: var(--lc-sys-color-primary);
+  color: var(--lc-sys-color-on-primary);
+}
+
+.lc-data-table__funnel--on:hover {
+  background: color-mix(in srgb, var(--lc-sys-color-on-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-sys-color-primary));
+  color: var(--lc-sys-color-on-primary);
+}
+
+.lc-data-table__funnel--on svg path {
+  fill: currentColor;
+}
+
+.lc-data-table__sort:focus-visible,
+.lc-data-table__funnel:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-data-table__state td {
+  padding: var(--lc-sys-space-4);
+}
+
+.lc-data-table__state:hover td {
+  background: transparent;
+}
+
+.lc-data-table__empty {
+  margin: 0;
+  padding-block: var(--lc-sys-space-6);
+  color: var(--lc-sys-color-on-surface-muted);
+  text-align: center;
+}
+
+.lc-data-table__notice {
+  margin: 0;
+  padding: var(--lc-sys-space-2) var(--lc-sys-space-4);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+/* ---------- Ordinateur ---------- */
+@media (min-width: 48em) {
+  .lc-data-table__card-only {
+    display: none;
+  }
+}
+
+/* ---------- Téléphone : cartes, outils, pastilles ---------- */
+@media (max-width: 47.99em) {
+  .lc-data-table__summary {
+    display: none;
+  }
+
+  .lc-data-table__chips {
+    display: flex;
+  }
+
+  .lc-data-table__count {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
+
+  .lc-data-table__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lc-sys-space-2);
+    padding: var(--lc-sys-space-3) var(--lc-sys-space-4) 0;
+  }
+
+  .lc-data-table__tools .lc-button {
+    flex: none;
+  }
+
+  .lc-data-table__sort-select {
+    flex: 1 1 calc(var(--lc-sys-space-16) * 3);
+    min-inline-size: 0;
+  }
+
+  .lc-data-table__scroll {
+    overflow: visible;
+  }
+
+  .lc-data-table__table {
+    min-inline-size: 0;
+  }
+
+  .lc-data-table__table,
+  .lc-data-table__table tbody,
+  .lc-data-table__table tr,
+  .lc-data-table__table td {
+    display: block;
+  }
+
+  .lc-data-table__table thead,
+  .lc-data-table__table colgroup {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .lc-data-table__table tbody tr {
+    padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+    border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  }
+
+  .lc-data-table__table td,
+  .lc-data-table__table td:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--lc-sys-space-3);
+    padding: var(--lc-sys-space-1) 0;
+    border: 0;
+    text-align: end;
+  }
+
+  .lc-data-table__table td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--lc-sys-color-on-surface-muted);
+    text-align: start;
+  }
+
+  .lc-data-table__table td.lc-data-table__title {
+    display: block;
+    font-weight: var(--lc-sys-font-weight-semibold);
+    text-align: start;
+  }
+
+  .lc-data-table__table td.lc-data-table__title::before,
+  .lc-data-table__state td::before {
+    content: none;
+  }
+
+  .lc-data-table__state td,
+  .lc-data-table__table .lc-data-table__state td {
+    display: block;
+    text-align: center;
+  }
+
+  .lc-data-table__table tbody tr:hover td {
+    background: transparent;
+  }
+}
+
+/* ---------- Menu (ordinateur) ---------- */
+.lc-data-table__menu {
+  display: flex;
+  flex-direction: column;
+  inline-size: min(calc(var(--lc-sys-space-16) * 5), calc(100vw - var(--lc-sys-space-8)));
+  margin-block: var(--lc-sys-space-1);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-sys-radius-lg);
+  background: var(--lc-sys-color-surface-raised);
+  box-shadow: var(--lc-sys-shadow-3);
+  color: var(--lc-sys-color-on-surface);
+  font-family: var(--lc-sys-font-family-base);
+}
+
+.lc-data-table__menu:focus {
+  outline: none;
+}
+
+.lc-data-table__menu-head {
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4) var(--lc-sys-space-2);
+}
+
+.lc-data-table__menu-title,
+.lc-data-table__panel-title {
+  margin: 0;
+  font-size: var(--lc-sys-font-size-md);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-data-table__menu-head p {
+  margin: var(--lc-sys-space-1) 0 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-xs);
+}
+
+.lc-data-table__menu-body {
+  padding: var(--lc-sys-space-1) var(--lc-sys-space-4) var(--lc-sys-space-4);
+}
+
+.lc-data-table__menu-foot,
+.lc-data-table__panel-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+/* ---------- Panneau plein écran (téléphone) ---------- */
+.lc-data-table__panel {
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: 100%;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--lc-sys-color-background);
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-data-table__panel[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.lc-data-table__panel:focus {
+  outline: none;
+}
+
+.lc-data-table__panel::backdrop {
+  background: var(--lc-sys-color-background);
+}
+
+.lc-data-table__panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-1) var(--lc-sys-space-4);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  background: var(--lc-sys-color-surface-raised);
+}
+
+.lc-data-table__panel-title {
+  flex: 1;
+  font-size: var(--lc-sys-font-size-lg);
+}
+
+.lc-data-table__panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--lc-sys-space-4);
+  --lc-column-filter-list-max-height: none;
+}
+
+.lc-data-table__panel-foot {
+  justify-content: stretch;
+  background: var(--lc-sys-color-surface-raised);
+}
+
+.lc-data-table__panel-apply {
+  flex: 1;
+}
+
+.lc-data-table__section {
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-data-table__section-title {
+  margin: 0;
+  font-size: inherit;
+}
+
+.lc-data-table__section-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-3);
+  inline-size: 100%;
+  min-block-size: var(--lc-sys-control-height-lg);
+  padding: var(--lc-sys-space-2) 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--lc-sys-font-weight-semibold);
+  text-align: start;
+  cursor: pointer;
+}
+
+.lc-data-table__section-toggle > span {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.lc-data-table__section-toggle > lc-icon {
+  color: var(--lc-sys-color-on-surface-muted);
+  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+.lc-data-table__section-toggle[aria-expanded='true'] > lc-icon {
+  transform: rotate(180deg);
+}
+
+.lc-data-table__section-toggle:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
+}
+
+.lc-data-table__section-summary {
+  display: block;
+  overflow: hidden;
+  color: var(--lc-sys-color-on-surface-muted);
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lc-data-table__section-summary--on {
+  color: var(--lc-sys-color-on-surface);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-data-table__section-body {
+  padding-block-end: var(--lc-sys-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-data-table__funnel,
+  .lc-data-table__section-toggle > lc-icon {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  lc-data-table,
+  .lc-data-table__menu,
+  .lc-data-table__table td {
+    border-color: CanvasText;
+  }
+
+  .lc-data-table__funnel--on {
+    outline: 1px solid CanvasText;
+  }
+}

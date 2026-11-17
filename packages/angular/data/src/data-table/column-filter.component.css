@@ -1,0 +1,194 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-3);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-column-filter__hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lc-column-filter__list {
+  display: flex;
+  flex-direction: column;
+  max-block-size: var(--lc-column-filter-list-max-height, calc(var(--lc-sys-control-height-md) * 6.5));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-inline: calc(var(--lc-sys-space-2) * -1);
+}
+
+.lc-column-filter__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-3);
+  min-block-size: var(--lc-sys-control-height-md);
+  padding-inline: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-sm);
+  cursor: pointer;
+}
+
+.lc-column-filter__option:hover {
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-column-filter__option--all {
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-sys-radius-sm) var(--lc-sys-radius-sm) 0 0;
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-column-filter__label {
+  flex: 1;
+  min-inline-size: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-column-filter__label lc-icon {
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-column-filter__option--zero .lc-column-filter__label,
+.lc-column-filter__count,
+.lc-column-filter__note {
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-column-filter__count {
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-column-filter__note {
+  margin: 0;
+  font-size: var(--lc-sys-font-size-xs);
+}
+
+.lc-column-filter__search {
+  position: relative;
+}
+
+.lc-column-filter__search > lc-icon {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: var(--lc-sys-space-3);
+  transform: translateY(-50%);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+  color: var(--lc-sys-color-on-surface-muted);
+  pointer-events: none;
+}
+
+.lc-column-filter__search .lc-input {
+  inline-size: 100%;
+  padding-inline-start: var(--lc-sys-space-8);
+}
+
+.lc-column-filter__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+}
+
+.lc-column-filter__loading-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  margin: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-column-filter__spin {
+  animation: lc-column-filter-spin calc(var(--lc-sys-duration-slow) * 3) linear infinite;
+}
+
+@keyframes lc-column-filter-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-column-filter__spin { animation: none; }
+}
+
+.lc-column-filter__skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-3);
+  min-block-size: var(--lc-sys-control-height-md);
+}
+
+.lc-column-filter__skeleton-label {
+  flex: 1;
+}
+
+.lc-column-filter__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-4) var(--lc-sys-space-2);
+  text-align: center;
+}
+
+.lc-column-filter__empty > lc-icon {
+  --lc-icon-size: var(--lc-sys-space-8);
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-column-filter__empty p {
+  margin: 0;
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-column-filter__error-text {
+  margin: 0 0 var(--lc-sys-space-2);
+}
+
+.lc-column-filter__radios {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  margin: 0 calc(var(--lc-sys-space-2) * -1);
+  padding: 0;
+  border: 0;
+}
+
+.lc-column-filter__range {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--lc-sys-space-2) var(--lc-sys-space-3);
+}
+
+.lc-column-filter__range .lc-input {
+  min-inline-size: 0;
+  font-variant-numeric: var(--lc-sys-font-numeric-tabular);
+}
+
+.lc-column-filter__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+}
+
+.lc-column-filter__field label {
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-column-filter__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
+  margin: 0;
+  color: var(--lc-sys-color-on-error-container);
+  font-weight: var(--lc-sys-font-weight-medium);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
