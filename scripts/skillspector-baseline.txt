@@ -1,0 +1,24 @@
+graphify|AR2|SKILL.md|without warning
+graphify|AR2|references/extraction-spec.md|NO warning
+graphify|TM1|SKILL.md|rm -f graphify-out/.graphify_cached.json
+graphify|TM1|SKILL.md|rm -f graphify-out/.graphify_detect.json
+graphify|TM1|SKILL.md|rm -f graphify-out/.needs_update
+graphify|TM1|references/update.md|rm -f graphify-out/.graphify_old.json`
+impeccable|AR2|reference/critique.md|do not judge
+impeccable|AR2|reference/degraded/finish-reviewer.md|without warning
+impeccable|AR2|reference/new-work.md|Never judge
+impeccable|AS1|reference/hooks.md|~/.claude/settings.json
+impeccable|MP3|reference/colorize.md|new identity is
+impeccable|MP3|reference/mode-operate.md|clear state
+systematic-debugging|E4|defense-in-depth.md|Capture context
+systematic-debugging|PE3|SKILL.md|Keychain
+systematic-debugging|PE3|SKILL.md|keychain
+ui-ux-pro-max|E2|scripts/tests/test_catalog_refresh.py|dict(os.environ)
+ui-ux-pro-max|MP3|data/stacks/javafx.csv|clear context
+ui-ux-pro-max|MP3|scripts/tests/test_core.py|overwrite rule
+ui-ux-pro-max|OH1|data/react-performance.csv|dangerouslySetInnerHTML={
+ui-ux-pro-max|OH1|data/stacks/nextjs.csv|dangerouslySetInnerHTML={
+ui-ux-pro-max|P1|data/ux-guidelines.csv|Override system
+ui-ux-pro-max|PE3|data/products.csv|keychain
+ui-ux-pro-max|PE3|data/stacks/nextjs.csv|.env
+ui-ux-pro-max|PE3|data/stacks/nextjs.csv|.env.local
