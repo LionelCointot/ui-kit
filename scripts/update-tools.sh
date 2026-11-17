@@ -56,5 +56,10 @@ copy_official https://github.com/dotnet/skills "$dn_ref" plugins/dotnet-data/ski
 echo "==> normalisation des hooks Claude Code"
 node scripts/lib/normalize-claude-settings.mjs
 
+echo "==> scan des skills tiers (SkillSpector, analyse statique)"
+if [ -x scripts/scan-skills.sh ]; then
+  scripts/scan-skills.sh || echo "  Des constats nouveaux sont à relire avant de commiter (voir ci-dessus)."
+fi
+
 git status --short .claude CLAUDE.md
 echo "Relisez le diff puis commitez : git commit -am 'chore: met à jour graphify, impeccable et ponytail'"
