@@ -1,6 +1,6 @@
 # Spec : Catalogue des composants, généré pour les agents
 
-- **Statut** : Validée (délégation de l'utilisateur du 2026-11-17 : « je te laisse mettre ça en place »)
+- **Statut** : Implémentée le 2026-11-17 (validée par délégation de l'utilisateur du 2026-11-17 : « je te laisse mettre ça en place »)
 - **Auteur** : session principale
 - **Date** : 2026-11-17
 - **ADR liés** : aucun
@@ -75,16 +75,16 @@ Pas d'impact UI : aucun écran.
 - Acceptation (écrits par `qa-engineer`) : CA-1 à CA-5 sur le dépôt réel.
 
 ## 10. Critères d'acceptation
-- [ ] CA-1 : `npm run catalogue:build` écrit `packages/angular/CATALOGUE.md` ; deux lancements de suite produisent un fichier identique.
-- [ ] CA-2 : chaque classe exportée par un `public-api.ts` et décorée `@Component`, `@Directive` ou `@Pipe` figure au catalogue, sous son point d'entrée, avec son sélecteur exact ; aucune classe non exportée n'y figure.
-- [ ] CA-3 : pour `lc-data-table` et `button[lcButton]`, les entrées et sorties listées sont celles de la source.
-- [ ] CA-4 : `npm run catalogue:check` réussit sur le dépôt à jour et échoue après la modification d'un sélecteur sans régénération.
-- [ ] CA-5 : après `npm run build`, `dist/ui-angular/CATALOGUE.md` existe et est identique au fichier versionné.
-- [ ] CA-6 : pour un composant qui hérite d'une classe de base du kit, les entrées et les sorties héritées figurent au catalogue comme celles qu'il déclare lui-même, sur toute la chaîne d'héritage. Vérifié sur `lc-money-input` (`value`, `disabled`, `min`, `max` venus de `LcNumericInputBase`), `lc-region-select` (au moins `selectionChange` en sortie) et `lc-line-chart`.
-- [ ] CA-7 : pour chaque classe du catalogue, le nombre d'entrées et de sorties listées est égal au nombre de `input(`, `input.required(`, `model(`, `model.required(` et `output(` déclarés dans sa source et dans celles de ses classes de base (contrôle d'exhaustivité : un membre que le script ne sait pas lire fait échouer le test au lieu de disparaître en silence).
+- [x] CA-1 : `npm run catalogue:build` écrit `packages/angular/CATALOGUE.md` ; deux lancements de suite produisent un fichier identique.
+- [x] CA-2 : chaque classe exportée par un `public-api.ts` et décorée `@Component`, `@Directive` ou `@Pipe` figure au catalogue, sous son point d'entrée, avec son sélecteur exact ; aucune classe non exportée n'y figure.
+- [x] CA-3 : pour `lc-data-table` et `button[lcButton]`, les entrées et sorties listées sont celles de la source.
+- [x] CA-4 : `npm run catalogue:check` réussit sur le dépôt à jour et échoue après la modification d'un sélecteur sans régénération.
+- [x] CA-5 : après `npm run build`, `dist/ui-angular/CATALOGUE.md` existe et est identique au fichier versionné.
+- [x] CA-6 : pour un composant qui hérite d'une classe de base du kit, les entrées et les sorties héritées figurent au catalogue comme celles qu'il déclare lui-même, sur toute la chaîne d'héritage. Vérifié sur `lc-money-input` (`value`, `disabled`, `min`, `max` venus de `LcNumericInputBase`), `lc-region-select` (au moins `selectionChange` en sortie) et `lc-line-chart`.
+- [x] CA-7 : pour chaque classe du catalogue, le nombre d'entrées et de sorties listées est égal au nombre de `input(`, `input.required(`, `model(`, `model.required(` et `output(` déclarés dans sa source et dans celles de ses classes de base (contrôle d'exhaustivité : un membre que le script ne sait pas lire fait échouer le test au lieu de disparaître en silence).
 
 ## 11. Découpage en tâches
-- [ ] T1 : script, commandes npm, copie dans le paquet, tests unitaires du script, fichier généré versionné, ligne dans `CLAUDE.md` (M, couvre CA-1 à CA-5)
+- [x] T1 : script, commandes npm, copie dans le paquet, tests unitaires du script, fichier généré versionné, ligne dans `CLAUDE.md` (M, couvre CA-1 à CA-5)
 
 ## 12. Risques et questions ouvertes
 - **Dettes** : les entrées exposées par `hostDirectives` ne sont pas listées (un cas : `a[lcNavItem]`) ; pas de description d'usage par composant ; un composant qui s'écarterait des conventions (sélecteur calculé, `@Input()` décoré) serait mal décrit, les tests de CA-2 le détecteraient pour le sélecteur.
@@ -96,5 +96,8 @@ Pas d'impact UI : aucun écran.
 | 2026-11-17 | aucun | conception | non relue | Tâche d'outillage, angles fermés |
 | 2026-11-17 | `qa-engineer` | vérification | GO sur CA-1 à CA-5 | 5 tests d'acceptation écrits |
 | 2026-11-17 | `code-reviewer` | vérification | CHANGEMENTS REQUIS | Bloquant retenu : entrées et sorties héritées absentes pour 13 composants. La spec ne le prévoyait pas : CA-6 et CA-7 ajoutés. Recommandé retenu : contrôle d'exhaustivité (CA-7). |
+| 2026-11-17 | `qa-engineer` | vérification, second passage | NO-GO | Tests CA-6 et CA-7 écrits ; CA-7 rouge : membres déclarés avec `override` ignorés (`value` des quatre champs `geo`) |
+| 2026-11-17 | `code-reviewer` | vérification, second passage | CHANGEMENTS REQUIS | Héritage confirmé sur sept composants ; même défaut `override` trouvé indépendamment |
+| 2026-11-17 | session principale | vérification finale | 14 tests verts, dont CA-1 à CA-7 ; build ; catalogue du paquet identique | Preuves : `npm run catalogue:test`, `catalogue:check`, `npm run build`, `cmp` ; CA-5 vérifié par commande, pas par un test |
 
-**Écarts constatés à l'implémentation** : la première livraison ne lisait que le corps de la classe décorée ; la spec ne disait rien de l'héritage et CA-3 ne portait que sur deux composants sans classe de base. Corrigé par CA-6 et CA-7.
+**Écarts constatés à l'implémentation** : la première livraison ne lisait que le corps de la classe décorée ; la spec ne disait rien de l'héritage et CA-3 ne portait que sur deux composants sans classe de base. Corrigé par CA-6 et CA-7. Le premier correctif ignorait encore les membres déclarés avec `override` : trouvé par le test d'exhaustivité CA-7 et par la seconde relecture, corrigé au second aller-retour.
