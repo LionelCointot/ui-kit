@@ -1,6 +1,6 @@
 # Spec : sélecteur de date (date simple et période)
 
-- **Statut** : En revue
+- **Statut** : Validée le 2026-11-19 par l'utilisateur (« oui pour le devis »), sans test au lecteur d'écran (« on test pas cette a cessibilite la »)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-19
 - **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0002 Comportement CDK et sélecteurs](../adr/0002-comportement-cdk-et-selecteurs.md) · [0006 Thèmes à l'exécution](../adr/0006-themes-a-l-execution.md) · [0008 Sélecteur de date : calendrier du kit ou sélecteur du système](../adr/0008-selecteur-de-date-kit-ou-systeme.md) (nouveau)
@@ -237,7 +237,7 @@ Directions choisies par l'utilisateur : **B** (date simple) et **C** (période).
 - **Unitaires** (`senior-developer`) : `date-math.spec.ts`, `date-mask.spec.ts` (frappe, passage automatique, flèches, jour impossible refusé ou ramené, collage, ordre selon la locale), `date-picker-mode.spec.ts` (faux `matchMedia` : vrai, faux, absent, en erreur), raccourcis avec `vi.setSystemTime`.
 - **Acceptation** (`qa-engineer`, Vitest sous jsdom, un test par critère, identifiant dans le nom) : `date-input.component.spec.ts`, `date-range-input.component.spec.ts`, `signal-forms.spec.ts`, `calendar-panel.architecture.spec.ts` (lecture de la feuille de styles, exports, imports). La surcouche, le clavier et le focus se testent comme dans `combobox.component.spec.ts`.
 - **Navigateur réel** (`qa-engineer`) : fonctions `play` de stories, par le projet Vitest « storybook » déjà configuré (`@vitest/browser-playwright`), pour ce que jsdom ne calcule pas : styles réellement appliqués, thème, largeur, taille des cibles. T0 vérifie que ce projet tourne sur le poste ; sinon, repli sur une vérification par captures, notée comme telle.
-- **Manuel** : lecteur d'écran (NVDA ou VoiceOver) sur le champ à zones, par une personne, avant de brancher le panneau (T5) ; test `novice-user` sur captures de l'écran réel.
+- **Manuel** : test `novice-user` sur captures de l'écran réel. Pas de test au lecteur d'écran (décision de l'utilisateur, risque accepté en section 12).
 - **Commandes** (preuve du verdict, pas des tests Vitest) : `npm run build`, `npx ng test ui-angular --watch=false`, `npm run catalogue:check`, `npx lc-tokens check`.
 
 ## 10. Critères d'acceptation
@@ -297,7 +297,7 @@ Transverse :
 - [ ] CA-40 : `packages/angular/CATALOGUE.md` régénéré décrit `lc-date-range-input`, `LcDateInterval`, `LcDateIntervalPreset` et `LC_DATE_PICKER` ; `npm run build`, `npx ng test ui-angular --watch=false` et `npm run catalogue:check` passent.
 
 Vérifications manuelles (hors tests automatiques) :
-- [ ] V-1 : lecteur d'écran sur le champ à zones : la personne entend le libellé du champ, la zone active et sa valeur, et parvient à saisir une date.
+- V-1 : retiré. L'utilisateur a décidé de ne pas tester le champ à zones au lecteur d'écran ; les attributs et annonces prévus restent exigés par CA-6, CA-12 et CA-19.
 - [ ] V-2 : test `novice-user` sur captures de l'écran réel : la personne choisit une date, une date lointaine, puis une période avec et sans fin, sans mot incompris ni hésitation bloquante.
 - [ ] V-3 : les tests de bout en bout de copro-ticket et de finance-credit passent avec le kit mis à jour.
 
@@ -308,7 +308,6 @@ Vérifications manuelles (hors tests automatiques) :
 | T0 | `qa-engineer` : tests de caractérisation du mode natif actuel ; vérifier que le projet de tests en navigateur tourne | S | CA-3 |
 | T1 | `date-math.ts`, `date-picker-mode.ts` et jeton `LC_DATE_PICKER`, export explicite de `toIsoDate` | S | CA-2, CA-3 |
 | T2 | `date-mask.ts` et champ à zones dans `lc-date-input`, sans panneau : frappe, flèches, jour impossible refusé ou ramené, collage, erreurs par `transformedValue`, annonces, mode natif gardé. Le plus risqué : à prototyper en premier | L | CA-1, CA-4 à CA-11 |
-| — | V-1 : test au lecteur d'écran, par une personne ; en cas d'échec, repli sur trois `spinbutton` (décision à reprendre avec l'utilisateur) | | V-1 |
 | T3 | `calendar-panel`, niveau jours : API à niveau, nombre de mois et sélection `{ from, to }` dès le départ ; clavier, ARIA, styles, `calendar.tokens.json`, paires de contraste, libellés | M | CA-16 (jours), CA-17 (jours), CA-19, CA-20, CA-24, CA-27, CA-38 |
 | T4 | Niveaux mois et années : grille générique, titres, bornes, clavier | M | CA-15, CA-16, CA-17 |
 | T5 | Branchement dans `lc-date-input` : bouton, surcouche, focus, « Aujourd'hui », « Effacer », cas du dialogue, stories et tests en navigateur | M | CA-12 à CA-14, CA-18, CA-21 à CA-23, CA-25, CA-26 |
@@ -326,13 +325,13 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
   3. Utilisateur principal (section 4).
   4. Une date incomplète vaut « pas de date » (`null`), avec un message à la sortie du champ.
 - **Risques** :
-  - **Lecteur d'écran sur le champ à zones** : un `input` masqué est annoncé comme un champ de texte, et la lecture de la zone sélectionnée varie d'un lecteur à l'autre. Les agents ne peuvent pas faire ce test : il demande une personne avec NVDA ou VoiceOver (V-1). Repli prévu : trois `spinbutton`, au prix d'un changement du contrat de `lc-form-field`.
+  - **Lecteur d'écran sur le champ à zones, risque accepté par l'utilisateur le 2026-11-19** : un `input` masqué est annoncé comme un champ de texte, et la lecture de la zone sélectionnée varie d'un lecteur à l'autre. Aucun essai avec NVDA ou VoiceOver n'est fait : une personne aveugle pourrait avoir du mal à saisir une date au clavier sur ordinateur (sur téléphone, le sélecteur du système n'est pas concerné). Si un besoin apparaît, repli possible sur trois `spinbutton`, au prix d'un changement du contrat de `lc-form-field`.
   - Sélection de zone par `setSelectionRange` : fragile avec le remplissage automatique et les claviers virtuels ; limité par le fait que le mode calendrier ne s'active que sur pointeur fin.
   - Le rendu de `lc-date-input` change sur ordinateur dès la mise à jour du kit. Un test de bout en bout qui remplit le champ par sa valeur ISO continue de marcher ; un test qui relirait la valeur affichée du champ (`toHaveValue('2026-11-12')`) casserait. Aucun n'a été trouvé dans copro-ticket ; V-3 le vérifie pour les deux consommateurs.
   - Piège de focus du panneau dans un dialogue du kit : pas de précédent (`lc-combobox` n'en a pas) ; couvert par CA-22, à prototyper tôt en T5.
   - `transformedValue` est récent (Angular 22) et n'est pas encore employé dans le kit : T2 commence par le vérifier.
 - **Dettes** : le filtre de dates de `lc-data-table` garde le calendrier natif et son propre type `LcDateRange` ; pas de test visuel par comparaison d'images dans le kit.
-- **Questions ouvertes** : qui fait le test au lecteur d'écran (V-1) ? À défaut, le risque est accepté et noté.
+- **Questions ouvertes** : aucune.
 
 ## 13. Relectures et écarts
 
@@ -345,5 +344,6 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 | 2026-11-19 | `novice-user` | textes du brief | COMPRIS AVEC DIFFICULTÉ | Retenu : le point « aujourd'hui » a sa légende (même point sur le bouton « Aujourd'hui », info-bulle) ; le titre a l'apparence d'un bouton ; « 2020 à 2029 » et « Années suivantes » à la place de « 2020 – 2029 » et « Décennie » ; un raccourci remplit les champs, ferme et décrit ses dates ; « Sans date de fin » et champ vide sans erreur pour une période ouverte. |
 | 2026-11-19 | utilisateur | cadrage | décision | Un jour qui n'existe pas ne peut pas être saisi et ne donne lieu à aucun message : le jour est limité au dernier jour du mois. Cela écarte le message « Cette date n'existe pas… », que le premier test du novice avait fait préférer à la correction. |
 | 2026-11-19 | `novice-user` | second test des textes | COMPRIS AVEC DIFFICULTÉ, tâches accomplies sauf une | Retenu : « Changer le début » (aucune issue visible après un premier clic erroné) ; ligne « Sans date de fin : tout depuis le… » sous les champs ; douze années affichées et titre exact (« 2019 à 2030 ») ; dates des raccourcis visibles sans survol ; « Effacer la date » et « Effacer la période ». Non retenu : expliquer `jj/mm/aaaa`, le zéro devant le chiffre et les barres (les deux façons de taper marchent). Reste à juger sur l'écran réel (V-2) : le titre est-il reconnu comme un bouton. |
+| 2026-11-19 | utilisateur | validation | validée | « oui pour le devis » ; pas de test au lecteur d'écran (« on test pas cette a cessibilite la pour le test de l'ecran ») : risque accepté, V-1 retiré. |
 
 **Écarts constatés à l'implémentation** : (à remplir)
