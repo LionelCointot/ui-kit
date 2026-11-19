@@ -1,5 +1,89 @@
 {
   "calendar": {
+    "cell-size": {
+      "$value": "{sys.space.10}",
+      "$type": "dimension"
+    },
+    "padding": {
+      "$value": "{sys.space.3}",
+      "$type": "dimension"
+    },
+    "month-gap": {
+      "$value": "{sys.space.6}",
+      "$type": "dimension"
+    },
+    "presets-width": {
+      "$value": "calc({sys.space.16} * 3)",
+      "$type": "dimension"
+    },
+    "radius": {
+      "$value": "{sys.radius.md}",
+      "$type": "dimension"
+    },
+    "background": {
+      "$value": "{sys.color.surface-raised}",
+      "$type": "color"
+    },
+    "border": {
+      "$value": "{sys.color.border}",
+      "$type": "color"
+    },
+    "shadow": {
+      "$value": "{sys.shadow.3}",
+      "$type": "shadow"
+    },
+    "text": {
+      "$value": "{sys.color.on-surface}",
+      "$type": "color"
+    },
+    "weekday-text": {
+      "$value": "{sys.color.on-surface-muted}",
+      "$type": "color"
+    },
+    "day-hover-bg": {
+      "$value": "{sys.color.surface-sunken}",
+      "$type": "color"
+    },
+    "day-disabled-text": {
+      "$value": "{sys.color.on-surface-subtle}",
+      "$type": "color"
+    },
+    "selected-bg": {
+      "$value": "{sys.color.primary}",
+      "$type": "color"
+    },
+    "selected-text": {
+      "$value": "{sys.color.on-primary}",
+      "$type": "color"
+    },
+    "range-bg": {
+      "$value": "{sys.color.primary-container}",
+      "$type": "color"
+    },
+    "range-text": {
+      "$value": "{sys.color.on-primary-container}",
+      "$type": "color"
+    },
+    "range-preview-edge": {
+      "$value": "{sys.color.primary}",
+      "$type": "color"
+    },
+    "today-mark": {
+      "$value": "{sys.color.primary}",
+      "$type": "color"
+    },
+    "today-mark-size": {
+      "$value": "{sys.space.1}",
+      "$type": "dimension"
+    },
+    "title-border": {
+      "$value": "{sys.color.border-strong}",
+      "$type": "color"
+    },
+    "focus-ring": {
+      "$value": "{sys.color.focus-ring}",
+      "$type": "color"
+    },
     "zone-bg": {
       "$value": "{sys.color.primary-container}",
       "$type": "color"
@@ -7,6 +91,14 @@
     "zone-text": {
       "$value": "{sys.color.on-primary-container}",
       "$type": "color"
+    },
+    "duration": {
+      "$value": "{sys.duration.fast}",
+      "$type": "duration"
+    },
+    "easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
     }
   }
 }

@@ -140,6 +140,26 @@
       "sys.chart.sequential-warm.700",
       "sys.chart.surface",
       3
+    ],
+    [
+      "sys.color.primary",
+      "sys.color.surface-raised",
+      3
+    ],
+    [
+      "sys.color.primary",
+      "sys.color.primary-container",
+      3
+    ],
+    [
+      "sys.color.focus-ring",
+      "sys.color.surface-raised",
+      3
+    ],
+    [
+      "sys.color.focus-ring",
+      "sys.color.primary-container",
+      3
     ]
   ]
 }

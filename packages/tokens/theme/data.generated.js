@@ -465,5 +465,9 @@ export const CONTRAST_PAIRS = [
   ["sys.chart.ink-primary","sys.chart.surface",4.5],
   ["sys.chart.ink-secondary","sys.chart.surface",4.5],
   ["sys.chart.sequential-warm.600","sys.chart.surface",3],
-  ["sys.chart.sequential-warm.700","sys.chart.surface",3]
+  ["sys.chart.sequential-warm.700","sys.chart.surface",3],
+  ["sys.color.primary","sys.color.surface-raised",3],
+  ["sys.color.primary","sys.color.primary-container",3],
+  ["sys.color.focus-ring","sys.color.surface-raised",3],
+  ["sys.color.focus-ring","sys.color.primary-container",3]
 ];
