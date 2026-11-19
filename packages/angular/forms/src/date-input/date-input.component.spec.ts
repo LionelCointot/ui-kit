@@ -2,7 +2,8 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { LcFillMode, LcRounded, LcSize } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcDateInputComponent, toIsoDate } from './date-input.component';
+import { LcDateInputComponent } from './date-input.component';
+import { toIsoDate } from './date-math';
 
 /** Caractérisation (T0, CA-3) du mode natif actuel de `lc-date-input` : à garder verte à travers la refonte. */
 @Component({

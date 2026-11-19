@@ -15,9 +15,8 @@ import {
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { LC_DEFAULTS, LcFillMode, LcRounded, LcSize, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
+import { toIsoDate } from './date-math';
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const LOCAL_DATE = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/;
 
 /**
  * Saisie de date sur `input[type=date]` natif. Valeur (model) au format ISO `AAAA-MM-JJ` ou `null` :
@@ -99,19 +98,4 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     this.blurred.set(true);
     this.touch.emit();
   }
-}
-
-/**
- * Texte du champ → date ISO : la valeur native est déjà ISO ; repli pour un navigateur sans sélecteur natif
- * (saisie « JJ/MM/AAAA »). `undefined` = saisie incomplète ou invalide (valeur inchangée), `null` = vide.
- */
-export function toIsoDate(text: string): string | null | undefined {
-  if (text === '') return null;
-  if (ISO_DATE.test(text)) return text;
-  const match = LOCAL_DATE.exec(text);
-  if (!match) return undefined;
-  const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return undefined;
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
