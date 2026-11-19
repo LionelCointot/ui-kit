@@ -26,9 +26,6 @@ class FormHostComponent {
   readonly f = form(this.model);
 }
 
-const MISSING = 'Date incomplète. Exemple : 12/11/2026';
-const UNREADABLE = 'Date non reconnue. Exemple : 12/11/2026';
-
 async function mount<T>(type: new () => T, mode: LcDatePickerMode = 'calendar', locale?: string) {
   TestBed.configureTestingModule({ providers: [{ provide: LC_DATE_PICKER, useValue: mode }] });
   if (locale) TestBed.overrideProvider(LC_LOCALE, { useValue: { locale, currency: 'USD' } });
@@ -328,14 +325,15 @@ describe('CA-6 un jour qui n’existe pas ne se saisit pas, sans message', () =>
 });
 
 describe('CA-7 date incomplète à la sortie', () => {
-  it('CA-7 : 12/mm/aaaa puis blur : null, aria-invalid, message relié', async () => {
-    const { host, input, type, blur, message } = await mount(HostComponent);
+  it('CA-7 : 12/mm/aaaa puis blur : texte gardé, null, aria-invalid, aucun message', async () => {
+    const { host, input, type, blur, message, root } = await mount(HostComponent);
     await type('12');
     await blur();
     expect(input.value).toBe('12/mm/aaaa');
     expect(host.value()).toBeNull();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(message()).toEqual([MISSING]);
+    expect(message()).toEqual([]);
+    expect(root.textContent).not.toMatch(/Exemple|Date incomplète/);
   });
 
   it('CA-7 : l’état disparaît quand la date est complète', async () => {
@@ -368,6 +366,7 @@ describe('CA-7 date incomplète à la sortie', () => {
     const state = host.f.day();
     expect(state.invalid()).toBe(true);
     expect(state.errors().map((e) => e.kind)).toContain('parse');
+    expect(state.errors().every((e) => !e.message)).toBe(true);
     expect(input.getAttribute('aria-invalid')).toBe('true');
     input.focus();
     await type('112026');
@@ -391,15 +390,6 @@ describe('CA-8 collage', () => {
     expect(host.value()).toBe(iso);
   });
 
-  it.each(['45/11/2026', '12/13/2026'])('CA-8 : « %s » est non reconnu, champ et valeur inchangés', async (text) => {
-    const { host, input, paste, message, settle } = await mount(HostComponent);
-    host.value.set('2026-03-05');
-    await settle();
-    await paste(text);
-    expect(input.value).toBe('05/03/2026');
-    expect(host.value()).toBe('2026-03-05');
-    expect(message()).toEqual([UNREADABLE]);
-  });
 
   it('CA-6 : « 31/04/2026 » collé est ramené à 30/04/2026 sans message', async () => {
     const { host, input, paste, message } = await mount(HostComponent);
@@ -409,17 +399,18 @@ describe('CA-8 collage', () => {
     expect(message()).toEqual([]);
   });
 
-  it.each(['12/11/26', 'demain'])('CA-8 : « %s » laisse champ et valeur, message jusqu’à la frappe suivante', async (text) => {
-    const { host, input, paste, message, key, settle } = await mount(HostComponent);
+  it.each(['12/11/26', '45/11/2026', '12/13/2026', 'demain'])('CA-8 : « %s » est ignoré en silence : champ et valeur inchangés, ni message ni état invalide', async (text) => {
+    const { host, input, paste, message, root, blur, settle } = await mount(HostComponent);
     host.value.set('2026-03-05');
     await settle();
     input.focus();
     await paste(text);
+    await blur();
     expect(input.value).toBe('05/03/2026');
     expect(host.value()).toBe('2026-03-05');
-    expect(message()).toEqual([UNREADABLE]);
-    await key('ArrowUp');
     expect(message()).toEqual([]);
+    expect(root.textContent).not.toMatch(/Exemple|non reconnue/);
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
   });
 });
 

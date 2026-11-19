@@ -107,24 +107,10 @@ export const FondDeLaZone: Story = {
 })
 class StatesComponent {}
 
-@Component({
-  selector: 'lc-date-input-below',
-  imports: [LcDateInputComponent],
-  template: `<div style="max-width:20rem"><lc-date-input ariaLabel="Date" />
-    <button type="button" style="display:block;margin-block-start:4px;inline-size:100%;min-block-size:40px">Élément placé juste sous le champ</button></div>`,
-})
-class BelowComponent {}
-
 /** Captures : désactivé et lecture seule (aucun bouton, zones non modifiables). */
 export const Etats: Story = {
   decorators: [moduleMetadata({ imports: [StatesComponent] })],
   render: () => ({ template: '<lc-date-input-states />' }),
-};
-
-/** Captures : hors formulaire, le message sous le cadre face à un élément placé juste dessous. */
-export const ContenuSuivant: Story = {
-  decorators: [moduleMetadata({ imports: [BelowComponent] })],
-  render: () => ({ template: '<lc-date-input-below />' }),
 };
 
 /** Captures : champ vide, sans scénario joué. */
@@ -144,18 +130,4 @@ export const HoteNatif: Story = {
 /** Captures et essais : champ vide en en-US (mois, jour, année). */
 export const ChampVideEnUS: Story = {
   decorators: [applicationConfig({ providers: [{ provide: LC_LOCALE, useValue: { locale: 'en-US', currency: 'USD' } }] })],
-};
-
-@Component({
-  selector: 'lc-date-input-narrow',
-  imports: [LcDateInputComponent],
-  template: `<div style="inline-size:160px"><lc-date-input ariaLabel="Date" />
-    <button type="button" style="display:block;inline-size:100%;min-block-size:40px">Suite</button></div>`,
-})
-class NarrowComponent {}
-
-/** Captures : champ étroit (160 px), message hors formulaire. */
-export const ChampEtroit: Story = {
-  decorators: [moduleMetadata({ imports: [NarrowComponent] })],
-  render: () => ({ template: '<lc-date-input-narrow />' }),
 };
