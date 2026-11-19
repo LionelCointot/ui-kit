@@ -586,6 +586,25 @@ lc-form-field [lcSuffix] {
   vertical-align: middle;
 }
 
+/* Niveaux mois et années : 4 colonnes sur 3 lignes, même largeur ; la pilule garde la hauteur d'une cellule de jours. */
+.lc-calendar__grid--wide .lc-calendar__day {
+  block-size: calc(2 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+}
+
+.lc-calendar__grid--wide .lc-calendar__day::before {
+  inset-block: calc(var(--lc-calendar-cell-size, var(--lc-sys-space-10)) / 2);
+}
+
+.lc-calendar__grid--wide .lc-calendar__day[aria-current='date']::after {
+  inset-block-end: calc(var(--lc-calendar-cell-size, var(--lc-sys-space-10)) / 2 + var(--lc-sys-space-1));
+}
+
+/* Niveau des années : le titre est du texte, sans contour ni chevron. */
+.lc-calendar__title--text {
+  border: 0;
+  cursor: default;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lc-calendar {
     animation: none;

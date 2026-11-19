@@ -153,6 +153,13 @@ export interface LcLabels {
   readonly datePreviousMonth: string;
   readonly dateNextMonth: string;
   readonly dateChooseMonthOf: (title: string) => string;
+  readonly dateChooseYearOf: (title: string) => string;
+  readonly datePreviousYear: string;
+  readonly dateNextYear: string;
+  readonly datePreviousYears: string;
+  readonly dateNextYears: string;
+  /** Titre du niveau des années : première et dernière année affichées. */
+  readonly dateYearsRange: (first: number, last: number) => string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -714,6 +721,12 @@ export const LC_LABELS_FR: LcLabels = {
   datePreviousMonth: 'Mois précédent',
   dateNextMonth: 'Mois suivant',
   dateChooseMonthOf: (title) => `${title} : choisir un mois`,
+  dateChooseYearOf: (title) => `${title} : choisir une année`,
+  datePreviousYear: 'Année précédente',
+  dateNextYear: 'Année suivante',
+  datePreviousYears: 'Années précédentes',
+  dateNextYears: 'Années suivantes',
+  dateYearsRange: (first, last) => `${first} à ${last}`,
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -927,6 +940,12 @@ export const LC_LABELS_EN: LcLabels = {
   datePreviousMonth: 'Previous month',
   dateNextMonth: 'Next month',
   dateChooseMonthOf: (title) => `${title}: choose a month`,
+  dateChooseYearOf: (title) => `${title}: choose a year`,
+  datePreviousYear: 'Previous year',
+  dateNextYear: 'Next year',
+  datePreviousYears: 'Previous years',
+  dateNextYears: 'Next years',
+  dateYearsRange: (first, last) => `${first} to ${last}`,
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });
