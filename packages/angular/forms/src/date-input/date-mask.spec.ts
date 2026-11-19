@@ -78,11 +78,11 @@ describe('date-mask : frappe', () => {
 
   it('chiffre fautif ignoré : jour 00, 32 à 39, mois 00 et 13 à 19, année 0000 ou commençant par 0', () => {
     expect(typed('00').zones.day).toBe('0');
-    expect(typed('32').zones.day).toBe('3');
-    expect(typed('39').zones.day).toBe('3');
+    expect(typed('32').zones.day).toBe('03');
+    expect(typed('39').zones.day).toBe('03');
     expect(typed('1200').zones.month).toBe('0');
-    expect(typed('1213').zones.month).toBe('1');
-    expect(typed('1219').zones.month).toBe('1');
+    expect(typed('1213').zones.month).toBe('01');
+    expect(typed('1219').zones.month).toBe('01');
     const year = typed('0', FR, { day: '12', month: '11', year: '' }, 'year');
     expect(year.zones.year).toBe('');
     expect(typed('0000', FR, { day: '12', month: '11', year: '' }, 'year').zones.year).toBe('');
@@ -91,11 +91,11 @@ describe('date-mask : frappe', () => {
 
   it('mois rempli : un jour trop grand est ignoré (février 2026, 2 puis 9 laisse 02)', () => {
     const base = { day: '', month: '02', year: '2026' };
-    expect(typed('29', FR, base).zones.day).toBe('2');
+    expect(typed('29', FR, base).zones.day).toBe('02');
     expect(typed('29', FR, base).text).toBe('02/02/2026');
     expect(typed('28', FR, base).zones.day).toBe('28');
     expect(typed('29', FR, { ...base, year: '2024' }).zones.day).toBe('29');
-    expect(typed('31', FR, { day: '', month: '04', year: '2026' }).zones.day).toBe('3');
+    expect(typed('31', FR, { day: '', month: '04', year: '2026' }).zones.day).toBe('03');
     expect(typed('29', FR, { day: '', month: '02', year: '' }).zones.day).toBe('29');
   });
 
@@ -115,7 +115,7 @@ describe('date-mask : frappe', () => {
   it('en en-US : mois d’abord, le jour se règle sur le mois déjà rempli', () => {
     expect(typed('022', US).zones).toMatchObject({ month: '02', day: '2' });
     expect(typed('02292026', US).text).toBe('02/28/2026');
-    expect(typed('0229', US, { day: '', month: '', year: '2026' }).zones.day).toBe('2');
+    expect(typed('0229', US, { day: '', month: '', year: '2026' }).zones.day).toBe('02');
     expect(typed('11122026', US).text).toBe('11/12/2026');
   });
 
@@ -217,12 +217,32 @@ describe('date-mask : zone jamais bloquée en attente', () => {
     expect(typed('32026', FR, base).text).toBe('03/02/2026');
   });
 
-  it('mois de 30 jours : 3 attend, 1 est ignoré (la zone relit 03), 0 donne 30', () => {
+  it('mois de 30 jours : 3 attend, 0 donne 30 ; 1 est ignoré et la zone se complète en 03', () => {
     const base = { day: '', month: '04', year: '2026' };
-    const pending = typed('31', FR, base);
-    expect(pending.zones.day).toBe('3');
-    expect(pending.zone).toBe('day');
+    expect(typed('3', FR, base).zone).toBe('day');
     expect(typed('30', FR, base).zones.day).toBe('30');
+    const impossible = typed('31', FR, base);
+    expect(impossible.zones.day).toBe('03');
+    expect(impossible.zone).toBe('month');
+  });
+
+  it('second chiffre impossible : la zone se complète, les chiffres d’après vont à la zone vide suivante', () => {
+    expect(typed('312026', FR, { day: '', month: '04', year: '' }).text).toBe('03/04/2026');
+    expect(typed('3126', FR, { day: '', month: '04', year: '' }).text).toBe('03/04/26');
+    const month = typed('13', FR, { day: '12', month: '', year: '' }, 'month');
+    expect(month.zones.month).toBe('01');
+    expect(month.zone).toBe('year');
+    expect(typed('29', FR, { day: '', month: '02', year: '2026' }).text).toBe('02/02/2026');
+  });
+
+  it('un 0 seul s’affiche « 0j » ou « 0m », sans valeur ; sans second chiffre la zone redevient vide', () => {
+    expect(typed('0').text).toBe('0j/mm/aaaa');
+    expect(typed('10').text).toBe('10/mm/aaaa');
+    expect(typed('120').text).toBe('12/0m/aaaa');
+    expect(typed('0', US).text).toBe('0m/jj/aaaa');
+    expect(toIso({ day: '0', month: '11', year: '2026' })).toBeNull();
+    expect(settle({ day: '0', month: '11', year: '2026' }, 'day').day).toBe('');
+    expect(typed('00').text).toBe('0j/mm/aaaa');
   });
 
   it('un jour ou un mois en attente compte comme rempli pour la valeur ; un 0 seul non', () => {

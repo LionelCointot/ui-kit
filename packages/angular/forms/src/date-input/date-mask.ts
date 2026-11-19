@@ -101,7 +101,12 @@ export function typeDigit(zones: Zones, zone: Zone, digit: string, order: readon
     accepted = alone ? `0${next}` : next;
   } else {
     const value = Number(next);
-    if (value < 1 || value > (zone === 'day' ? maxDay(zones) : 12)) return ignored;
+    if (value < 1 || value > (zone === 'day' ? maxDay(zones) : 12)) {
+      // Second chiffre impossible : ignoré, et la zone se complète avec son premier chiffre (un « 0 » seul ne le peut pas).
+      if (current === '0') return ignored;
+      const completed = { ...zones, [zone]: `0${current}` };
+      return withClamp(completed, advance(completed, order, zone));
+    }
     accepted = next;
   }
   const updated = { ...zones, [zone]: accepted };
@@ -150,8 +155,10 @@ export function render(
   const ranges = {} as Record<Zone, readonly [number, number]>;
   for (const zone of order) {
     if (text) text += '/';
-    // Un chiffre de jour ou de mois en attente s'affiche déjà « 0n » : le jour ou le mois suivant ne change rien.
-    const shown = zones[zone] ? (zone === 'year' ? zones[zone] : zones[zone].padStart(2, '0')) : letters[zone];
+    // Un chiffre de jour ou de mois en attente s'affiche « 0n », un « 0 » seul « 0j » : un jour 00 ne s'affiche jamais.
+    const digits = zones[zone];
+    const shown =
+      !digits ? letters[zone] : digits === '0' && zone !== 'year' ? `0${letters[zone][0]}` : zone === 'year' ? digits : digits.padStart(2, '0');
     ranges[zone] = [text.length, text.length + shown.length];
     text += shown;
   }

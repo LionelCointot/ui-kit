@@ -1,6 +1,12 @@
 import { Component, signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+// Le projet Vitest « storybook » ne charge pas les feuilles globales d'angular.json : on les charge ici pour mesurer le vrai rendu.
+import '../../../../tokens/dist/css/lc-tokens.css';
+import '../../../../tokens/dist/css/theme-default.css';
+import '../../../../tokens/dist/css/theme-dark.css';
+import '../../../../tokens/dist/css/base.css';
+import '../../../styles/ui-angular.css';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcDateInputComponent } from '../date-input/date-input.component';
 import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
@@ -55,6 +61,27 @@ export const ZoneActiveSelectionnee: Story = {
     expect(input).toHaveFocus();
     expect(input.value).toBe('05/03/2026');
     expect(selection()).toBe('2026'); // la zone active (l'année) reste sélectionnée
+  },
+};
+
+/** Navigateur réel : à 160 px le message passe sur plusieurs lignes, la place réservée suit sa hauteur et il ne recouvre pas l'élément suivant. */
+export const MessageChampEtroit: Story = {
+  decorators: [
+    moduleMetadata({ imports: [LcDateInputComponent] }),
+    applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] }),
+  ],
+  render: () => ({
+    template: '<div style="width:160px"><lc-date-input ariaLabel="Date" /><button type="button">Suite</button></div>',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('textbox'));
+    await userEvent.keyboard('12');
+    await userEvent.tab();
+    const message = await canvas.findByRole('alert');
+    const next = canvas.getByRole('button', { name: 'Suite' });
+    await waitFor(() => expect(message.getBoundingClientRect().bottom).toBeLessThanOrEqual(next.getBoundingClientRect().top));
+    expect(message.getBoundingClientRect().height).toBeGreaterThan(30); // plusieurs lignes
   },
 };
 

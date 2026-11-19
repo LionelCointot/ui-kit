@@ -3,9 +3,9 @@
   position: relative;
 }
 
-/* Place réservée au message : une ligne de la taille et de l'interligne du message, plus l'écart. */
+/* Place réservée au message : sa hauteur mesurée (`--_message-height`, posée par le composant), à défaut une ligne, plus l'écart. */
 :host(.lc-date-input--calendar.lc-date-input--message) {
-  margin-block-end: calc(var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal) + var(--lc-sys-space-1));
+  margin-block-end: calc(var(--_message-height, var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal)) + var(--lc-sys-space-1));
 }
 
 /* Zone active du champ à zones : le texte sélectionné. */

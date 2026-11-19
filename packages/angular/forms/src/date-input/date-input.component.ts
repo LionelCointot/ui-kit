@@ -5,6 +5,7 @@ import {
   Component,
   ElementRef,
   booleanAttribute,
+  DestroyRef,
   computed,
   forwardRef,
   inject,
@@ -102,6 +103,8 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   readonly labelable = true;
 
   private readonly doc = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private messageObserver?: ResizeObserver;
   protected readonly isCalendar = resolveDatePickerMode(inject(LC_DATE_PICKER), this.doc) === 'calendar';
   protected readonly labels = inject(LC_LABELS);
   // Tout ce qui sert au champ à zones n'est construit qu'en mode calendrier.
@@ -139,11 +142,29 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
 
   constructor() {
     // La zone active reste sélectionnée tant que le champ a le focus, aussi après un rendu ou une valeur posée par le code.
-    if (this.isCalendar) afterRenderEffect(() => {
+    if (!this.isCalendar) return;
+    afterRenderEffect(() => {
       this.mask();
       this.active();
       this.selectActive();
     });
+    afterRenderEffect(() => this.trackMessageHeight(this.message() !== null));
+    inject(DestroyRef).onDestroy(() => this.messageObserver?.disconnect());
+  }
+
+  /** Le message n'est pas dans le flux : sa hauteur réelle (qui dépend de la largeur du champ) est copiée dans la marge basse de l'hôte. */
+  private trackMessageHeight(shown: boolean): void {
+    this.messageObserver?.disconnect();
+    this.messageObserver = undefined;
+    const message = shown ? this.host.querySelector<HTMLElement>('.lc-date-input__message') : null;
+    if (!message || typeof ResizeObserver === 'undefined') {
+      this.host.style.removeProperty('--_message-height');
+      return;
+    }
+    const measure = () => this.host.style.setProperty('--_message-height', `${message.offsetHeight}px`);
+    measure();
+    this.messageObserver = new ResizeObserver(measure);
+    this.messageObserver.observe(message);
   }
 
   protected readonly showInvalid = computed(() =>
