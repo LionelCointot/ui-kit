@@ -227,3 +227,180 @@ describe('calendar-panel, niveau des jours', () => {
     expect(el.querySelector('[aria-label="Next month"]')).not.toBeNull();
   });
 });
+
+describe('calendar-panel, niveaux mois et années', () => {
+  afterEach(() => document.body.replaceChildren());
+  const TITLE = '.lc-calendar__title';
+
+  async function toMonths(inputs: Record<string, unknown> = {}, english = false) {
+    const ctx = await setup(inputs, english);
+    await ctx.click(`button${TITLE}`);
+    return ctx;
+  }
+  async function toYears(inputs: Record<string, unknown> = {}, english = false) {
+    const ctx = await toMonths(inputs, english);
+    await ctx.click(`button${TITLE}`);
+    return ctx;
+  }
+
+  it('niveau mois : douze mois en 4 colonnes sur 3 lignes, titre « 2026 » encore un bouton', async () => {
+    const { el, title, click } = await toMonths();
+    expect(title()).toBe('2026');
+    expect(el.querySelector(`button${TITLE}`)!.getAttribute('aria-label')).toBe('2026 : choisir une année');
+    expect(el.querySelectorAll('thead')).toHaveLength(0);
+    const rows = [...el.querySelectorAll('tbody tr')];
+    expect(rows.map((row) => row.children.length)).toEqual([4, 4, 4]);
+    const cells = [...el.querySelectorAll('td[role=gridcell]')];
+    expect(cells.map((c) => c.textContent)).toEqual(
+      Array.from({ length: 12 }, (_, m) => new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(new Date(2026, m, 1))),
+    );
+    expect(cells[10].getAttribute('aria-label')).toBe('novembre 2026');
+    expect(el.querySelector('[aria-label="Année précédente"]')).not.toBeNull();
+    await click('[aria-label="Année suivante"]');
+    expect(title()).toBe('2027');
+    await click('[aria-label="Année précédente"]');
+    await click('[aria-label="Année précédente"]');
+    expect(title()).toBe('2025');
+  });
+
+  it('niveau années : 2019 à 2030, titre en texte simple, flèches de douze ans', async () => {
+    const { el, title, click } = await toYears();
+    expect(title()).toBe('2019 à 2030');
+    expect(el.querySelector('button' + TITLE)).toBeNull();
+    const cells = [...el.querySelectorAll('td[role=gridcell]')];
+    expect(cells.map((c) => c.textContent)).toEqual(Array.from({ length: 12 }, (_, i) => String(2019 + i)));
+    expect(cells[0].getAttribute('aria-label')).toBe('2019');
+    await click('[aria-label="Années suivantes"]');
+    expect(title()).toBe('2031 à 2042');
+    await click('[aria-label="Années précédentes"]');
+    await click('[aria-label="Années précédentes"]');
+    expect(title()).toBe('2007 à 2018');
+  });
+
+  it('choisir une année puis un mois ramène aux jours, sans rien choisir, focus sur le niveau d’arrivée', async () => {
+    const { el, picked, title, click, active } = await toYears({ selection: { from: '2026-11-12', to: null } });
+    await click('td[data-date="2024-01-01"]');
+    expect(title()).toBe('2024');
+    expect(active().getAttribute('data-date')).toBe('2024-11-01');
+    expect(document.activeElement).toBe(active());
+    await click('td[data-date="2024-03-01"]');
+    expect(title()).toBe('mars 2024');
+    expect(active().getAttribute('data-date')).toBe('2024-03-12');
+    expect(document.activeElement).toBe(active());
+    expect(el.querySelectorAll('thead th')).toHaveLength(7);
+    expect(picked).not.toHaveBeenCalled();
+    expect(el.querySelector('td[aria-selected="true"]')).toBeNull();
+  });
+
+  it('repères : mois et année choisis, mois et année d’aujourd’hui', async () => {
+    const { el, cell, click } = await toMonths({ selection: { from: '2026-03-04', to: null } });
+    expect(cell('2026-03-01').getAttribute('aria-selected')).toBe('true');
+    expect(el.querySelectorAll('td[aria-selected="true"]')).toHaveLength(1);
+    expect(cell('2026-11-01').getAttribute('aria-current')).toBe('date');
+    expect(el.querySelectorAll('[aria-current="date"]')).toHaveLength(1);
+    await click(`button${TITLE}`);
+    expect(cell('2026-01-01').getAttribute('aria-selected')).toBe('true');
+    expect(cell('2026-01-01').getAttribute('aria-current')).toBe('date');
+    expect(cell('2027-01-01').getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('bornes aux niveaux mois et années : désactivés, atteignables, sans effet', async () => {
+    const { el, cell, click, press, active, title } = await toMonths({ min: '2026-03-10', max: '2026-08-20' });
+    expect(cell('2026-02-01').getAttribute('aria-disabled')).toBe('true');
+    expect(cell('2026-09-01').getAttribute('aria-disabled')).toBe('true');
+    expect(cell('2026-03-01').getAttribute('aria-disabled')).toBeNull();
+    expect(cell('2026-08-01').getAttribute('aria-disabled')).toBeNull();
+    expect(el.querySelector<HTMLButtonElement>('[aria-label="Année précédente"]')!.disabled).toBe(true);
+    expect(el.querySelector<HTMLButtonElement>('[aria-label="Année suivante"]')!.disabled).toBe(true);
+    await click('td[data-date="2026-02-01"]');
+    expect(title()).toBe('2026');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    await press('ArrowLeft');
+    expect(active().getAttribute('data-date')).toBe('2026-02-19');
+    await press('Enter');
+    expect(title()).toBe('2026');
+    await click(`button${TITLE}`);
+    expect(cell('2025-01-01').getAttribute('aria-disabled')).toBe('true');
+    expect(cell('2027-01-01').getAttribute('aria-disabled')).toBe('true');
+    expect(cell('2026-01-01').getAttribute('aria-disabled')).toBeNull();
+    expect(el.querySelector<HTMLButtonElement>('[aria-label="Années précédentes"]')!.disabled).toBe(true);
+    expect(el.querySelector<HTMLButtonElement>('[aria-label="Années suivantes"]')!.disabled).toBe(true);
+    await click('td[data-date="2027-01-01"]');
+    expect(title()).toBe('2019 à 2030');
+  });
+
+  it('clavier au niveau des mois : ±1, ±4, Page = une année, Maj + Page sans effet de plus, Entrée descend', async () => {
+    const { press, active, title, el } = await toMonths();
+    const at = () => active().getAttribute('data-date')!.slice(0, 7);
+    expect(el.querySelectorAll('td[tabindex="0"]')).toHaveLength(1);
+    await press('ArrowRight');
+    expect(at()).toBe('2026-12');
+    await press('ArrowDown');
+    expect(at()).toBe('2027-04');
+    expect(title()).toBe('2027');
+    await press('ArrowUp');
+    await press('ArrowLeft');
+    expect(at()).toBe('2026-11');
+    await press('PageDown');
+    expect(at()).toBe('2027-11');
+    await press('PageUp', { shiftKey: true });
+    expect(at()).toBe('2026-11');
+    expect(document.activeElement).toBe(active());
+    await press('ArrowLeft');
+    await press('Enter');
+    expect(title()).toBe('octobre 2026');
+  });
+
+  it('clavier au niveau des années : ±1, ±4, Page = douze ans, la page suit le focus, Entrée descend', async () => {
+    const { press, active, title, el } = await toYears();
+    const at = () => active().getAttribute('data-date')!.slice(0, 4);
+    expect(el.querySelectorAll('td[tabindex="0"]')).toHaveLength(1);
+    await press('ArrowRight');
+    expect(at()).toBe('2027');
+    await press('ArrowDown');
+    expect(at()).toBe('2031');
+    expect(title()).toBe('2031 à 2042');
+    await press('ArrowLeft');
+    expect(at()).toBe('2030');
+    expect(title()).toBe('2019 à 2030');
+    await press('PageUp');
+    expect(at()).toBe('2018');
+    expect(title()).toBe('2007 à 2018');
+    expect(document.activeElement).toBe(active());
+    await press('Enter');
+    expect(title()).toBe('2018');
+  });
+
+  it('Échap ferme à chaque niveau', async () => {
+    const months = await toMonths();
+    await months.press('Escape');
+    expect(months.closed).toHaveBeenCalledTimes(1);
+    await months.click(`button${TITLE}`);
+    await months.press('Escape');
+    expect(months.closed).toHaveBeenCalledTimes(2);
+  });
+
+  it('focusInitial revient au niveau des jours', async () => {
+    const { fixture, title } = await toYears();
+    fixture.componentInstance.focusInitial();
+    await fixture.whenStable();
+    expect(title()).toBe('novembre 2026');
+  });
+
+  it('libellés anglais des niveaux', async () => {
+    const months = await toMonths({}, true);
+    expect(months.el.querySelector(`button${TITLE}`)!.getAttribute('aria-label')).toBe('2026: choose a year');
+    expect(months.el.querySelector('[aria-label="Previous year"]')).not.toBeNull();
+    expect(months.el.querySelector('td[data-date="2026-11-01"]')!.textContent).toBe('Nov');
+    await months.click(`button${TITLE}`);
+    expect(months.title()).toBe('2019 to 2030');
+    expect(months.el.querySelector('[aria-label="Next years"]')).not.toBeNull();
+  });
+});

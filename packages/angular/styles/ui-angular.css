@@ -477,7 +477,7 @@ lc-form-field [lcSuffix] {
 }
 
 .lc-calendar__nav:hover:not(:disabled),
-.lc-calendar__title:hover {
+.lc-calendar__title:hover:not(.lc-calendar__title--text) {
   background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
 }
 

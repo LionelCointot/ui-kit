@@ -94,7 +94,7 @@ const MONDAY = '2026-11-02';
               </thead>
             }
             <tbody>
-              @for (week of month.weeks; track $index) {
+              @for (week of month.rows; track $index) {
                 <tr role="row">
                   @for (cell of week; track $index) {
                     @if (cell) {
