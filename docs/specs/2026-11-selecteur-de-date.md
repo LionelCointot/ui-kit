@@ -15,7 +15,8 @@
 - **Décisions prises pendant le cadrage** :
   - 2026-11-19, utilisateur : sélecteur du système sur mobile, calendrier du kit sur ordinateur.
   - 2026-11-19, utilisateur : les deux besoins sont couverts, date simple et période.
-  - 2026-11-19, `ui-ux-designer` : trois directions maquettées (`docs/design/explorations/2026-11-date-picker/index.html`), recommandation A (sobre) pour la date simple et C pour la période. **Le choix entre A et B pour la date simple reste à confirmer par l'utilisateur** (section 12).
+  - 2026-11-19, `ui-ux-designer` : trois directions maquettées (`docs/design/explorations/2026-11-date-picker/index.html`) : A (sobre), B (riche : saisie par zones, calendrier à trois niveaux), C (période, avec raccourcis).
+  - 2026-11-19, utilisateur, sur maquettes : « On fait B et C ». **B pour la date simple, C pour la période.** Les sections 5 à 11 ci-dessous décrivent encore A : elles sont réécrites pour B après les relectures en cours.
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : un composant public évolue sans rupture de contrat, un composant public est ajouté, un calendrier interne est partagé par les deux.
