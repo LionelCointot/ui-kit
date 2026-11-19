@@ -1,7 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormField, disabled, form } from '@angular/forms/signals';
+import { FormField, disabled, form, required } from '@angular/forms/signals';
 import { LcComboboxComponent } from './combobox/combobox.component';
+import { LcDateInputComponent } from './date-input/date-input.component';
 import { LcSliderComponent } from './slider/slider.component';
 
 interface FormsModel {
@@ -77,5 +78,45 @@ describe('lc-combobox et lc-slider dans un formulaire Signal Forms ([formField])
     host.locked.set(true);
     await fixture.whenStable();
     expect([text().disabled, range().disabled]).toEqual([true, true]);
+  });
+});
+
+/** CA-3 : `lc-date-input` (mode natif) est un hôte de `[formField]`. */
+@Component({
+  imports: [FormField, LcDateInputComponent],
+  template: `<lc-date-input ariaLabel="Date" [formField]="f.day" />`,
+})
+class DateFormHostComponent {
+  readonly model = signal<{ day: string | null }>({ day: null });
+  readonly f = form(this.model, (path) => {
+    required(path.day, { message: 'Obligatoire.' });
+  });
+}
+
+describe('CA-3 lc-date-input dans un formulaire Signal Forms ([formField])', () => {
+  it('valeur du modèle vers le champ et retour, invalide et obligatoire', async () => {
+    const fixture = TestBed.createComponent(DateFormHostComponent);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const input = el.querySelector<HTMLInputElement>('input[type="date"]')!;
+    const host = fixture.componentInstance;
+    expect(input.getAttribute('aria-required')).toBe('true');
+    expect(host.f.day().invalid()).toBe(true);
+    input.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    host.model.set({ day: '2026-11-12' });
+    await fixture.whenStable();
+    expect(input.value).toBe('2026-11-12');
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    input.value = '2026-12-01';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(host.model().day).toBe('2026-12-01');
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(host.model().day).toBeNull();
+    expect(host.f.day().invalid()).toBe(true);
   });
 });

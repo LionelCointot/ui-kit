@@ -305,7 +305,7 @@ Vérifications manuelles (hors tests automatiques) :
 
 | Tâche | Contenu | Taille | Couvre |
 |---|---|---|---|
-| T0 | `qa-engineer` : tests de caractérisation du mode natif actuel ; vérifier que le projet de tests en navigateur tourne | S | CA-3 |
+| T0 (livrée) | `qa-engineer` : tests de caractérisation du mode natif actuel ; vérifier que le projet de tests en navigateur tourne | S | CA-3 |
 | T1 | `date-math.ts`, `date-picker-mode.ts` et jeton `LC_DATE_PICKER`, export explicite de `toIsoDate` | S | CA-2, CA-3 |
 | T2 | `date-mask.ts` et champ à zones dans `lc-date-input`, sans panneau : frappe, flèches, jour impossible refusé ou ramené, collage, erreurs par `transformedValue`, annonces, mode natif gardé. Le plus risqué : à prototyper en premier | L | CA-1, CA-4 à CA-11 |
 | T3 | `calendar-panel`, niveau jours : API à niveau, nombre de mois et sélection `{ from, to }` dès le départ ; clavier, ARIA, styles, `calendar.tokens.json`, paires de contraste, libellés | M | CA-16 (jours), CA-17 (jours), CA-19, CA-20, CA-24, CA-27, CA-38 |
@@ -346,4 +346,11 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 | 2026-11-19 | `novice-user` | second test des textes | COMPRIS AVEC DIFFICULTÉ, tâches accomplies sauf une | Retenu : « Changer le début » (aucune issue visible après un premier clic erroné) ; ligne « Sans date de fin : tout depuis le… » sous les champs ; douze années affichées et titre exact (« 2019 à 2030 ») ; dates des raccourcis visibles sans survol ; « Effacer la date » et « Effacer la période ». Non retenu : expliquer `jj/mm/aaaa`, le zéro devant le chiffre et les barres (les deux façons de taper marchent). Reste à juger sur l'écran réel (V-2) : le titre est-il reconnu comme un bouton. |
 | 2026-11-19 | utilisateur | validation | validée | « oui pour le devis » ; pas de test au lecteur d'écran (« on test pas cette a cessibilite la pour le test de l'ecran ») : risque accepté, V-1 retiré. |
 
-**Écarts constatés à l'implémentation** : (à remplir)
+**Vérifications par tâche**
+
+| Date | Tâche | Rôle | Statut | Preuves et suites |
+|---|---|---|---|---|
+| 2026-11-19 | T0 | `qa-engineer`, relancé par la session principale | FAIT | 24 tests de caractérisation « CA-3 » dans `forms/src/date-input/date-input.component.spec.ts` et un cas `[formField]` dans `signal-forms.spec.ts`, verts sur le composant d'avant la refonte : 1 526 tests (1 501 avant). Tests en navigateur réel : `npx vitest run --project storybook` passe sur ce poste (36 fichiers de stories, 223 tests, environ 1 minute). |
+
+**Écarts constatés à l'implémentation**
+- T0 : le repli « JJ/MM/AAAA » de `toIsoDate` n'est pas atteignable par une saisie dans le champ natif (un `input[type=date]` rend une valeur vide pour tout texte non ISO) ; il est donc caractérisé en appelant la fonction, pas par le champ. `lc-date-input` n'a pas encore de story : T5 en ajoute.
