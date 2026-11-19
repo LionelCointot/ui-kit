@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  afterRenderEffect,
   Component,
   ElementRef,
   booleanAttribute,
@@ -16,7 +17,7 @@ import {
 } from '@angular/core';
 import { transformedValue } from '@angular/forms/signals';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcRounded, LcSize, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import {
   EMPTY_ZONES, MaskChange, Zone, Zones, clear, fromIso, isEmpty, neighbor, parsePaste, render, settle, step, toIso,
@@ -29,6 +30,8 @@ import { LC_DATE_PICKER, resolveDatePickerMode } from './date-picker-mode';
 interface DateEntry {
   readonly iso: string | null | undefined;
   readonly error: string | null;
+  /** Vrai quand la saisie vient du champ ; faux quand le modèle ou `reset()` a posé la valeur (les zones repartent d'elle). */
+  readonly typed: boolean;
 }
 
 /**
@@ -39,17 +42,18 @@ interface DateEntry {
  */
 @Component({
   selector: 'lc-date-input',
+  imports: [LcIconComponent],
   template: `
     @if (isCalendar) {
       <input #input class="lc-field__input" type="text" inputmode="numeric" autocomplete="off" spellcheck="false"
         [id]="inputId()" [value]="mask().text" [disabled]="disabled()" [readOnly]="readonly()"
         [attr.aria-label]="ariaLabel() || null" [attr.aria-invalid]="showInvalid() ? 'true' : null"
         [attr.aria-required]="isRequired() ? 'true' : null" [attr.aria-describedby]="describedBy()"
-        (keydown)="onKeydown($event)" (input)="onText($event)" (click)="onClick()" (focus)="onFocus()" (blur)="onBlur()" />
+        (keydown)="onKeydown($event)" (beforeinput)="onBeforeInput($event)" (input)="onText($event)" (click)="onClick()" (focus)="onFocus()" (blur)="onBlur()" />
       <span class="lc-visually-hidden" [id]="hintId">{{ labels.dateInputHint }}</span>
       <span class="lc-visually-hidden" aria-live="polite">{{ announcement() }}</span>
       @if (message(); as text) {
-        <span class="lc-date-input__message" [id]="messageId">{{ text }}</span>
+        <span class="lc-date-input__message" role="alert" [id]="messageId"><lc-icon name="circle-alert" /><span>{{ text }}</span></span>
       }
     } @else {
       <input #input class="lc-field__input" type="date" [id]="inputId()" [value]="value() ?? ''"
@@ -68,6 +72,8 @@ interface DateEntry {
     '[class.lc-field--invalid]': 'showInvalid()',
     '[class.lc-field--disabled]': 'disabled()',
     '[class.lc-field--readonly]': 'readonly()',
+    '[class.lc-date-input--calendar]': 'isCalendar',
+    '[class.lc-date-input--message]': 'message() !== null',
   },
 })
 export class LcDateInputComponent implements FormValueControl<string | null>, LcFormFieldControl {
@@ -98,34 +104,47 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   private readonly doc = inject(DOCUMENT);
   protected readonly isCalendar = resolveDatePickerMode(inject(LC_DATE_PICKER), this.doc) === 'calendar';
   protected readonly labels = inject(LC_LABELS);
-  private readonly locale = inject(LC_LOCALE).locale;
-  private readonly order = zoneOrder(this.locale);
-  private readonly example = new Intl.DateTimeFormat(this.locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-    .format(new Date(2026, 10, 12));
+  // Tout ce qui sert au champ à zones n'est construit qu'en mode calendrier.
+  private readonly locale = this.isCalendar ? inject(LC_LOCALE).locale : '';
+  private readonly order = this.isCalendar ? zoneOrder(this.locale) : [];
+  private readonly example = this.isCalendar
+    ? new Intl.DateTimeFormat(this.locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(2026, 10, 12))
+    : '';
   protected readonly hintId = lcUniqueId('date-hint');
   protected readonly messageId = lcUniqueId('date-message');
+  private readonly entry = this.isCalendar
+    ? transformedValue<string | null, DateEntry>(this.value, {
+        parse: (entry) => ({ value: entry.iso, error: entry.error ? { kind: 'parse', message: entry.error } : undefined }),
+        format: (iso) => ({ iso, error: null, typed: false }),
+      })
+    : undefined;
 
-  /** Zones affichées : suivent `value`, mais une date incomplète (valeur `null`) garde ses zones remplies. */
-  private readonly zones = linkedSignal<string | null, Zones>({
-    source: this.value,
-    computation: (iso, previous) =>
-      previous && toIso(previous.value) === iso ? previous.value : fromIso(iso),
+  /** Zones affichées : celles de la saisie tant qu'elle vient du champ (une date incomplète garde ses zones) ; sinon la valeur du modèle. */
+  private readonly zones = linkedSignal<DateEntry | undefined, Zones>({
+    source: () => this.entry?.(),
+    computation: (entry, previous) =>
+      !entry || (entry.typed && previous) ? (previous?.value ?? EMPTY_ZONES) : fromIso(entry.iso ?? null),
   });
   private readonly active = signal<Zone>(this.order[0]);
   protected readonly announcement = signal('');
   protected readonly mask = computed(() =>
     render(this.zones(), this.order, { day: this.labels.dateZoneDay, month: this.labels.dateZoneMonth, year: this.labels.dateZoneYear }));
-  private readonly entry = transformedValue<string | null, DateEntry>(this.value, {
-    parse: (entry) => ({ value: entry.iso, error: entry.error ? { kind: 'parse', message: entry.error } : undefined }),
-    format: (iso) => ({ iso, error: null }),
-  });
-  private readonly parseError = computed(() => this.entry.parseErrors()[0]?.message ?? null);
+  private readonly parseError = computed(() => this.entry?.parseErrors()[0]?.message ?? null);
   /** Hors formulaire le champ affiche lui-même son message ; sous `[formField]` il revient par `errors`. */
   protected readonly message = computed(() =>
     this.parseError() && !this.errors().some((error) => error.kind === 'parse') ? this.parseError() : null);
 
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
   private readonly blurred = signal(false);
+
+  constructor() {
+    // La zone active reste sélectionnée tant que le champ a le focus, aussi après un rendu ou une valeur posée par le code.
+    if (this.isCalendar) afterRenderEffect(() => {
+      this.mask();
+      this.active();
+      this.selectActive();
+    });
+  }
 
   protected readonly showInvalid = computed(() =>
     this.parseError() !== null || (this.field ? this.field.showInvalid() : this.invalid() && (this.touched() || this.blurred())));
@@ -180,15 +199,18 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
    * et effacements, `beforeinput` ne voyant pas les flèches). Collage et remplissage automatique arrivent par `input`.
    */
   protected onKeydown(event: KeyboardEvent): void {
-    if (this.readonly() || event.ctrlKey || event.metaKey || event.altKey || event.key === 'Tab') return;
     const { key } = event;
+    if (this.readonly() || key === 'Tab') return;
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      // Couper et effacer un mot détruiraient le masque : ni message ni changement.
+      if (/^x$/i.test(key) || key === 'Backspace' || key === 'Delete') event.preventDefault();
+      return;
+    }
     const zones = this.zones();
     const zone = this.active();
     if (/^\d$/.test(key)) this.apply(typeDigit(zones, zone, key, this.order));
     else if (key === '/' || key === '.' || key === '-' || key === 'ArrowRight') this.goTo(neighbor(this.order, zone, 1));
     else if (key === 'ArrowLeft') this.goTo(neighbor(this.order, zone, -1));
-    else if (key === 'Home') this.goTo(this.order[0]);
-    else if (key === 'End') this.goTo(this.order[2]);
     else if (key === 'ArrowUp' || key === 'ArrowDown') {
       this.apply(step(settle(zones, zone), zone, key === 'ArrowUp' ? 1 : -1, this.today()));
     } else if (key === 'Backspace' || key === 'Delete') this.apply({ zones: clear(zones, zone), zone });
@@ -196,12 +218,22 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     event.preventDefault();
   }
 
+  /** Clavier virtuel : un chiffre inséré vaut une frappe ; tout autre texte inséré est refusé. */
+  protected onBeforeInput(event: InputEvent): void {
+    if (this.readonly() || event.inputType !== 'insertText' || !event.cancelable) return;
+    event.preventDefault();
+    if (event.data && /^\d$/.test(event.data)) this.apply(typeDigit(this.zones(), this.active(), event.data, this.order));
+  }
+
+  /** Seul un remplacement de tout le texte (collage, remplissage automatique) est lu ; le reste (composition, touche morte, coupe) est annulé sans message. */
   protected onText(event: Event): void {
     const text = (event.target as HTMLInputElement).value.trim();
-    if (text !== this.mask().text) {
+    const type = (event as InputEvent).inputType;
+    const wholeText = !type || type === 'insertFromPaste' || type === 'insertFromDrop' || type === 'insertReplacementText';
+    if (wholeText && text !== this.mask().text) {
       const change = text === '' ? { zones: EMPTY_ZONES, zone: this.order[0] } : parsePaste(text, this.order);
       if (change) this.apply(change);
-      else this.entry.set({ iso: undefined, error: this.labels.dateUnrecognized(this.example) });
+      else this.entry!.set({ iso: undefined, error: this.labels.dateUnrecognized(this.example), typed: true });
     }
     this.refresh(false);
   }
@@ -222,22 +254,27 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   /** Les zones font foi : la valeur du modèle suit (`null` tant que la date est incomplète). */
   private commit(zones: Zones, error: string | null = null): void {
     this.zones.set(zones);
-    this.entry.set({ iso: toIso(zones), error });
+    this.entry!.set({ iso: toIso(zones), error, typed: true });
   }
 
   /** Réécrit le texte (un collage illisible est annulé), sélectionne la zone active et l'annonce. */
   private refresh(announce = true, clamped?: MaskChange['clamped']): void {
     const el = this.inputRef().nativeElement;
     el.value = this.mask().text;
-    if (this.doc.activeElement !== el) return;
-    const [start, end] = this.mask().ranges[this.active()];
-    el.setSelectionRange(start, end);
-    if (!announce) return;
+    this.selectActive();
+    if (!announce || this.doc.activeElement !== el) return;
     this.announcement.set(
       clamped
         ? this.labels.dateDayClamped(clamped.day, this.monthName(clamped.month))
         : this.zoneAnnouncement(this.zones(), this.active()),
     );
+  }
+
+  private selectActive(): void {
+    const el = this.inputRef().nativeElement;
+    if (this.doc.activeElement !== el) return;
+    const [start, end] = this.mask().ranges[this.active()];
+    el.setSelectionRange(start, end);
   }
 
   private monthName(month: number): string {

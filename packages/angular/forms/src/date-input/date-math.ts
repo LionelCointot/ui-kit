@@ -2,8 +2,8 @@
 import { isoToLocalDate, localDateToIso } from '@lionelcointot/ui-angular';
 import type { LcDateInterval } from './date-interval';
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const LOCAL_DATE = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/;
+export const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+export const LOCAL_DATE = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/;
 
 type Bound = string | null | undefined;
 

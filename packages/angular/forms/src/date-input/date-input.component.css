@@ -1,19 +1,34 @@
-:host {
+/* Champ à zones (mode calendrier) seulement : le mode natif ne reçoit rien d'ici. */
+:host(.lc-date-input--calendar) {
   position: relative;
 }
 
+/* Place réservée au message : une ligne de la taille et de l'interligne du message, plus l'écart. */
+:host(.lc-date-input--calendar.lc-date-input--message) {
+  margin-block-end: calc(var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal) + var(--lc-sys-space-1));
+}
+
 /* Zone active du champ à zones : le texte sélectionné. */
-.lc-field__input::selection {
+:host(.lc-date-input--calendar) .lc-field__input::selection {
   background: var(--lc-calendar-zone-bg, var(--lc-sys-color-primary-container));
   color: var(--lc-calendar-zone-text, var(--lc-sys-color-on-primary-container));
 }
 
-/* shortcut: message hors formulaire posé sous le cadre sans réserver de place (il peut recouvrir le contenu suivant), à reprendre si cet usage se répand. */
+/* Même apparence que les erreurs de lc-form-field, posé dans la marge basse de l'hôte. */
 .lc-date-input__message {
   position: absolute;
   inset-block-start: 100%;
   inset-inline-start: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-1);
   margin-block-start: var(--lc-sys-space-1);
+  color: var(--lc-form-field-error-color, var(--lc-sys-color-on-error-container));
   font-size: var(--lc-sys-font-size-sm);
-  color: var(--lc-sys-color-error);
+  line-height: var(--lc-sys-font-line-height-normal);
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-date-input__message lc-icon {
+  margin-block-start: calc((1lh - var(--lc-sys-icon-size-sm)) / 2);
 }

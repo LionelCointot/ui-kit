@@ -207,3 +207,36 @@ describe('date-mask : texte collé', () => {
       expect(parsePaste(text, FR), text).toBeNull();
   });
 });
+
+describe('date-mask : zone jamais bloquée en attente', () => {
+  it('février 2026 : 3 donne 03 et passe à l’année (le mois rempli est sauté)', () => {
+    const base = { day: '', month: '02', year: '' };
+    const result = typed('3', FR, base);
+    expect(result.zones.day).toBe('03');
+    expect(result.zone).toBe('year');
+    expect(typed('32026', FR, base).text).toBe('03/02/2026');
+  });
+
+  it('mois de 30 jours : 3 attend, 1 est ignoré (la zone relit 03), 0 donne 30', () => {
+    const base = { day: '', month: '04', year: '2026' };
+    const pending = typed('31', FR, base);
+    expect(pending.zones.day).toBe('3');
+    expect(pending.zone).toBe('day');
+    expect(typed('30', FR, base).zones.day).toBe('30');
+  });
+
+  it('un jour ou un mois en attente compte comme rempli pour la valeur ; un 0 seul non', () => {
+    expect(toIso({ day: '2', month: '02', year: '2026' })).toBe('2026-02-02');
+    expect(toIso({ day: '15', month: '1', year: '2026' })).toBe('2026-01-15');
+    expect(toIso({ day: '0', month: '02', year: '2026' })).toBeNull();
+    expect(toIso({ day: '15', month: '02', year: '202' })).toBeNull();
+  });
+
+  it('collage : jour au-dessus de 31 ou mois au-dessus de 12 est illisible, 31/04 est ramené', () => {
+    expect(parsePaste('45/11/2026', FR)).toBeNull();
+    expect(parsePaste('32/01/2026', FR)).toBeNull();
+    expect(parsePaste('12/13/2026', FR)).toBeNull();
+    expect(toIso(parsePaste('31/04/2026', FR)!.zones)).toBe('2026-04-30');
+  });
+});
+

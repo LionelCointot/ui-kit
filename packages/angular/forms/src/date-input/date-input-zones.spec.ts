@@ -170,4 +170,81 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(state.invalid()).toBe(false);
     expect(fixture.componentInstance.model().day).toBe('2026-11-12');
   });
+
+  it('un jour en attente qui affiche une valeur possible émet la valeur tout de suite', async () => {
+    const { fixture, host, input, key, keys } = await setup();
+    host.value.set('2026-02-15');
+    await fixture.whenStable();
+    input.focus();
+    await key('Backspace');
+    expect(host.value()).toBeNull();
+    await keys('2');
+    expect(input.value).toBe('02/02/2026');
+    expect(host.value()).toBe('2026-02-02');
+    await keys('5');
+    expect(host.value()).toBe('2026-02-25');
+  });
+
+  it('composition, touche morte et coupe : texte remis en état, aucun message', async () => {
+    const { fixture, host, input, key } = await setup();
+    host.value.set('2026-11-12');
+    await fixture.whenStable();
+    input.focus();
+    for (const inputType of ['insertCompositionText', 'insertText', 'deleteByCut']) {
+      input.value = '12/11/20é6';
+      input.dispatchEvent(new InputEvent('input', { inputType, data: 'é' }));
+      await fixture.whenStable();
+      expect(input.value).toBe('12/11/2026');
+    }
+    expect((await key('Dead')).defaultPrevented).toBe(false);
+    const cut = new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, cancelable: true });
+    input.dispatchEvent(cut);
+    expect(cut.defaultPrevented).toBe(true);
+    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
+    expect(host.value()).toBe('2026-11-12');
+  });
+
+  it('clavier virtuel : un chiffre inséré (beforeinput) vaut une frappe', async () => {
+    const { fixture, host, input } = await setup();
+    for (const data of '12112026') {
+      input.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data, cancelable: true }));
+      await fixture.whenStable();
+    }
+    expect(host.value()).toBe('2026-11-12');
+  });
+
+  it('un collage de jour au-dessus de 31 est refusé avec le message', async () => {
+    const { fixture, host, input } = await setup();
+    host.value.set('2026-11-12');
+    await fixture.whenStable();
+    input.value = '45/11/2026';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(host.value()).toBe('2026-11-12');
+    expect(input.value).toBe('12/11/2026');
+    expect(fixture.nativeElement.querySelector('.lc-date-input__message[role="alert"]')).not.toBeNull();
+  });
+
+  it('reset() du formulaire remet le texte en forme, même si la valeur était déjà null', async () => {
+    const fixture = TestBed.createComponent(FormHostComponent);
+    document.body.append(fixture.nativeElement);
+    await fixture.whenStable();
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.focus();
+    for (const key of '12') input.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
+    await fixture.whenStable();
+    expect(input.value).toBe('12/mm/aaaa');
+    fixture.componentInstance.f.day().reset();
+    await fixture.whenStable();
+    expect(input.value).toBe('jj/mm/aaaa');
+  });
+
+  it('mode natif : ni classe ni message du champ à zones', async () => {
+    TestBed.overrideProvider(LC_DATE_PICKER, { useValue: 'native' });
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const el = fixture.nativeElement.querySelector('lc-date-input') as HTMLElement;
+    expect(el.classList.contains('lc-date-input--calendar')).toBe(false);
+    expect(el.querySelector('input')!.type).toBe('date');
+  });
 });

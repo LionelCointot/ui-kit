@@ -1,4 +1,4 @@
-import { isValidIsoDate, lastDayOfMonth } from './date-math';
+import { ISO_DATE, LOCAL_DATE, isValidIsoDate, lastDayOfMonth } from './date-math';
 
 /** Saisie par zones (jour, mois, année) : fonctions pures, sans Angular. Années traitées : 1000 à 9999. */
 export type Zone = 'day' | 'month' | 'year';
@@ -13,17 +13,9 @@ export interface MaskChange {
   readonly clamped?: { readonly day: number; readonly month: number };
 }
 
-export interface MaskLetters {
-  readonly day: string;
-  readonly month: string;
-  readonly year: string;
-}
-
 export const EMPTY_ZONES: Zones = { day: '', month: '', year: '' };
 
 const SIZE: Record<Zone, number> = { day: 2, month: 2, year: 4 };
-const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
-const LOCAL = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/;
 
 /** Ordre des zones selon la locale (« jj/mm/aaaa » en fr-FR, « mm/jj/aaaa » en en-US). */
 export function zoneOrder(locale: string): Zone[] {
@@ -43,15 +35,21 @@ export function maxDay(zones: Zones): number {
   return lastDayOfMonth(`${year}-${zones.month}-01`);
 }
 
-/** Date ISO quand les trois zones sont complètes, sinon `null`. */
+/** Chiffres d'une zone qui montre une valeur possible : un jour ou un mois en attente (« 2 » affiché « 02 ») compte, un « 0 » seul non. */
+function effective(zones: Zones, zone: Zone): string | null {
+  const digits = zones[zone];
+  if (digits.length === SIZE[zone]) return digits;
+  return zone !== 'year' && digits.length === 1 && digits !== '0' ? `0${digits}` : null;
+}
+
+/** Date ISO quand les trois zones montrent une valeur possible, sinon `null`. */
 export function toIso(zones: Zones): string | null {
-  return isComplete(zones, 'day') && isComplete(zones, 'month') && isComplete(zones, 'year')
-    ? `${zones.year}-${zones.month}-${zones.day}`
-    : null;
+  const [day, month, year] = [effective(zones, 'day'), effective(zones, 'month'), effective(zones, 'year')];
+  return day && month && year ? `${year}-${month}-${day}` : null;
 }
 
 export function fromIso(iso: string | null): Zones {
-  const match = iso && isValidIsoDate(iso) ? ISO.exec(iso) : null;
+  const match = iso && isValidIsoDate(iso) ? ISO_DATE.exec(iso) : null;
   return match ? { day: match[3], month: match[2], year: match[1] } : EMPTY_ZONES;
 }
 
@@ -83,6 +81,11 @@ function withClamp(zones: Zones, zone: Zone): MaskChange {
     : { zones, zone };
 }
 
+/** Zone suivante à remplir : la première incomplète après `zone`, sinon la voisine. */
+function advance(zones: Zones, order: readonly Zone[], zone: Zone): Zone {
+  return order.slice(order.indexOf(zone) + 1).find((next) => !isComplete(zones, next)) ?? neighbor(order, zone, 1);
+}
+
 /** Frappe d'un chiffre dans la zone active ; un chiffre refusé rend les zones inchangées (même référence). */
 export function typeDigit(zones: Zones, zone: Zone, digit: string, order: readonly Zone[]): MaskChange {
   const current = zones[zone].length === SIZE[zone] ? '' : zones[zone];
@@ -93,8 +96,8 @@ export function typeDigit(zones: Zones, zone: Zone, digit: string, order: readon
     if (next.startsWith('0')) return ignored;
     accepted = next;
   } else if (next.length === 1) {
-    // 4 à 9 pour un jour, 2 à 9 pour un mois : aucun second chiffre possible, la zone se complète seule.
-    const alone = Number(next) >= (zone === 'day' ? 4 : 2);
+    // Aucun second chiffre ne donnerait une valeur possible (jour : 4 à 9, ou 3 quand le mois a au plus 29 jours ; mois : 2 à 9) : la zone se complète seule.
+    const alone = Number(next) * 10 > (zone === 'day' ? maxDay(zones) : 12);
     accepted = alone ? `0${next}` : next;
   } else {
     const value = Number(next);
@@ -103,7 +106,7 @@ export function typeDigit(zones: Zones, zone: Zone, digit: string, order: readon
   }
   const updated = { ...zones, [zone]: accepted };
   const done = accepted.length === SIZE[zone];
-  return withClamp(updated, done ? neighbor(order, zone, 1) : zone);
+  return withClamp(updated, done ? advance(updated, order, zone) : zone);
 }
 
 /** Flèche haut (+1) ou bas (-1) : en boucle, sans toucher aux autres zones ; une zone vide part d'aujourd'hui. */
@@ -119,8 +122,8 @@ export const clear = (zones: Zones, zone: Zone): Zones => ({ ...zones, [zone]: '
 
 /** Texte collé ou rempli : `jj/mm/aaaa` dans l'ordre de la locale (séparateurs `/`, `.`, `-`) ou ISO ; `null` si illisible. */
 export function parsePaste(text: string, order: readonly Zone[]): MaskChange | null {
-  const iso = ISO.exec(text.trim());
-  const local = iso ? null : LOCAL.exec(text.trim());
+  const iso = ISO_DATE.exec(text.trim());
+  const local = iso ? null : LOCAL_DATE.exec(text.trim());
   const raw: Record<Zone, string> | null = iso
     ? { year: iso[1], month: iso[2], day: iso[3] }
     : local
@@ -132,7 +135,7 @@ export function parsePaste(text: string, order: readonly Zone[]): MaskChange | n
     month: raw.month.padStart(2, '0'),
     year: raw.year,
   };
-  if (Number(zones.month) < 1 || Number(zones.month) > 12 || Number(zones.day) < 1 || zones.year < '1000')
+  if (Number(zones.month) < 1 || Number(zones.month) > 12 || Number(zones.day) < 1 || Number(zones.day) > 31 || zones.year < '1000')
     return null;
   return withClamp(zones, order[2]);
 }
@@ -141,7 +144,7 @@ export function parsePaste(text: string, order: readonly Zone[]): MaskChange | n
 export function render(
   zones: Zones,
   order: readonly Zone[],
-  letters: MaskLetters,
+  letters: Zones,
 ): { text: string; ranges: Record<Zone, readonly [number, number]> } {
   let text = '';
   const ranges = {} as Record<Zone, readonly [number, number]>;
