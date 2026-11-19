@@ -1,8 +1,8 @@
 # Brief : sélecteur de date (date simple B, période C)
 
-Complète la §5.4 de `docs/specs/2026-11-selecteur-de-date.md`. Direction retenue par l'utilisateur : **B** (saisie par zones, calendrier à trois niveaux) pour la date simple, **C** pour la période. Maquettes : `docs/design/explorations/2026-11-date-picker/`. Statut : à valider ; test `novice-user` sur les textes du §2 à lancer par l'orchestrateur. Tokens : `--lc-sys-*` seulement ; les `--lc-calendar-*` vont dans `packages/tokens/src/components/calendar.tokens.json` (références `{sys.…}`, comme `card.tokens.json`) et dans le CSS avec repli sur `--lc-sys-*`. Aucun `--lc-ref-*`, aucune valeur en dur.
+Complète la §5.4 de `docs/specs/2026-11-selecteur-de-date.md`. Direction retenue par l'utilisateur : **B** (saisie par zones, calendrier à trois niveaux) pour la date simple, **C** pour la période. Maquettes : `docs/design/explorations/2026-11-date-picker/`. Statut : aligné sur la spec réécrite (révision après le test `novice-user`, 2026-11-19). Types de la spec : `LcDateInterval` (`from` / `to`), jeton `LC_DATE_PICKER` (aucune entrée `picker`). Tokens : `--lc-sys-*` seulement ; les `--lc-calendar-*` vont dans `packages/tokens/src/components/calendar.tokens.json` (références `{sys.…}`, comme `card.tokens.json`) et dans le CSS avec repli sur `--lc-sys-*`. Aucun `--lc-ref-*`, aucune valeur en dur.
 
-## 0. Deux décisions de conception
+## 0. Décisions de conception
 
 **D1. Saisie par zones : un seul `input` texte (retenu), pas trois `spinbutton`.**
 
@@ -15,9 +15,11 @@ Complète la §5.4 de `docs/specs/2026-11-selecteur-de-date.md`. Direction reten
 
 Limites assumées du choix : les lettres de zone vides (« jj ») ont la même couleur que les chiffres (distinction par la forme : lettres contre chiffres) ; Tab quitte le champ au lieu de passer de zone en zone (flèches gauche / droite, ou la frappe, avancent). Le calendrier n'est actif que sur pointeur fin (peu de claviers virtuels, donc peu de soucis de saisie). **Repli si le test avec lecteur d'écran échoue** : trois `spinbutton` ; à noter en risque.
 
-**D2. Période : oui aux niveaux mois / décennie et oui à la saisie par zones**, avec une règle qui évite la confusion : dans le panneau à deux mois, cliquer **n'importe quel titre** remplace les deux mois par **une seule grille** (12 mois, ou 12 années) pleine largeur. Choisir un mois ou une année ne choisit aucune date : on revient aux deux mois, le mois choisi à gauche. Les niveaux ne servent qu'à naviguer, la date se choisit toujours au niveau des jours (aussi pour la date simple). Les champs « Du » et « Au » sont deux champs à zones identiques à `lc-date-input`.
+**D2. Période : oui aux niveaux mois / années et oui à la saisie par zones**, avec une règle qui évite la confusion : dans le panneau à deux mois, cliquer **n'importe quel titre** remplace les deux mois par **une seule grille** (12 mois, ou 12 années) pleine largeur. Choisir un mois ou une année ne choisit aucune date : on revient aux deux mois, le mois choisi à gauche. Les niveaux ne servent qu'à naviguer, la date se choisit toujours au niveau des jours (aussi pour la date simple). Les champs « Du » et « Au » sont deux champs à zones identiques à `lc-date-input`.
 
-**Date impossible : confirmé, on ramène le jour au dernier du mois** (31/02 devient 28/02 ou 29/02), pas de message d'erreur. Garde-fous : le changement est **visible** (le champ affiche le jour corrigé) et **annoncé** (« Jour ramené au 28 février. »), sinon une faute de frappe passerait inaperçue. Même règle au collage et quand une flèche change l'année ou le mois (29/02/2024 + flèche haut sur l'année). **Date incomplète à la sortie** : confirmé, valeur `null`, état invalide, message « Date incomplète. Exemple : 12/11/2026 ». Champ entièrement vide : pas d'erreur propre (l'obligation reste celle du formulaire).
+**Date qui n'existe pas : jamais corrigée à la place de la personne** (test novice : « j'ai tapé 31 et on m'affiche 28, sans un mot »). Tapée ou collée, elle reste affichée telle quelle, la valeur vaut `null`, le champ est invalide et le message du §2 apparaît dès que les trois zones sont remplies. Seules les **flèches haut / bas** ramènent le jour au dernier du mois (29/02/2024 + flèche haut sur l'année donne 28/02/2025) : la personne regarde la zone qu'elle change ; comme le jour change ailleurs que sous ses yeux, ce changement est annoncé (« Jour ramené au 28 février. »). **Date incomplète à la sortie** : valeur `null`, état invalide, message « Date incomplète. Exemple : 12/11/2026 ». Champ entièrement vide : aucune erreur propre (l'obligation reste celle du formulaire). Dans une période, un champ « Du » ou « Au » vide n'est **jamais** une erreur.
+
+**Trois lisibilités ajoutées après le test novice** : le point « aujourd'hui » a une légende (bouton « Aujourd'hui » + info-bulle), le titre se voit cliquable au repos, un raccourci dit ses dates (§1.2, §1.4, §3).
 
 ## 1. Anatomie et tokens
 
@@ -27,15 +29,15 @@ Rayons : `radius-sm` (cadres), `radius-full` (jour, mois, année choisis).
 
 **1.2 Panneau (dialogue)**, de haut en bas : en-tête, corps, pied.
 - Conteneur : fond `--lc-calendar-background`, bordure `--lc-calendar-border` (`border-width-thin`), rayon `--lc-calendar-radius`, ombre `--lc-calendar-shadow`, `z-overlay`, texte `--lc-calendar-text`, `font-size-md`.
-- En-tête : bouton précédent · **titre-bouton** · bouton suivant. Boutons icône `chevron-left` / `chevron-right`, cible `--lc-calendar-cell-size`. Titre : `font-weight-semibold`, survol `--lc-calendar-day-hover-bg`, pas de soulignement ; une petite icône `chevron-down` indique qu'il s'ouvre. Au niveau décennie le titre n'est pas un bouton (sommet).
+- En-tête : bouton précédent · **titre-bouton** · bouton suivant. Boutons icône `chevron-left` / `chevron-right`, cible `--lc-calendar-cell-size`. **Titre = bouton visible au repos** : contour `--lc-calendar-title-border` (`border-width-thin`), `radius-sm`, hauteur `--lc-calendar-cell-size`, marge `space-3` de chaque côté, texte `font-weight-semibold` en `--lc-calendar-text`, suivi d'une icône `chevron-down` (`icon-size-sm`, même couleur, écart `space-2`) ; survol : fond `--lc-calendar-day-hover-bg`. Au niveau années le titre (« 2020 à 2029 ») est du texte simple, sans contour ni chevron (sommet, rien à ouvrir).
 - Corps, **hauteur fixe** = 7 lignes de cellules (en-tête des jours + 6 semaines) pour ne pas sauter d'un niveau à l'autre ; mois et années s'étirent sur 4 colonnes × 3 lignes.
   - Jours : en-têtes `columnheader` (lettre, `abbr` = nom complet) en `--lc-calendar-weekday-text`, `font-size-sm`. Cellule = carré de `--lc-calendar-cell-size`, chiffre centré, chiffres tabulaires.
-  - Mois : libellé court (« janv. »), 12 cellules. Années : 12 cellules (la décennie, plus l'année avant et l'année après en `--lc-calendar-weekday-text`, choisissables).
-- Pied : « Aujourd'hui » et « Effacer », boutons texte du kit (variante `text`), séparés du corps par un filet `--lc-calendar-border`. « Effacer » absent si le champ est obligatoire.
+  - Mois : libellé court (« janv. »), 12 cellules. Années : 12 cellules (les dix années de la plage affichée, plus l'année avant et l'année après en `--lc-calendar-weekday-text`, choisissables).
+- Pied : « Aujourd'hui » et « Effacer », boutons texte du kit (variante `text`), séparés du corps par un filet `--lc-calendar-border`. « Effacer » absent si le champ est obligatoire. **Le bouton « Aujourd'hui » commence par le même point** que la cellule d'aujourd'hui (`--lc-calendar-today-mark`, `--lc-calendar-today-mark-size`, écart `space-2` avant le texte) : il sert de légende, sans mot de plus. La cellule d'aujourd'hui a en plus `title="Aujourd'hui"` (attribut natif : `forms` n'importe pas `overlay`).
 
 **1.3 Champ de période** : groupe `role="group"` étiqueté (« Période » ou `ariaLabel`), deux champs à zones (1.1) précédés des libellés visibles « Du » / « Au » (`font-size-sm`, `--lc-calendar-weekday-text`), un seul bouton calendrier à droite. À moins de 28 rem de large (requête de conteneur, Baseline 2024) : les deux champs s'empilent.
 
-**1.4 Panneau de période** : même coque que 1.2, corps = deux mois côte à côte (`--lc-calendar-month-gap`), une ligne d'état visible au-dessus (`role="status"`, `font-size-sm`, `--lc-calendar-weekday-text`) : « Choisissez la date de début. » puis « Choisissez la date de fin. ». Raccourcis : colonne à gauche ≥ 840 px de large de fenêtre, sinon rangée de boutons (retour à la ligne) au-dessus des mois. Bouton de raccourci : `font-size-sm`, hauteur `control-height-sm`, `radius-sm`.
+**1.4 Panneau de période** : même coque que 1.2, corps = deux mois côte à côte (`--lc-calendar-month-gap`), une ligne d'état visible au-dessus (`role="status"`, `font-size-sm`, `--lc-calendar-weekday-text`) : « Choisissez la date de début. » puis, après le premier clic, « Choisissez la date de fin, ou cliquez sur « Sans date de fin ». ». Pied : à gauche « Aujourd'hui » (avec son point ; montre le mois en cours à gauche, sans rien choisir), à droite « Sans date de fin » (**apparaît après le premier clic**, même variante `text`, aucune place réservée avant) puis « Effacer ». Sous 400 px de large les boutons du pied passent à la ligne (écart `space-2`). Raccourcis : colonne à gauche ≥ 840 px de large de fenêtre, sinon rangée de boutons (retour à la ligne) au-dessus des mois. Bouton de raccourci : `font-size-sm`, hauteur `control-height-sm`, `radius-sm`. Un clic remplit les deux champs et ferme le panneau. Chaque raccourci porte ses dates en description : `title` (survol) et `aria-describedby` vers un texte masqué (lecteur d'écran), formes du §2.
 
 **1.5 Mode natif tactile** : un ou deux `input[type=date]` du kit, sans bouton ni panneau. Période : sous les champs, rangée « Raccourcis » (`role="group"`) des mêmes boutons qu'en 1.4.
 
@@ -59,12 +61,13 @@ Rayons : `radius-sm` (cadres), `radius-full` (jour, mois, année choisis).
 | `range-bg` / `range-text` | `color-primary-container` / `color-on-primary-container` | intérieur de la période |
 | `range-preview-edge` | `color-primary` | bords en tirets de l'aperçu |
 | `today-mark` | `color-primary` | point « aujourd'hui » |
-| `today-mark-size` | `space-1` | taille du point |
+| `today-mark-size` | `space-1` | taille du point (cellule et bouton « Aujourd'hui ») |
+| `title-border` | `color-border-strong` | contour du titre-bouton, visible au repos |
 | `focus-ring` | `color-focus-ring` | anneau clavier |
 | `zone-bg` / `zone-text` | `color-primary-container` / `color-on-primary-container` | zone active du champ |
 | `duration` / `easing` | `duration-fast` / `easing-standard` | mouvement |
 
-Contrôle `npx lc-tokens check` : ajouter à `packages/tokens/src/checks/contrast-pairs.json`, si absentes : `on-primary`/`primary` 4,5 · `on-primary-container`/`primary-container` 4,5 · `on-surface-muted`/`surface-raised` 4,5 · `primary`/`surface-raised` 3 et `primary`/`primary-container` 3 (point) · `focus-ring`/`surface-raised` 3 et `focus-ring`/`primary-container` 3.
+Contrôle `npx lc-tokens check` : ajouter à `packages/tokens/src/checks/contrast-pairs.json`, si absentes : `on-primary`/`primary` 4,5 · `on-primary-container`/`primary-container` 4,5 · `on-surface-muted`/`surface-raised` 4,5 · `border-strong`/`surface-raised` 3 (contour du titre) · `primary`/`surface-raised` 3 et `primary`/`primary-container` 3 (point) · `focus-ring`/`surface-raised` 3 et `focus-ring`/`primary-container` 3.
 
 ## 2. Textes (mot pour mot ; clés `LC_LABELS` à ajouter)
 
@@ -76,82 +79,95 @@ Contrôle `npx lc-tokens check` : ajouter à `packages/tokens/src/checks/contras
 | Aide du champ (lecteur d'écran) | Tapez la date, ou changez chaque zone avec les flèches haut et bas. | Type the date, or change each part with the up and down arrow keys. |
 | Bouton, sans valeur | Choisir une date | Choose a date |
 | Bouton, avec valeur | Changer la date, 12 novembre 2026 | Change date, November 12, 2026 |
-| Bouton de période | Choisir une période · Changer la période, du 3 au 12 novembre 2026 | Choose a period · Change period, from November 3 to November 12, 2026 |
+| Bouton de période | Choisir une période · Changer la période, du 3 au 12 novembre 2026 | Choose a period · Change period, from November 3 to 12, 2026 |
 | Titre du dialogue (`aria-label`) | Choisir une date · Choisir une période | Choose a date · Choose a period |
 | Titre-bouton, jours | « novembre 2026 » (nom : « novembre 2026 : choisir un mois ») | "November 2026" (name: "November 2026: choose a month") |
 | Titre-bouton, mois | « 2026 » (nom : « 2026 : choisir une année ») | "2026" (name: "2026: choose a year") |
-| Titre, décennie (texte seul) | 2020 – 2029 | 2020 – 2029 |
-| Boutons de navigation | Mois précédent · Mois suivant · Année précédente · Année suivante · Décennie précédente · Décennie suivante | Previous month · Next month · Previous year · Next year · Previous decade · Next decade |
+| Titre, années (texte seul) | 2020 à 2029 | 2020 to 2029 |
+| Boutons de navigation | Mois précédent · Mois suivant · Année précédente · Année suivante · **Années précédentes · Années suivantes** (niveau années) | Previous month · Next month · Previous year · Next year · **Previous years · Next years** |
 | Cellule jour (nom) | jeudi 12 novembre 2026 | Thursday, November 12, 2026 |
 | Cellule mois (nom) | novembre 2026 | November 2026 |
-| Pied | Aujourd'hui · Effacer | Today · Clear |
-| Date incomplète (à la sortie) | Date incomplète. Exemple : 12/11/2026 | Incomplete date. Example: 11/12/2026 |
-| Collage illisible (champ inchangé, annoncé et affiché jusqu'à la frappe suivante) | Date non reconnue. Exemple : 12/11/2026 | Date not recognized. Example: 11/12/2026 |
-| Jour ramené (annonce, polie) | Jour ramené au 28 février. | Day set to February 28. |
+| Cellule d'aujourd'hui (`title`) | Aujourd'hui | Today |
+| Pied | Aujourd'hui · Effacer · **Sans date de fin** | Today · Clear · **No end date** |
+| Date incomplète (à la sortie du champ) | Date incomplète. Exemple : 12/11/2026 | Incomplete date. Example: 11/12/2026 |
+| **Date qui n'existe pas** (trois zones remplies) | **Cette date n'existe pas : février 2026 n'a que 28 jours.** | **This date does not exist: February 2026 has only 28 days.** |
+| Même message, mois ou jour hors plage (mois 13, jour 00, année 0000) | Cette date n'existe pas. Exemple : 12/11/2026 | This date does not exist. Example: 11/12/2026 |
+| Collage illisible (champ inchangé, message jusqu'à la frappe suivante) | Date non reconnue. Exemple : 12/11/2026 | Date not recognized. Example: 11/12/2026 |
+| Jour ramené (annonce polie, **flèches haut / bas seulement**) | Jour ramené au 28 février. | Day set to February 28. |
 | Libellés de période | Du · Au · Période | From · To · Period |
-| Ligne d'état | Choisissez la date de début. · Choisissez la date de fin. | Choose the start date. · Choose the end date. |
-| Début choisi (annonce) | Début : 3 novembre 2026. Choisissez la date de fin. | Start: November 3, 2026. Choose the end date. |
+| Ligne d'état, début | Choisissez la date de début. | Choose the start date. |
+| Ligne d'état, après le premier clic | Choisissez la date de fin, ou cliquez sur « Sans date de fin ». | Choose the end date, or click "No end date". |
+| Début choisi (annonce) | Début : 3 novembre 2026. Choisissez la date de fin, ou cliquez sur « Sans date de fin ». | Start: November 3, 2026. Choose the end date, or click "No end date". |
 | Période choisie (annonce) | Période choisie : du 3 novembre 2026 au 12 novembre 2026. | Period selected: from November 3, 2026 to November 12, 2026. |
+| Début seul choisi (annonce) | Période choisie : à partir du 3 novembre 2026. | Period selected: from November 3, 2026, no end date. |
 | Rangée native | Raccourcis | Shortcuts |
 
-L'exemple « 12/11/2026 » est le 12 novembre 2026 mis en forme par la locale (l'anglais américain donne 11/12/2026). Changement de mois, d'année ou de niveau : le titre (`aria-live="polite"`) est relu ; pas d'annonce à l'ouverture.
+**Date qui n'existe pas** : « février 2026 » est le mois et l'année saisis, composés par `Intl` avec `LC_LOCALE` (minuscule en français, majuscule en anglais). Le nombre est celui du mois (28, 29, 30) ; « 1 jour » ne peut pas arriver (un mois a au moins 28 jours) donc **pas de singulier à gérer**, « n'a que » vaut pour 28, 29 et 30. Pour jour 31 dans un mois de 30 jours : « avril 2026 n'a que 30 jours. » Le message court sert quand le mois ou le jour est hors plage et qu'aucun nombre de jours ne se dit. L'exemple est le 12 novembre 2026 mis en forme par la locale (11/12/2026 en anglais américain).
 
-**Raccourcis (confirmés, précisés)** : « 7 derniers jours » = 6 jours avant aujourd'hui jusqu'à aujourd'hui (aujourd'hui compris) · « 30 derniers jours » = 29 jours avant, jusqu'à aujourd'hui · « Ce mois-ci » = du 1er au dernier jour du mois, rogné par `max` (un filtre d'historique pose `max` = aujourd'hui) · « Le mois dernier » = tout le mois précédent. Anglais : Last 7 days · Last 30 days · This month · Last month. Je n'ajoute pas « Cette semaine » : quatre suffisent.
+**Description d'un raccourci** (`title` et lecteur d'écran), la tournure dépend des dates ; les noms de mois et l'ordre jour / mois viennent d'`Intl` :
+
+| Cas | Français | Anglais (américain) |
+|---|---|---|
+| Même mois | du 13 au 19 novembre 2026 · du 1er au 30 novembre 2026 | from November 13 to 19, 2026 · from November 1 to 30, 2026 |
+| Mois différents, même année | du 25 octobre au 24 novembre 2026 | from October 25 to November 24, 2026 |
+| Années différentes | du 15 décembre 2025 au 14 janvier 2026 | from December 15, 2025 to January 14, 2026 |
+| Un seul jour (raccourci rogné par les bornes) | le 12 novembre 2026 | November 12, 2026 |
+| Raccourci désactivé | Aucune date autorisée sur cette période. | No allowed date in this period. |
+
+Le premier jour du mois s'écrit « 1er » en français : à composer à la main si `Intl` ne le donne pas (à vérifier en T1). En anglais britannique l'ordre devient « from 13 to 19 November 2026 » : c'est `Intl` qui le décide, pas les libellés.
+
+L'annonce du changement de mois, d'année ou de niveau est la relecture du titre (`aria-live="polite"`) ; rien à l'ouverture.
+
+**Raccourcis (confirmés)** : « 7 derniers jours » = 6 jours avant aujourd'hui jusqu'à aujourd'hui (aujourd'hui compris) · « 30 derniers jours » = 29 jours avant jusqu'à aujourd'hui · « Ce mois-ci » = du 1er au dernier jour du mois, rogné par `max` · « Le mois dernier » = le mois précédent entier. Anglais : Last 7 days · Last 30 days · This month · Last month.
 
 ## 3. États
 
-Trois repères, trois **formes** : **disque** plein (choisi), **point** sous le chiffre (aujourd'hui), **anneau carré** (focus). L'anneau est un contour de la cellule carrée, **à l'intérieur** (`outline-offset` négatif de `focus-ring-width`), le disque est inscrit avec une marge de `space-1` : les deux ne se confondent plus et le point n'est jamais touché. Mois et années : le disque devient une pilule (`radius-full`), le point et l'anneau sont identiques.
+Trois repères, trois **formes** : **disque** plein (choisi), **point** sous le chiffre (aujourd'hui), **anneau carré** (focus). L'anneau est un contour de la cellule carrée, **à l'intérieur** (`outline-offset` négatif de `focus-ring-width`) ; le disque est inscrit avec une marge de `space-1` : ils ne se confondent pas et le point n'est jamais touché. Mois et années : le disque devient une pilule (`radius-full`), point et anneau identiques.
 
 | État | Rendu |
 |---|---|
 | Repos | texte `--lc-calendar-text`, pas de fond |
-| Survol | disque en `--lc-calendar-day-hover-bg` ; titre et boutons : même fond |
-| Focus clavier | anneau carré `--lc-calendar-focus-ring`, largeur `focus-ring-width` ; un seul focus visible à la fois (grille à tabulation unique) |
+| Survol | disque en `--lc-calendar-day-hover-bg` ; boutons et titre : même fond |
+| Focus clavier | anneau carré `--lc-calendar-focus-ring`, largeur `focus-ring-width` ; un seul focus visible à la fois |
 | Choisi | disque `selected-bg`, chiffre `selected-text`, `font-weight-semibold`, `aria-selected` |
-| Aujourd'hui | point `today-mark` ; nom `aria-current="date"` |
+| Aujourd'hui | point `today-mark` sous le chiffre ; `aria-current="date"` ; `title="Aujourd'hui"` ; **même point en tête du bouton « Aujourd'hui »** du pied (légende) |
 | Aujourd'hui et choisi | disque + point en `selected-text` ; focus en plus : anneau |
-| Hors bornes | `day-disabled-text`, `aria-disabled="true"`, curseur interdit, pas de survol ; reste atteignable au clavier (on comprend pourquoi on ne peut pas) ; navigation hors bornes : bouton désactivé (`state-disabled-opacity`) |
+| Titre-bouton | repos : contour `title-border` + chevron ; survol : fond `day-hover-bg` ; focus : anneau ; année : texte simple |
+| Hors bornes | `day-disabled-text`, `aria-disabled="true"`, curseur interdit, pas de survol ; atteignable au clavier, sans effet ; bouton de navigation hors bornes : désactivé (`state-disabled-opacity`) |
 | Période : extrémités | disque plein, avec une demi-bande `range-bg` du côté de l'intérieur |
-| Période : intérieur | bande pleine largeur `range-bg`, chiffre `range-text`, sans coins sauf en début et fin de semaine (`radius-full` sur le bord) |
-| Période : aperçu | même bande mais **bords haut et bas en tirets** `range-preview-edge` (forme, pas seulement couleur) ; extrémité d'aperçu en disque creux (contour `border-width-thick`) |
-| Désactivé / lecture seule (champ) | pas de bouton, pas de panneau ; `state-disabled-opacity` pour désactivé ; lecture seule : texte normal, sélectionnable, zones non modifiables |
-| Invalide | cadre d'erreur du kit, `aria-invalid`, message sous le champ relié par `aria-describedby` |
+| Période : intérieur | bande pleine largeur `range-bg`, chiffre `range-text`, coins arrondis (`radius-full`) seulement en début et fin de semaine |
+| Période : aperçu | même bande, **bords haut et bas en tirets** `range-preview-edge` ; extrémité d'aperçu en disque creux (contour `border-width-thick`) |
+| Raccourci | repos : bouton texte ; survol : `title` avec les dates ; désactivé : `state-disabled-opacity`, description « Aucune date autorisée sur cette période. » |
+| « Sans date de fin » | absent avant le premier clic ; ensuite bouton du pied ; un clic valide le début seul (`to = null`) et ferme ; le champ « Au » reste vide, sans erreur |
+| Désactivé / lecture seule (champ) | pas de bouton, pas de panneau ; désactivé : `state-disabled-opacity` ; lecture seule : texte normal, sélectionnable, zones non modifiables |
+| Invalide | cadre d'erreur du kit, `aria-invalid`, message sous le champ relié par `aria-describedby` (date incomplète, date qui n'existe pas, fin avant début) ; **un champ vide n'est jamais invalide de lui-même** |
 
 ## 4. Dimensions et disposition
 
-- Cellule 40 px (`space-10`) : un mois = 7 × 40 + 2 × `padding` = 304 px, **fixe**, indépendant du champ. Les niveaux mois et décennie gardent la même largeur et la même hauteur.
-- Deux mois : 2 × 280 + `month-gap` + 2 × `padding` = 608 px, donc tient dans une fenêtre de 640 px (+ marge de `space-2` de chaque côté). **Deux mois à partir de 640 px, un seul en dessous** : confirmé. Une requête de média n'accepte pas de token : le seuil vit dans le code (`BreakpointObserver` du CDK), en 640 px pour les mois et **840 px** pour la colonne de raccourcis (608 + 160 + marges).
-- 44 px (`control-height-md`) pour les cellules ferait 664 px : ne tiendrait plus à 640 px. Pointeur fin seulement, donc 40 px suffit ; boutons du pied et raccourcis : au moins `control-height-sm` (36 px) de haut, plus large que haut.
-- Fenêtre d'ordinateur de 360 px : un mois (304 px) + marge `space-2` : tient, pas de défilement horizontal ; raccourcis en rangée au-dessus, retour à la ligne. Le CDK repositionne le panneau (au-dessus, aligné à droite) ; hauteur maximale : celle de la fenêtre, le corps défile si besoin.
+- Cellule 40 px (`space-10`) : un mois = 7 × 40 + 2 × `padding` = 304 px, **fixe**. Les niveaux mois et années gardent la même largeur et la même hauteur.
+- Deux mois : 2 × 280 + `month-gap` + 2 × `padding` = 608 px, tient dans 640 px (marge `space-2` de chaque côté). Seuils dans le code (`BreakpointObserver` du CDK, une requête de média n'accepte pas de token) : 640 px pour les deux mois, **840 px** pour la colonne de raccourcis (608 + 160 + marges).
+- Cellules de 40 px et non 44 : 44 donnerait 664 px, qui ne tient plus à 640 px ; pointeur fin seulement. Boutons du pied et raccourcis : au moins `control-height-sm` (36 px) de haut.
+- Fenêtre d'ordinateur de 360 px : un mois (304 px) + marge : pas de défilement horizontal ; raccourcis en rangée au-dessus, retour à la ligne ; trois boutons du pied tiennent sur une ligne ou passent à la ligne. Le CDK repositionne le panneau ; le corps défile si la fenêtre est trop basse.
 
 ## 5. Clavier et lecteur d'écran (comparé au motif ARIA *date picker dialog*)
 
-Ce qui est juste dans la spec : `role="dialog"` nommé, focus piégé et rendu au bouton, flèches / Début / Fin / Page, Maj + Page = année, Entrée ou Espace, Échap sans changement, `aria-live="polite"` sur le titre, `aria-current="date"`, grille `role="grid"`. **À corriger ou ajouter** :
-1. `aria-modal="true"` sur le dialogue (manquant). Le bouton déclencheur : `aria-haspopup="dialog"`, `aria-expanded`.
-2. `aria-selected` va sur la **cellule** (`role="gridcell"` dans un `role="row"`), pas sur le bouton ; les en-têtes sont des `columnheader` ; la grille a `aria-labelledby` vers le titre.
-3. **Tabulation** : une seule étape pour la grille (focus mobile, `tabindex` tournant). Ordre : précédent, titre, suivant, grille, Aujourd'hui, Effacer ; Maj + Tab à l'envers.
-4. Jours hors bornes : atteignables au clavier, `aria-disabled`, Entrée sans effet (la spec disait seulement « non cliquable »).
-5. Début / Fin = début et fin de **semaine** (lundi, dimanche) : conforme. Ajout : Alt + Flèche bas dans le champ ouvre le panneau.
-6. Premier focus : jour choisi, sinon aujourd'hui, sinon le **jour autorisé le plus proche d'aujourd'hui** (la spec disait « le premier »).
-7. **Niveaux** : Entrée ou Espace sur le titre = niveau supérieur ; sur un mois ou une année = niveau inférieur, focus sur la cellule choisie. Flèches : ±1 et ±4 (4 colonnes). Page : un pas du niveau (mois, année, décennie). Maj + Page : seulement au niveau des jours (année). Échap ferme toujours le panneau entier (pas de retour d'un niveau) : un comportement unique.
-8. Période : Entrée sur un jour = début, flèches = aperçu, Entrée = fin et fermeture. Échap pendant le choix de la fin : ferme et **abandonne** le début, valeur inchangée.
-9. Champ à zones : flèches gauche / droite ou `/`, `.`, `-` : zone voisine ; flèches haut / bas : ±1 dans la zone (jour de 1 au dernier du mois, mois de 1 à 12, année), avec retour au début de la plage sans toucher aux autres zones ; chiffres : jour dont le premier chiffre est 4 à 9 et mois dont le premier chiffre est 2 à 9 passent seuls à la zone suivante, deux chiffres aussi, l'année s'arrête à 4 ; Retour arrière / Suppr : vide la zone (valeur `null` aussitôt) ; Ctrl + V : date entière dans les formes de la §5.3.
-10. Le nom d'un jour est sa date complète ; mois et années : mois et année complets.
+Conforme dans la spec : `role="dialog"` nommé et `aria-modal="true"`, focus piégé et rendu au bouton, `aria-haspopup="dialog"` et `aria-expanded` sur le bouton, flèches / Début / Fin / Page, Maj + Page, Entrée ou Espace, Échap sans changement, titre `aria-live="polite"`, `aria-current="date"`, `aria-selected` sur la `gridcell` (pas sur le bouton), `columnheader`, `aria-labelledby` de la grille vers le titre, une seule étape de tabulation pour la grille, jours hors bornes atteignables, premier focus sur le jour autorisé le plus proche. Précisions du brief :
+1. **Ordre de tabulation**, période : précédent, titre, suivant, grille, « Aujourd'hui », « Sans date de fin » (s'il est là), « Effacer » ; Maj + Tab à l'envers. Raccourcis (colonne ou rangée) : avant l'en-tête.
+2. **Niveaux** : Entrée ou Espace sur le titre = niveau supérieur ; sur un mois ou une année = niveau inférieur, focus sur la cellule choisie. Flèches ±1 et ±4 (quatre colonnes). Page : un pas du niveau (mois, année, dix ans) ; Maj + Page : une année, au niveau des jours seulement. Échap ferme toujours tout le panneau.
+3. **Période au clavier** : Entrée sur un jour = début, flèches = aperçu, Entrée = fin et fermeture. Quand « Sans date de fin » apparaît, la ligne d'état (`role="status"`) le dit à voix haute ; Entrée sur le bouton valide le début seul. Échap pendant le choix de la fin : ferme et abandonne le début, valeur inchangée. « Aujourd'hui » (période) : le mois en cours passe à gauche, le focus reste sur le bouton.
+4. **Raccourcis** : boutons ordinaires ; `aria-describedby` vers le texte masqué des dates (le `title` seul serait ignoré par la plupart des lecteurs au clavier). Entrée ou Espace = remplir les deux champs, fermer, rendre le focus au bouton calendrier.
+5. **Champ à zones** : flèches gauche / droite ou `/`, `.`, `-` : zone voisine ; haut / bas : ±1 dans la zone, en boucle, sans toucher aux autres zones sauf le jour ramené (§0, annoncé) ; chiffres : le jour (premier chiffre 4 à 9) et le mois (premier chiffre 2 à 9) passent seuls à la zone suivante, deux chiffres aussi, l'année s'arrête à quatre ; Retour arrière / Suppr : vide la zone (valeur `null` aussitôt) ; Tab quitte le champ ; Alt + flèche bas ouvre le panneau ; Ctrl + V : date entière dans les formes de la spec. Le message d'une date inexistante est relié par `aria-describedby` et se lit quand la dernière zone est remplie (`role="status"` sous le champ si le champ est seul).
+6. Le nom d'un jour est sa date complète ; mois et années : mois et année complets. Le point d'aujourd'hui a sa légende pour tous : bouton « Aujourd'hui » (vue), `aria-current` (lecteur d'écran), `title` (survol).
 
 ## 6. Mouvement
 
-Apparition du panneau : fondu `opacity` en `--lc-calendar-duration` / `--lc-calendar-easing`, pas de glissement. Survol : changement de fond sur la même durée. Changement de mois ou de niveau : aucun mouvement (remplacement net). `@media (prefers-reduced-motion: reduce)` : apparition et survol instantanés. Aucune minuterie.
+Apparition du panneau : fondu `opacity` en `--lc-calendar-duration` / `--lc-calendar-easing`, pas de glissement. Survol : changement de fond sur la même durée. Apparition de « Sans date de fin » : sans mouvement. Changement de mois ou de niveau : aucun mouvement. `@media (prefers-reduced-motion: reduce)` : apparition et survol instantanés. Aucune minuterie.
 
-## 7. Ce que je changerais dans la spec
+## 7. Écarts restants entre le brief et la spec
 
-1. §3 et §8 : retirer « saisie segmentée » et « niveaux mois / décennie » des non-objectifs ; B devient la direction retenue ; §12 : supprimer la question A / B.
-2. §5.3 : décrire le champ à zones (D1 : un `input` masqué, comportements du §5 ci-dessus, point 9) à la place de « texte libre analysé » ; la forme libre reste acceptée au collage. Ajouter la règle du jour ramené et le message « Date incomplète ».
-3. §5.3 / CA-5 : l'erreur « Date non reconnue » ne concerne plus que le collage ; ajouter CA pour : date incomplète à la sortie, jour ramené (28 / 29 février, annonce), passage automatique de zone, flèches haut / bas, collage.
-4. §5.4 : remplacer « une grille, pas de jours voisins » par les trois niveaux ; ajouter D2 (une grille pleine largeur dans la période) et un CA par niveau (navigation, titres, 12 cellules, bornes).
-5. §5.4 / CA-12 : repères = disque, point, anneau **carré intérieur** ; testable par styles calculés (fond, point présent, contour).
-6. §5.4 / CA-9 : `aria-modal`, `aria-selected` sur la cellule, `columnheader`, tabulation unique, jours hors bornes atteignables ; Échap pendant la période abandonne le début.
-7. §5.4 / CA-20 : 640 px pour les deux mois confirmé ; **colonne de raccourcis à partir de 840 px** (la spec disait 640 px) ; cellule 40 px, panneau 304 px.
-8. §5.3 / CA-19 : définitions des raccourcis (aujourd'hui compris ; « Ce mois-ci » jusqu'à la fin du mois, rogné par `max`).
-9. §5.3 / CA-22 : le texte d'exemple se compose des lettres de zone (jj, mm, aaaa) dans l'ordre de la locale, pas d'une chaîne entière ; ajouter les libellés du §2 de ce brief ; ligne d'état de la période visible.
-10. §5.1 / §11 : tokens dans `calendar.tokens.json` + paires de contraste ; ajouter un fichier pur `date-mask.ts` (zones, clamp, auto-avance) et scinder T2 en T2 (jours) et T2b (niveaux mois / décennie) ; T3 inclut le champ à zones. Les écarts de coût : B ≈ deux fois A, déjà dit en §8.
-11. §12 : ajouter le risque « lecteur d'écran sur l'`input` à zones, test manuel NVDA et VoiceOver avant T3 ; repli trois `spinbutton` ».
+1. **Ligne d'état de la période** : la spec (§5.4) écrit « Choisissez la date de début. » puis « Choisissez la date de fin. » ; le brief écrit pour la seconde « Choisissez la date de fin, ou cliquez sur « Sans date de fin ». » (le bouton n'a pas d'autre moyen de se faire découvrir). À reporter dans la spec.
+2. **Message « Cette date n'existe pas »** : la spec donne le cas « février 2026 n'a que 28 jours » ; le brief ajoute la forme courte « Cette date n'existe pas. Exemple : 12/11/2026 » pour un mois 13, un jour 00 ou une année 0000 (aucun nombre de jours à dire). À ajouter en §5.3 et au critère.
+3. **Annonce « Jour ramené au 28 février. »** : la spec dit « la nouvelle valeur de la zone est annoncée » ; le brief garde en plus cette annonce pour les flèches seulement (le jour change hors de la zone regardée). À confirmer.
+4. **Description des raccourcis** : la spec donne un seul exemple ; les cinq tournures (même mois, mois différents, années différentes, un jour, désactivé) et le « 1er » français sont au §2 du brief, avec la vérification `Intl` en T1.
+5. **Bouton « Aujourd'hui » de la période** : la spec dit « montre le mois en cours » ; le brief précise que le focus reste sur le bouton et que le bouton n'est jamais désactivé (rien n'est choisi).
+6. **Titre-bouton** : le brief fixe le rendu (contour `border-strong`, chevron) et le token `title-border`, absents de la spec ; les paires de contraste incluent `border-strong`/`surface-raised`.
