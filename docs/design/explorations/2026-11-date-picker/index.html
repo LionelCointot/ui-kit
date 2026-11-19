@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exploration : sélecteur de date du ui-kit</title>
+<style>
+/* Valeurs --lc-sys-* du thème par défaut du kit (packages/tokens/dist/css/theme-default.css et theme-dark.css), résolues. */
+:root, [data-theme="light"] {
+  --lc-sys-color-primary:#1c5cab; --lc-sys-color-on-primary:#ffffff;
+  --lc-sys-color-primary-container:#cde2fb; --lc-sys-color-on-primary-container:#0d366b;
+  --lc-sys-color-background:#f9f9f7; --lc-sys-color-surface:#fcfcfb; --lc-sys-color-surface-raised:#ffffff; --lc-sys-color-surface-sunken:#f0efec;
+  --lc-sys-color-on-surface:#0b0b0b; --lc-sys-color-on-surface-muted:#52514e; --lc-sys-color-on-surface-subtle:#6b6a66;
+  --lc-sys-color-border:#e1e0d9; --lc-sys-color-border-strong:#898781; --lc-sys-color-focus-ring:#2a78d6;
+  --lc-sys-color-backdrop:rgba(11,11,11,.45);
+  --lc-sys-shadow-3:0 8px 24px rgba(11,11,11,.12); --lc-sys-shadow-4:0 16px 48px rgba(11,11,11,.18);
+}
+[data-theme="dark"] {
+  --lc-sys-color-primary:#6da7ec; --lc-sys-color-on-primary:#0b0b0b;
+  --lc-sys-color-primary-container:#0d366b; --lc-sys-color-on-primary-container:#cde2fb;
+  --lc-sys-color-background:#0d0d0d; --lc-sys-color-surface:#1a1a19; --lc-sys-color-surface-raised:#232322; --lc-sys-color-surface-sunken:#121211;
+  --lc-sys-color-on-surface:#f0efec; --lc-sys-color-on-surface-muted:#c3c2b7; --lc-sys-color-on-surface-subtle:#898781;
+  --lc-sys-color-border:#2c2c2a; --lc-sys-color-border-strong:#898781; --lc-sys-color-focus-ring:#6da7ec;
+  --lc-sys-color-backdrop:rgba(0,0,0,.6);
+  --lc-sys-shadow-3:0 8px 24px rgba(0,0,0,.6); --lc-sys-shadow-4:0 16px 48px rgba(0,0,0,.7);
+}
+:root {
+  --lc-sys-font-family-base:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --lc-sys-font-size-sm:.875rem; --lc-sys-font-size-md:1rem; --lc-sys-font-size-lg:1.125rem; --lc-sys-font-size-xl:1.25rem;
+  --lc-sys-space-1:4px; --lc-sys-space-2:8px; --lc-sys-space-3:12px; --lc-sys-space-4:16px; --lc-sys-space-6:24px; --lc-sys-space-8:32px;
+  --lc-sys-radius-sm:4px; --lc-sys-radius-md:8px; --lc-sys-radius-lg:12px; --lc-sys-radius-full:9999px;
+  --lc-sys-duration-fast:100ms; --lc-sys-easing-standard:cubic-bezier(.2,0,0,1);
+  --lc-sys-control-height-md:44px; --lc-sys-focus-ring-width:2px; --lc-sys-focus-ring-offset:2px; --lc-sys-border-width-thin:1px;
+  --lc-sys-state-hover-opacity:.08; --lc-sys-state-disabled-opacity:.38;
+  --hover:color-mix(in srgb, var(--lc-sys-color-on-surface) calc(var(--lc-sys-state-hover-opacity)*100%), transparent);
+}
+*{box-sizing:border-box}
+body{margin:0;font:var(--lc-sys-font-size-md)/1.5 var(--lc-sys-font-family-base);background:var(--lc-sys-color-background);color:var(--lc-sys-color-on-surface)}
+.page{max-width:1280px;margin:0 auto;padding:var(--lc-sys-space-4)}
+h1{font-size:var(--lc-sys-font-size-xl);margin:var(--lc-sys-space-4) 0 var(--lc-sys-space-1)}
+h2{font-size:var(--lc-sys-font-size-lg);margin:0}
+.note{color:var(--lc-sys-color-on-surface-muted);font-size:var(--lc-sys-font-size-sm);margin:0}
+section.dir{margin-top:var(--lc-sys-space-8);border-top:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);padding-top:var(--lc-sys-space-4)}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:var(--lc-sys-space-4);margin-top:var(--lc-sys-space-3)}
+@media (max-width:820px){.themes{grid-template-columns:1fr}}
+.stage{background:var(--lc-sys-color-background);color:var(--lc-sys-color-on-surface);border:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-lg);padding:var(--lc-sys-space-4);display:flex;flex-direction:column;gap:var(--lc-sys-space-3);min-width:0}
+.stage>b{font-size:var(--lc-sys-font-size-sm);color:var(--lc-sys-color-on-surface-muted);font-weight:600}
+.cap{font-size:var(--lc-sys-font-size-sm);color:var(--lc-sys-color-on-surface-muted);margin:0}
+label.l{display:block;font-size:var(--lc-sys-font-size-sm);font-weight:600;margin-bottom:var(--lc-sys-space-1)}
+/* champ */
+.field{display:flex;align-items:center;gap:var(--lc-sys-space-1);height:var(--lc-sys-control-height-md);padding:0 var(--lc-sys-space-1) 0 var(--lc-sys-space-3);background:var(--lc-sys-color-surface-raised);border:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong);border-radius:var(--lc-sys-radius-md);max-width:300px;width:100%}
+.field:focus-within{outline:var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);outline-offset:var(--lc-sys-focus-ring-offset)}
+.field input{border:0;background:transparent;color:inherit;font:inherit;min-width:0;flex:1;height:100%;outline:0;font-variant-numeric:tabular-nums}
+.field input::placeholder{color:var(--lc-sys-color-on-surface-subtle)}
+.seg{display:flex;align-items:center;flex:1;gap:2px;font-variant-numeric:tabular-nums}
+.seg input{flex:none;text-align:center;width:2.2ch;padding:0;border-radius:var(--lc-sys-radius-sm);height:32px}
+.seg input.y{width:4.4ch}
+.seg input:focus{background:var(--lc-sys-color-primary-container);color:var(--lc-sys-color-on-primary-container)}
+.seg i{font-style:normal;color:var(--lc-sys-color-on-surface-subtle)}
+.ib{display:inline-grid;place-items:center;width:40px;height:40px;border:0;border-radius:var(--lc-sys-radius-md);background:transparent;color:var(--lc-sys-color-on-surface-muted);cursor:pointer;font:inherit}
+.ib:hover{background:var(--hover);color:var(--lc-sys-color-on-surface)}
+.ib:focus-visible,.d:focus-visible,.txt:focus-visible,.ttl:focus-visible,.m:focus-visible{outline:var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);outline-offset:var(--lc-sys-focus-ring-offset)}
+.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+/* panneau */
+.pop{background:var(--lc-sys-color-surface-raised);border:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-lg);box-shadow:var(--lc-sys-shadow-3);padding:var(--lc-sys-space-3);width:100%;max-width:340px}
+.hd{display:flex;align-items:center;gap:var(--lc-sys-space-1);margin-bottom:var(--lc-sys-space-2)}
+.hd .t{flex:1;font-weight:600;text-transform:capitalize;padding:0 var(--lc-sys-space-2)}
+.ttl{flex:1;display:flex;align-items:center;gap:var(--lc-sys-space-1);height:40px;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;text-transform:capitalize;padding:0 var(--lc-sys-space-2);border-radius:var(--lc-sys-radius-md);cursor:pointer}
+.ttl:hover{background:var(--hover)}
+.ttl svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.grid.mm{grid-template-columns:repeat(3,1fr);gap:var(--lc-sys-space-2)}
+.wd{font-size:var(--lc-sys-font-size-sm);color:var(--lc-sys-color-on-surface-muted);height:32px;display:grid;place-items:center;font-weight:600}
+.d,.m{height:40px;border:var(--lc-sys-border-width-thin) solid transparent;border-radius:var(--lc-sys-radius-full);background:transparent;color:var(--lc-sys-color-on-surface);font:inherit;font-variant-numeric:tabular-nums;cursor:pointer;display:grid;place-items:center}
+.m{height:48px;border-radius:var(--lc-sys-radius-md)}
+.d:hover,.m:hover{background:var(--hover)}
+.d.out{color:var(--lc-sys-color-on-surface-subtle)}
+.d.today,.m.today{border-color:var(--lc-sys-color-primary);color:var(--lc-sys-color-primary);font-weight:700}
+.d.sel,.m.sel{background:var(--lc-sys-color-primary);border-color:var(--lc-sys-color-primary);color:var(--lc-sys-color-on-primary);font-weight:700}
+.d.dis{opacity:var(--lc-sys-state-disabled-opacity);text-decoration:line-through;cursor:not-allowed}
+.d.dis:hover{background:transparent}
+.d.foc{outline:var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);outline-offset:var(--lc-sys-focus-ring-offset)}
+.ft{display:flex;justify-content:space-between;gap:var(--lc-sys-space-2);margin-top:var(--lc-sys-space-2);padding-top:var(--lc-sys-space-2);border-top:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border)}
+.txt{border:0;background:transparent;color:var(--lc-sys-color-primary);font:inherit;font-weight:600;height:40px;padding:0 var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-md);cursor:pointer}
+.txt:hover{background:var(--hover)}
+.btn{border:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-primary);background:var(--lc-sys-color-primary);color:var(--lc-sys-color-on-primary);font:inherit;font-weight:600;height:48px;padding:0 var(--lc-sys-space-6);border-radius:var(--lc-sys-radius-md);cursor:pointer;flex:1}
+.btn.o{background:transparent;color:var(--lc-sys-color-on-surface)}
+.btn.o{border-color:var(--lc-sys-color-border-strong)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-2);margin-bottom:var(--lc-sys-space-2)}
+.chip{border:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong);background:transparent;color:var(--lc-sys-color-on-surface);font:inherit;font-size:var(--lc-sys-font-size-sm);height:32px;padding:0 var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-full);cursor:pointer}
+.chip:hover{background:var(--hover)}
+/* C : feuille */
+.phone{position:relative;overflow:hidden;border:var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-lg);background:var(--lc-sys-color-surface);min-height:560px;max-width:360px;width:100%;margin:0 auto;display:flex;flex-direction:column;justify-content:flex-end}
+.phone .under{padding:var(--lc-sys-space-4);position:absolute;inset:0 0 auto 0}
+.phone .bk{position:absolute;inset:0;background:var(--lc-sys-color-backdrop)}
+.sheet{position:relative;background:var(--lc-sys-color-surface-raised);border-radius:var(--lc-sys-radius-lg) var(--lc-sys-radius-lg) 0 0;padding:var(--lc-sys-space-2) var(--lc-sys-space-3) calc(var(--lc-sys-space-4) + env(safe-area-inset-bottom));box-shadow:var(--lc-sys-shadow-4)}
+.grip{width:40px;height:4px;border-radius:var(--lc-sys-radius-full);background:var(--lc-sys-color-border-strong);margin:0 auto var(--lc-sys-space-2)}
+.sheet .big{font-size:var(--lc-sys-font-size-xl);font-weight:700;margin:var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-3)}
+.sheet .d{height:44px}
+.sheet .ib{width:48px;height:48px}
+.sheet .grid{gap:0}
+.sheet .acts{display:flex;gap:var(--lc-sys-space-2);margin-top:var(--lc-sys-space-3)}
+.legend{display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-2) var(--lc-sys-space-4);font-size:var(--lc-sys-font-size-sm);color:var(--lc-sys-color-on-surface-muted);margin-top:var(--lc-sys-space-2)}
+.dir ul{margin:var(--lc-sys-space-2) 0;padding-left:1.2em;font-size:var(--lc-sys-font-size-sm);color:var(--lc-sys-color-on-surface-muted)}
+.dir ul b{color:var(--lc-sys-color-on-surface)}
+@media (max-width:480px){.page{padding:var(--lc-sys-space-2)} .stage{padding:var(--lc-sys-space-2)} .d{height:44px} .pop{max-width:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body><div class="page">
+<h1>Sélecteur de date du ui-kit : trois directions</h1>
+<p class="note">Maquettes statiques, légèrement interactives (changer de mois, choisir un jour, titre cliquable en B). Date du jour d'exemple : jeudi 19 novembre 2026. Valeurs d'exemple : date choisie 12/11/2026, bornes 05/11/2026 à 25/11/2026. Couleurs : variables <code>--lc-sys-*</code> du thème par défaut, clair et sombre.</p>
+
+<section class="dir">
+<h2>A. Champ à saisie libre + calendrier en panneau (sobre)</h2>
+<p class="note">On tape « 12/11/2026 » comme aujourd'hui ; le bouton calendrier ouvre un panneau de jours. Le champ reste un vrai <code>input</code> (clavier numérique, lecteur d'écran).</p>
+<div class="themes" id="A"></div>
+</section>
+
+<section class="dir">
+<h2>B. Saisie segmentée + calendrier à trois niveaux (riche)</h2>
+<p class="note">Jour, mois et année sont trois zones où l'on tape ou fait défiler à la flèche. Le titre du panneau monte de jours à mois puis à décennie. Raccourcis « Aujourd'hui » et « Effacer ».</p>
+<div class="themes" id="B"></div>
+</section>
+
+<section class="dir">
+<h2>C. Feuille en bas d'écran, pensée téléphone</h2>
+<p class="note">Le champ garde le sélecteur natif sur téléphone ; sur grand écran, le panneau de A ou B. Une feuille avec grandes cibles (48 px), la date choisie en gros, « Valider » et « Annuler ». Montrée ici dans un cadre de 360 px.</p>
+<div class="themes" id="C"></div>
+</section>
+</div>
+
+<script>
+const TODAY=[2026,10,19], MIN=[2026,10,5], MAX=[2026,10,25];
+const MONTHS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const ABBR=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const WD=[['L','lundi'],['M','mardi'],['M','mercredi'],['J','jeudi'],['V','vendredi'],['S','samedi'],['D','dimanche']];
+const key=(y,m,d)=>y*10000+m*100+d, K=a=>key(...a);
+const ico={cal:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+ l:'<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',r:'<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
+ dn:'<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>'};
+const pad=n=>String(n).padStart(2,'0');
+const fmt=a=>`${pad(a[2])}/${pad(a[1]+1)}/${a[0]}`;
+function days(st,opt){
+  const first=new Date(st.y,st.m,1), off=(first.getDay()+6)%7, n=new Date(st.y,st.m+1,0).getDate();
+  let h=WD.map(w=>`<span class="wd" role="columnheader" aria-label="${w[1]}">${w[0]}</span>`).join('');
+  for(let i=-off;i<n+((7-(off+n)%7)%7);i++){
+    const dt=new Date(st.y,st.m,1+i), y=dt.getFullYear(), m=dt.getMonth(), d=dt.getDate(), k=key(y,m,d);
+    const c=['d']; if(m!==st.m)c.push('out'); if(k===K(TODAY))c.push('today'); if(st.sel&&k===K(st.sel))c.push('sel');
+    const dis=k<K(MIN)||k>K(MAX); if(dis)c.push('dis'); if(opt.foc&&k===key(2026,10,opt.foc)&&m===st.m)c.push('foc');
+    h+=`<button class="${c.join(' ')}" type="button" data-d="${y}-${m}-${d}" ${dis?'aria-disabled="true"':''} aria-label="${d} ${MONTHS[m]} ${y}${k===K(TODAY)?', aujourd’hui':''}${dis?', indisponible':''}" ${st.sel&&k===K(st.sel)?'aria-pressed="true"':''}>${d}</button>`;
+  }
+  return `<div class="grid" role="grid" aria-label="${MONTHS[st.m]} ${st.y}">${h}</div>`;
+}
+function months(st){
+  return `<div class="grid mm">${MONTHS.map((n,i)=>`<button type="button" class="m${st.sel&&st.sel[0]===st.y&&st.sel[1]===i?' sel':''}${TODAY[0]===st.y&&TODAY[1]===i?' today':''}" data-m="${i}">${ABBR[i]}</button>`).join('')}</div>`;
+}
+function years(st){
+  const s=Math.floor(st.y/10)*10-1; let h='';
+  for(let y=s;y<s+12;y++)h+=`<button type="button" class="m${st.sel&&st.sel[0]===y?' sel':''}${TODAY[0]===y?' today':''}${y<s+1||y>s+10?' d out':''}" data-y="${y}" style="${y<s+1||y>s+10?'color:var(--lc-sys-color-on-surface-subtle)':''}">${y}</button>`;
+  return `<div class="grid mm">${h}</div>`;
+}
+const nav=(l,r,title)=>`<div class="hd"><button class="ib" type="button" data-nav="-1" aria-label="${l}">${ico.l}</button>${title}<button class="ib" type="button" data-nav="1" aria-label="${r}">${ico.r}</button></div>`;
+const plain=st=>`<span class="t" aria-live="polite">${MONTHS[st.m]} ${st.y}</span>`;
+const rich=st=>`<button class="ttl" type="button" data-up="1" aria-label="Changer de mois ou d’année">${st.view==='days'?MONTHS[st.m]+' '+st.y:st.view==='months'?st.y:(Math.floor(st.y/10)*10)+' – '+(Math.floor(st.y/10)*10+9)} ${ico.dn}</button>`;
+
+const T={
+ A:(st)=>`<div><label class="l">Date de début</label><div class="field"><input inputmode="numeric" placeholder="JJ/MM/AAAA" value="${st.sel?fmt(st.sel):''}" aria-label="Date de début, format jour mois année"><button class="ib" type="button" aria-label="Ouvrir le calendrier">${ico.cal}</button></div></div>
+  <div class="pop" role="dialog" aria-label="Choisir une date">${nav('Mois précédent','Mois suivant',plain(st))}${days(st,{foc:18})}<div class="ft"><button class="txt" type="button" data-today="1">Aujourd’hui</button></div></div>
+  <div class="legend"><span>Rond : aujourd’hui</span><span>Plein : choisie</span><span>Barré : hors bornes</span></div>`,
+ B:(st)=>{const mv=st.view!=='days';return `<div>${st.first?'<label class="l">Date de début</label><div class="field"><div class="seg" role="group" aria-label="Date de début"><input value="12" aria-label="Jour" inputmode="numeric"><i>/</i><input value="11" aria-label="Mois" inputmode="numeric"><i>/</i><input class="y" value="2026" aria-label="Année" inputmode="numeric"></div><button class="ib" type="button" aria-label="Ouvrir le calendrier">'+ico.cal+'</button></div>':''}</div>
+  <div class="pop" role="dialog" aria-label="Choisir une date">${nav(mv?(st.view==='months'?'Année précédente':'Décennie précédente'):'Mois précédent',mv?(st.view==='months'?'Année suivante':'Décennie suivante'):'Mois suivant',rich(st))}
+  ${st.view==='days'?'<div class="chips"><button class="chip" type="button" data-today="1">Aujourd’hui</button><button class="chip" type="button" data-set="-1">Hier</button><button class="chip" type="button" data-set="-7">Il y a 7 jours</button></div>'+days(st,{foc:18})+'<div class="ft"><button class="txt" type="button" data-clear="1">Effacer</button><button class="txt" type="button" data-today="1">Aujourd’hui</button></div>':st.view==='months'?months(st):years(st)}</div>`},
+ C:(st)=>`<div class="phone"><div class="under"><label class="l">Date de début</label><div class="field"><input readonly value="${st.sel?fmt(st.sel):''}" aria-label="Date de début"><span class="ib" aria-hidden="true">${ico.cal}</span></div></div><div class="bk"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Choisir une date"><div class="grip"></div><div class="big">${st.sel?['jeu.','ven.','sam.','dim.','lun.','mar.','mer.'][(new Date(st.sel[0],st.sel[1],st.sel[2]).getDay()+3)%7]+' '+st.sel[2]+' '+MONTHS[st.sel[1]]:'Aucune date'}</div>
+  ${nav('Mois précédent','Mois suivant',plain(st))}${days(st,{})}<div class="acts"><button class="btn o" type="button" data-today="1">Aujourd’hui</button><button class="btn" type="button">Valider</button></div></div></div>`
+};
+function mount(host,dir,theme,view,first){
+  const el=document.createElement('div');el.className='stage';el.dataset.theme=theme;
+  host.appendChild(el);
+  const st={y:2026,m:10,sel:[2026,10,12],view:view||'days',first};
+  const draw=()=>{el.innerHTML=`<b>Thème ${theme==='dark'?'sombre':'clair'}${dir==='B'?(st.view==='days'?' · vue jours':st.view==='months'?' · vue mois (clic sur le titre)':' · vue décennie'):''}</b>`+T[dir](st)};
+  el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.nav){const s=+b.dataset.nav;if(st.view==='days'){st.m+=s;if(st.m<0){st.m=11;st.y--}if(st.m>11){st.m=0;st.y++}}else if(st.view==='months')st.y+=s;else st.y+=10*s}
+    else if(b.dataset.up){st.view=st.view==='days'?'months':'years'}
+    else if(b.dataset.m){st.m=+b.dataset.m;st.view='days'}
+    else if(b.dataset.y){st.y=+b.dataset.y;st.view='months'}
+    else if(b.dataset.d){if(b.getAttribute('aria-disabled'))return;const[y,m,d]=b.dataset.d.split('-').map(Number);st.sel=[y,m,d];st.y=y;st.m=m}
+    else if(b.dataset.today){st.sel=[...TODAY];st.y=2026;st.m=10}
+    else if(b.dataset.set){st.sel=[2026,10,19+Number(b.dataset.set)]}
+    else if(b.dataset.clear){st.sel=null} else return;
+    draw()});
+  draw();
+}
+for(const th of ['light','dark']){
+  mount(A,'A',th);
+  mount(B,'B',th,'days',true);
+  mount(C,'C',th);
+}
+for(const th of ['light','dark'])mount(B,'B',th,'months');
+</script>
+</body></html>
