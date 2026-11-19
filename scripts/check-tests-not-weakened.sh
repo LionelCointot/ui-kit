@@ -12,8 +12,8 @@ if [ -z "$base" ]; then
 fi
 merge_base="$(git merge-base "$base" HEAD 2>/dev/null || echo "$base")"
 
-# Motifs : Vitest / Jest / Playwright, puis xUnit / NUnit / MSTest.
-pattern='\.(skip|only|fixme|todo)\(|\b(xit|xdescribe|xtest|fit|fdescribe)\(|Skip *=|\[Ignore|\[Explicit'
+# Motifs : Vitest / Jest / Playwright, puis xUnit / NUnit / MSTest, puis un test C# mis hors compilation (#if false).
+pattern='\.(skip|only|fixme|todo)\(|\b(xit|xdescribe|xtest|fit|fdescribe)\(|Skip *=|\[Ignore|\[Explicit|#if +(false|! *true)\b'
 
 found="$(git diff "$merge_base" --unified=0 -- \
     '*.spec.ts' '*.test.ts' '*.spec.tsx' '*.test.tsx' '*Tests.cs' '*Test.cs' '**/e2e/**' '**/tests/**' \
