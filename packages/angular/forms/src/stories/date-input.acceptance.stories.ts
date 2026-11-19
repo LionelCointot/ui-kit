@@ -92,3 +92,36 @@ export const FondDeLaZone: Story = {
     expect(zone).not.toBe('rgba(0, 0, 0, 0)');
   },
 };
+
+@Component({
+  selector: 'lc-date-input-states',
+  imports: [LcDateInputComponent],
+  template: `<div style="display:grid;gap:24px;max-width:20rem">
+    <lc-date-input ariaLabel="Désactivé" [value]="'2026-11-12'" disabled />
+    <lc-date-input ariaLabel="Lecture seule" [value]="'2026-11-12'" readonly />
+  </div>`,
+})
+class StatesComponent {}
+
+@Component({
+  selector: 'lc-date-input-below',
+  imports: [LcDateInputComponent],
+  template: `<div style="max-width:20rem"><lc-date-input ariaLabel="Date" />
+    <button type="button" style="display:block;margin-block-start:4px;inline-size:100%;min-block-size:40px">Élément placé juste sous le champ</button></div>`,
+})
+class BelowComponent {}
+
+/** Captures : désactivé et lecture seule (aucun bouton, zones non modifiables). */
+export const Etats: Story = {
+  decorators: [moduleMetadata({ imports: [StatesComponent] })],
+  render: () => ({ template: '<lc-date-input-states />' }),
+};
+
+/** Captures : hors formulaire, le message sous le cadre face à un élément placé juste dessous. */
+export const ContenuSuivant: Story = {
+  decorators: [moduleMetadata({ imports: [BelowComponent] })],
+  render: () => ({ template: '<lc-date-input-below />' }),
+};
+
+/** Captures : champ vide, sans scénario joué. */
+export const ChampVide: Story = {};
