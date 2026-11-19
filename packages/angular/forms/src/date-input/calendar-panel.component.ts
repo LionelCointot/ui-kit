@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
-import { addDays, addMonths, addYears, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
+import { addDays, addMonths, addYears, clampIso, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
 import type { LcDateInterval } from './date-interval';
 
 export type LcCalendarLevel = 'day' | 'month' | 'year';
@@ -71,12 +71,14 @@ const MONDAY = '2026-11-02';
             }
             @if (month.up) {
               <button type="button" class="lc-calendar__title" [attr.aria-label]="month.titleName" (click)="levelUp()">
-                <span aria-live="polite" [id]="month.id">{{ month.title }}</span>
+                <span [id]="month.id">{{ month.title }}</span>
                 <lc-icon name="chevron-down" />
               </button>
             } @else {
-              <span class="lc-calendar__title lc-calendar__title--text"><span aria-live="polite" [id]="month.id">{{ month.title }}</span></span>
+              <span class="lc-calendar__title lc-calendar__title--text" [id]="month.id">{{ month.title }}</span>
             }
+            <!-- Le titre relu quand le mois, l'année ou le niveau change : hors du bouton, dont les enfants ne sont pas annoncés de façon sûre. -->
+            <span class="lc-visually-hidden" aria-live="polite">{{ month.title }}</span>
             @if (last) {
               <button type="button" class="lc-calendar__nav lc-calendar__nav--next" [attr.aria-label]="navLabels().next" [disabled]="nextDisabled()" (click)="shift(1)">
                 <lc-icon name="chevron-right" />
@@ -103,7 +105,7 @@ const MONDAY = '2026-11-02';
                         [attr.aria-current]="cell.today ? 'date' : null" [attr.title]="cell.today ? labels.dateToday : null"
                         [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" (click)="pick(cell.iso)">{{ cell.label }}</td>
                     } @else {
-                      <td></td>
+                      <td role="presentation"></td>
                     }
                   }
                 </tr>
@@ -159,10 +161,7 @@ export class LcCalendarPanelComponent {
 
   /** Jour de départ : le jour choisi, sinon aujourd'hui, ramené dans `min` / `max`. */
   private readonly start = computed(() => {
-    const day = this.selection().from ?? this.today();
-    const min = this.min();
-    const max = this.max();
-    return min && day < min ? min : max && day > max ? max : day;
+    return clampIso(this.selection().from ?? this.today(), this.min(), this.max());
   });
   /** Jour qui porte le focus (tabindex tournant). */
   protected readonly active = linkedSignal(() => this.start());
@@ -257,7 +256,10 @@ export class LcCalendarPanelComponent {
   /** Clic, Entrée ou Espace sur une cellule : choisit un jour, ou descend d'un niveau sans rien choisir. */
   protected pick(iso: string): void {
     const level = this.level();
-    if (level === 'day') return this.choose(iso);
+    if (level === 'day') {
+      this.active.set(iso); // un jour hors bornes reçoit quand même le focus : les flèches repartent de lui
+      return this.choose(iso);
+    }
     if (this.isOut(iso, level)) return;
     const active = this.active();
     this.active.set(
@@ -288,19 +290,22 @@ export class LcCalendarPanelComponent {
     if (level === 'day') {
       this.active.set(addMonths(this.active(), direction));
       this.shown.set(addMonths(this.shown(), direction));
-      return;
+      return this.refocusIfLost();
     }
     const years = level === 'month' ? direction : 12 * direction;
     this.active.set(addYears(this.active(), years));
     if (level === 'year') this.pageBase.update((base) => base + years);
+    this.refocusIfLost();
   }
 
   protected onEscape(event: Event): void {
     event.preventDefault();
+    event.stopPropagation(); // dans un tiroir ou un dialogue, Échap ne ferme que le panneau
     this.closed.emit();
   }
 
   protected onKeydown(event: KeyboardEvent): void {
+    if (event.altKey || event.ctrlKey || event.metaKey) return; // appartient au navigateur
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.pick(this.active());
@@ -349,6 +354,17 @@ export class LcCalendarPanelComponent {
       if (first < this.shown()) this.shown.set(first);
       else if (first > addMonths(this.shown(), this.months() - 1)) this.shown.set(addMonths(first, 1 - this.months()));
     }
+  }
+
+  /** Un bouton qui se désactive sous le focus (dernière page atteinte) le perdrait : le focus passe au jour actif. */
+  private refocusIfLost(): void {
+    afterNextRender(
+      () => {
+        const focused = this.host.ownerDocument.activeElement;
+        if (!focused || focused === this.host.ownerDocument.body || (focused as HTMLButtonElement).disabled) this.focusActive();
+      },
+      { injector: this.injector },
+    );
   }
 
   private focusActive(): void {

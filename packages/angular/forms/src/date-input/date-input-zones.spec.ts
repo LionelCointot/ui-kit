@@ -94,7 +94,7 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(host.value()).toBe('2026-11-12');
   });
 
-  it('sortie du champ avec une date incomplète : valeur null, invalide, message relié', async () => {
+  it('sortie du champ avec une date incomplète : valeur null, invalide, aucun texte', async () => {
     const { fixture, host, input, key, keys } = await setup();
     host.value.set('2026-11-12');
     await fixture.whenStable();
@@ -105,13 +105,13 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     await fixture.whenStable();
     expect(host.value()).toBeNull();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    const message = fixture.nativeElement.querySelector('.lc-date-input__message') as HTMLElement;
-    expect(message.textContent).toBe('Date incomplète. Exemple : 12/11/2026');
-    expect(input.getAttribute('aria-describedby')).toContain(message.id);
+    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toMatch(/incompl/i);
+    expect(input.value).toBe('12/mm/2026');
     expect(fixture.nativeElement.querySelector('lc-date-input').classList).toContain('lc-field--invalid');
     input.focus();
     await keys('12112026');
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
+    expect(input.getAttribute('aria-invalid')).toBeNull();
   });
 
   it('un champ entièrement vide ne signale rien à la sortie', async () => {
@@ -170,6 +170,22 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     await fixture.whenStable();
     expect(state.invalid()).toBe(false);
     expect(fixture.componentInstance.model().day).toBe('2026-11-12');
+  });
+
+  it('sous [formField], une date incomplète à la sortie : champ invalide (parse) sans texte', async () => {
+    const fixture = TestBed.createComponent(FormHostComponent);
+    document.body.append(fixture.nativeElement);
+    await fixture.whenStable();
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.focus();
+    for (const key of '12') input.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
+    input.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    const state = fixture.componentInstance.f.day();
+    expect(state.invalid()).toBe(true);
+    expect(state.errors().map((error) => [error.kind, error.message])).toEqual([['parse', undefined]]);
+    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('un jour en attente qui affiche une valeur possible émet la valeur tout de suite', async () => {

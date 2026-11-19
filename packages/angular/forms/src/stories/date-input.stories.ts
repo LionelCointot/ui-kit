@@ -76,8 +76,7 @@ export const MessageChampEtroit: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('textbox'));
-    await userEvent.keyboard('12');
-    await userEvent.tab();
+    await userEvent.paste('demain'); // seul le collage illisible affiche un message (une date incomplète n'en affiche plus)
     const message = await canvas.findByRole('alert');
     const next = canvas.getByRole('button', { name: 'Suite' });
     await waitFor(() => expect(message.getBoundingClientRect().bottom).toBeLessThanOrEqual(next.getBoundingClientRect().top));

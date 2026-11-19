@@ -30,6 +30,7 @@ import { LC_DATE_PICKER, resolveDatePickerMode } from './date-picker-mode';
 /** Saisie du champ à zones vers le modèle : `iso` `undefined` laisse la valeur telle quelle ; `error` remonte par `transformedValue`. */
 interface DateEntry {
   readonly iso: string | null | undefined;
+  /** Texte du message ; `''` = invalide sans texte (date incomplète) ; `null` = aucune erreur. */
   readonly error: string | null;
   /** Vrai quand la saisie vient du champ ; faux quand le modèle ou `reset()` a posé la valeur (les zones repartent d'elle). */
   readonly typed: boolean;
@@ -117,7 +118,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   protected readonly messageId = lcUniqueId('date-message');
   private readonly entry = this.isCalendar
     ? transformedValue<string | null, DateEntry>(this.value, {
-        parse: (entry) => ({ value: entry.iso, error: entry.error ? { kind: 'parse', message: entry.error } : undefined }),
+        parse: (entry) => ({ value: entry.iso, error: entry.error === null ? undefined : { kind: 'parse', message: entry.error || undefined } }),
         format: (iso) => ({ iso, error: null, typed: false }),
       })
     : undefined;
@@ -132,10 +133,12 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   protected readonly announcement = signal('');
   protected readonly mask = computed(() =>
     render(this.zones(), this.order, { day: this.labels.dateZoneDay, month: this.labels.dateZoneMonth, year: this.labels.dateZoneYear }));
-  private readonly parseError = computed(() => this.entry?.parseErrors()[0]?.message ?? null);
+  /** Erreur de saisie en cours (date incomplète : sans texte ; collage illisible : avec le texte de `parseMessage`). */
+  private readonly hasParseError = computed(() => (this.entry?.parseErrors().length ?? 0) > 0);
+  private readonly parseMessage = computed(() => this.entry?.parseErrors()[0]?.message ?? null);
   /** Hors formulaire le champ affiche lui-même son message ; sous `[formField]` il revient par `errors`. */
   protected readonly message = computed(() =>
-    this.parseError() && !this.errors().some((error) => error.kind === 'parse') ? this.parseError() : null);
+    this.parseMessage() && !this.errors().some((error) => error.kind === 'parse') ? this.parseMessage() : null);
 
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
   private readonly blurred = signal(false);
@@ -168,7 +171,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   }
 
   protected readonly showInvalid = computed(() =>
-    this.parseError() !== null || (this.field ? this.field.showInvalid() : this.invalid() && (this.touched() || this.blurred())));
+    this.hasParseError() || (this.field ? this.field.showInvalid() : this.invalid() && (this.touched() || this.blurred())));
   protected readonly isRequired = computed(() => this.required() || (this.field?.isRequired() ?? false));
   protected readonly describedBy = computed(() =>
     joinIds(this.field?.describedBy(), this.isCalendar && this.hintId, this.message() && this.messageId));
@@ -197,11 +200,11 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     this.touch.emit();
   }
 
-  /** Sortie du champ : la zone en cours est mise en forme ; une date incomplète vaut `null` avec son message. */
+  /** Sortie du champ : la zone en cours est mise en forme ; une date incomplète vaut `null`, invalide, sans message. */
   private leave(): void {
     const zones = settle(this.zones(), this.active());
     const incomplete = !isEmpty(zones) && toIso(zones) === null;
-    if (zones !== this.zones() || incomplete) this.commit(zones, incomplete ? this.labels.dateIncomplete(this.example) : null);
+    if (zones !== this.zones() || incomplete) this.commit(zones, incomplete ? '' : null);
     this.refresh(false);
   }
 

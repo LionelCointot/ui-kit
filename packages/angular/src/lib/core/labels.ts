@@ -142,7 +142,6 @@ export interface LcLabels {
   /** Annonce d'une zone : `value` est null quand la zone est vide. */
   readonly dateZoneAnnounce: (name: string, value: string | null) => string;
   readonly dateInputHint: string;
-  readonly dateIncomplete: (example: string) => string;
   readonly dateUnrecognized: (example: string) => string;
   readonly dateDayClamped: (day: number, month: string) => string;
   /** Panneau du calendrier : titre du dialogue, pied, navigation, nom du titre-bouton (`title` = « novembre 2026 »). */
@@ -711,7 +710,6 @@ export const LC_LABELS_FR: LcLabels = {
   dateYearName: 'Année',
   dateZoneAnnounce: (name, value) => `${name}, ${value ?? 'vide'}`,
   dateInputHint: 'Tapez la date, ou changez chaque zone avec les flèches haut et bas.',
-  dateIncomplete: (example) => `Date incomplète. Exemple : ${example}`,
   dateUnrecognized: (example) => `Date non reconnue. Exemple : ${example}`,
   dateDayClamped: (day, month) => `Jour ramené au ${day} ${month}.`,
   dateChoose: 'Choisir une date',
@@ -930,7 +928,6 @@ export const LC_LABELS_EN: LcLabels = {
   dateYearName: 'Year',
   dateZoneAnnounce: (name, value) => `${name}, ${value ?? 'empty'}`,
   dateInputHint: 'Type the date, or change each part with the up and down arrow keys.',
-  dateIncomplete: (example) => `Incomplete date. Example: ${example}`,
   dateUnrecognized: (example) => `Date not recognized. Example: ${example}`,
   dateDayClamped: (day, month) => `Day set to ${month} ${day}.`,
   dateChoose: 'Choose a date',

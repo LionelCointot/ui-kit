@@ -24,7 +24,7 @@ async function setup(inputs: Record<string, unknown> = {}, english = false) {
   fixture.componentInstance.closed.subscribe(closed);
   const cell = (iso: string) => el.querySelector<HTMLElement>(`td[data-date="${iso}"]`)!;
   const active = () => el.querySelector<HTMLElement>('td[tabindex="0"]')!;
-  const title = () => el.querySelector('.lc-calendar__title span')!.textContent;
+  const title = () => el.querySelector('[aria-live="polite"]')!.textContent;
   const press = async (key: string, init: KeyboardEventInit = {}) => {
     active().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
     await fixture.whenStable();
@@ -49,7 +49,7 @@ describe('calendar-panel, niveau des jours', () => {
     expect(rows).toHaveLength(6);
     expect(el.querySelectorAll('td[role=gridcell]')).toHaveLength(30);
     const first = [...rows[0].children];
-    expect(first.slice(0, 6).every((c) => c.getAttribute('role') === null)).toBe(true);
+    expect(first.slice(0, 6).every((c) => c.getAttribute('role') === 'presentation')).toBe(true);
     expect(first[6].getAttribute('data-date')).toBe('2026-11-01');
     expect(rows[5].children[0].getAttribute('data-date')).toBe('2026-11-30');
   });
@@ -60,7 +60,7 @@ describe('calendar-panel, niveau des jours', () => {
     expect(el.querySelectorAll('td[role=gridcell]')).toHaveLength(28);
     const rows = [...el.querySelectorAll('tbody tr')];
     expect(rows).toHaveLength(5);
-    expect(rows[4].lastElementChild!.getAttribute('role')).toBeNull();
+    expect(rows[4].lastElementChild!.getAttribute('role')).toBe('presentation');
   });
 
   it('repères : jour choisi, aujourd’hui, noms complets, rôles', async () => {
@@ -77,7 +77,8 @@ describe('calendar-panel, niveau des jours', () => {
     expect(cell('2026-11-20').getAttribute('title')).toBeNull();
     const grid = el.querySelector('[role=grid]')!;
     expect(el.querySelector('#' + grid.getAttribute('aria-labelledby'))!.textContent).toBe('novembre 2026');
-    expect(el.querySelector('.lc-calendar__title span')!.getAttribute('aria-live')).toBe('polite');
+    expect(el.querySelector('[aria-live="polite"]')!.textContent).toBe('novembre 2026');
+    expect(el.querySelector('[aria-live="polite"]')!.closest('button')).toBeNull();
   });
 
   it('une seule étape de tabulation pour la grille', async () => {
@@ -91,12 +92,12 @@ describe('calendar-panel, niveau des jours', () => {
     expect(cell('2026-11-04').getAttribute('aria-disabled')).toBe('true');
     expect(cell('2026-11-21').getAttribute('aria-disabled')).toBe('true');
     expect(cell('2026-11-10').getAttribute('aria-disabled')).toBeNull();
-    cell('2026-11-04').click();
-    expect(picked).not.toHaveBeenCalled();
     await press('ArrowRight');
     await press('ArrowRight');
     expect(active().getAttribute('data-date')).toBe('2026-11-21');
     await press('Enter');
+    expect(picked).not.toHaveBeenCalled();
+    cell('2026-11-04').click();
     expect(picked).not.toHaveBeenCalled();
     cell('2026-11-10').click();
     expect(picked).toHaveBeenCalledWith('2026-11-10');
@@ -159,6 +160,38 @@ describe('calendar-panel, niveau des jours', () => {
     await press('PageDown');
     expect(active().getAttribute('data-date')).toBe('2026-02-28');
     expect(title()).toBe('février 2026');
+  });
+
+  it('un jour hors bornes cliqué reçoit le focus : la flèche suivante part de lui', async () => {
+    const { cell, press, active } = await setup({ min: '2026-11-05' });
+    cell('2026-11-04').click();
+    await press('ArrowRight');
+    expect(active().getAttribute('data-date')).toBe('2026-11-05');
+  });
+
+  it('un bouton qui se désactive sous le focus rend le focus au jour actif', async () => {
+    const { el, fixture, active } = await setup({ max: '2026-12-31' });
+    const next = el.querySelector<HTMLButtonElement>('[aria-label="Mois suivant"]')!;
+    next.focus();
+    next.click();
+    await fixture.whenStable();
+    expect(next.disabled).toBe(true);
+    expect(document.activeElement).toBe(active());
+    expect(active().getAttribute('data-date')).toBe('2026-12-19');
+  });
+
+  it('Échap ne remonte pas ; Alt, Ctrl et Méta + flèche sont laissés au navigateur', async () => {
+    const { el, press, active, closed } = await setup();
+    const outer = vi.fn();
+    document.body.addEventListener('keydown', outer);
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    document.body.removeEventListener('keydown', outer);
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(outer).not.toHaveBeenCalled();
+    await press('ArrowRight', { altKey: true });
+    await press('ArrowRight', { ctrlKey: true });
+    await press('ArrowRight', { metaKey: true });
+    expect(active().getAttribute('data-date')).toBe(TODAY);
   });
 
   it('Entrée et Espace choisissent le jour actif ; Échap ferme', async () => {
@@ -314,16 +347,8 @@ describe('calendar-panel, niveaux mois et années', () => {
     expect(el.querySelector<HTMLButtonElement>('[aria-label="Année suivante"]')!.disabled).toBe(true);
     await click('td[data-date="2026-02-01"]');
     expect(title()).toBe('2026');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    await press('ArrowLeft');
-    expect(active().getAttribute('data-date')).toBe('2026-02-19');
+    for (let step = 0; step < 6; step++) await press('ArrowLeft');
+    expect(active().getAttribute('data-date')).toBe('2026-02-01');
     await press('Enter');
     expect(title()).toBe('2026');
     await click(`button${TITLE}`);
