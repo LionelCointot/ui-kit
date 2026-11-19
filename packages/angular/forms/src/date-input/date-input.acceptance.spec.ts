@@ -218,8 +218,57 @@ describe('CA-6 un jour qui n’existe pas ne se saisit pas, sans message', () =>
     await type('29');
     expect(input.value).toBe('02/02/2026');
     expect(host.value()).toBe('2026-02-02');
-    await type('5');
+  });
+
+  it('CA-6 : 2 puis 5 dans le jour donne 25', async () => {
+    const { host, input, type, settle } = await mount(HostComponent);
+    host.value.set('2026-02-01');
+    await settle();
+    input.focus();
+    await type('25');
+    expect(input.value).toBe('25/02/2026');
     expect(host.value()).toBe('2026-02-25');
+  });
+
+  it('CA-6 : un 0 seul s’affiche 0j (valeur null), 5 donne 05, sortie de la zone la vide', async () => {
+    const { host, input, key, type, settle } = await mount(HostComponent);
+    host.value.set('2026-11-12');
+    await settle();
+    input.blur();
+    input.focus();
+    await key('Backspace');
+    await type('0');
+    expect(input.value).toBe('0j/11/2026');
+    expect(host.value()).toBeNull();
+    await type('5');
+    expect(input.value).toBe('05/11/2026');
+    expect(host.value()).toBe('2026-11-05');
+    await key('ArrowLeft');
+    await type('0');
+    await key('ArrowRight');
+    expect(input.value).toBe('jj/11/2026');
+    expect(host.value()).toBeNull();
+  });
+
+  it('CA-6 : un 0 seul dans le mois s’affiche 0m, sortie de la zone la vide', async () => {
+    const { host, input, key, type, settle } = await mount(HostComponent);
+    host.value.set('2026-11-12');
+    await settle();
+    input.blur();
+    input.focus();
+    await key('ArrowRight');
+    await key('Backspace');
+    await type('0');
+    expect(input.value).toBe('12/0m/2026');
+    await key('ArrowRight');
+    expect(input.value).toBe('12/mm/2026');
+    expect(host.value()).toBeNull();
+  });
+
+  it('CA-9 : en en-US, un 0 seul dans la première zone (mois) s’affiche 0m', async () => {
+    const { input, type } = await mount(HostComponent, 'calendar', 'en-US');
+    await type('0');
+    expect(input.value).toBe('0m/jj/aaaa');
   });
 
   it('CA-6 : mois 02 rempli, 3 puis 2026 donne 03/02/2026 sans flèche ni Tab', async () => {
@@ -241,9 +290,9 @@ describe('CA-6 un jour qui n’existe pas ne se saisit pas, sans message', () =>
     await key('ArrowLeft');
     await type('31');
     expect(input.value).toBe('03/04/aaaa');
-    await type('02026');
-    expect(input.value).toBe('30/04/2026');
-    expect(host.value()).toBe('2026-04-30');
+    await type('2026');
+    expect(input.value).toBe('03/04/2026');
+    expect(host.value()).toBe('2026-04-03');
   });
 
   it('CA-6 : « 31/02/2026 » collé donne 28/02/2026', async () => {
