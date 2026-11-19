@@ -28,6 +28,8 @@ describe('date-math', () => {
       '2026-00-10',
       '2026-1-1',
       '2026-11-19T00',
+      '0050-06-15',
+      '0999-12-31',
       '',
     ])
       expect(isValidIsoDate(ko)).toBe(false);
@@ -57,6 +59,7 @@ describe('date-math', () => {
     expect(addMonths('2024-01-31', 1)).toBe('2024-02-29');
     expect(addMonths('2026-03-31', -1)).toBe('2026-02-28');
     expect(addMonths('2026-05-31', 1)).toBe('2026-06-30');
+    expect(addMonths('2026-07-31', -1)).toBe('2026-06-30');
     expect(addMonths('2026-11-15', 2)).toBe('2027-01-15');
     expect(addMonths('2026-01-15', -1)).toBe('2025-12-15');
     expect(addMonths('2026-01-15', 14)).toBe('2027-03-15');
@@ -107,6 +110,13 @@ describe('date-math', () => {
     expect(grid.flat().includes(null)).toBe(false);
   });
 
+  it('grille : août 2026 (1er un samedi, 31 jours) tient en six semaines', () => {
+    const grid = monthGrid('2026-08-15');
+    expect(grid).toHaveLength(6);
+    expect(grid[0][5]).toBe('2026-08-01');
+    expect(grid[5].slice(0, 2)).toEqual(['2026-08-31', null]);
+  });
+
   it('page d’années : 2026 donne 2019 à 2030', () => {
     const page = yearPage(2026);
     expect(page[0]).toBe(2019);
@@ -139,6 +149,17 @@ describe('date-math', () => {
     expect(clipInterval(period, null, undefined)).toEqual(period);
     expect(clipInterval(period, '2026-11-01', undefined)).toBeNull();
     expect(clipInterval(period, undefined, '2026-09-30')).toBeNull();
+    expect(clipInterval({ from: null, to: '2026-01-01' }, '2026-02-01', undefined)).toBeNull();
+    expect(clipInterval({ from: '2027-01-01', to: null }, undefined, '2026-12-31')).toBeNull();
+    expect(clipInterval({ from: null, to: '2026-03-01' }, '2026-02-01', '2026-12-31')).toEqual({
+      from: '2026-02-01',
+      to: '2026-03-01',
+    });
+    expect(clipInterval({ from: null, to: null }, '2026-02-01', '2026-12-31')).toEqual({
+      from: '2026-02-01',
+      to: '2026-12-31',
+    });
+    expect(clipInterval({ from: null, to: null }, undefined, undefined)).toEqual({ from: null, to: null });
     expect(clipInterval(period, '2026-10-31', '2026-10-31')).toEqual({
       from: '2026-10-31',
       to: '2026-10-31',

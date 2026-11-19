@@ -17,7 +17,6 @@ import { LC_DEFAULTS, LcFillMode, LcRounded, LcSize, joinIds, lcUniqueId } from 
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import { toIsoDate } from './date-math';
 
-
 /**
  * Saisie de date sur `input[type=date]` natif. Valeur (model) au format ISO `AAAA-MM-JJ` ou `null` :
  * aucun objet `Date`, donc aucun décalage de fuseau (cohérent avec `DateOnly` côté .NET).

@@ -1,3 +1,4 @@
+// Années traitées : 1000 à 9999 (`new Date` ramène les années 0 à 99 à 19xx).
 import { isoToLocalDate, localDateToIso } from '@lionelcointot/ui-angular';
 import type { LcDateInterval } from './date-interval';
 
@@ -24,7 +25,7 @@ export function toIsoDate(text: string): string | null | undefined {
 
 /** `AAAA-MM-JJ` qui existe au calendrier (le 30 février est refusé). */
 export function isValidIsoDate(iso: string): boolean {
-  if (!ISO_DATE.test(iso)) return false;
+  if (!ISO_DATE.test(iso) || iso < '1000') return false;
   const date = isoToLocalDate(iso);
   return date !== null && localDateToIso(date) === iso;
 }
@@ -80,7 +81,8 @@ export function monthGrid(iso: string): (string | null)[][] {
   const first = firstOfMonth(iso);
   const offset = (isoToLocalDate(first)!.getDay() + 6) % 7;
   const cells: (string | null)[] = Array.from({ length: offset }, () => null);
-  for (let day = 0; day < lastDayOfMonth(iso); day++) cells.push(addDays(first, day));
+  const last = lastDayOfMonth(iso);
+  for (let day = 0; day < last; day++) cells.push(addDays(first, day));
   while (cells.length % 7 !== 0) cells.push(null);
   return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
 }
@@ -112,7 +114,10 @@ export function clipInterval(
   min: Bound,
   max: Bound,
 ): LcDateInterval | null {
-  const from = interval.from && min && interval.from < min ? min : interval.from;
-  const to = interval.to && max && interval.to > max ? max : interval.to;
-  return from && to && from > to ? null : { from, to };
+  const { from, to } = interval;
+  if ((to && min && to < min) || (from && max && from > max)) return null;
+  // Une borne nulle ne limite pas : elle prend la valeur de `min` / `max` s'il y en a.
+  const clippedFrom = from && min && from < min ? min : (from ?? min ?? null);
+  const clippedTo = to && max && to > max ? max : (to ?? max ?? null);
+  return clippedFrom && clippedTo && clippedFrom > clippedTo ? null : { from: clippedFrom, to: clippedTo };
 }
