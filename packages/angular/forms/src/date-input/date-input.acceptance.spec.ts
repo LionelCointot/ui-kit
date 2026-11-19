@@ -217,6 +217,33 @@ describe('CA-6 un jour qui n’existe pas ne se saisit pas, sans message', () =>
     input.focus();
     await type('29');
     expect(input.value).toBe('02/02/2026');
+    expect(host.value()).toBe('2026-02-02');
+    await type('5');
+    expect(host.value()).toBe('2026-02-25');
+  });
+
+  it('CA-6 : mois 02 rempli, 3 puis 2026 donne 03/02/2026 sans flèche ni Tab', async () => {
+    const { host, input, key, type } = await mount(HostComponent);
+    await key('ArrowRight');
+    await type('02');
+    await key('ArrowLeft');
+    await key('ArrowLeft');
+    await type('32026');
+    expect(input.value).toBe('03/02/2026');
+    expect(host.value()).toBe('2026-02-03');
+  });
+
+  it('CA-6 : 3 puis 1 en avril : le 1 est ignoré, la frappe continue', async () => {
+    const { host, input, key, type } = await mount(HostComponent);
+    await key('ArrowRight');
+    await type('04');
+    await key('ArrowLeft');
+    await key('ArrowLeft');
+    await type('31');
+    expect(input.value).toBe('03/04/aaaa');
+    await type('02026');
+    expect(input.value).toBe('30/04/2026');
+    expect(host.value()).toBe('2026-04-30');
   });
 
   it('CA-6 : « 31/02/2026 » collé donne 28/02/2026', async () => {
@@ -315,6 +342,24 @@ describe('CA-8 collage', () => {
     expect(host.value()).toBe(iso);
   });
 
+  it.each(['45/11/2026', '12/13/2026'])('CA-8 : « %s » est non reconnu, champ et valeur inchangés', async (text) => {
+    const { host, input, paste, message, settle } = await mount(HostComponent);
+    host.value.set('2026-03-05');
+    await settle();
+    await paste(text);
+    expect(input.value).toBe('05/03/2026');
+    expect(host.value()).toBe('2026-03-05');
+    expect(message()).toEqual([UNREADABLE]);
+  });
+
+  it('CA-6 : « 31/04/2026 » collé est ramené à 30/04/2026 sans message', async () => {
+    const { host, input, paste, message } = await mount(HostComponent);
+    await paste('31/04/2026');
+    expect(input.value).toBe('30/04/2026');
+    expect(host.value()).toBe('2026-04-30');
+    expect(message()).toEqual([]);
+  });
+
   it.each(['12/11/26', 'demain'])('CA-8 : « %s » laisse champ et valeur, message jusqu’à la frappe suivante', async (text) => {
     const { host, input, paste, message, key, settle } = await mount(HostComponent);
     host.value.set('2026-03-05');
@@ -384,5 +429,39 @@ describe('CA-11 disabled et readonly (date simple)', () => {
     expect(host.value()).toBe('2026-03-05');
     expect(root.querySelector('button')).toBeNull();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+});
+
+describe('touches spéciales : aucun message', () => {
+  const noMessage = (m: () => string[]) => expect(m()).toEqual([]);
+
+  it('touche morte, composition et Ctrl + X : aucun message, rien ne change', async () => {
+    const { host, input, key, message, settle } = await mount(HostComponent);
+    host.value.set('2026-03-05');
+    await settle();
+    input.blur();
+    input.focus();
+    await key('Dead');
+    await key('Process');
+    await key('x', { ctrlKey: true });
+    input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    input.dispatchEvent(new CompositionEvent('compositionupdate', { bubbles: true, data: '^' }));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '^' }));
+    await settle();
+    noMessage(message);
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(host.value()).toBe('2026-03-05');
+  });
+
+  it('beforeinput insertText (clavier virtuel) : le chiffre s’inscrit, aucun message', async () => {
+    const { host, input, message, settle } = await mount(HostComponent);
+    for (const data of '12112026') {
+      input.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data, bubbles: true, cancelable: true }));
+      await settle();
+    }
+    noMessage(message);
+    expect(input.value).toBe('12/11/2026');
+    expect(host.value()).toBe('2026-11-12');
   });
 });

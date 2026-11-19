@@ -7,6 +7,7 @@ import '../../../../tokens/dist/css/theme-default.css';
 import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
+import { LC_LOCALE } from '@lionelcointot/ui-angular';
 import { LcDateInputComponent } from '../date-input/date-input.component';
 import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
 
@@ -43,7 +44,10 @@ export const ClicEtFrappe: Story = {
     await userEvent.click(input);
     expect(input).toHaveFocus();
     expect(selection(input)).not.toBe('');
-    await userEvent.keyboard('12112026');
+    for (const digit of '12112026') {
+      await userEvent.keyboard(digit);
+      expect(selection(input)).not.toBe('');
+    }
     expect(input.value).toBe('12/11/2026');
     expect(within(canvasElement).getByTestId('value')).toHaveTextContent('2026-11-12');
   },
@@ -125,3 +129,33 @@ export const ContenuSuivant: Story = {
 
 /** Captures : champ vide, sans scénario joué. */
 export const ChampVide: Story = {};
+
+/** Mode natif (navigateur) : l'hôte n'a pas `position: relative` (le style du mode calendrier ne fuit pas). */
+export const HoteNatif: Story = {
+  decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }] })],
+  play: async ({ canvasElement }) => {
+    const host = canvasElement.querySelector('lc-date-input')!;
+    expect(getComputedStyle(host).position).not.toBe('relative');
+    expect(host.querySelector('input[type=date]')).not.toBeNull();
+    expect(host.querySelector('[role=alert], button')).toBeNull();
+  },
+};
+
+/** Captures et essais : champ vide en en-US (mois, jour, année). */
+export const ChampVideEnUS: Story = {
+  decorators: [applicationConfig({ providers: [{ provide: LC_LOCALE, useValue: { locale: 'en-US', currency: 'USD' } }] })],
+};
+
+@Component({
+  selector: 'lc-date-input-narrow',
+  imports: [LcDateInputComponent],
+  template: `<div style="inline-size:160px"><lc-date-input ariaLabel="Date" />
+    <button type="button" style="display:block;inline-size:100%;min-block-size:40px">Suite</button></div>`,
+})
+class NarrowComponent {}
+
+/** Captures : champ étroit (160 px), message hors formulaire. */
+export const ChampEtroit: Story = {
+  decorators: [moduleMetadata({ imports: [NarrowComponent] })],
+  render: () => ({ template: '<lc-date-input-narrow />' }),
+};
