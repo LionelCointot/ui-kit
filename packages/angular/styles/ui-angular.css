@@ -398,3 +398,202 @@ lc-form-field [lcSuffix] {
     border-color: CanvasText;
   }
 }
+
+/* lc-calendar-panel : le panneau (rôle dialog) vit dans la surcouche CDK, hors du composant. Jetons --lc-calendar-*, repli sur --lc-sys-*. */
+.lc-calendar {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  inline-size: max-content;
+  /* Le contour est compté dans le padding : la largeur totale reste 7 cellules + 2 marges (304 px). */
+  padding: calc(var(--lc-calendar-padding, var(--lc-sys-space-3)) - var(--lc-sys-border-width-thin));
+  border: var(--lc-sys-border-width-thin) solid var(--lc-calendar-border, var(--lc-sys-color-border));
+  border-radius: var(--lc-calendar-radius, var(--lc-sys-radius-md));
+  background: var(--lc-calendar-background, var(--lc-sys-color-surface-raised));
+  box-shadow: var(--lc-calendar-shadow, var(--lc-sys-shadow-3));
+  color: var(--lc-calendar-text, var(--lc-sys-color-on-surface));
+  font-size: var(--lc-sys-font-size-md);
+  animation: lc-calendar-fade var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
+}
+
+@keyframes lc-calendar-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.lc-calendar__months {
+  display: flex;
+  gap: var(--lc-calendar-month-gap, var(--lc-sys-space-6));
+}
+
+/* Hauteur fixe : en-tête + ligne des jours + 6 semaines, pour ne pas sauter d'un mois à l'autre. */
+.lc-calendar__month {
+  block-size: calc(8 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+  inline-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+}
+
+.lc-calendar__header {
+  display: grid;
+  grid-template-columns: var(--lc-calendar-cell-size, var(--lc-sys-space-10)) auto var(--lc-calendar-cell-size, var(--lc-sys-space-10));
+  align-items: center;
+}
+
+.lc-calendar__nav,
+.lc-calendar__title {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--lc-calendar-cell-size, var(--lc-sys-space-10));
+  padding: 0;
+  border: 0;
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
+  --lc-icon-size: var(--lc-sys-icon-size-sm);
+}
+
+.lc-calendar__nav {
+  grid-column: 1;
+  inline-size: var(--lc-calendar-cell-size, var(--lc-sys-space-10));
+}
+
+.lc-calendar__nav--next {
+  grid-column: 3;
+}
+
+.lc-calendar__title {
+  grid-column: 2;
+  justify-self: center;
+  gap: var(--lc-sys-space-2);
+  margin-inline: var(--lc-sys-space-3);
+  padding-inline: var(--lc-sys-space-3);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-calendar-title-border, var(--lc-sys-color-border-strong));
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-calendar__nav:hover:not(:disabled),
+.lc-calendar__title:hover {
+  background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+}
+
+.lc-calendar__nav:disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: default;
+}
+
+.lc-calendar__nav:focus-visible,
+.lc-calendar__title:focus-visible,
+.lc-calendar__day:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-calendar-focus-ring, var(--lc-sys-color-focus-ring));
+  outline-offset: calc(-1 * var(--lc-sys-focus-ring-width));
+}
+
+.lc-calendar__grid {
+  border-collapse: collapse;
+  table-layout: fixed;
+  inline-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+}
+
+.lc-calendar__grid th {
+  block-size: var(--lc-calendar-cell-size, var(--lc-sys-space-10));
+  padding: 0;
+  color: var(--lc-calendar-weekday-text, var(--lc-sys-color-on-surface-muted));
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: inherit;
+}
+
+.lc-calendar__grid abbr {
+  text-decoration: none;
+}
+
+/* Disque plein = jour choisi (::before, inscrit avec une marge), point = aujourd'hui (::after), anneau carré = focus (outline). */
+.lc-calendar__day {
+  position: relative;
+  isolation: isolate;
+  block-size: var(--lc-calendar-cell-size, var(--lc-sys-space-10));
+  padding: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.lc-calendar__day::before {
+  content: '';
+  position: absolute;
+  inset: var(--lc-sys-space-1);
+  z-index: -1;
+  border-radius: var(--lc-sys-radius-full);
+  transition: background var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
+}
+
+.lc-calendar__day:hover:not([aria-disabled='true'])::before {
+  background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+}
+
+.lc-calendar__day[aria-selected='true'] {
+  color: var(--lc-calendar-selected-text, var(--lc-sys-color-on-primary));
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-calendar__day[aria-selected='true']::before {
+  background: var(--lc-calendar-selected-bg, var(--lc-sys-color-primary));
+}
+
+.lc-calendar__day[aria-current='date']::after {
+  content: '';
+  position: absolute;
+  inset-block-end: var(--lc-sys-space-1);
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: var(--lc-calendar-today-mark-size, var(--lc-sys-space-1));
+  block-size: var(--lc-calendar-today-mark-size, var(--lc-sys-space-1));
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-calendar-today-mark, var(--lc-sys-color-primary));
+}
+
+.lc-calendar__day[aria-current='date'][aria-selected='true']::after {
+  background: var(--lc-calendar-selected-text, var(--lc-sys-color-on-primary));
+}
+
+.lc-calendar__day[aria-disabled='true'] {
+  color: var(--lc-calendar-day-disabled-text, var(--lc-sys-color-on-surface-subtle));
+  cursor: not-allowed;
+}
+
+.lc-calendar__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-2);
+  margin-block-start: var(--lc-sys-space-2);
+  padding-block-start: var(--lc-sys-space-2);
+  border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-calendar-border, var(--lc-sys-color-border));
+}
+
+/* Même point que la cellule d'aujourd'hui : il sert de légende. */
+.lc-calendar__today-dot {
+  display: inline-block;
+  inline-size: var(--lc-calendar-today-mark-size, var(--lc-sys-space-1));
+  block-size: var(--lc-calendar-today-mark-size, var(--lc-sys-space-1));
+  margin-inline-end: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-calendar-today-mark, var(--lc-sys-color-primary));
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-calendar {
+    animation: none;
+  }
+
+  .lc-calendar__nav,
+  .lc-calendar__title,
+  .lc-calendar__day::before {
+    transition: none;
+  }
+}

@@ -5,13 +5,13 @@
 
 /* Place réservée au message : sa hauteur mesurée (`--_message-height`, posée par le composant), à défaut une ligne, plus l'écart. */
 :host(.lc-date-input--calendar.lc-date-input--message) {
-  margin-block-end: calc(var(--_message-height, var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal)) + var(--lc-sys-space-1));
+  margin-block-end: calc(var(--_message-height, var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal)) + var(--lc-sys-space-2));
 }
 
 /* Zone active du champ à zones : le texte sélectionné. */
 :host(.lc-date-input--calendar) .lc-field__input::selection {
-  background: var(--lc-calendar-zone-bg, var(--lc-sys-color-primary-container));
-  color: var(--lc-calendar-zone-text, var(--lc-sys-color-on-primary-container));
+  background: var(--lc-calendar-zone-bg, var(--lc-sys-color-primary));
+  color: var(--lc-calendar-zone-text, var(--lc-sys-color-on-primary));
 }
 
 /* Même apparence que les erreurs de lc-form-field, posé dans la marge basse de l'hôte. */

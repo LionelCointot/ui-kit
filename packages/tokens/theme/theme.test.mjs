@@ -137,7 +137,7 @@ describe('contraste', () => {
     assert.equal(Math.round(contrastRatio('#000000', '#ffffff') * 100) / 100, 21);
     for (const base of ['default', 'dark']) {
       const results = checkContrast(resolveTheme(theme({}, { extends: base })));
-      assert.equal(results.length, 28, `${base} : 26 paires historiques + 2 paires highlight`);
+      assert.equal(results.length, 32, `${base} : 30 paires historiques + 2 paires highlight`);
       for (const [fg, bg] of HIGHLIGHT_PAIRS) {
         const pair = results.find((result) => result.fg === fg && result.bg === bg);
         assert.ok(pair, `${base} : paire ${fg} / ${bg} absente`);
@@ -157,7 +157,7 @@ describe('contraste', () => {
   test('contraste : une couleur translucide est ignorée', () => {
     const resolved = resolveTheme(theme({ 'color.primary': '#0b5f5acc' }));
     const base = checkContrast(resolveTheme(theme())).length;
-    assert.equal(checkContrast(resolved).length, base - 2, "primary figure dans deux paires, ignorées une fois translucide");
+    assert.equal(checkContrast(resolved).length, base - 4, "primary figure dans quatre paires, ignorées une fois translucide");
     assert.ok(!checkContrast(resolved).some((pair) => pair.fg === 'color.primary' || pair.bg === 'color.primary'));
   });
 });

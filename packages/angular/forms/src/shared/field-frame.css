@@ -21,7 +21,7 @@
   transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
 }
 
-:host(:hover:not(.lc-field--disabled):not(.lc-field--readonly)) {
+:host(:hover:not(.lc-field--disabled):not(.lc-field--readonly):not(.lc-field--invalid)) {
   --_border: var(--lc-sys-color-on-surface-muted);
 }
 

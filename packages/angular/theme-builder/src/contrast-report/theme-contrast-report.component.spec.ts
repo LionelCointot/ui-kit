@@ -12,7 +12,7 @@ describe('LcThemeContrastReportComponent', () => {
   }
 
   // 26 paires historiques + 2 paires du rôle highlight (CA-K2.1).
-  const PAIR_COUNT = 28;
+  const PAIR_COUNT = 32;
 
   it('liste les paires du thème de base (dont highlight), toutes réussies', async () => {
     const element = await setup();

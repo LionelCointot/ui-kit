@@ -145,6 +145,14 @@ export interface LcLabels {
   readonly dateIncomplete: (example: string) => string;
   readonly dateUnrecognized: (example: string) => string;
   readonly dateDayClamped: (day: number, month: string) => string;
+  /** Panneau du calendrier : titre du dialogue, pied, navigation, nom du titre-bouton (`title` = « novembre 2026 »). */
+  readonly dateChoose: string;
+  readonly dateChoosePeriod: string;
+  readonly dateToday: string;
+  readonly dateClear: string;
+  readonly datePreviousMonth: string;
+  readonly dateNextMonth: string;
+  readonly dateChooseMonthOf: (title: string) => string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -699,6 +707,13 @@ export const LC_LABELS_FR: LcLabels = {
   dateIncomplete: (example) => `Date incomplète. Exemple : ${example}`,
   dateUnrecognized: (example) => `Date non reconnue. Exemple : ${example}`,
   dateDayClamped: (day, month) => `Jour ramené au ${day} ${month}.`,
+  dateChoose: 'Choisir une date',
+  dateChoosePeriod: 'Choisir une période',
+  dateToday: "Aujourd'hui",
+  dateClear: 'Effacer la date',
+  datePreviousMonth: 'Mois précédent',
+  dateNextMonth: 'Mois suivant',
+  dateChooseMonthOf: (title) => `${title} : choisir un mois`,
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -905,6 +920,13 @@ export const LC_LABELS_EN: LcLabels = {
   dateIncomplete: (example) => `Incomplete date. Example: ${example}`,
   dateUnrecognized: (example) => `Date not recognized. Example: ${example}`,
   dateDayClamped: (day, month) => `Day set to ${month} ${day}.`,
+  dateChoose: 'Choose a date',
+  dateChoosePeriod: 'Choose a period',
+  dateToday: 'Today',
+  dateClear: 'Clear date',
+  datePreviousMonth: 'Previous month',
+  dateNextMonth: 'Next month',
+  dateChooseMonthOf: (title) => `${title}: choose a month`,
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });

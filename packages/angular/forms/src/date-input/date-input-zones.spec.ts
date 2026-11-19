@@ -108,6 +108,7 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     const message = fixture.nativeElement.querySelector('.lc-date-input__message') as HTMLElement;
     expect(message.textContent).toBe('Date incomplète. Exemple : 12/11/2026');
     expect(input.getAttribute('aria-describedby')).toContain(message.id);
+    expect(fixture.nativeElement.querySelector('lc-date-input').classList).toContain('lc-field--invalid');
     input.focus();
     await keys('12112026');
     expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
