@@ -64,7 +64,7 @@ describe('date-mask : frappe', () => {
     expect(typed('123').zone).toBe('year');
     expect(typed('123').zones.month).toBe('03');
     expect(typed('121').zone).toBe('month');
-    expect(typed('1210').zone).toBe('month');
+    expect(typed('1210').zone).toBe('year');
   });
 
   it('l’année s’arrête à quatre chiffres et reste dans sa zone', () => {
@@ -80,7 +80,7 @@ describe('date-mask : frappe', () => {
     expect(typed('00').zones.day).toBe('0');
     expect(typed('32').zones.day).toBe('3');
     expect(typed('39').zones.day).toBe('3');
-    expect(typed('100').zones.month).toBe('');
+    expect(typed('1200').zones.month).toBe('0');
     expect(typed('1213').zones.month).toBe('1');
     expect(typed('1219').zones.month).toBe('1');
     const year = typed('0', FR, { day: '12', month: '11', year: '' }, 'year');
@@ -101,10 +101,11 @@ describe('date-mask : frappe', () => {
 
   it('jour rempli avant le mois ou l’année : ramené au dernier jour du mois', () => {
     const feb = typed('3102');
-    expect(feb.zones).toMatchObject({ day: '31', month: '02' });
+    expect(feb.zones).toMatchObject({ day: '29', month: '02' });
     const final = typed('31022026');
     expect(final.text).toBe('28/02/2026');
-    expect(final.clamps).toEqual([{ day: 28, month: 2 }]);
+    // Année encore inconnue : février garde 29 jours, puis l'année 2026 le ramène à 28.
+    expect(final.clamps).toEqual([{ day: 29, month: 2 }, { day: 28, month: 2 }]);
     expect(typed('29022025').text).toBe('28/02/2025');
     expect(typed('29022024').text).toBe('29/02/2024');
     expect(typed('31042026').text).toBe('30/04/2026');
@@ -113,7 +114,8 @@ describe('date-mask : frappe', () => {
 
   it('en en-US : mois d’abord, le jour se règle sur le mois déjà rempli', () => {
     expect(typed('022', US).zones).toMatchObject({ month: '02', day: '2' });
-    expect(typed('0229', US).zones.day).toBe('2');
+    expect(typed('02292026', US).text).toBe('02/28/2026');
+    expect(typed('0229', US, { day: '', month: '', year: '2026' }).zones.day).toBe('2');
     expect(typed('11122026', US).text).toBe('11/12/2026');
   });
 
