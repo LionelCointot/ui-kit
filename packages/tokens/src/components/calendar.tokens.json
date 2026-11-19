@@ -1,0 +1,12 @@
+{
+  "calendar": {
+    "zone-bg": {
+      "$value": "{sys.color.primary-container}",
+      "$type": "color"
+    },
+    "zone-text": {
+      "$value": "{sys.color.on-primary-container}",
+      "$type": "color"
+    }
+  }
+}

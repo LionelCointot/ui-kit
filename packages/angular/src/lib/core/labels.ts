@@ -182,6 +182,19 @@ export interface LcDataTableLabels {
   readonly until: (date: string) => string;
   readonly datesNote: string;
   readonly dateOrderError: string;
+  /** Champ de date à zones : lettres d'une zone vide, noms des zones, aide et messages (l'exemple est la date du 12 novembre 2026 mise en forme). */
+  readonly dateZoneDay: string;
+  readonly dateZoneMonth: string;
+  readonly dateZoneYear: string;
+  readonly dateDayName: string;
+  readonly dateMonthName: string;
+  readonly dateYearName: string;
+  /** Annonce d'une zone : `value` est null quand la zone est vide. */
+  readonly dateZoneAnnounce: (name: string, value: string | null) => string;
+  readonly dateInputHint: string;
+  readonly dateIncomplete: (example: string) => string;
+  readonly dateUnrecognized: (example: string) => string;
+  readonly dateDayClamped: (day: number, month: string) => string;
   readonly filters: (active: number) => string;
   readonly filtersButtonLabel: (active: number) => string;
   readonly closeWithoutApplying: string;
@@ -248,6 +261,17 @@ const DATA_TABLE_FR: LcDataTableLabels = {
   until: (date) => `jusqu'au ${date}`,
   datesNote: 'Dates incluses. Une date vide ne borne pas la période.',
   dateOrderError: 'La date de fin est avant la date de début.',
+  dateZoneDay: 'jj',
+  dateZoneMonth: 'mm',
+  dateZoneYear: 'aaaa',
+  dateDayName: 'Jour',
+  dateMonthName: 'Mois',
+  dateYearName: 'Année',
+  dateZoneAnnounce: (name, value) => `${name}, ${value ?? 'vide'}`,
+  dateInputHint: 'Tapez la date, ou changez chaque zone avec les flèches haut et bas.',
+  dateIncomplete: (example) => `Date incomplète. Exemple : ${example}`,
+  dateUnrecognized: (example) => `Date non reconnue. Exemple : ${example}`,
+  dateDayClamped: (day, month) => `Jour ramené au ${day} ${month}.`,
   filters: (active) => (active ? `Filtres (${active})` : 'Filtres'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filtres' : `Filtres, ${active} ${active > 1 ? 'actifs' : 'actif'}`),
   closeWithoutApplying: 'Fermer sans appliquer',
@@ -314,6 +338,17 @@ const DATA_TABLE_EN: LcDataTableLabels = {
   until: (date) => `until ${date}`,
   datesNote: 'Dates included. An empty date leaves the period open.',
   dateOrderError: 'The end date is before the start date.',
+  dateZoneDay: 'dd',
+  dateZoneMonth: 'mm',
+  dateZoneYear: 'yyyy',
+  dateDayName: 'Day',
+  dateMonthName: 'Month',
+  dateYearName: 'Year',
+  dateZoneAnnounce: (name, value) => `${name}, ${value ?? 'empty'}`,
+  dateInputHint: 'Type the date, or change each part with the up and down arrow keys.',
+  dateIncomplete: (example) => `Incomplete date. Example: ${example}`,
+  dateUnrecognized: (example) => `Date not recognized. Example: ${example}`,
+  dateDayClamped: (day, month) => `Day set to ${month} ${day}.`,
   filters: (active) => (active ? `Filters (${active})` : 'Filters'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filters' : `Filters, ${active} active`),
   closeWithoutApplying: 'Close without applying',

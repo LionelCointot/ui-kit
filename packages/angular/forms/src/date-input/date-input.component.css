@@ -1,0 +1,19 @@
+:host {
+  position: relative;
+}
+
+/* Zone active du champ à zones : le texte sélectionné. */
+.lc-field__input::selection {
+  background: var(--lc-calendar-zone-bg, var(--lc-sys-color-primary-container));
+  color: var(--lc-calendar-zone-text, var(--lc-sys-color-on-primary-container));
+}
+
+/* shortcut: message hors formulaire posé sous le cadre sans réserver de place (il peut recouvrir le contenu suivant), à reprendre si cet usage se répand. */
+.lc-date-input__message {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  margin-block-start: var(--lc-sys-space-1);
+  font-size: var(--lc-sys-font-size-sm);
+  color: var(--lc-sys-color-error);
+}
