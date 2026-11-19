@@ -1,37 +1,47 @@
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { ComponentPortal } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   afterRenderEffect,
   Component,
+  ComponentRef,
   ElementRef,
   booleanAttribute,
   DestroyRef,
   computed,
+  effect,
   forwardRef,
   inject,
   input,
+  isDevMode,
   linkedSignal,
   model,
   output,
   signal,
+  untracked,
   viewChild,
+  ViewContainerRef,
 } from '@angular/core';
 import { transformedValue } from '@angular/forms/signals';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import {
+  LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcFormatService, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId,
+} from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import {
   EMPTY_ZONES, MaskChange, Zone, Zones, clear, fromIso, isEmpty, neighbor, parsePaste, render, settle, step, toIso,
   typeDigit, zoneAt, zoneOrder,
 } from './date-mask';
-import { toIsoDate } from './date-math';
+import { LcCalendarPanelComponent } from './calendar-panel.component';
+import { compareIso, isValidIsoDate, toIsoDate } from './date-math';
 import { LC_DATE_PICKER, resolveDatePickerMode } from './date-picker-mode';
 
 /** Saisie du champ à zones vers le modèle : `iso` `undefined` laisse la valeur telle quelle ; `error` remonte par `transformedValue`. */
 interface DateEntry {
   readonly iso: string | null | undefined;
-  /** Texte du message ; `''` = invalide sans texte (date incomplète) ; `null` = aucune erreur. */
-  readonly error: string | null;
+  /** Date incomplète : saisie invalide (erreur `parse` sans texte ; le champ n'affiche aucun message). */
+  readonly error: boolean;
   /** Vrai quand la saisie vient du champ ; faux quand le modèle ou `reset()` a posé la valeur (les zones repartent d'elle). */
   readonly typed: boolean;
 }
@@ -54,8 +64,11 @@ interface DateEntry {
         (keydown)="onKeydown($event)" (beforeinput)="onBeforeInput($event)" (input)="onText($event)" (click)="onClick()" (focus)="onFocus()" (blur)="onBlur()" />
       <span class="lc-visually-hidden" [id]="hintId">{{ labels.dateInputHint }}</span>
       <span class="lc-visually-hidden" aria-live="polite">{{ announcement() }}</span>
-      @if (message(); as text) {
-        <span class="lc-date-input__message" role="alert" [id]="messageId"><lc-icon name="circle-alert" /><span>{{ text }}</span></span>
+      @if (!disabled() && !readonly()) {
+        <button #calendarButton type="button" class="lc-field__step lc-date-input__button" aria-haspopup="dialog"
+          [attr.aria-expanded]="open()" [attr.aria-label]="buttonName()" (click)="toggle()">
+          <lc-icon name="calendar" />
+        </button>
       }
     } @else {
       <input #input class="lc-field__input" type="date" [id]="inputId()" [value]="value() ?? ''"
@@ -75,7 +88,6 @@ interface DateEntry {
     '[class.lc-field--disabled]': 'disabled()',
     '[class.lc-field--readonly]': 'readonly()',
     '[class.lc-date-input--calendar]': 'isCalendar',
-    '[class.lc-date-input--message]': 'message() !== null',
   },
 })
 export class LcDateInputComponent implements FormValueControl<string | null>, LcFormFieldControl {
@@ -105,21 +117,16 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
 
   private readonly doc = inject(DOCUMENT);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private messageObserver?: ResizeObserver;
   protected readonly isCalendar = resolveDatePickerMode(inject(LC_DATE_PICKER), this.doc) === 'calendar';
   protected readonly labels = inject(LC_LABELS);
   // Tout ce qui sert au champ à zones n'est construit qu'en mode calendrier.
   private readonly locale = this.isCalendar ? inject(LC_LOCALE).locale : '';
   private readonly order = this.isCalendar ? zoneOrder(this.locale) : [];
-  private readonly example = this.isCalendar
-    ? new Intl.DateTimeFormat(this.locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(2026, 10, 12))
-    : '';
   protected readonly hintId = lcUniqueId('date-hint');
-  protected readonly messageId = lcUniqueId('date-message');
   private readonly entry = this.isCalendar
     ? transformedValue<string | null, DateEntry>(this.value, {
-        parse: (entry) => ({ value: entry.iso, error: entry.error === null ? undefined : { kind: 'parse', message: entry.error || undefined } }),
-        format: (iso) => ({ iso, error: null, typed: false }),
+        parse: (entry) => ({ value: entry.iso, error: entry.error ? { kind: 'parse' } : undefined }),
+        format: (iso) => ({ iso, error: false, typed: false }),
       })
     : undefined;
 
@@ -133,15 +140,29 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   protected readonly announcement = signal('');
   protected readonly mask = computed(() =>
     render(this.zones(), this.order, { day: this.labels.dateZoneDay, month: this.labels.dateZoneMonth, year: this.labels.dateZoneYear }));
-  /** Erreur de saisie en cours (date incomplète : sans texte ; collage illisible : avec le texte de `parseMessage`). */
+  /** Date incomplète : le cadre est invalide, aucun message. */
   private readonly hasParseError = computed(() => (this.entry?.parseErrors().length ?? 0) > 0);
-  private readonly parseMessage = computed(() => this.entry?.parseErrors()[0]?.message ?? null);
-  /** Hors formulaire le champ affiche lui-même son message ; sous `[formField]` il revient par `errors`. */
-  protected readonly message = computed(() =>
-    this.parseMessage() && !this.errors().some((error) => error.kind === 'parse') ? this.parseMessage() : null);
 
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
   private readonly blurred = signal(false);
+
+  private readonly overlay = inject(Overlay);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private readonly format = inject(LcFormatService);
+  private readonly buttonRef = viewChild<ElementRef<HTMLButtonElement>>('calendarButton');
+  private overlayRef?: OverlayRef;
+  /** Panneau ouvert ; créé à l'ouverture, détruit à la fermeture. */
+  private readonly panel = signal<ComponentRef<LcCalendarPanelComponent> | null>(null);
+  protected readonly open = computed(() => this.panel() !== null);
+  /** Valeur ISO valide, sinon `null` : une valeur illisible laisse le champ et le panneau vides. */
+  private readonly validValue = computed(() => {
+    const value = this.value();
+    return value && isValidIsoDate(value) ? value : null;
+  });
+  protected readonly buttonName = computed(() => {
+    const value = this.validValue();
+    return value ? this.labels.dateChange(this.format.date(value, 'long')) : this.labels.dateChoose;
+  });
 
   constructor() {
     // La zone active reste sélectionnée tant que le champ a le focus, aussi après un rendu ou une valeur posée par le code.
@@ -151,30 +172,92 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
       this.active();
       this.selectActive();
     });
-    afterRenderEffect(() => this.trackMessageHeight(this.message() !== null));
-    inject(DestroyRef).onDestroy(() => this.messageObserver?.disconnect());
+    inject(DestroyRef).onDestroy(() => this.overlayRef?.dispose());
+    // Le panneau suit la valeur et les bornes posées par le code ; il se ferme si le champ devient inactif.
+    effect(() => {
+      const panel = this.panel();
+      if (!panel) return;
+      if (this.disabled() || this.readonly()) untracked(() => this.close(false));
+      else this.syncPanel(panel);
+    });
+    if (isDevMode()) {
+      effect(() => {
+        const [min, max] = [this.min(), this.max()];
+        if (min && max && isValidIsoDate(min) && isValidIsoDate(max) && compareIso(min, max) > 0) {
+          console.warn(`[lc-date-input] \`min\` (${min}) est postérieur à \`max\` (${max}) : aucune date ne peut être choisie.`);
+        }
+      });
+      effect(() => {
+        const value = this.value();
+        if (value && !isValidIsoDate(value)) console.warn(`[lc-date-input] \`value\` doit être une date ISO AAAA-MM-JJ valide, reçu : ${value}`);
+      });
+    }
   }
 
-  /** Le message n'est pas dans le flux : sa hauteur réelle (qui dépend de la largeur du champ) est copiée dans la marge basse de l'hôte. */
-  private trackMessageHeight(shown: boolean): void {
-    this.messageObserver?.disconnect();
-    this.messageObserver = undefined;
-    const message = shown ? this.host.querySelector<HTMLElement>('.lc-date-input__message') : null;
-    if (!message || typeof ResizeObserver === 'undefined') {
-      this.host.style.removeProperty('--_message-height');
-      return;
-    }
-    const measure = () => this.host.style.setProperty('--_message-height', `${message.offsetHeight}px`);
-    measure();
-    this.messageObserver = new ResizeObserver(measure);
-    this.messageObserver.observe(message);
+  protected toggle(): void {
+    if (this.panel()) this.close(true);
+    else this.openPanel();
+  }
+
+  private openPanel(): void {
+    if (this.panel() || this.disabled() || this.readonly()) return;
+    this.overlayRef ??= this.createOverlay();
+    const panel = this.overlayRef.attach(new ComponentPortal(LcCalendarPanelComponent, this.viewContainerRef));
+    this.syncPanel(panel);
+    panel.instance.picked.subscribe((iso) => this.choose(fromIso(iso)));
+    panel.instance.cleared.subscribe(() => this.choose(EMPTY_ZONES));
+    panel.instance.closed.subscribe(() => this.close(true));
+    this.panel.set(panel);
+    panel.instance.focusInitial();
+  }
+
+  /** Même stratégie de position et de défilement que `lc-combobox` ; largeur propre au panneau (304 px). */
+  private createOverlay(): OverlayRef {
+    const ref = this.overlay.create({
+      positionStrategy: this.overlay.position().flexibleConnectedTo(this.host).withFlexibleDimensions(false).withViewportMargin(8)
+        .withPositions([
+          { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
+          { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
+          { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
+          { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
+        ]),
+      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+    });
+    ref.outsidePointerEvents().subscribe((event) => {
+      if (this.buttonRef()?.nativeElement.contains(event.target as Node)) return; // le bouton bascule lui-même
+      // Un clic sur un autre contrôle garde son focus ; sur du vide, le focus revient au bouton.
+      const active = this.doc.activeElement;
+      this.close(!active || active === this.doc.body || ref.overlayElement.contains(active));
+    });
+    return ref;
+  }
+
+  private syncPanel(panel: ComponentRef<LcCalendarPanelComponent>): void {
+    panel.setInput('selection', { from: this.validValue(), to: null });
+    panel.setInput('min', this.min() ?? null);
+    panel.setInput('max', this.max() ?? null);
+    panel.setInput('required', this.isRequired());
+  }
+
+  private close(restoreFocus: boolean): void {
+    if (!this.panel()) return;
+    this.panel.set(null);
+    this.overlayRef?.detach();
+    if (restoreFocus) this.buttonRef()?.nativeElement.focus();
+  }
+
+  /** Jour choisi ou date effacée : le texte du champ est remis en forme (aussi une date incomplète), le panneau se ferme. */
+  private choose(zones: Zones): void {
+    this.commit(zones);
+    this.refresh(false);
+    this.close(true);
   }
 
   protected readonly showInvalid = computed(() =>
     this.hasParseError() || (this.field ? this.field.showInvalid() : this.invalid() && (this.touched() || this.blurred())));
   protected readonly isRequired = computed(() => this.required() || (this.field?.isRequired() ?? false));
   protected readonly describedBy = computed(() =>
-    joinIds(this.field?.describedBy(), this.isCalendar && this.hintId, this.message() && this.messageId));
+    joinIds(this.field?.describedBy(), this.isCalendar && this.hintId));
   protected readonly frameClasses = computed(() => {
     const size = this.size() ?? this.defaults.size;
     const fillMode = this.fillMode() ?? this.defaults.fillMode;
@@ -204,7 +287,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   private leave(): void {
     const zones = settle(this.zones(), this.active());
     const incomplete = !isEmpty(zones) && toIso(zones) === null;
-    if (zones !== this.zones() || incomplete) this.commit(zones, incomplete ? '' : null);
+    if (zones !== this.zones() || incomplete) this.commit(zones, incomplete);
     this.refresh(false);
   }
 
@@ -225,6 +308,11 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   protected onKeydown(event: KeyboardEvent): void {
     const { key } = event;
     if (this.readonly() || key === 'Tab') return;
+    if (event.altKey && key === 'ArrowDown') {
+      event.preventDefault();
+      this.openPanel();
+      return;
+    }
     if (event.ctrlKey || event.metaKey || event.altKey) {
       // Couper et effacer un mot détruiraient le masque : ni message ni changement.
       if (/^x$/i.test(key) || key === 'Backspace' || key === 'Delete') event.preventDefault();
@@ -256,8 +344,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     const wholeText = !type || type === 'insertFromPaste' || type === 'insertFromDrop' || type === 'insertReplacementText';
     if (wholeText && text !== this.mask().text) {
       const change = text === '' ? { zones: EMPTY_ZONES, zone: this.order[0] } : parsePaste(text, this.order);
-      if (change) this.apply(change);
-      else this.entry!.set({ iso: undefined, error: this.labels.dateUnrecognized(this.example), typed: true });
+      if (change) this.apply(change); // texte illisible : ignoré en silence, `refresh` remet le texte du champ
     }
     this.refresh(false);
   }
@@ -276,7 +363,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   }
 
   /** Les zones font foi : la valeur du modèle suit (`null` tant que la date est incomplète). */
-  private commit(zones: Zones, error: string | null = null): void {
+  private commit(zones: Zones, error = false): void {
     this.zones.set(zones);
     this.entry!.set({ iso: toIso(zones), error, typed: true });
   }

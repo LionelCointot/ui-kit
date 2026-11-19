@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, booleanAttribute, input, linkedSignal, signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 // Le projet Vitest « storybook » ne charge pas les feuilles globales d'angular.json : on les charge ici pour mesurer le vrai rendu.
@@ -64,23 +64,174 @@ export const ZoneActiveSelectionnee: Story = {
   },
 };
 
-/** Navigateur réel : à 160 px le message passe sur plusieurs lignes, la place réservée suit sa hauteur et il ne recouvre pas l'élément suivant. */
-export const MessageChampEtroit: Story = {
-  decorators: [
-    moduleMetadata({ imports: [LcDateInputComponent] }),
-    applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] }),
-  ],
+const CALENDAR = applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] });
+
+/** Champ avec son bouton calendrier et le panneau : la valeur ISO est affichée dessous pour la lire dans les stories. */
+@Component({
+  selector: 'lc-date-input-picker-demo',
+  imports: [LcFormFieldComponent, LcDateInputComponent],
+  template: `
+    <div style="max-width:20rem;min-height:28rem">
+      @if (labelled()) {
+        <lc-form-field label="Date de début" [required]="required()">
+          <lc-date-input [(value)]="date" [min]="min()" [max]="max()" />
+        </lc-form-field>
+      } @else {
+        <lc-date-input ariaLabel="Date" [(value)]="date" [min]="min()" [max]="max()" [required]="required()" />
+      }
+      <p data-testid="value">Valeur : {{ date() ?? 'aucune' }}</p>
+    </div>
+  `,
+})
+class DateInputPickerDemoComponent {
+  readonly initial = input<string | null>(null);
+  readonly min = input<string | undefined>(undefined);
+  readonly max = input<string | undefined>(undefined);
+  readonly required = input(false, { transform: booleanAttribute });
+  readonly labelled = input(false, { transform: booleanAttribute });
+  protected readonly date = linkedSignal(() => this.initial());
+}
+
+const picker = (attributes = '') => ({ template: `<lc-date-input-picker-demo ${attributes} />` });
+const body = () => within(document.body);
+const openedPanel = () => body().findByRole('dialog');
+const closed = () => waitFor(() => expect(document.querySelector('lc-calendar-panel')).toBeNull());
+
+/** Navigateur réel : le clic sur le bouton ouvre le panneau ; un jour choisi met la valeur et le texte à jour, ferme, et rend le focus au bouton. */
+export const CalendrierVide: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', { name: 'Choisir une date' });
+    expect(button).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(button);
+    const panel = await openedPanel();
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(panel.getBoundingClientRect().width).toBe(304); // largeur propre au panneau, pas celle du champ
+    await userEvent.click(panel.querySelector('td[data-date$="-15"]')!);
+    await closed();
+    const input = canvas.getByRole('textbox') as HTMLInputElement;
+    expect(input.value).toMatch(/^15\/\d\d\/\d{4}$/);
+    expect(canvas.getByTestId('value')).toHaveTextContent(/Valeur : \d{4}-\d\d-15/);
+    await waitFor(() => expect(canvas.getByRole('button', { name: /^Changer la date, 15 / })).toHaveFocus());
+  },
+};
+
+/** Navigateur réel : avec valeur le bouton se nomme « Changer la date, … » ; Échap ferme sans rien changer et rend le focus au bouton ; Alt + flèche bas rouvre. */
+export const CalendrierAvecValeur: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker('initial="2026-11-12"'),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', { name: 'Changer la date, 12 novembre 2026' });
+    await userEvent.click(button);
+    const panel = await openedPanel();
+    await waitFor(() => expect(within(panel).getByRole('gridcell', { name: 'jeudi 12 novembre 2026' })).toHaveFocus());
+    await userEvent.keyboard('{Escape}');
+    await closed();
+    expect(canvas.getByTestId('value')).toHaveTextContent('Valeur : 2026-11-12');
+    await waitFor(() => expect(button).toHaveFocus());
+    await userEvent.click(canvas.getByRole('textbox'));
+    await userEvent.keyboard('{Alt>}{ArrowDown}{/Alt}');
+    await openedPanel();
+  },
+};
+
+/** Navigateur réel : hors des bornes (10 au 25 novembre 2026) un jour est désactivé et ne se choisit pas ; dans les bornes il se choisit. */
+export const CalendrierAvecBornes: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker('initial="2026-11-12" min="2026-11-10" max="2026-11-25"'),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /^Changer la date/ }));
+    const panel = await openedPanel();
+    const outside = panel.querySelector('td[data-date="2026-11-28"]')!;
+    expect(outside).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(outside);
+    expect(document.querySelector('lc-calendar-panel')).not.toBeNull();
+    await userEvent.click(panel.querySelector('td[data-date="2026-11-24"]')!);
+    await closed();
+    expect(within(canvasElement).getByTestId('value')).toHaveTextContent('Valeur : 2026-11-24');
+  },
+};
+
+/** Navigateur réel : champ obligatoire, le panneau n'a pas « Effacer la date ». */
+export const CalendrierObligatoire: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker('required'),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Choisir une date' }));
+    const panel = await openedPanel();
+    expect(within(panel).getByRole('button', { name: "Aujourd'hui" })).toBeInTheDocument();
+    expect(within(panel).queryByRole('button', { name: 'Effacer la date' })).toBeNull();
+  },
+};
+
+/** Navigateur réel : dans un `lc-form-field`, Alt + flèche bas dans le champ ouvre le panneau, « Effacer la date » vide et rend le focus au bouton. */
+export const CalendrierDansUnChampDeFormulaire: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker('labelled initial="2026-11-12"'),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('textbox', { name: /Date de début/ }));
+    await userEvent.keyboard('{Alt>}{ArrowDown}{/Alt}');
+    const panel = await openedPanel();
+    await userEvent.click(within(panel).getByRole('button', { name: 'Effacer la date' }));
+    await closed();
+    expect(canvas.getByTestId('value')).toHaveTextContent('Valeur : aucune');
+    expect((canvas.getByRole('textbox') as HTMLInputElement).value).toBe('jj/mm/aaaa');
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Choisir une date' })).toHaveFocus());
+  },
+};
+
+/** États du champ en mode calendrier : vide, avec valeur, invalide, désactivé, lecture seule (ces deux derniers sans bouton). */
+export const CalendrierEtats: Story = {
+  decorators: [moduleMetadata({ imports: [LcDateInputComponent] }), CALENDAR],
   render: () => ({
-    template: '<div style="width:160px"><lc-date-input ariaLabel="Date" /><button type="button">Suite</button></div>',
+    template: `
+      <div style="display:grid;gap:16px;max-width:20rem">
+        <lc-date-input ariaLabel="Vide" />
+        <lc-date-input ariaLabel="Avec valeur" value="2026-11-12" />
+        <lc-date-input ariaLabel="Invalide" invalid touched />
+        <lc-date-input ariaLabel="Désactivé" value="2026-11-12" disabled />
+        <lc-date-input ariaLabel="Lecture seule" value="2026-11-12" readonly />
+      </div>`,
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('textbox'));
-    await userEvent.paste('demain'); // seul le collage illisible affiche un message (une date incomplète n'en affiche plus)
-    const message = await canvas.findByRole('alert');
-    const next = canvas.getByRole('button', { name: 'Suite' });
-    await waitFor(() => expect(message.getBoundingClientRect().bottom).toBeLessThanOrEqual(next.getBoundingClientRect().top));
-    expect(message.getBoundingClientRect().height).toBeGreaterThan(30); // plusieurs lignes
+    expect(canvas.getAllByRole('button')).toHaveLength(3); // ni le champ désactivé ni celui en lecture seule n'ont de bouton
+    const field = canvas.getByRole('textbox', { name: 'Avec valeur' });
+    const button = canvas.getByRole('button', { name: /^Changer la date/ });
+    expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(field.getBoundingClientRect().height - 2); // cible = hauteur du champ
+    expect(canvas.getByRole('textbox', { name: 'Invalide' })).toHaveAttribute('aria-invalid', 'true');
+  },
+};
+
+/** Navigateur réel : panneau ouvert, `data-theme` de clair à sombre sur `html` change le fond du panneau et celui du jour choisi (disque). */
+export const CalendrierClairSombre: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker('initial="2026-11-12"'),
+  play: async ({ canvasElement }) => {
+    const root = document.documentElement;
+    const before = root.dataset['theme'];
+    root.dataset['theme'] = 'default';
+    try {
+      await userEvent.click(within(canvasElement).getByRole('button', { name: /^Changer la date/ }));
+      const panel = await openedPanel();
+      const day = panel.querySelector('td[aria-selected="true"]')!;
+      const colors = () => [getComputedStyle(panel).backgroundColor, getComputedStyle(day, '::before').backgroundColor];
+      const light = colors();
+      root.dataset['theme'] = 'dark';
+      await waitFor(() => {
+        const dark = colors();
+        expect(dark[0]).not.toBe(light[0]);
+        expect(dark[1]).not.toBe(light[1]);
+      });
+    } finally {
+      if (before === undefined) delete root.dataset['theme'];
+      else root.dataset['theme'] = before;
+    }
   },
 };
 

@@ -78,13 +78,12 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(host.value()).toBeNull();
   });
 
-  it('un jour qui n’existe pas : ignoré ou ramené, sans message', async () => {
+  it('un jour qui n’existe pas : ignoré ou ramené', async () => {
     const { host, input, keys, fixture } = await setup();
     await keys('31022026');
     expect(input.value).toBe('28/02/2026');
     expect(host.value()).toBe('2026-02-28');
     expect(input.getAttribute('aria-invalid')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
   });
 
   it('en en-US, le mois vient d’abord', async () => {
@@ -105,7 +104,6 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     await fixture.whenStable();
     expect(host.value()).toBeNull();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toMatch(/incompl/i);
     expect(input.value).toBe('12/mm/2026');
     expect(fixture.nativeElement.querySelector('lc-date-input').classList).toContain('lc-field--invalid');
@@ -121,8 +119,8 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(input.getAttribute('aria-invalid')).toBeNull();
   });
 
-  it('collage : formes lues ; texte illisible laisse champ et valeur, message jusqu’à la frappe suivante', async () => {
-    const { fixture, host, input, key } = await setup();
+  it('collage : formes lues ; texte illisible ignoré en silence, champ et valeur inchangés', async () => {
+    const { fixture, host, input } = await setup();
     const paste = async (text: string) => {
       input.value = text;
       input.dispatchEvent(new Event('input'));
@@ -134,9 +132,8 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     await paste('12/11/26');
     expect(host.value()).toBe('2026-11-12');
     expect(input.value).toBe('12/11/2026');
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message').textContent).toBe('Date non reconnue. Exemple : 12/11/2026');
-    await key('1');
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 
   it('une valeur posée par le code remet le texte en forme', async () => {
@@ -154,7 +151,7 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(input.value).toBe('jj/mm/aaaa');
   });
 
-  it('sous [formField], une erreur de saisie rend le champ du formulaire invalide (nature parse)', async () => {
+  it('sous [formField], un texte illisible collé est ignoré : le champ du formulaire reste valide', async () => {
     const fixture = TestBed.createComponent(FormHostComponent);
     await fixture.whenStable();
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
@@ -162,9 +159,8 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
     const state = fixture.componentInstance.f.day();
-    expect(state.invalid()).toBe(true);
-    expect(state.errors().map((error) => error.kind)).toEqual(['parse']);
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
+    expect(state.invalid()).toBe(false);
+    expect(state.errors()).toEqual([]);
     input.value = '12/11/2026';
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
@@ -184,7 +180,6 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     const state = fixture.componentInstance.f.day();
     expect(state.invalid()).toBe(true);
     expect(state.errors().map((error) => [error.kind, error.message])).toEqual([['parse', undefined]]);
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
     expect(input.getAttribute('aria-invalid')).toBe('true');
   });
 
@@ -217,7 +212,6 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     const cut = new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, cancelable: true });
     input.dispatchEvent(cut);
     expect(cut.defaultPrevented).toBe(true);
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message')).toBeNull();
     expect(host.value()).toBe('2026-11-12');
   });
 
@@ -230,7 +224,7 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(host.value()).toBe('2026-11-12');
   });
 
-  it('un collage de jour au-dessus de 31 est refusé avec le message', async () => {
+  it('un collage de jour au-dessus de 31 est ignoré en silence', async () => {
     const { fixture, host, input } = await setup();
     host.value.set('2026-11-12');
     await fixture.whenStable();
@@ -239,7 +233,8 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     await fixture.whenStable();
     expect(host.value()).toBe('2026-11-12');
     expect(input.value).toBe('12/11/2026');
-    expect(fixture.nativeElement.querySelector('.lc-date-input__message[role="alert"]')).not.toBeNull();
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 
   it('reset() du formulaire remet le texte en forme, même si la valeur était déjà null', async () => {
@@ -256,12 +251,13 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(input.value).toBe('jj/mm/aaaa');
   });
 
-  it('mode natif : ni classe ni message du champ à zones', async () => {
+  it('mode natif : ni classe ni bouton du champ à zones', async () => {
     TestBed.overrideProvider(LC_DATE_PICKER, { useValue: 'native' });
     const fixture = TestBed.createComponent(HostComponent);
     await fixture.whenStable();
     const el = fixture.nativeElement.querySelector('lc-date-input') as HTMLElement;
     expect(el.classList.contains('lc-date-input--calendar')).toBe(false);
     expect(el.querySelector('input')!.type).toBe('date');
+    expect(el.querySelector('button')).toBeNull();
   });
 });

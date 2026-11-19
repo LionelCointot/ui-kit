@@ -405,6 +405,8 @@ lc-form-field [lcSuffix] {
   display: flex;
   flex-direction: column;
   inline-size: max-content;
+  /* Écart avec le champ, dessous comme dessus (la surcouche colle le panneau au cadre). */
+  margin-block: var(--lc-sys-space-1);
   /* Le contour est compté dans le padding : la largeur totale reste 7 cellules + 2 marges (304 px). */
   padding: calc(var(--lc-calendar-padding, var(--lc-sys-space-3)) - var(--lc-sys-border-width-thin));
   border: var(--lc-sys-border-width-thin) solid var(--lc-calendar-border, var(--lc-sys-color-border));

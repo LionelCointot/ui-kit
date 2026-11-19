@@ -132,7 +132,7 @@ export interface LcLabels {
   readonly themeBuilder: LcThemeBuilderLabels;
   /** Tableau filtrable (`lc-data-table`). Pour nommer les lignes (« demandes »), remplacer `rows`, `rowNoun`, `showRows`, `noResultsTitle`. */
   readonly dataTable: LcDataTableLabels;
-  /** Champ de date à zones : lettres d'une zone vide, noms des zones, aide et messages (l'exemple est la date du 12 novembre 2026 mise en forme). */
+  /** Champ de date à zones : lettres d'une zone vide, noms des zones, aide et annonces. */
   readonly dateZoneDay: string;
   readonly dateZoneMonth: string;
   readonly dateZoneYear: string;
@@ -142,10 +142,11 @@ export interface LcLabels {
   /** Annonce d'une zone : `value` est null quand la zone est vide. */
   readonly dateZoneAnnounce: (name: string, value: string | null) => string;
   readonly dateInputHint: string;
-  readonly dateUnrecognized: (example: string) => string;
   readonly dateDayClamped: (day: number, month: string) => string;
   /** Panneau du calendrier : titre du dialogue, pied, navigation, nom du titre-bouton (`title` = « novembre 2026 »). */
   readonly dateChoose: string;
+  /** Bouton calendrier d'un champ qui a une valeur (`date` en forme longue). */
+  readonly dateChange: (date: string) => string;
   readonly dateChoosePeriod: string;
   readonly dateToday: string;
   readonly dateClear: string;
@@ -710,9 +711,9 @@ export const LC_LABELS_FR: LcLabels = {
   dateYearName: 'Année',
   dateZoneAnnounce: (name, value) => `${name}, ${value ?? 'vide'}`,
   dateInputHint: 'Tapez la date, ou changez chaque zone avec les flèches haut et bas.',
-  dateUnrecognized: (example) => `Date non reconnue. Exemple : ${example}`,
   dateDayClamped: (day, month) => `Jour ramené au ${day} ${month}.`,
   dateChoose: 'Choisir une date',
+  dateChange: (date) => `Changer la date, ${date}`,
   dateChoosePeriod: 'Choisir une période',
   dateToday: "Aujourd'hui",
   dateClear: 'Effacer la date',
@@ -928,9 +929,9 @@ export const LC_LABELS_EN: LcLabels = {
   dateYearName: 'Year',
   dateZoneAnnounce: (name, value) => `${name}, ${value ?? 'empty'}`,
   dateInputHint: 'Type the date, or change each part with the up and down arrow keys.',
-  dateUnrecognized: (example) => `Date not recognized. Example: ${example}`,
   dateDayClamped: (day, month) => `Day set to ${month} ${day}.`,
   dateChoose: 'Choose a date',
+  dateChange: (date) => `Change date, ${date}`,
   dateChoosePeriod: 'Choose a period',
   dateToday: 'Today',
   dateClear: 'Clear date',

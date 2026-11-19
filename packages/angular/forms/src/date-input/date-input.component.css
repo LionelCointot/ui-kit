@@ -3,32 +3,19 @@
   position: relative;
 }
 
-/* Place réservée au message : sa hauteur mesurée (`--_message-height`, posée par le composant), à défaut une ligne, plus l'écart. */
-:host(.lc-date-input--calendar.lc-date-input--message) {
-  margin-block-end: calc(var(--_message-height, var(--lc-sys-font-size-sm) * var(--lc-sys-font-line-height-normal)) + var(--lc-sys-space-2));
-}
-
 /* Zone active du champ à zones : le texte sélectionné. */
 :host(.lc-date-input--calendar) .lc-field__input::selection {
   background: var(--lc-calendar-zone-bg, var(--lc-sys-color-primary));
   color: var(--lc-calendar-zone-text, var(--lc-sys-color-on-primary));
 }
 
-/* Même apparence que les erreurs de lc-form-field, posé dans la marge basse de l'hôte. */
-.lc-date-input__message {
-  position: absolute;
-  inset-block-start: 100%;
-  inset-inline-start: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--lc-sys-space-1);
-  margin-block-start: var(--lc-sys-space-1);
-  color: var(--lc-form-field-error-color, var(--lc-sys-color-on-error-container));
-  font-size: var(--lc-sys-font-size-sm);
-  line-height: var(--lc-sys-font-line-height-normal);
-  --lc-icon-size: var(--lc-sys-icon-size-sm);
+/* Bouton calendrier : cadre, hauteur et filet viennent de `.lc-field__step` ; l'anneau de focus suit le cadre arrondi. */
+.lc-date-input__button:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(-1 * var(--lc-sys-focus-ring-width));
 }
 
-.lc-date-input__message lc-icon {
-  margin-block-start: calc((1lh - var(--lc-sys-icon-size-sm)) / 2);
+/* Le filet du bouton ne coupe pas le contour invalide. */
+:host(.lc-field--invalid) .lc-date-input__button {
+  border-inline-start-color: var(--_border);
 }
