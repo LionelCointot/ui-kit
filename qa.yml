@@ -5,6 +5,12 @@ version: 1
 project:
   name: ui-kit
   description: Bibliothèque de composants Angular (ui-angular) et design tokens (ui-tokens)
+setup:
+  - id: npm-ci
+    name: Installation des dépendances (npm ci)
+    run: npm ci
+    cache-key: [package-lock.json]
+
 suites:
   - id: angular-unit
     name: Composants Angular ui-angular (Vitest via ng test)
