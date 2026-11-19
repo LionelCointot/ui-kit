@@ -3,7 +3,7 @@
 - **Statut** : En revue
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-19
-- **ADR liés** : [0001 Tokens](../adr/0001-design-tokens-dtcg-style-dictionary.md) · [0002 Comportement CDK et sélecteurs](../adr/0002-comportement-cdk-et-selecteurs.md)
+- **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0002 Comportement CDK et sélecteurs](../adr/0002-comportement-cdk-et-selecteurs.md) · [0006 Thèmes à l'exécution](../adr/0006-themes-a-l-execution.md)
 - **Consommateurs identifiés** : copro-ticket (filtre « Du / Au » du journal d'audit), finance-credit (date des règles, date de début d'un prêt)
 
 ## 0. Fiche de cadrage
