@@ -394,7 +394,12 @@ describe('CA-19 rôles et attributs', () => {
     expect(today).toHaveLength(1);
     expect(today[0].getAttribute('data-date')).toBe('2026-11-19');
     expect(today[0].getAttribute('title')).toBe("Aujourd'hui");
-    expect(dialog.querySelector('[aria-live="polite"]')!.textContent!.trim()).toBe('novembre 2026');
+    const live = dialog.querySelector('[aria-live="polite"]')!;
+    expect(live.textContent!.trim()).toBe('novembre 2026');
+    const titleButton = dialog.querySelector('button.lc-calendar__title')!;
+    expect(live.parentElement).toBe(titleButton.parentElement); // frère du bouton-titre, pas le titre lui-même
+    expect(titleButton.hasAttribute('aria-live')).toBe(false);
+    expect(titleButton.contains(live)).toBe(false);
   });
 
   it('CA-19 : le titre vivant change avec le mois', async () => {
