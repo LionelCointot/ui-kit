@@ -37,7 +37,7 @@ Mode **`ponytail`** (skill recopié dans `.claude/skills/ponytail/`) actif par d
 2. Conception : spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), ADR dans `docs/adr/` (skill `adr`), relue en parallèle par `architect`, `security-reviewer`, `qa-engineer` (plan de test) et `cadreur` selon les angles. Écran : 2 ou 3 directions maquettées, **l'utilisateur choisit**, brief de `ui-ux-designer`, test `novice-user`. **Spec validée par l'utilisateur avant de coder.**
 3. Réalisation : `qa-engineer` écrit les tests d'acceptation (`CA-n`) à partir de la spec ; `senior-developer` écrit le code et ses tests unitaires, une tâche par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
 4. Vérification, en parallèle : `qa-engineer` (GO / NO-GO avec preuves), `code-reviewer`, et les rôles des angles ouverts ; un bloquant renvoie au développeur.
-5. Livraison : `cadreur` compare le résultat à la spec ; critères cochés et écarts écrits dans la spec ; PR décrite avec `pr-description`.
+5. Livraison : `cadreur` compare le résultat à la spec ; critères cochés et écarts écrits dans la spec ; pour une fonctionnalité, `code-reviewer` audite ce qu'elle a rendu inutile (skill `simplification-audit` : une preuve par recommandation, le plus petit changement qui garde le fonctionnement) ; PR décrite avec `pr-description`.
 Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-reviewer`. Barre de qualité : `CONSTRAINTS.md` et `scripts/check.sh` quand ils existent, sinon les commandes ci-dessus.
 
 ## Agents (`.claude/agents/`)
@@ -73,7 +73,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 - Processus : `delivery-workflow`, `project-init`, `spec-writer`, `adr`, `pr-description`
 - Conception : `web-architecture`, `api-design`, `frontend-guidelines`
 - Code : `clean-code` ; conventions du projet : `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici) ; skills officiels recopiés tels quels : `angular-developer` (équipe Angular)
-- Qualité : `review-checklist`, `security-checklist`, `test-strategy`
+- Qualité : `review-checklist`, `security-checklist`, `test-strategy`, `simplification-audit` (audit de ce qu'on peut retirer ou simplifier, sur demande ou à la livraison)
 - Méthode (superpowers, recopiés tels quels) : `systematic-debugging`, `verification-before-completion`
 - Outils : `graphify` (graphe du code), `impeccable` (design front : `/impeccable init`, `shape`, `critique`, `audit`, `polish`) ; `ponytail` (mode développeur senior économe, actif par défaut)
 - Global utile : `dataviz` (règles et validation de palette des graphiques)
