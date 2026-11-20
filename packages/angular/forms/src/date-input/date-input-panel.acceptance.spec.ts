@@ -574,7 +574,8 @@ describe('CA-39 rien d’interne exporté, aucun import d’un autre point d’e
     const offenders: string[] = [];
     for (const file of readdirSync(dir).filter((name) => name.endsWith('.ts'))) {
       const source = readFileSync(resolve(dir, file), 'utf8');
-      for (const [, path] of source.matchAll(/(?:from|import)\s*\(?\s*'([^']+)'/g)) {
+      for (const [, a, b, c] of source.matchAll(/^(?:import|export)\b[^;]*?\sfrom\s+'([^']+)'|^import\s+'([^']+)'|\bimport\(\s*'([^']+)'/gm)) {
+        const path = a ?? b ?? c;
         const allowed = path.startsWith('./') || /^\.\.\/[\w-]/.test(path) || path.startsWith('@angular/') || path === 'rxjs' || path === '@lionelcointot/ui-angular' || path.startsWith('node:') || path === 'vitest';
         if (!allowed) offenders.push(`${file}: ${path}`);
       }
