@@ -1,10 +1,16 @@
 import { Component, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcDrawerComponent } from '../drawer/drawer.component';
 import { LcDrawerInitialFocusDirective } from '../drawer/drawer-initial-focus.directive';
 import { LC_DRAWER_DATA, LcDrawerRef } from '../drawer/drawer-ref';
 import { LcDrawerService, type LcDrawerConfig } from '../drawer/drawer.service';
+
+interface DrawerData {
+  readonly title: string;
+  readonly hideClose?: boolean;
+}
 
 const PARAGRAPHS = Array.from({ length: 14 }, (_, index) => `Paragraphe ${index + 1} : le contenu du corps défile sous l'en-tête et au-dessus du pied d'actions.`);
 
@@ -13,7 +19,7 @@ const PARAGRAPHS = Array.from({ length: 14 }, (_, index) => `Paragraphe ${index 
   selector: 'lc-drawer-demo-content',
   imports: [LcDrawerComponent, LcDrawerInitialFocusDirective, LcButtonComponent],
   template: `
-    <lc-drawer [title]="data.title">
+    <lc-drawer [title]="data.title" [hideClose]="data.hideClose ?? false">
       <label for="demo-name">Nom</label>
       <input id="demo-name" lcDrawerInitialFocus value="Exemple" style="display:block;margin-block:4px 16px;min-block-size:44px;inline-size:100%" />
       @for (line of paragraphs; track line) {
@@ -28,7 +34,7 @@ const PARAGRAPHS = Array.from({ length: 14 }, (_, index) => `Paragraphe ${index 
 })
 class DrawerDemoContentComponent {
   protected readonly ref = inject<LcDrawerRef<string>>(LcDrawerRef);
-  protected readonly data = inject(LC_DRAWER_DATA) as { title: string };
+  protected readonly data = inject(LC_DRAWER_DATA) as DrawerData;
   protected readonly paragraphs = PARAGRAPHS;
 }
 
@@ -43,27 +49,57 @@ class DrawerDemoContentComponent {
 class DrawerDemoComponent {
   private readonly drawers = inject(LcDrawerService);
   protected result: string | undefined;
-  readonly config = input<LcDrawerConfig<{ title: string }>>({ data: { title: 'Ajouter un élément' } });
+  readonly config = input<LcDrawerConfig<DrawerData>>({ data: { title: 'Ajouter un élément' } });
 
   protected open(): void {
-    this.drawers.open<DrawerDemoContentComponent, { title: string }, string>(DrawerDemoContentComponent, this.config())
+    this.drawers.open<DrawerDemoContentComponent, DrawerData, string>(DrawerDemoContentComponent, this.config())
       .afterClosed().subscribe((value) => (this.result = value));
   }
 }
 
-const meta: Meta<DrawerDemoComponent> = {
-  title: 'Superpositions/Tiroir',
+/** Entrées de `lc-drawer` montrées dans la démo, plus les options du service passées à `open()`. */
+type Args = DrawerData & Required<Pick<LcDrawerConfig<DrawerData>, 'side' | 'size' | 'disableClose' | 'closeOnBackdrop'>>;
+
+/**
+ * Side panel opened by `LcDrawerService.open(Component, config)`: focus is trapped then restored, Escape and a click on the backdrop close it.
+ * The opened component places `lc-drawer` in its template for the header, scrolling body and `lcDrawerActions` footer.
+ *
+ * Import: `import { LcDrawerComponent, LcDrawerService } from '@lionelcointot/ui-angular/overlay';`
+ */
+const meta: Meta<Args> = {
+  title: 'Overlays/Drawer',
+  component: LcDrawerComponent,
   decorators: [moduleMetadata({ imports: [DrawerDemoComponent, LcDrawerComponent, LcDrawerInitialFocusDirective, LcButtonComponent, LcIconComponent] })],
-  render: (args) => ({ props: args, template: `<lc-drawer-demo />` }),
+  args: { title: 'Ajouter un élément', hideClose: false, side: 'end', size: 'medium', disableClose: false, closeOnBackdrop: true },
+  argTypes: {
+    side: { control: 'inline-radio', options: ['start', 'end'], description: 'Service config `side`.' },
+    size: { control: 'inline-radio', options: ['small', 'medium', 'large'], description: 'Service config `size`.' },
+    disableClose: { control: 'boolean', description: 'Service config `disableClose`: Escape, backdrop and close button do nothing.' },
+    closeOnBackdrop: { control: 'boolean', description: 'Service config `closeOnBackdrop`.' },
+  },
 };
 export default meta;
-type Story = StoryObj<DrawerDemoComponent>;
+type Story = StoryObj<Args>;
 
-/** Ouvre le tiroir par le service : focus piégé et restitué, Échap et clic sur le voile ferment. */
-export const Defaut: Story = {};
+/** Click the button to open the drawer: every control (title, close button, side, size, dismissal) is applied. */
+export const Playground: Story = {
+  // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
+  // closeOnBackdrop : comportement à la fermeture, sans effet visible sur le rendu.
+  parameters: { controlsCheck: { openWith: 'button', stateDependent: ['closeOnBackdrop'] } },
+  render: (args) => ({
+    props: {
+      config: {
+        side: args.side, size: args.size, disableClose: args.disableClose, closeOnBackdrop: args.closeOnBackdrop,
+        data: { title: args.title, hideClose: args.hideClose },
+      } satisfies LcDrawerConfig<DrawerData>,
+    },
+    template: `<lc-drawer-demo [config]="config" />`,
+  }),
+};
 
-/** Aperçu statique de la mise en page (sans voile) : en-tête, corps défilant, pied d'actions. */
-export const ApercuStatique: Story = {
+/** Static preview of the layout (no backdrop): header, scrolling body, action footer. */
+export const StaticPreview: Story = {
+  parameters: fixedExample,
   render: () => ({
     template: `
       <div style="block-size:28rem;inline-size:32rem;max-inline-size:100%;display:flex">
@@ -79,17 +115,20 @@ export const ApercuStatique: Story = {
   }),
 };
 
-export const OuvertureAGauche: Story = {
+/** Opens on the start edge, small width. */
+export const OpensAtStart: Story = {
+  parameters: fixedExample,
   render: () => ({
-    props: { config: { side: 'start', size: 'small', data: { title: 'Filtres' } } satisfies LcDrawerConfig<{ title: string }> },
+    props: { config: { side: 'start', size: 'small', data: { title: 'Filtres' } } satisfies LcDrawerConfig<DrawerData> },
     template: `<lc-drawer-demo [config]="config" />`,
   }),
 };
 
-/** Sans fermeture : Échap, voile et bouton de fermeture sans effet ; seules les actions ferment. */
-export const SansFermeture: Story = {
+/** Not dismissible: Escape, backdrop and close button have no effect; only the actions close it. */
+export const NotDismissible: Story = {
+  parameters: fixedExample,
   render: () => ({
-    props: { config: { size: 'large', disableClose: true, data: { title: 'Action obligatoire' } } satisfies LcDrawerConfig<{ title: string }> },
+    props: { config: { size: 'large', disableClose: true, data: { title: 'Action obligatoire' } } satisfies LcDrawerConfig<DrawerData> },
     template: `<lc-drawer-demo [config]="config" />`,
   }),
 };

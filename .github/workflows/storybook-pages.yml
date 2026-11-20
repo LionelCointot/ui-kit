@@ -1,0 +1,57 @@
+# Vitrine : construit le Storybook public (sans les stories de QA) et le publie sur GitHub Pages.
+# Sur une PR : construction seule, pour détecter une casse avant la fusion.
+# Prérequis (une fois) : Settings → Pages → Source « GitHub Actions ». Dépôt privé : GitHub Pro ou supérieur.
+name: Storybook (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - '.storybook/**'
+      - 'docs/storybook/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - '.github/workflows/storybook-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: storybook-pages-${{ github.ref }}
+  # Ne jamais interrompre un déploiement de main en cours.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.15'
+          cache: npm
+      - run: npm ci
+      - run: npm run tokens:build
+      - name: Storybook public
+        run: npm run build-storybook:public
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/storybook
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

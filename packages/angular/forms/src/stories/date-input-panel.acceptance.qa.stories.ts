@@ -32,7 +32,7 @@ class PanelAcceptanceComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de date/Acceptation du panneau',
+  title: 'QA/Date input/Panel acceptance',
   tags: ['!autodocs'],
   decorators: [
     moduleMetadata({ imports: [PanelAcceptanceComponent] }),

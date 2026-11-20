@@ -3,10 +3,11 @@
   "compilerOptions": {
     "types": [],
     "paths": {
+      "@lc/storybook": ["./story-helpers.ts"],
       "@lionelcointot/ui-angular": ["../packages/angular/src/public-api.ts"],
       "@lionelcointot/ui-angular/*": ["../packages/angular/*/src/public-api.ts"]
     }
   },
-  "include": ["../packages/angular/**/*.stories.ts", "./*.ts"],
+  "include": ["../packages/angular/**/*.stories.ts", "../docs/storybook/**/*.ts", "./*.ts"],
   "exclude": ["../packages/angular/**/*.spec.ts"]
 }

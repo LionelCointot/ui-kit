@@ -1,4 +1,4 @@
-import { Component, booleanAttribute, input, linkedSignal } from '@angular/core';
+import { Component, booleanAttribute, input, linkedSignal, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
@@ -9,6 +9,7 @@ import '../../../../tokens/dist/css/theme-default.css';
 import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
+import { commonArgTypes, fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import type { LcDateInterval } from '../date-input/date-interval';
 import { LcDateRangeInputComponent } from '../date-input/date-range-input.component';
@@ -57,12 +58,40 @@ class DateRangeInputFormDemoComponent {
   protected readonly f = form(this.model);
 }
 
-const meta: Meta = {
-  title: 'Formulaires/Champ de période',
-  decorators: [moduleMetadata({ imports: [DateRangeInputDemoComponent, DateRangeInputFormDemoComponent] })],
+/**
+ * Date range field (`lc-date-range-input`) holding `{ from, to }` as ISO dates, with a two-month calendar panel and presets
+ * ("Ce mois-ci"…). Either bound may stay empty (open-ended range). Falls back to two system date fields on touch (`LC_DATE_PICKER`).
+ *
+ * Import: `import { LcDateRangeInputComponent } from '@lionelcointot/ui-angular/forms';`
+ */
+const meta: Meta<LcDateRangeInputComponent> = {
+  title: 'Forms/Date range input',
+  component: LcDateRangeInputComponent,
+  decorators: [moduleMetadata({ imports: [DateRangeInputDemoComponent, DateRangeInputFormDemoComponent, LcDateRangeInputComponent, LcFormFieldComponent] })],
+  args: {
+    min: undefined, max: undefined, disabled: false, readonly: false, required: false, invalid: false, touched: false,
+    size: 'medium', fillMode: 'solid', rounded: 'medium', ariaLabel: 'Période',
+  },
+  argTypes: { size: commonArgTypes.size, fillMode: commonArgTypes.fillMode, rounded: commonArgTypes.rounded, min: { control: 'text' }, max: { control: 'text' }, presets: { control: false }, errors: { control: false } },
 };
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<LcDateRangeInputComponent>;
+
+/** Every input is bound: change them in the Controls panel (`min` and `max` take an ISO date such as 2026-11-30). */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['min', 'max', 'invalid', 'touched'] } },
+  render: (args) => ({
+    props: { ...args, range: signal<LcDateInterval>({ from: '2026-11-03', to: '2026-11-12' }) },
+    template: `
+      <div style="max-width:32rem;min-height:36rem">
+        <lc-date-range-input [(value)]="range" [min]="min || undefined" [max]="max || undefined" [disabled]="disabled"
+          [readonly]="readonly" [required]="required" [invalid]="invalid" [touched]="touched" [size]="size" [fillMode]="fillMode"
+          [rounded]="rounded" [ariaLabel]="ariaLabel" />
+        <p style="margin-top:1rem">Valeur : {{ range().from ?? '…' }} / {{ range().to ?? '…' }}</p>
+      </div>`,
+  }),
+};
 
 const CALENDAR = applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] });
 const NATIVE = applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }] });
@@ -72,14 +101,16 @@ const openedPanel = () => body().findByRole('dialog');
 const closed = () => waitFor(() => expect(document.querySelector('lc-calendar-panel')).toBeNull());
 const value = (canvas: ReturnType<typeof within>) => canvas.getByTestId('value');
 
-/** Champ fermé, vide (sans interaction : sert aux captures). */
-export const ChampVide: Story = {
+/** Closed, empty field (no interaction: used for captures). */
+export const ClosedEmpty: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo(),
 };
 
-/** Navigateur réel à 1280 px : deux mois, raccourcis en colonne ; début puis fin mettent la valeur et les champs à jour, ferment, et rendent le focus au bouton. */
-export const Vide: Story = {
+/** Real browser at 1280 px: two months and a preset column; picking a start then an end updates value and fields, closes and returns focus to the button. */
+export const PickRange: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo(),
   play: async ({ canvasElement }) => {
@@ -105,8 +136,9 @@ export const Vide: Story = {
   },
 };
 
-/** Navigateur réel : à 600 px un seul mois, raccourcis en grille. */
-export const UnSeulMoisA600: Story = {
+/** Real browser: at 600 px a single month and presets laid out as a grid. */
+export const SingleMonthAt600Pixels: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo(),
   play: async ({ canvasElement }) => {
@@ -124,8 +156,9 @@ export const UnSeulMoisA600: Story = {
   },
 };
 
-/** Navigateur réel : un raccourci pose les deux bornes, ferme et rend le focus au bouton. */
-export const Raccourci: Story = {
+/** Real browser: a preset sets both bounds, closes and returns focus to the button. */
+export const Preset: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo(),
   play: async ({ canvasElement }) => {
@@ -141,8 +174,9 @@ export const Raccourci: Story = {
   },
 };
 
-/** Navigateur réel : une seule borne, la ligne explicative ; « Sans date de fin » valide le début seul. */
-export const SansDateDeFin: Story = {
+/** Real browser: one bound only, with an explanatory line; "Sans date de fin" validates the start alone. */
+export const OpenEnded: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo(),
   play: async ({ canvasElement }) => {
@@ -160,7 +194,9 @@ export const SansDateDeFin: Story = {
   },
 };
 
-export const PeriodeChoisie: Story = {
+/** A range already chosen: both fields filled and the button named after the range. */
+export const RangeSelected: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('[initial]="{ from: \'2026-11-03\', to: \'2026-11-12\' }"'),
   play: async ({ canvasElement }) => {
@@ -171,7 +207,9 @@ export const PeriodeChoisie: Story = {
   },
 };
 
-export const UneSeuleBorne: Story = {
+/** Only a start date: the "Sans date de fin" explanation line. */
+export const SingleBound: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('[initial]="{ from: \'2026-11-01\', to: null }"'),
   play: async ({ canvasElement }) => {
@@ -179,8 +217,9 @@ export const UneSeuleBorne: Story = {
   },
 };
 
-/** Navigateur réel : une fin tapée avant le début vaut null, le cadre de la fin est invalide et le message est sous le groupe. */
-export const FinAvantDebut: Story = {
+/** Real browser: an end typed before the start is null, the end frame is invalid and the message sits under the group. */
+export const EndBeforeStart: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('[initial]="{ from: \'2026-11-10\', to: null }"'),
   play: async ({ canvasElement }) => {
@@ -194,7 +233,9 @@ export const FinAvantDebut: Story = {
   },
 };
 
-export const AvecBornes: Story = {
+/** Bounds (15 to 30 November 2026): out-of-range days and presets are disabled. */
+export const WithBounds: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('min="2026-11-15" max="2026-11-30" [initial]="{ from: \'2026-11-17\', to: \'2026-11-19\' }"'),
   play: async ({ canvasElement }) => {
@@ -207,7 +248,9 @@ export const AvecBornes: Story = {
   },
 };
 
-export const Obligatoire: Story = {
+/** A required field has no "Effacer la période" action in the panel. */
+export const Required: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('required labelled'),
   play: async ({ canvasElement }) => {
@@ -217,7 +260,9 @@ export const Obligatoire: Story = {
   },
 };
 
-export const SansRaccourcis: Story = {
+/** Without presets: the panel only shows the calendar. */
+export const NoPresets: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('noPresets'),
   play: async ({ canvasElement }) => {
@@ -227,7 +272,9 @@ export const SansRaccourcis: Story = {
   },
 };
 
-export const Desactive: Story = {
+/** Disabled field: no button, disabled inputs. */
+export const Disabled: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => demo('disabled [initial]="{ from: \'2026-11-03\', to: \'2026-11-12\' }"'),
   play: async ({ canvasElement }) => {
@@ -237,8 +284,9 @@ export const Desactive: Story = {
   },
 };
 
-/** Dans `lc-form-field` avec `[formField]` : la fin avant le début est une erreur de formulaire que le champ affiche. */
-export const DansUnChampDeFormulaire: Story = {
+/** Inside `lc-form-field` with `[formField]`: an end before the start is a form error the field displays. */
+export const InAField: Story = {
+  parameters: fixedExample,
   decorators: [CALENDAR],
   render: () => ({ template: '<lc-date-range-input-form-demo />' }),
   play: async ({ canvasElement }) => {
@@ -255,8 +303,9 @@ export const DansUnChampDeFormulaire: Story = {
   },
 };
 
-/** Mode natif (tactile) : deux champs de date bornés l'un par l'autre, raccourcis en rangée, pas de bouton. */
-export const ModeNatif: Story = {
+/** Native (touch) mode: two bounded date fields, presets in a row, no button. */
+export const NativeMode: Story = {
+  parameters: fixedExample,
   decorators: [NATIVE],
   render: () => demo('[initial]="{ from: \'2026-11-03\', to: \'2026-11-12\' }"'),
   play: async ({ canvasElement }) => {

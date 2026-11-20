@@ -1,5 +1,9 @@
 # ui-kit
 
+[![Storybook](https://img.shields.io/badge/Storybook-vitrine-ff4785?logo=storybook&logoColor=white)](https://lionelcointot.github.io/ui-kit/)
+
+**Vitrine des composants : https://lionelcointot.github.io/ui-kit/** (Storybook publié par `.github/workflows/storybook-pages.yml` à chaque fusion sur `main`).
+
 Bibliothèque de composants Angular et de design tokens, **générique** et réutilisable par tous les projets : boutons, champs (dont montants, pourcentages, durées, dates), tableaux, mise en page, navigation, dialogues, retours d'état, indicateurs et graphiques. Le style est entièrement piloté par des tokens : chaque projet applique son thème sans modifier la bibliothèque.
 
 > **Statut** : spécification. Le code arrive phase par phase (voir les specs).
@@ -51,3 +55,8 @@ Les scripts installent si besoin Node >= 24.15 dans votre dossier utilisateur (s
 Prérequis : Node.js >= 24.15, un jeton GitHub `read:packages` pour le registre privé. Puis `./scripts/setup.sh` (graphify et impeccable), et les commandes listées dans [CLAUDE.md](CLAUDE.md).
 
 Créé depuis [project-template](https://github.com/LionelCointot/project-template) (workflow spec d'abord avec Claude Code).
+
+## Licence
+
+Copyright (C) 2026 Lionel Cointot. Distribué sous la [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
+Une application qui intègre ou modifie ce kit doit, dès qu'elle est distribuée ou rendue accessible à des utilisateurs (y compris par le réseau), publier ses sources sous la même licence. Ce résumé ne remplace pas le texte de la licence.

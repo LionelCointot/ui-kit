@@ -1,14 +1,16 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample } from '@lc/storybook';
 import type { LcThemeDefinition } from '@lionelcointot/ui-tokens/theme';
 import { LcThemeBuilderComponent } from '../builder/theme-builder.component';
 
 /**
- * Page « Outils / Theme builder » : régler les paramètres, voir tous les composants changer en direct (sur toute la
- * page), puis exporter en `.tokens.json` (thème produit, `lc-tokens build`) ou en `.css`. La barre d'outils « Thème »
- * fixe la base de départ (clair ou sombre).
+ * Theme builder page: tune the settings, watch every component change live (across the whole page), then export a `.tokens.json`
+ * (product theme, built with `lc-tokens build`) or a `.css` file. The "Thème" toolbar picks the starting base (light or dark).
+ *
+ * Import: `import { LcThemeBuilderComponent } from '@lionelcointot/ui-angular/theme-builder';`
  */
 const meta: Meta<LcThemeBuilderComponent> = {
-  title: 'Outils/Theme builder',
+  title: 'Tools/Theme builder',
   component: LcThemeBuilderComponent,
   decorators: [moduleMetadata({ imports: [LcThemeBuilderComponent] })],
   parameters: { layout: 'fullscreen' },
@@ -16,8 +18,9 @@ const meta: Meta<LcThemeBuilderComponent> = {
 export default meta;
 type Story = StoryObj<LcThemeBuilderComponent>;
 
-export const ThemeBuilder: Story = {
-  name: 'Theme builder',
+/** The complete builder; its single input `theme` is a two-way model, so the story starts from the toolbar's base. */
+export const Playground: Story = {
+  parameters: { ...fixedExample, layout: 'fullscreen' },
   render: (_args, context) => {
     const theme: LcThemeDefinition = { name: 'mon-theme', extends: context.globals['theme'] === 'dark' ? 'dark' : 'default', overrides: {} };
     return { props: { theme }, template: `<lc-theme-builder [(theme)]="theme" />` };

@@ -1,0 +1,102 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { useContext } from 'react';
+import { DocsContext } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introduction" />
+
+export const Go = ({ to, className, children }) => {
+  const context = useContext(DocsContext);
+  return (
+    <a
+      className={className}
+      href={`./?path=${to}`}
+      target="_top"
+      onClick={(event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        context.channel.emit('navigateUrl', `?path=${to}`);
+      }}
+    >
+      {children}
+    </a>
+  );
+};
+
+export const families = [
+  { name: 'Buttons', to: '/docs/buttons-button--overview', text: 'Buttons, links styled as buttons and button groups with the shared colour, fill, size and radius API.' },
+  { name: 'Forms', to: '/docs/forms-date-input--overview', text: 'Text, number, money, date and period fields, combobox, slider, file upload, checkbox, segmented control.' },
+  { name: 'Data', to: '/docs/data-table--overview', text: 'Sortable and grouped tables, filterable data table, tree table, paginator, KPI cards, logs and code blocks.' },
+  { name: 'Charts', to: '/docs/charts-line-chart--overview', text: 'Line, area, bar, segmented bar and sparkline charts on Apache ECharts, plus a themed escape hatch for raw ECharts options.' },
+  { name: 'Feedback', to: '/docs/feedback-alert--overview', text: 'Alerts, toasts, messages, badges, meters, progress, spinners, skeletons, empty and error states.' },
+  { name: 'Navigation', to: '/docs/navigation-tabs--overview', text: 'Tabs, stepper, navigation groups and menus with full keyboard support.' },
+  { name: 'Overlays', to: '/docs/overlays-dialog--overview', text: 'Dialogs, confirmation dialogs, drawers and tooltips built on the Angular CDK.' },
+  { name: 'Layout', to: '/docs/layout-app-shell--overview', text: 'Application shell, page, stack, grid, card, disclosure and divider.' },
+  { name: 'Geography', to: '/docs/geography-region-and-department-selects--overview', text: 'French regions, departments, communes and addresses from the official public APIs.' },
+  { name: 'Theme builder', to: '/story/tools-theme-builder--playground', text: 'Edit a theme live, check its contrast and export it as tokens or CSS.' },
+];
+
+<style>{`
+  .lc-intro { font-family: var(--lc-sys-font-family-base); color: var(--lc-sys-color-on-surface); }
+  .lc-intro-hero { padding: var(--lc-sys-space-10) var(--lc-sys-space-8); border-radius: var(--lc-sys-radius-lg);
+    background: linear-gradient(135deg, var(--lc-sys-color-primary-container), var(--lc-sys-color-surface-raised) 70%);
+    border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); margin-bottom: var(--lc-sys-space-8); }
+  .lc-intro-hero .eyebrow { font-size: var(--lc-sys-font-size-sm); font-weight: var(--lc-sys-font-weight-semibold);
+    color: var(--lc-sys-color-on-primary-container); letter-spacing: 0.04em; text-transform: uppercase; margin: 0; }
+  .lc-intro-hero h1 { font-size: var(--lc-sys-font-size-3xl); line-height: var(--lc-sys-font-line-height-tight); margin: var(--lc-sys-space-2) 0 var(--lc-sys-space-3); border: 0; }
+  .lc-intro-hero p.lead { font-size: var(--lc-sys-font-size-lg); color: var(--lc-sys-color-on-surface-muted); max-width: 60ch; margin: 0 0 var(--lc-sys-space-6); }
+  .lc-intro-actions { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-3); }
+  .lc-intro-actions a { display: inline-flex; align-items: center; height: var(--lc-sys-control-height-md); padding-inline: var(--lc-sys-space-5);
+    border-radius: var(--lc-sys-radius-md); font-weight: var(--lc-sys-font-weight-medium); text-decoration: none; }
+  .lc-intro-actions a.primary { background: var(--lc-sys-color-primary); color: var(--lc-sys-color-on-primary); }
+  .lc-intro-actions a.secondary { border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong); color: var(--lc-sys-color-on-surface); background: var(--lc-sys-color-surface-raised); }
+  .lc-intro-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--lc-sys-space-4); margin-bottom: var(--lc-sys-space-8); }
+  .lc-intro-points div { padding: var(--lc-sys-space-4); border-left: var(--lc-sys-border-width-thick) solid var(--lc-sys-color-primary); background: var(--lc-sys-color-surface); }
+  .lc-intro-points strong { display: block; margin-bottom: var(--lc-sys-space-1); }
+  .lc-intro-points span { color: var(--lc-sys-color-on-surface-muted); font-size: var(--lc-sys-font-size-sm); }
+  .lc-intro-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--lc-sys-space-4); }
+  .lc-intro-grid a.card { display: block; padding: var(--lc-sys-space-5); border-radius: var(--lc-sys-radius-lg); text-decoration: none; color: inherit;
+    background: var(--lc-sys-color-surface-raised); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+    transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard), box-shadow var(--lc-sys-duration-fast) var(--lc-sys-easing-standard); }
+  .lc-intro-grid a.card:hover, .lc-intro-grid a.card:focus-visible { border-color: var(--lc-sys-color-primary); box-shadow: var(--lc-sys-shadow-2); }
+  .lc-intro-grid a.card strong { display: block; font-size: var(--lc-sys-font-size-lg); margin-bottom: var(--lc-sys-space-2); color: var(--lc-sys-color-primary); }
+  .lc-intro-grid a.card span { font-size: var(--lc-sys-font-size-sm); color: var(--lc-sys-color-on-surface-muted); line-height: var(--lc-sys-font-line-height-relaxed); }
+`}</style>
+
+<div className="lc-intro">
+  <div className="lc-intro-hero">
+    <p className="eyebrow">Angular 22 · Design tokens · Accessible</p>
+    <h1>lc ui-kit</h1>
+    <p className="lead">
+      A generic component library and design token system for data-rich business applications.
+      Standalone, signal-based and zoneless, themed entirely through CSS variables.
+    </p>
+    <div className="lc-intro-actions">
+      <Go className="primary" to="/docs/getting-started--overview">Get started</Go>
+      <Go className="secondary" to="/story/foundations-colors--colors">Explore the foundations</Go>
+    </div>
+  </div>
+
+  <div className="lc-intro-points">
+    <div><strong>Modern Angular</strong><span>Standalone components, <code>input()</code> / <code>output()</code> / <code>model()</code>, OnPush, zoneless, Signal Forms.</span></div>
+    <div><strong>Tokens first</strong><span>Three token layers (reference, system, component) in DTCG format, light and dark themes, a live theme builder.</span></div>
+    <div><strong>Accessible by default</strong><span>Behaviour from the Angular CDK, full keyboard support, every story checked with axe.</span></div>
+    <div><strong>Localised</strong><span>All texts go through <code>LC_LABELS</code>: French by default, English provided.</span></div>
+  </div>
+
+  <h2>Components</h2>
+  <div className="lc-intro-grid">
+    {families.map((family) => (
+      <Go key={family.name} className="card" to={family.to}>
+        <strong>{family.name}</strong>
+        <span>{family.text}</span>
+      </Go>
+    ))}
+  </div>
+</div>
+
+## How to read this site
+
+- Each component has an **Overview** page: what it is for, a **Playground** whose controls change the live component, the generated API table (inputs and outputs), then focused examples.
+- Use the **Theme** button in the toolbar to switch any example between the light and dark themes.
+- The **Code** panel under each example shows the Angular template to copy.
+- Demo content is in French, the library's default language; see [Getting started](?path=/docs/getting-started--overview) to switch labels to English.

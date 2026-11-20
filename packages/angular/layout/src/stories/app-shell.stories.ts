@@ -1,14 +1,29 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
+import { fixedExample } from '@lc/storybook';
 import { LcAppShellComponent } from '../app-shell/app-shell.component';
 
+/**
+ * Application frame: header, side navigation (a drawer on narrow screens) and main content.
+ * `navMode` forces the navigation layout; `auto` switches between side and drawer according to the width.
+ *
+ * Import: `import { LcAppShellComponent } from '@lionelcointot/ui-angular/layout';`
+ */
 const meta: Meta<LcAppShellComponent> = {
-  title: 'Mise en page/Coque d\'application',
+  title: 'Layout/App shell',
   component: LcAppShellComponent,
   decorators: [moduleMetadata({ imports: [LcAppShellComponent, LcButtonComponent, LcIconComponent] })],
   parameters: { layout: 'fullscreen' },
   argTypes: { navMode: { control: 'inline-radio', options: ['auto', 'side', 'drawer', 'none'] } },
   args: { navMode: 'auto', navLabel: 'Navigation principale' },
+};
+export default meta;
+type Story = StoryObj<LcAppShellComponent>;
+
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['navMode'] } },
   render: (args) => ({
     props: args,
     template: `
@@ -22,13 +37,10 @@ const meta: Meta<LcAppShellComponent> = {
       </lc-app-shell>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcAppShellComponent>;
 
-export const Defaut: Story = {};
-
-/** `navMode="none"` : ni bouton de menu, ni navigation, ni tiroir ; l'en-tête et le contenu pleine largeur restent. */
-export const SansNavigation: Story = {
+/** `navMode="none"`: no menu button, navigation or drawer; the header and the full-width content remain. */
+export const WithoutNavigation: Story = {
+  parameters: fixedExample,
   args: { navMode: 'none' },
   render: (args) => ({
     props: args,

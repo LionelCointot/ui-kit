@@ -1,65 +1,81 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { commonArgTypes, fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcSliderComponent } from './slider.component';
 
+/**
+ * Range slider bound to a number (`lc-slider`). The `unit` is only a label: the value stays a plain number.
+ * The current value is shown as a label, in a coupled numeric field, or not at all (`showValue`).
+ *
+ * Import: `import { LcSliderComponent } from '@lionelcointot/ui-angular/forms';`
+ */
 const meta: Meta<LcSliderComponent> = {
-  title: 'Formulaires/Curseur',
+  title: 'Forms/Slider',
   component: LcSliderComponent,
   decorators: [moduleMetadata({ imports: [LcSliderComponent, LcFormFieldComponent] })],
   argTypes: {
-    size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
-    themeColor: { control: 'select', options: ['primary', 'secondary', 'success', 'warning', 'error', 'highlight', 'neutral'] },
+    size: commonArgTypes.size,
+    themeColor: commonArgTypes.themeColor,
     showValue: { control: 'inline-radio', options: ['none', 'label', 'input'] },
   },
-  args: { min: 0, max: 100, step: 5, unit: '%', decimals: 0, showValue: 'label', disabled: false, readonly: false },
+  args: {
+    min: 0, max: 100, step: 5, unit: '%', decimals: 0, showValue: 'label', size: 'medium', themeColor: 'primary',
+    disabled: false, readonly: false, required: false, invalid: false, touched: false,
+  },
+};
+export default meta;
+type Story = StoryObj<LcSliderComponent>;
+
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['invalid', 'touched'] } },
   render: (args) => ({
     props: { ...args, share: signal<number | null>(60) },
     template: `
       <div style="max-width:28rem">
-        <lc-form-field label="Part de l'écart épargnée">
+        <lc-form-field label="Niveau de zoom">
           <lc-slider [(value)]="share" [min]="min" [max]="max" [step]="step" [unit]="unit" [decimals]="decimals"
-            [showValue]="showValue" [size]="size" [themeColor]="themeColor" [disabled]="disabled" [readonly]="readonly" />
+            [showValue]="showValue" [size]="size" [themeColor]="themeColor" [disabled]="disabled" [readonly]="readonly"
+            [required]="required" [invalid]="invalid" [touched]="touched" />
         </lc-form-field>
         <p style="margin-top:1rem">Valeur : {{ share() ?? 'aucune' }}</p>
       </div>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcSliderComponent>;
 
-/** Pourcentage : la valeur reste un nombre (60), l'unité n'est qu'un libellé. */
-export const Pourcentage: Story = {};
-
-/** Montant en euros : l'appelant change `min`, `max`, `step` et `unit` ; aucune conversion. */
+/** Amount in euros: the caller changes `min`, `max`, `step` and `unit`; no conversion. */
 export const Euros: Story = {
-  args: { min: 0, max: 3000, step: 50, unit: '€' },
-  render: (args) => ({
-    props: { ...args, amount: signal<number | null>(1500) },
+  parameters: fixedExample,
+  render: () => ({
+    props: { amount: signal<number | null>(1500) },
     template: `
       <div style="max-width:28rem">
-        <lc-form-field label="Épargne mensuelle">
-          <lc-slider [(value)]="amount" [min]="min" [max]="max" [step]="step" [unit]="unit" [showValue]="showValue" />
+        <lc-form-field label="Budget mensuel">
+          <lc-slider [(value)]="amount" [min]="0" [max]="3000" [step]="50" unit="€" />
         </lc-form-field>
       </div>`,
   }),
 };
 
-/** Saisie exacte au clavier dans le champ numérique couplé. */
-export const AvecChampNumerique: Story = {
-  args: { showValue: 'input', min: 0, max: 40, step: 1, unit: 'ans' },
-  render: (args) => ({
-    props: { ...args, years: signal<number | null>(20) },
+/** Exact keyboard entry in the coupled numeric field (`showValue="input"`). */
+export const WithNumericField: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { years: signal<number | null>(20) },
     template: `
       <div style="max-width:28rem">
-        <lc-form-field label="Horizon">
-          <lc-slider [(value)]="years" [min]="min" [max]="max" [step]="step" [unit]="unit" showValue="input" />
+        <lc-form-field label="Durée">
+          <lc-slider [(value)]="years" [min]="0" [max]="40" [step]="1" unit="ans" showValue="input" />
         </lc-form-field>
       </div>`,
   }),
 };
 
-export const Graduations: Story = {
+/** Tick marks with labels (`marks`). */
+export const Marks: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: {
       years: signal<number | null>(10),
@@ -67,32 +83,36 @@ export const Graduations: Story = {
     },
     template: `
       <div style="max-width:28rem">
-        <lc-form-field label="Durée de détention">
+        <lc-form-field label="Durée d'abonnement">
           <lc-slider [(value)]="years" [min]="0" [max]="40" [step]="1" unit="ans" [marks]="marks" />
         </lc-form-field>
       </div>`,
   }),
 };
 
-export const Etats: Story = {
+/** Normal, empty, disabled, read-only and invalid sliders. */
+export const States: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { value: signal<number | null>(40), empty: signal<number | null>(null) },
     template: `
-      <div style="display:grid;gap:24px;max-width:28rem">
+      <div style="display:grid;gap:var(--lc-sys-space-6);max-width:28rem">
         <lc-form-field label="Normal"><lc-slider [(value)]="value" unit="%" /></lc-form-field>
         <lc-form-field label="Sans valeur"><lc-slider [(value)]="empty" unit="%" /></lc-form-field>
         <lc-form-field label="Désactivé"><lc-slider [(value)]="value" unit="%" disabled /></lc-form-field>
         <lc-form-field label="Lecture seule"><lc-slider [(value)]="value" unit="%" readonly /></lc-form-field>
-        <lc-form-field label="Invalide" [errors]="['La part doit être inférieure à 30 %']"><lc-slider [(value)]="value" unit="%" invalid touched /></lc-form-field>
+        <lc-form-field label="Invalide" [errors]="['Le niveau doit rester inférieur à 30 %']"><lc-slider [(value)]="value" unit="%" invalid touched /></lc-form-field>
       </div>`,
   }),
 };
 
-export const Tailles: Story = {
+/** `small`, `medium` and `large` sizes. */
+export const Sizes: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { value: signal<number | null>(50) },
     template: `
-      <div style="display:grid;gap:16px;max-width:28rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:28rem">
         <lc-slider [(value)]="value" size="small" ariaLabel="Petit" unit="%" />
         <lc-slider [(value)]="value" size="medium" ariaLabel="Moyen" unit="%" />
         <lc-slider [(value)]="value" size="large" ariaLabel="Grand" unit="%" />

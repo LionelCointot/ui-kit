@@ -29,7 +29,8 @@ import { kitDatePresets } from '../date-input/date-presets';
 class CalendarPanelDemoComponent {}
 
 const meta: Meta = {
-  title: 'Formulaires/Panneau de calendrier (interne)',
+  title: 'QA/Calendar panel (internal)',
+  tags: ['!autodocs'],
   decorators: [moduleMetadata({ imports: [CalendarPanelDemoComponent] })],
   render: () => ({ template: '<lc-calendar-panel-demo />' }),
 };

@@ -10,21 +10,21 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Framework(s) : Angular 22 (standalone, signaux, zoneless), Angular CDK 22 ; Style Dictionary 5 (tokens DTCG) ; Apache ECharts 6 (point d'entrée `charts`, dépendance optionnelle) ; AG Grid Community 36 (`data-grid`, phase 5, optionnelle)
 - Outillage : Storybook 10, Vitest, Playwright, ng-packagr, workspaces npm ; prévus, pas encore en place : tests visuels, ESLint, stylelint
 - Base de données : aucune
-- Déploiement : paquets npm `@lionelcointot/ui-tokens` et `@lionelcointot/ui-angular` sur GitHub Packages (release-please) ; Storybook publié en artefact de CI (cible : ni CI ni publication en place à ce jour)
+- Déploiement : paquets npm `@lionelcointot/ui-tokens` et `@lionelcointot/ui-angular` sur GitHub Packages (release-please) ; Storybook publié sur GitHub Pages (`.github/workflows/storybook-pages.yml`)
 
 ## Commandes
 - Tout installer / lancer Storybook (Node installé au besoin) : `installer.command` / `lancer.command` (macOS), `.cmd` (Windows), `bash installer.command` (Linux) ; équivalent : `bash scripts/dev/bootstrap.sh install|start`. Configuration : `dev.config.json`
 - Installer : `npm ci`
 - Lancer en dev : `npm run storybook`
 - Tests : `npx ng test ui-angular --watch=false` (Vitest) ; pas encore : `test:visual` (Playwright), `lint` (ESLint, stylelint)
-- Storybook statique : `npm run build-storybook` (sortie `dist/storybook`)
+- Storybook statique : `npm run build-storybook` (sortie `dist/storybook`) ; vitrine publique sans QA : `npm run build-storybook:public` (publiée sur GitHub Pages par la CI) ; contrôles des Playground : `node tools/qa/storybook-controls.mjs`. Règles des stories : `docs/storybook/CONVENTIONS.md`
 - Build : `npm run build` (tokens puis bibliothèque)
 - Catalogue des composants (livré dans le paquet) : `npm run catalogue:build` régénère `packages/angular/CATALOGUE.md` · `npm run catalogue:check` échoue s'il est périmé · tests `npm run catalogue:test`
 - Tokens : `npm run tokens:build` · `npx lc-tokens check --theme <fichier.tokens.json>` · tests `npm test --workspace @lionelcointot/ui-tokens`
 - Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
 
 ## Documentation
-- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md`, `2026-11-selecteur-de-date.md` (chacune se termine par ses écarts constatés à l'implémentation)
+- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md`, `2026-11-selecteur-de-date.md`, `2026-11-vitrine-storybook.md` (chacune se termine par ses écarts constatés à l'implémentation)
 - ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`) ; `0008` (champ de date : calendrier du kit sur pointeur fin, sélecteur du système sinon, jeton `LC_DATE_PICKER`)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
 - Direction visuelle : `DESIGN.md` (système visuel de référence des projets consommateurs) ; `PRODUCT.md` pas encore créé (`/impeccable init`)

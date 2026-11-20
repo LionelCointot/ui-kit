@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { commonArgTypes, fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcComboboxOptionDirective } from './combobox-option.directive';
 import { LcComboboxComponent } from './combobox.component';
@@ -28,22 +29,37 @@ const CITIES: readonly City[] = [
 const display = (city: City) => city.name;
 const trackBy = (city: City) => city.id;
 
+/**
+ * Search field with a suggestion list (WAI-ARIA combobox). Two modes: local (`options`, filtered in memory without accents or case)
+ * and asynchronous (`search`, debounced and cancellable). The selected item is the `value`; `displayWith` and `trackBy` are required.
+ *
+ * Import: `import { LcComboboxComponent } from '@lionelcointot/ui-angular/forms';`
+ */
 const meta: Meta<LcComboboxComponent<City>> = {
-  title: 'Formulaires/Liste filtrable',
+  title: 'Forms/Combobox',
   component: LcComboboxComponent,
   decorators: [moduleMetadata({ imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent, LcFormFieldComponent] })],
-  argTypes: {
-    size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
-    fillMode: { control: 'inline-radio', options: ['solid', 'outline', 'flat'] },
-    rounded: { control: 'select', options: ['none', 'small', 'medium', 'large', 'full'] },
+  args: {
+    placeholder: 'Rechercher une ville', clearable: true, disabled: false, readonly: false, required: false, invalid: false, touched: false,
+    size: 'medium', fillMode: 'solid', rounded: 'medium', maxResults: 50, minLength: 0, openOnFocus: true,
   },
-  args: { placeholder: 'Rechercher une ville', clearable: true, disabled: false, readonly: false },
+  argTypes: {
+    size: commonArgTypes.size,
+    fillMode: commonArgTypes.fillMode,
+    rounded: commonArgTypes.rounded,
+    openOnFocus: { control: 'boolean' },
+    minLength: { control: 'number' },
+    maxResults: { control: 'number' },
+    debounceMs: { table: { disable: true } },
+  },
 };
 export default meta;
 type Story = StoryObj<LcComboboxComponent<City>>;
 
-/** Mode local : la liste est filtrée en mémoire, sans accents ni casse ; la meilleure proposition est en tête. */
-export const Local: Story = {
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['minLength', 'maxResults', 'clearable', 'invalid', 'touched'] } },
   render: (args) => ({
     props: { ...args, cities: CITIES, display, trackBy, city: signal<City | null>(null) },
     template: `
@@ -51,15 +67,17 @@ export const Local: Story = {
         <lc-form-field label="Ville" hint="Tapez « ro » ou « zu » ; Bas ouvre la liste, Entrée choisit, Échap ferme.">
           <lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city"
             [placeholder]="placeholder" [clearable]="clearable" [size]="size" [fillMode]="fillMode" [rounded]="rounded"
-            [disabled]="disabled" [readonly]="readonly" />
+            [disabled]="disabled" [readonly]="readonly" [required]="required" [invalid]="invalid" [touched]="touched"
+            [minLength]="minLength" [maxResults]="maxResults" [openOnFocus]="openOnFocus" />
         </lc-form-field>
         <p style="margin-top:1rem">Valeur : {{ city()?.name ?? 'aucune' }}</p>
       </div>`,
   }),
 };
 
-/** Gabarit d'option : nom surligné et pays en texte secondaire. */
-export const GabaritDOption: Story = {
+/** Option template: highlighted name and the country as secondary text. */
+export const OptionTemplate: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { cities: CITIES, display, trackBy, city: signal<City | null>(CITIES[7]) },
     template: `
@@ -76,11 +94,13 @@ export const GabaritDOption: Story = {
   }),
 };
 
-export const Etats: Story = {
+/** Normal, disabled, read-only and invalid fields side by side. */
+export const States: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { cities: CITIES, display, trackBy, city: signal<City | null>(CITIES[1]) },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Normal"><lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" /></lc-form-field>
         <lc-form-field label="Désactivé"><lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" disabled /></lc-form-field>
         <lc-form-field label="Lecture seule"><lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" readonly /></lc-form-field>
@@ -108,8 +128,9 @@ function fakeSearch(mode: () => RemoteMode): (text: string, signal: AbortSignal)
     });
 }
 
-/** Mode asynchrone : anti-rebond de 200 ms, annulation de la recherche précédente, annonce du nombre de résultats. */
-export const Asynchrone: Story = {
+/** Async mode: 200 ms debounce, cancellation of the previous search, result count announced. */
+export const Async: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { display, trackBy, city: signal<City | null>(null), search: fakeSearch(() => 'ok') },
     template: `
@@ -122,7 +143,9 @@ export const Asynchrone: Story = {
   }),
 };
 
-export const AsynchroneVide: Story = {
+/** Async mode where the server returns no result. */
+export const AsyncEmpty: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { display, trackBy, city: signal<City | null>(null), search: fakeSearch(() => 'empty') },
     template: `
@@ -132,7 +155,9 @@ export const AsynchroneVide: Story = {
   }),
 };
 
-export const AsynchroneErreur: Story = {
+/** Async mode where the search fails: error state with a retry action. */
+export const AsyncError: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { display, trackBy, city: signal<City | null>(null), search: fakeSearch(() => 'error') },
     template: `

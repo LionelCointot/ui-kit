@@ -2,7 +2,7 @@
   "name": "@lionelcointot/ui-tokens",
   "version": "0.1.0",
   "description": "Design tokens du ui-kit (format DTCG) : CSS des thèmes default et dark, CLI lc-tokens pour les thèmes produit (contrôle de contraste WCAG).",
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "bin": {
     "lc-tokens": "bin/lc-tokens.mjs"
@@ -19,6 +19,7 @@
     "./package.json": "./package.json"
   },
   "files": [
+    "LICENSE",
     "bin",
     "lib",
     "theme",

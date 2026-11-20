@@ -25,7 +25,7 @@ class RangeFitComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de période/Ajustement du panneau',
+  title: 'QA/Date range input/Panel fit',
   tags: ['!autodocs'],
   decorators: [moduleMetadata({ imports: [RangeFitComponent] }), applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] })],
   render: () => ({ template: `<lc-range-fit />` }),

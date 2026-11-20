@@ -1,5 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { fixedExample, sizeOptions } from '@lc/storybook';
 import { LcBadgeComponent } from '../badge/badge.component';
 import { LcStatusBadgeComponent } from '../status-badge/status-badge.component';
 
@@ -12,69 +13,85 @@ const KINDS = [
   { kind: 'neutral', label: 'Inconnu' },
 ] as const;
 
+/**
+ * Status pill: a colored badge with a role-specific icon, so the state never relies on color alone.
+ * Six kinds (`success`, `error`, `warning`, `highlight`, `info`, `neutral`); the icon can be replaced.
+ *
+ * Import: `import { LcStatusBadgeComponent } from '@lionelcointot/ui-angular/feedback';`
+ */
 const meta: Meta<LcStatusBadgeComponent> = {
-  title: 'Retours d\'état/Indicateur d\'état',
+  title: 'Feedback/Status badge',
   component: LcStatusBadgeComponent,
   decorators: [moduleMetadata({ imports: [LcStatusBadgeComponent, LcBadgeComponent, LcButtonComponent] })],
   argTypes: {
-    kind: { control: 'select', options: ['success', 'error', 'warning', 'highlight', 'info', 'neutral'] },
-    size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
+    kind: { control: 'select', options: KINDS.map((item) => item.kind) },
+    size: { control: 'inline-radio', options: [...sizeOptions] },
+    icon: { control: 'text' },
   },
-  args: { kind: 'success', size: 'medium' },
+  args: { kind: 'success', size: 'medium', icon: undefined },
+};
+export default meta;
+type Story = StoryObj<LcStatusBadgeComponent>;
+
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
   render: (args) => ({
     props: args,
     template: `<lc-status-badge [kind]="kind" [size]="size" [icon]="icon">Statut du service</lc-status-badge>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcStatusBadgeComponent>;
 
-export const Defaut: Story = {};
-
-/** Une icône distincte par rôle : l'état reste lisible en niveaux de gris et en daltonisme. */
-export const ParRole: Story = {
+/** One distinct icon per kind: the state stays readable in grayscale and for color-blind users. */
+export const ByKind: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { kinds: KINDS },
-    template: `<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    template: `<div style="display:flex;gap:var(--lc-sys-space-3);flex-wrap:wrap;align-items:center">
       @for (item of kinds; track item.kind) { <lc-status-badge [kind]="item.kind">{{ item.label }}</lc-status-badge> }</div>`,
   }),
 };
 
-export const Tailles: Story = {
+/** Every kind in `small`, `medium` and `large`. */
+export const Sizes: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { kinds: KINDS },
-    template: `<div style="display:grid;gap:12px">
+    template: `<div style="display:grid;gap:var(--lc-sys-space-3)">
       @for (size of ['small', 'medium', 'large']; track size) {
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:var(--lc-sys-space-3);flex-wrap:wrap;align-items:center">
           @for (item of kinds; track item.kind) { <lc-status-badge [kind]="item.kind" [size]="size">{{ item.label }}</lc-status-badge> }
         </div>
       }</div>`,
   }),
 };
 
-export const IconePersonnalisee: Story = {
+/** The `icon` input replaces the default icon of the kind. */
+export const CustomIcon: Story = {
+  parameters: fixedExample,
   render: () => ({
-    template: `<div style="display:flex;gap:12px;flex-wrap:wrap">
+    template: `<div style="display:flex;gap:var(--lc-sys-space-3);flex-wrap:wrap">
       <lc-status-badge kind="highlight" icon="refresh-cw">Synchronisation</lc-status-badge>
       <lc-status-badge kind="neutral" icon="git-branch">Branche principale</lc-status-badge></div>`,
   }),
 };
 
-/** Libellé long : tronqué avec des points de suspension dans un conteneur étroit. */
-export const LibelleLong: Story = {
+/** Long label: truncated with an ellipsis in a narrow container. */
+export const LongLabel: Story = {
+  parameters: fixedExample,
   render: () => ({
     template: `<div style="max-width:12rem"><lc-status-badge kind="warning">Dégradé depuis plus de trois jours</lc-status-badge></div>`,
   }),
 };
 
-/** Le rôle `highlight` est aussi disponible pour `lc-badge` et `button[lcButton]`. */
-export const RoleHighlight: Story = {
+/** The `highlight` role is also available on `lc-badge` and `button[lcButton]`. */
+export const HighlightRole: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { fills: ['solid', 'flat', 'outline'] },
-    template: `<div style="display:grid;gap:12px">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    template: `<div style="display:grid;gap:var(--lc-sys-space-3)">
+      <div style="display:flex;gap:var(--lc-sys-space-3);flex-wrap:wrap;align-items:center">
         @for (fill of fills; track fill) { <lc-badge themeColor="highlight" [fillMode]="fill">Nouveau</lc-badge> }</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;gap:var(--lc-sys-space-3);flex-wrap:wrap;align-items:center">
         @for (fill of fills; track fill) { <button lcButton themeColor="highlight" [fillMode]="fill">Action</button> }</div></div>`,
   }),
 };
