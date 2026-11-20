@@ -29,7 +29,7 @@ export const NarrowColumn: Story = {
   parameters: fixedExample,
   render: () => ({
     props: { names },
-    template: `<ul style="width:14rem;margin:0;padding:0;list-style:none;display:grid;gap:var(--lc-sys-space-2)">
+    template: `<ul style="width:14rem;margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:var(--lc-sys-space-2)">
       @for (name of names; track name) { <li><span lcTruncate>{{ name }}</span></li> }</ul>`,
   }),
 };
