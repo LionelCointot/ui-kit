@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import '../../../../tokens/dist/css/lc-tokens.css';
 import '../../../../tokens/dist/css/theme-default.css';
@@ -12,11 +12,8 @@ import { LcDateRangeInputComponent } from '../date-input/date-range-input.compon
 
 // Stories sans scénario, pour les captures du designer et du test novice (Playwright pilote la page).
 
-// Contournement pour les captures : dans `lc-form-field`, le champ de période s'effondre à largeur nulle (constat QA) ; cette règle lui rend la largeur du champ.
 @Component({
   selector: 'lc-date-range-capture',
-  encapsulation: ViewEncapsulation.None,
-  styles: ['.lc-form-field__control > lc-date-range-input { inline-size: 100%; }'],
   imports: [LcFormFieldComponent, LcDateRangeInputComponent],
   template: `<div style="max-width:36rem;min-height:36rem">
     <lc-form-field label="Période"><lc-date-range-input [value]="initial()" [min]="min()" [max]="max()" /></lc-form-field>
