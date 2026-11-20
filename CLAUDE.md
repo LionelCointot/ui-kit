@@ -71,7 +71,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 
 ## Skills (`.claude/skills/`)
 - Processus : `delivery-workflow`, `project-init`, `spec-writer`, `adr`, `pr-description`
-- Conception : `web-architecture`, `api-design`, `frontend-guidelines`
+- Conception : `web-architecture`, `api-design`, `frontend-guidelines` ; `modern-web-guidance` (fiches du web moderne de Chrome, Edge, Firefox et MDN, copie locale figée lue sans `npx`, à consulter avant le HTML, le CSS et le JavaScript côté navigateur ; mise à jour par `scripts/update-tools.sh`)
 - Code : `clean-code` ; conventions du projet : `angular-best-practices` (`dotnet-best-practices` retiré : pas de .NET ici) ; skills officiels recopiés tels quels : `angular-developer` (équipe Angular)
 - Qualité : `review-checklist`, `security-checklist`, `test-strategy`, `simplification-audit` (audit de ce qu'on peut retirer ou simplifier, sur demande ou à la livraison)
 - Méthode (superpowers, recopiés tels quels) : `systematic-debugging`, `verification-before-completion`

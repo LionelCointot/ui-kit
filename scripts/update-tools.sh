@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Met à jour graphify, impeccable, ponytail, les skills superpowers, ui-ux-pro-max et les skills officiels Angular et .NET dans ce repo, puis remet la config des hooks Claude Code en forme portable.
+# Met à jour graphify, impeccable, ponytail, les skills superpowers, ui-ux-pro-max, Modern Web Guidance et les skills officiels Angular et .NET dans ce repo, puis remet la config des hooks Claude Code en forme portable.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 export PATH="$HOME/.local/bin:$PATH"
@@ -52,6 +52,33 @@ copy_official() {   # <url> <ref> <chemin amont> <skill> <licence>
 copy_official https://github.com/angular/skills "$ang_ref" angular-developer angular-developer "MIT, Google LLC"
 copy_official https://github.com/dotnet/skills "$dn_ref" plugins/dotnet-aspnetcore/skills/dotnet-webapi dotnet-webapi "MIT, .NET Foundation"
 copy_official https://github.com/dotnet/skills "$dn_ref" plugins/dotnet-data/skills/optimizing-ef-core-queries optimizing-ef-core-queries "MIT, .NET Foundation"
+
+echo "==> Modern Web Guidance (fiches recopiées, lues en local)"
+# Version figée et relue (1.0.1). Changer de version : relire le diff amont, puis modifier la référence.
+# Seules les fiches sont recopiées : le SKILL.md du projet (lecture locale, sans npx) n'est pas écrasé.
+mwg_ref="${MWG_REF:-64a6d708f5a43f2cd3fde5d4d7db3905ba1bdf65}"
+mwg_tmp="$(mktemp -d)"
+trap 'rm -rf "$sp_tmp" "${uxpm_tmp:-}" "${off_tmp:-}" "$mwg_tmp"' EXIT
+git clone --quiet https://github.com/GoogleChrome/modern-web-guidance.git "$mwg_tmp"
+git -C "$mwg_tmp" checkout --quiet "$mwg_ref"
+mwg=.claude/skills/modern-web-guidance
+mkdir -p "$mwg"
+rsync -a --delete "$mwg_tmp/skills/modern-web-guidance/guides/" "$mwg/guides/"
+cp "$mwg_tmp/skills/modern-web-guidance/SKILL.md" "$mwg/UPSTREAM-SKILL.md"
+cp "$mwg_tmp/LICENSE" "$mwg/LICENSE"
+{
+  echo "# Index des fiches Modern Web Guidance"
+  echo
+  echo "Généré par scripts/update-tools.sh. Une ligne par fiche : chemin, titre, première phrase de la présentation."
+  echo
+  for f in "$mwg"/guides/*/*.md; do
+    rel="${f#"$mwg"/}"
+    title="$(head -n 1 "$f" | sed 's/^# *//')"
+    first="$(awk 'NR>1 && /^## /{s=1; next} s && NF {print; exit}' "$f" | cut -c1-220)"
+    echo "- \`$rel\` : $title. $first"
+  done
+} > "$mwg/INDEX.md"
+printf 'Origine : https://github.com/GoogleChrome/modern-web-guidance (Apache-2.0), skills/modern-web-guidance/guides\nVersion : %s (%s)\nFiches recopiées telles quelles ; SKILL.md propre au projet (lecture locale, aucune commande npx) ; SKILL.md amont gardé dans UPSTREAM-SKILL.md. Mise à jour : scripts/update-tools.sh.\n' "$mwg_ref" "$(date +%F)" > "$mwg/VERSION"
 
 echo "==> normalisation des hooks Claude Code"
 node scripts/lib/normalize-claude-settings.mjs

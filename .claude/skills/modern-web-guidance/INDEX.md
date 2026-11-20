@@ -1,0 +1,214 @@
+# Index des fiches Modern Web Guidance
+
+Généré par scripts/update-tools.sh. Une ligne par fiche : chemin, titre, première phrase de la présentation.
+
+- `guides/accessibility/accessibility.md` : Accessibility Coding Guidelines. ### Landmarks
+- `guides/accessibility/accessible-error-announcement.md` : Accessible Error Announcement. Standard HTML5 validation provides visual feedback (via `:invalid` or `:user-invalid`), but it doesn't automatically synchronize with accessibility attributes like `aria-invalid`. 
+- `guides/accessibility/accessible-generated-content.md` : Accessible generated content. Baseline status for Alt text for generated content: Newly available. It's been Baseline since 2024-07-09.
+- `guides/accessibility/respect-os-text-scale.md` : Respect Operating System Text Scale. Users with visual impairments often configure text scaling at the operating system level (such as Dynamic Type on iOS or Font Size scaling on Android/ChromeOS). By default, mobile browsers ignore these OS-level accessibi
+- `guides/built-in-ai/language-detection.md` : Language Detection. - **Translation Prep:** Identifying the source language before sending text to a translator.
+- `guides/built-in-ai/language-model.md` : Language Model. The Prompt API is currently available in Chrome as of version 148 (Desktop) for Windows, macOS, Linux, and Chromebook Plus.
+- `guides/built-in-ai/prompt-api.md` : Language Model. The Prompt API is currently available in Chrome as of version 148 (Desktop) for Windows, macOS, Linux, and Chromebook Plus.
+- `guides/built-in-ai/summarizer.md` : Summarizer. The Summarizer API is available starting in **Chrome and Edge 138**. It requires a one-time model download of Gemini Nano or Phi (respectively).
+- `guides/built-in-ai/translator.md` : Translator. ### API Surface & Global Scope
+- `guides/css/animate-to-intrinsic-sizes.md` : Animate to Intrinsic Sizes. 1.  **Opt-in to keyword interpolation**: Apply `interpolate-size: allow-keywords` to a parent element (typically `:root`) to enable transitions for properties using intrinsic keywords.
+- `guides/css/atrule-support-conditionals.md` : Conditionally Apply CSS Based on At-Rule Support. When `at-rule()` is not an option, either due to browser support or because deeper detection is needed, you can use the guidance below.
+- `guides/css/calculate-with-intrinsic-sizes.md` : Calculate With Intrinsic Sizes. 1. **Identify the Intrinsic Basis**: Determine which intrinsic keyword (`auto`, `min-content`, etc.) should form the base of your calculation.
+- `guides/css/child-state-based-styling.md` : Child State Based Styling. **MANDATORY**: You must use the `:has()` selector on the container element to detect the specific state (e.g., `:checked`, `:focus`, `:invalid`) of its interactive child element.
+- `guides/css/content-based-styling.md` : Content Based Styling. 
+- `guides/css/css-layout.md` : CSS Layouts and Responsive Design. Lean on the browser's layout engine when possible for better performance. Reach for intrinsic sizing, logical properties, and `aspect-ratio` before resorting to hardcoded dimensions or complicated media-queries.
+- `guides/css/css.md` : CSS: Modern Architecture. Be allergic to knowledge duplication. Prefer variables over repetition, but whenever possible, prefer built-in conventions such as:
+- `guides/css/design-token-reactivity.md` : Design Token Reactivity. Often an author will need to make contextual changes to the design of a component. Historically authors would need to use selectors to apply such changes. This often meant that while many of their design tokens could exi
+- `guides/css/dynamic-sibling-styling.md` : Styling siblings based on count and index. You can create a color spectrum across a group of siblings by calculating a unique hue or lightness value for each child. This ensures a consistent gradient effect regardless of the number of items.
+- `guides/css/fluid-scaling.md` : Fluid Scaling. Fluid scaling allows components to adjust their internal proportions (like font sizes and spacing) based on their current dimensions. This creates a more cohesive design than jumping between fixed breakpoints.
+- `guides/css/individual-transform-properties.md` : Individual Transform Properties. 
+- `guides/css/overflow-clipping-control.md` : Overflow Clipping Control. 1. **Apply `overflow: clip`**: Ensure the target element has `overflow: clip` enabled. Setting `overflow: clip` is **mandatory** on block layout containers for `overflow-clip-margin` to take effect. If `overflow` is set 
+- `guides/css/reduce-style-repetition.md` : Reduce Style Repetition with CSS Functions. A custom function is defined using the `@function` rule followed by a dashed name and a list of parameters. The function returns a value using the `result` property. 
+- `guides/css/responsive-design.md` : Responsive design. - Use `@container` queries to create component-driven responsive layouts that adapt to their parent container's size rather than the viewport. See `size-aware-styling` (via `npx -y modern-web-guidance@latest retrieve "si
+- `guides/css/selector-atrule-combinations.md` : Selector & @-rule Combinations. We often need to combine filtering criteria of different types, e.g. selectors + media queries, media queries + container queries, and so on.
+- `guides/css/size-aware-styling.md` : Size Aware Styling. Size-aware styling allows components to change their layout or appearance based on the space available to them, rather than the size of the whole screen. This is useful for components like cards or navigation bars that m
+- `guides/css/style-parent-with-has.md` : Style a Form Group When a Field Is Invalid with :has(). Often, an error state requires styling elements *outside* the input itself—for example, changing the color of a parent `fieldset` border, highlighting the `<label>`, or showing a global error icon in the card header. H
+- `guides/css/usage-aware-component-variations.md` : Semantic Component Adaptation. This guide covers *behavioral* changes: a component deciding **what to render, how to arrange itself, or which variant to present** in response to its context — hiding or showing a badge, switching layout direction, or
+- `guides/forms/animated-select-picker.md` : Animated Select Picker. To implement an animated select picker:
+- `guides/forms/autofill-address-form.md` : Build an address form that follows best practice. Outlined below are the most important guidelines for building successful address forms.
+- `guides/forms/autofill-highlight-inputs.md` : Customize the styling of autofilled form fields. - Add at least one non-color indicator (e.g. a thicker inset ring). The browser's default highlight is color only.
+- `guides/forms/autofill-payment-form.md` : Build a payment form that follows best practice. Outlined below are the most important guidelines for building successful payment forms.
+- `guides/forms/autofill-sign-in-form.md` : Build a sign-in form that follows best practice. Outlined below are the most important guidelines for building successful sign-in forms.
+- `guides/forms/autofill-sign-up-form.md` : Build a sign-up form that follows best practice. Outlined below are the most important guidelines for building successful sign-up forms.
+- `guides/forms/brand-consistent-forms.md` : Brand-Consistent Forms. To apply your brand color to form controls:
+- `guides/forms/branded-select-styling.md` : Branded Select Styling. To implement branded select styling:
+- `guides/forms/custom-select-picker-layouts.md` : Custom Select Picker Layouts. ### 1. Activate Base Styling
+- `guides/forms/form-fields-automatically-fit-contents.md` : Form Fields Automatically Fit Contents. 
+- `guides/forms/forms.md` : Forms. ### Guidelines
+- `guides/forms/ime-safe-enter-submit.md` : IME-safe enter-to-submit. For a `<textarea>` or `<input>` with custom enter-to-submit, check the native `isComposing` property of the `KeyboardEvent` before submitting the content. Also call `event.preventDefault()`: the default action of `Enter`
+- `guides/forms/required-field-feedback.md` : Required Field Feedback. Marking required fields with an error state immediately upon page load can be confusing. Ideally, a required field should only look "invalid" if the user has attempted to fill it out and failed.
+- `guides/forms/rich-media-picker.md` : Rich Media Picker (Customizable Select). To implement a rich media picker using the Customizable Select API:
+- `guides/forms/select-menu-interaction.md` : Select Menu Interaction. For mandatory dropdowns (e.g., "Choose a Country"), standard validation flags the field as invalid immediately if the default option has an empty value. This can create visual noise. We want to show the error only after 
+- `guides/forms/slider.md` : Brand-Consistent Range Slider. Use a labeled `<input type="range">` rather than recreating a slider with `<div>` elements or custom pointer handlers. The native control preserves keyboard and pointer interaction, touch behavior, and accessibility supp
+- `guides/forms/sms-otp-form.md` : SMS OTP form verification. SMS OTP verifies possession of a phone number and provides convenient step-up verification, but SMS transport and phone numbers can be subject to SIM swapping, number recycling, and interception. Always pair client-side 
+- `guides/forms/switch.md` : Build Accessible Switch Controls. Add the boolean `switch` attribute to a standard checkbox input:
+- `guides/forms/validate-input-after-interaction.md` : Validate Input After Interaction. Displaying validation errors the moment a user focuses on a field and starts typing is premature and distracting. For example, as a user types an email address (e.g., "user@gm") or a password with complex requirements, t
+- `guides/html/accessible-web-components.md` : Accessible Web Components. Set a custom element's role and ARIA state in JS through `ElementInternals`, rather than writing ARIA attributes onto the host. This keeps the semantics as defaults the component owns, while still letting a consumer over
+- `guides/html/custom-elements.md` : Custom Elements. The callbacks themselves are well documented; these are the misconceptions that cause bugs:
+- `guides/html/form-associated-custom-elements.md` : Form-Associated Custom Elements. When creating custom elements, if the custom element directly handles interaction, or acts as a group for individual controls, ensure that the custom element has a role, and conveys state information (in the case of hand
+- `guides/html/html.md` : HTML. 1. Fundamental Semantics and Validation
+- `guides/html/prerendering-custom-elements.md` : Pre-rendering custom elements. Nest a `<template>` with the `shadowrootmode` attribute as the first child of the host. The parser attaches its content as a shadow root and removes the template; no script needed.
+- `guides/html/shadow-dom.md` : Shadow DOM, Templates & Slots. ```javascript
+- `guides/html/styling-web-components.md` : Styling Web Components. ```css
+- `guides/html/web-components.md` : Web Components Orientation. Reach for a custom element only when you need encapsulated behavior, lifecycle, or a reusable JS-backed API on a tag. Do **not** build one when:
+- `guides/js/calculate-event-differentials.md` : Calculating Event Differentials and Formatting Durations with Temporal. 1. **Obtain `Temporal.ZonedDateTime` endpoints**: Use `Temporal.Now.zonedDateTimeISO()` for the current time in the system time zone, or pass an explicit IANA time zone string—`Temporal.Now.zonedDateTimeISO(timeZone)`�
+- `guides/js/capture-location-agnostic-data.md` : Capturing Location-Agnostic Data and Partial Dates with Temporal. 1. **Choose the narrowest `Temporal.Plain*` type that matches your data**:
+- `guides/js/coordinate-global-events.md` : Coordinating Global Events with Temporal. To coordinate global events and handle potential DST conflicts:
+- `guides/js/js.md` : JavaScript. - [Use-Case Guide Matrix](#use-case-guide-matrix)
+- `guides/js/sort-high-precision-timestamps.md` : Sorting High-Precision Timestamps with Temporal.Instant. To parse, sort, and measure intervals between high-precision timestamps:
+- `guides/js/support-global-calendar-systems.md` : Supporting Global Calendar Systems with Temporal. To support global calendar systems using Temporal:
+- `guides/performance/batch-analytics-events.md` : Debounce and batch multiple analytics events. 1. **Schedule the request:** As soon as any relevant analytics data is available, call `fetchLater()` with your data payload and pass an `activateAfter` value. This queues the data to be sent after that amount of time pa
+- `guides/performance/break-up-long-tasks.md` : Break Up Long Tasks. 
+- `guides/performance/calculate-total-foreground-time.md` : Calculate total foreground time. The `PerformanceTimeline` API exposes visibility state changes as performance entries. Rather than reacting to `visibilitychange` events and manually accumulating time throughout a session, you can query the entire visib
+- `guides/performance/conditional-async-dependencies.md` : Conditional Async Dependencies. 
+- `guides/performance/defer-rendering-heavy-content.md` : Defer rendering heavy content. | Scenario / Example | Feature Applied | Performance Benefit |
+- `guides/performance/defer-work-until-scroll-ends.md` : Defer Work Until Scroll Ends. To implement a defer-work pattern:
+- `guides/performance/deliver-optimized-decorative-images.md` : Deliver Optimized Decorative Images. 
+- `guides/performance/deprioritize-background-fetches.md` : Deprioritize background fetches. 1. **Identify background requests**: Determine which `fetch()` calls are for non-essential data that doesn't impact the immediate user experience.
+- `guides/performance/detect-initial-visibility-state.md` : Detect Initial Visibility State. 
+- `guides/performance/efficient-background-processing.md` : Efficient Background Processing. The `content-visibility: auto` property allows the browser to skip rendering calculations for elements that are far outside the viewport. When the browser decides to skip or resume rendering for an element, it fires the 
+- `guides/performance/faster-spa-view-transitions.md` : Faster SPA View Transitions via State Caching. Traditionally, when a user navigates between tabs or views in an SPA, developers either destroy the old view or hide it using `display: none`. Both approaches require the browser to recreate or recalculate the full layou
+- `guides/performance/flicker-free-client-side-ab-testing.md` : Flicker-Free Client-Side A/B Testing. Client-side A/B testing tools work by loading a script that modifies the DOM after the browser has already begun constructing the page. Without intervention, the user briefly sees the original content before it flickers 
+- `guides/performance/full-session-analytics.md` : Reliably measure full-session analytics and telemetry. 1. **Schedule the request:** As soon as relevant data is available, call `fetchLater()` with your data payload. This queues the data to be sent later.
+- `guides/performance/identify-heavy-scripts.md` : Identify heavy-running JavaScript. Long animation frames are monitored using the `PerformanceObserver` interface. It emits a `long-animation-frame` entry when an animation frame takes longer than 50ms to render. The entry contains information about the lo
+- `guides/performance/identify-inp-causes.md` : Identify causes of poor INP. Calculating INP from the raw Event Timing API is complicated and has several nuances. You are advised to use a RUM tool or library to gather this data.
+- `guides/performance/improve-next-page-load-performance.md` : Improve next page load performance. Speculative loading works by using JSON-based speculation rules to tell the browser about links that can be prefetched or prerendered improving page load performance when user clicks on them.
+- `guides/performance/interaction-paint-timing.md` : Measure interaction and soft-navigation paint timing. ### 1. Observe contentful paints triggered by interactions
+- `guides/performance/interactions-in-complex-layouts.md` : Optimizing Interactions in Complex Layouts. In complex layouts, performing a minor change to a single item—such as dragging a card or editing a cell—can trigger a chain reaction of style and layout calculations that forces the browser to reflow the entire page
+- `guides/performance/lazy-load-video-and-audio.md` : Lazy load video and audio. 1. **Add `loading="lazy"` to offscreen media**: Apply `loading="lazy"` to `<video>` and `<audio>` elements positioned below the fold. Omit the `loading` attribute on above-the-fold media so it defaults to `eager`.
+- `guides/performance/optimize-image-priority.md` : Optimize image priority. 1. **Identify the LCP image**: Determine which image is the most likely candidate for the Largest Contentful Paint (usually the hero image at the top of the page).
+- `guides/performance/optimize-preload-priority.md` : Optimize preload priority. 1. **Identify preload candidates**: Find resources that are not discovered early by the browser (e.g., video poster images or background images in CSS) but are essential for the page's appearance.
+- `guides/performance/optimize-script-priority.md` : Optimize script priority. 1. **Identify critical scripts**: Determine which scripts are essential for the page's core functionality or initial user interaction.
+- `guides/performance/out-of-order-html-streaming.md` : Out-of-Order (OOO) HTML Streaming. The feature consists of two primary mechanisms:
+- `guides/performance/performance.md` : Performance. The Critical Rendering Path dictates how quickly the browser converts HTML, CSS, and JavaScript into painted pixels. 
+- `guides/performance/resolution-optimized-pseudo-elements.md` : Resolution Optimized Pseudo Elements. 
+- `guides/performance/schedule-tasks-by-priority.md` : Schedule Tasks By Priority. 
+- `guides/privacy/privacy.md` : Web Privacy Guidelines for Developers. These core themes should guide your approach to privacy in web development:
+- `guides/pwa/install-web-app.md` : Installing web applications. Decide to use either the HTML `<install>` element or the JavaScript
+- `guides/pwa/migrate-web-app-origin.md` : Migrating the Origin of an Installed Web App. ### 1. Verification of "Same-Site" status
+- `guides/security/client-side-encryption.md` : Encrypt data client-side with WebCrypto. Unlike Diffie-Hellman key agreement (`deriveKey()`), where both parties combine their keys, a Key Encapsulation Mechanism (KEM) uses the recipient's public key to generate both a random shared secret and a ciphertext cap
+- `guides/security/digital-signatures.md` : Sign and verify data with WebCrypto. ML-DSA (Module-Lattice-Based Digital Signature Algorithm, standardized in NIST FIPS 204) provides post-quantum lattice-based digital signatures resistant to attacks by both classical and quantum computers.
+- `guides/security/local-network-access.md` : Local Network Access. ### 1. Pre-Check Granular Permission State and Gate on User Gesture
+- `guides/security/passkey-authentication.md` : Passkey Authentication. ### Options Generation
+- `guides/security/passkey-conditional-create.md` : Passkey Conditional Create (Post-Login Promotion). Automatic passkey creation (also known as Conditional Create or silent post-login promotion) MUST only be triggered **immediately after a successful, full sign-in that involved a password**. 
+- `guides/security/passkey-management.md` : Passkey Management. Your backend database layer and endpoints MUST support common CRUD actions for registered credentials as well as updating user profile details. Decoupled from framework-specific libraries, the server exposes endpoints to
+- `guides/security/passkey-reauthentication.md` : Passkey Reauthentication. Unlike regular authentication, passkey reauthentication constrains passkey dialog prompts strictly to the logged-in user's pre-registered credentials to prevent account-mixing or passkey spoofing during active sessions.
+- `guides/security/passkey-registration.md` : Passkey Registration. To support passkey registrations, your database credential table must store the following fields:
+- `guides/security/passkeys.md` : Passkeys Orientation. Passkeys rely on the Web Authentication API (WebAuthn), which imposes strict cross-cutting security constraints that must be satisfied before any implementation attempt:
+- `guides/security/quick-sign-ins.md` : Quick sign-ins with immediate UI mode. Trigger Immediate UI mode inside a user-initiated event handler (requiring transient user activation) at moments of clear user intent **right before** navigating away from the current page. If immediate authentication su
+- `guides/security/restrict-outbound-connections.md` : Restrict outbound network connections with Connection Allowlists. 1. **Serialize the allowlist as an RFC 9651 Inner List `(...)`**: Format `Connection-Allowlist` (or `Connection-Allowlist-Report-Only`) as a single parenthesized list of space-separated items. Include the unquoted token 
+- `guides/security/sanitize-untrusted-html.md` : Sanitizing Untrusted HTML. The primary way to use the Sanitizer API is through the `setHTML()` method on any `Element`. This method handles parsing, sanitization and insertion in a single step, ensuring that content is sanitized specifically for t
+- `guides/security/secure-external-subresources.md` : Secure external subresources with Subresource Integrity, CORS, and Referrer Policy. Subresource Integrity (SRI) ensures the browser only executes or renders an external asset if its bytes match the cryptographic hash declared by your application.
+- `guides/security/security.md` : Web Security. - When to apply this skill
+- `guides/security/trusted-types.md` : Prevent DOM-based XSS attacks with Trusted Types. To use Trusted Types, follow four main steps:
+- `guides/security/validate-origins.md` : Compare and validate web origins and sites. - **Use `isSameOrigin()` for strict privilege boundaries:** Require an exact `(scheme, host, port)` match when handling cross-window `postMessage` commands (such as an embedded checkout or auth popup) or deciding whether
+- `guides/security/verify-email-ownership.md` : Verify email address ownership. To participate as a verifying site (relying party):
+- `guides/ui-atoms/carousel-slide-effects.md` : Build Carousel Slide Effects. Here’s how to create carousel slide effects:
+- `guides/ui-atoms/component-specific-light-dark-theme.md` : Component-specific light/dark themes. Not every element that uses lighter text on darker background in light mode or darker text on lighter background in dark mode needs a different `color-scheme`.
+- `guides/ui-atoms/icons.md` : Using and managing icons. Icon storage and rendering are separate choices. For example, an SVG sprite can supply an icon to the CSS icon system or be referenced with `<use>`.
+- `guides/ui-atoms/position-aware-tooltips.md` : Position Aware Tooltips. Imagine a tooltip that appears above its anchor by default. It has a "down" arrow at the bottom. If the user scrolls and the tooltip flips to appear *below* the anchor, the arrow is now pointing the wrong way and is on t
+- `guides/ui-atoms/pull-to-reveal.md` : Pull to Reveal. To implement a pull-to-reveal pattern:
+- `guides/ui-atoms/responsive-table.md` : Responsive tables. The core of a responsive table is maintaining the relationship between data cells and their headers.
+- `guides/ui-atoms/scroll-position-aware-elements.md` : Scroll Position Aware Elements. Improve the user experience of floating buttons, like a "Back to Top" link, by showing them only when they are useful. This guide shows how to build these elements using CSS `container-scroll-state-queries`, which allows
+- `guides/ui-atoms/scroll-progress-indicator.md` : Build a Scroll Progress Indicator. To create a scroll progress indicator, you need two things:
+- `guides/ui-atoms/scrollability-affordance-hints.md` : Scrollability Affordance Hints. Scrollability hints show users that a region has more content in a given direction, and disappear at that end of the content. There are two kinds:
+- `guides/ui-atoms/shrinking-header-on-scroll.md` : Shrinking header on scroll. Here’s how to create a shrinking header on scroll:
+- `guides/ui-atoms/single-line-overflow.md` : Single-line text overflow. Truncation is visual only. Screen readers announce the full text, find-in-page matches it, and copying copies it. This is why the string must never be cut in script.
+- `guides/ui-atoms/state-aware-sticky-headers.md` : State-Aware Sticky Headers. ### 1. Create the Sticky Container
+- `guides/ui-atoms/viewport-aware-dropdowns.md` : Viewport-Aware Dropdowns. ### Fallbacks & browser support for Popover
+- `guides/ui-behaviors/2d-panning.md` : Two-Dimensional Panning. ### 1. Disable axis-locking and contain overscroll on the two-dimensional scroll container
+- `guides/ui-behaviors/anchor-positioning-tab-underline.md` : Anchor Positioning Tab Underline. Browser support for Anchor positioning: Limited availability.
+- `guides/ui-behaviors/animate-element-entry-exit.md` : Animate Element Entry and Exit. ### 1. Animating `display: none` Toggles
+- `guides/ui-behaviors/animate-to-from-top-layer.md` : Animate Elements To and From Top Layer. ### 1. Enable Discrete Transitions
+- `guides/ui-behaviors/carousel-snap-highlights.md` : Carousel Snap Highlights. Browser support for Container scroll-state queries: Limited availability.
+- `guides/ui-behaviors/consistent-cross-document-transitions.md` : Consistent Cross-Document Transitions. Cross-document view transitions animate elements between two pages during a same-origin navigation. The browser captures a snapshot of the old page, navigates, then animates from the snapshot to the new page. If the new 
+- `guides/ui-behaviors/cross-document-transitions.md` : Cross-Document Transitions. 
+- `guides/ui-behaviors/custom-button-actions.md` : Custom Button Actions. 1.  **Define the target element**: Identify the element that will respond to the action. If it doesn’t have a unique `id`, add one.
+- `guides/ui-behaviors/declarative-dialog-popover-control.md` : Declarative Dialog and Popover Control. Popovers can be toggled open and closed using a single button.
+- `guides/ui-behaviors/directional-navigation-transitions.md` : Directional Navigation Transitions. 
+- `guides/ui-behaviors/drag-and-drop.md` : Rearrange Items with Drag and Drop. Keep the drag active and find the destination reliably:
+- `guides/ui-behaviors/drag.md` : Build a Draggable Element. Start dragging from a dedicated handle when the element contains selectable text, buttons, inputs, or links. This keeps its normal contents usable. Make the handle focusable for keyboard movement and give it an accessibl
+- `guides/ui-behaviors/dynamic-sibling-animations.md` : Creating a stagger animation. Use the `sibling-index()` function on the `animation-delay` property so that the animation on each element is offset by a number proportionate to its position in its parent. The `sibling-index()` function returns a 1-bas
+- `guides/ui-behaviors/dynamic-sort.md` : Handling dynamic user-triggered changes to sort order. **MANDATORY:** Reorder the existing DOM nodes into the new order. Do not recreate them. Recreating nodes with `innerHTML` or a re-render that replaces them discards focus, scroll position inside items, and image state, a
+- `guides/ui-behaviors/group-element-transitions.md` : Smoothly rearrange cards, lists, and groups of elements on add, remove, or reorder. 1. **Assign unique names and a shared class**
+- `guides/ui-behaviors/highlight-text-ranges.md` : Highlight Text Ranges. To highlight text ranges, you must collect the target text nodes, create `Range` and `Highlight` objects, register them in the `HighlightRegistry`, and then style them with the `::highlight()` pseudo-element.
+- `guides/ui-behaviors/interactive-content-reveal.md` : Interactive Content Reveal. ### 1. Register Custom Properties
+- `guides/ui-behaviors/interest-triggered-action-previews.md` : Interest Triggered Action Previews. An interest relationship is created by setting the `interestfor` attribute on a button or link (i.e. the interest source). The attribute takes an ID reference to another element (i.e. the interest target). Interest invok
+- `guides/ui-behaviors/interest-triggered-tooltips.md` : Show a tooltip when hovering. A toggletip is a small button, usually an "i" or "?" icon, placed next to a control or a piece of content, whose only job is to reveal more information. The choice between tooltip, toggletip, and inline content is about 
+- `guides/ui-behaviors/light-dismiss-a-dialog.md` : Light-Dismiss a Dialog. To enable light-dismiss:
+- `guides/ui-behaviors/motion.md` : Motion. - Prefer to animate `opacity` and `transform` (including individual transform properties, e.g. `translate` instead of `left/right/top/bottom`) to ensure animations stay on the compositor thread.
+- `guides/ui-behaviors/move-dom-element-without-losing-state.md` : Move DOM Element Without Losing State. Use `moveBefore()` exactly as you would use `insertBefore()`. It requires two arguments: the node to move, and a reference node to insert before (or `null` to append to the end of the new parent).
+- `guides/ui-behaviors/parallax-scroll-effects.md` : Build a Parallax Effect on Scroll. Here’s how to create a basic parallax effect:
+- `guides/ui-behaviors/persistent-top-layer-ui.md` : Persistent Top Layer UI. 
+- `guides/ui-behaviors/physics-based-easing.md` : Physics Based Easing. 
+- `guides/ui-behaviors/platform-controls-dismiss-dialog.md` : Platform Controls Dismiss Dialog. Browser support for <dialog closedby>: Limited availability.
+- `guides/ui-behaviors/prevent-page-scroll-under-modal-dialog.md` : Prevent the Page Underneath a Modal Dialog from Scrolling. ### 1. Contain scroll chaining on the `<dialog>`
+- `guides/ui-behaviors/same-document-transitions.md` : Same Document Transitions. Web sites often provide multiple views of an object, for instance a list of products, and then a detail page for each product. Navigating between the two views often feels disconnected. When a user clicks a product thumb
+- `guides/ui-behaviors/scoped-component-transitions.md` : Scoped Component Transitions. ### 1. Trigger a Scoped Transition
+- `guides/ui-behaviors/scroll-completion-effects.md` : Triggering Effects After Programmatic Scrolling Completes. 1. **Mark the handler as `async`**: Use an `async` function for the event listener or navigation handler that triggers the scroll.
+- `guides/ui-behaviors/scroll-entry-exit-effects.md` : Add entry and exit effects to elements as they enter or exit the scrollport. To add entry and exit effects to an element, you need to combine a few CSS properties. Here’s a step-by-step guide:
+- `guides/ui-behaviors/scroll-snap-realtime-feedback.md` : Scroll Snap Real-Time Feedback. Users expect immediate visual feedback when interacting with UI elements like carousels or galleries. Traditional scroll snap only provides feedback *after* the scroll gesture completes and the element settles. By using 
+- `guides/ui-behaviors/scroll-snap-state-sync.md` : Scroll Snap State Sync. ### 1. Configure Scroll Snap in CSS
+- `guides/ui-behaviors/scroll-target-on-load.md` : Set a scroll target for the initial render. To implement this successfully:
+- `guides/ui-behaviors/scrollytelling.md` : Scrollytelling. To create a scrollytelling experience, you need two sets of elements: one to track the scroll position and another to be animated.
+- `guides/ui-behaviors/search-hidden-content.md` : Search hidden content. The `<details>` element has searchable and accessible text by default, and no special implementation is required. Prefer using `<details>` over `hidden="until-found"` if possible.
+- `guides/ui-behaviors/sortable-table.md` : Sortable Table. * **MANDATORY:** Put a `<button type="button">` inside each sortable `<th scope="col">`. Do not make the `<th>` itself clickable, and do not use `<a>` or `role="button"`.
+- `guides/ui-behaviors/spatial-navigation.md` : Spatial Navigation (Directional Keypad Focus). 
+- `guides/ui-behaviors/swipe-to-remove.md` : Swipe to remove. The component has two layers: a **list** (the `<ul>`) and the **items** inside it. Each item is structured as an outer `<li>`, an inner scroll **track** (the scroll container with the snap points), and a **content** elem
+- `guides/ui-behaviors/swipe-to-reveal.md` : Swipe to reveal. Whether you are revealing action buttons on a list item or a side menu next to a scrollable pane, the mechanics are identical: wrap the foreground content and the hidden panel inside an outer horizontal scroll container 
+- `guides/ui-components/accordion.md` : Accordion. An exclusive accordion only allows one item to be open at a time.
+- `guides/ui-components/app-menus.md` : Build an application menu bar. * Put `role="menubar"` with an `aria-label` on the container of the top-level triggers, never on a popover. Each top-level trigger is a direct child of the menubar, immediately followed by its popover.
+- `guides/ui-components/breadcrumbs.md` : Build breadcrumbs. - Wrap the trail in `<nav aria-label="Breadcrumbs">` containing an ordered list (`<ol>`) of `<li>` items, each holding an `<a>`. Order conveys hierarchy, so use `ol`, not `ul`.
+- `guides/ui-components/card.md` : Build a Card. A card groups one related piece of content or one choice. It is a visual pattern, not a fixed semantic or interaction model, so preserve the content's meaning and use the native interaction that matches its purpose.
+- `guides/ui-components/carousel.md` : Build a carousel. - Use a named `region` with `aria-roledescription="carousel"` when the carousel is a meaningful page section. Give each slide `role="group"`, `aria-roledescription="slide"`, and an `aria-label` that includes its position
+- `guides/ui-components/checkbox.md` : Styling Checkboxes. For simple, brand-consistent styling that retains native rendering, keyboard behavior, validation, and operating-system focus indicators, use `accent-color`.
+- `guides/ui-components/copy-button.md` : Copy button. ### 1. Markup
+- `guides/ui-components/dark-mode-toggle.md` : Dark mode toggles. Most sites do not need a persistent color scheme toggle in the site UI (header, nav, footer, etc.).
+- `guides/ui-components/dialog.md` : Dialog. Use the native `<dialog>` element for modal and non-modal dialogs. It provides the accessibility semantics, focus handling, top-layer rendering and `Esc` handling that custom overlays have to rebuild by hand.
+- `guides/ui-components/hovercard.md` : Build an interactive hovercard. Use the **Interest Invokers** API to trigger the hovercard. This ensures the card appears on both hover and focus.
+- `guides/ui-components/menu.md` : Build a popup menu. Two independent choices. Everything else here applies to both.
+- `guides/ui-components/navbar.md` : Responsive Site Navigation. Use one `<nav>` landmark for narrow and wide layouts. Wrap it in a semantic `<header>` whose `is-wide` class selects the inline layout. The collapsed layout is the default, so it is also what you get without script.
+- `guides/ui-components/navigation-drawer.md` : Navigation Drawer. A navigation drawer is a panel that slides in from the edge of the viewport over the page content, dimming everything behind it. It is opened from a trigger button and dismissed by swiping the panel off-screen, tapping t
+- `guides/ui-components/persistent-app-tours.md` : Creating Persistent App Tours. ### HTML
+- `guides/ui-components/persistent-toast-notifications.md` : Creating Toast Notifications. Toast notifications must be used to provide non-critical, supplemental information about the results of an interaction, or an event (e.g. an email has been received). An example may include confirming that a form submiss
+- `guides/ui-components/progress-ring.md` : Progress ring. ### 1. Markup
+- `guides/ui-components/progress.md` : Build a Styled Progress Bar. - If space is constrained or a square aspect ratio is preferable, consider using a circular progress bar (progress ring): `progress-ring` (via `npx -y modern-web-guidance@latest retrieve "progress-ring"`)
+- `guides/ui-components/scrollspy.md` : Build a Scrollspy Navigation. Traditionally, the scrollspy pattern required JavaScript and the `IntersectionObserver` API. Modern CSS provides a native way to achieve this using the `scroll-target-group` property and the `:target-current` pseudo-clas
+- `guides/ui-components/spinner.md` : Loading spinner. ### 1. Markup
+- `guides/ui-components/stack-drill-down.md` : Stack Drill Down. A stack drill-down is a hierarchical navigation pattern, common in mobile apps, where activating a link pushes a new full-screen view on top of the previous one. The view's content is application-defined — a settings s
+- `guides/ui-components/tabs.md` : Tabbed interfaces. Instead of manually implementing a roving tabindex or ARIA activedescendant pattern to meet the focus management requirement of the ARIA `tablist` role, we can use `focusgroup` which has a `tablist` behavior and automati
+- `guides/ui-components/toolbar.md` : Build a toolbar. MANDATORY: Put `role="toolbar"` and an `aria-label` on the container. Wrap related controls in `role="group"` with their own `aria-label`, and divide groups with `role="separator"` and `aria-orientation="vertical"`. If a
+- `guides/user-experience/content-first-noise-reduction.md` : Maximize content and reduce noise. ### Don't block or interrupt the user
+- `guides/user-experience/form-factor-adaptation.md` : Adapt to the form factor. ### Size targets for the input method
+- `guides/user-experience/natural-interactions.md` : Implement natural interactions. ### Give every control hover, press, and focus feedback
+- `guides/visual-design/adapt-scrollbar-to-contrast-preferences.md` : Adapt scrollbar to high-contrast preferences. When customizing scrollbars with `scrollbar-color` or custom variables, you can provide an explicit override for high-contrast modes. This is especially helpful if your primary application theme uses lower-contrast scrol
+- `guides/visual-design/apply-webgl-shaders.md` : Apply WebGL shaders to HTML content. 1. Check if HTML-in-Canvas is supported in the browser:
+- `guides/visual-design/browser-ui-theming.md` : Theming browser-generated UI. 
+- `guides/visual-design/color.md` : Color. **Don't use color alone to indicate the presence of a user interface component or its state**: Use iconography and/or shape to help differentiate. Do not denote success/errors ONLY with color. Use icons or text (WCAG 1.4
+- `guides/visual-design/complex-shapes.md` : Complex Shapes. To clip elements to complex, free-form shapes like brush strokes or organic textures, use CSS Masking (`mask-image`). While `clip-path` is excellent for geometric shapes or vector paths, `mask-image` allows you to use im
+- `guides/visual-design/contrast-color.md` : Ensure text readability with dynamic background colors. When an element has a variable or dynamically injected background color, you can rely on the browser to compute the safest text color.
+- `guides/visual-design/custom-text-decorations.md` : Custom text decorations. Set line, style, color, and thickness with the `text-decoration` shorthand, and the gap from the text with `text-underline-offset`. Wrap the selector in `:where()` so the defaults have zero specificity and any later over
+- `guides/visual-design/customize-scrollbar-color-and-thickness.md` : Customize the color or thickness of a scrollbar. MANDATORY: Use `scrollbar-color` and `scrollbar-width` on the scrollable container.
+- `guides/visual-design/dark-mode.md` : Dark mode. ### 1. Declare supported schemes in HTML
+- `guides/visual-design/equal-width-text-lines.md` : Equal-Width Text Lines. Note: Line breaks in a lockup are either **forced** (each line is its own block) or **free** (the browser wraps). This is a continuum: a lockup can be all forced, all free, or a mix.
+- `guides/visual-design/export-html-media-from-canvas.md` : Export HTML content from canvas. 1. Check if HTML-in-Canvas is supported in the browser:
+- `guides/visual-design/expose-canvas-content-to-browser-features.md` : Expose canvas content to browser features. 1. Check if HTML-in-Canvas is supported in the browser:
+- `guides/visual-design/improve-text-layout-and-legibility.md` : Improve Text Layout and Legibility. ### 1. **Identify text elements**: 
+- `guides/visual-design/interactive-content-in-3d-scenes.md` : Enable interactive HTML content in 3D scenes. ### WebGL and WebGPU
+- `guides/visual-design/precise-text-alignment.md` : Precise Text Alignment. Browsers automatically add extra whitespace above and below text characters to accommodate line-height and font-specific metrics like ascenders and descenders. This "ghost space" makes it impossible to achieve pixel-perf
+- `guides/visual-design/shaped-cutouts.md` : Shaped Cutouts. CSS Masking allows you to clip an element to a custom shape, such as adding a notch to a card or creating a shaped border. When combining shapes for complex layouts, choose your masking strategy based on the type of cont
+- `guides/visual-design/soft-edge-content-fade.md` : Soft Edge Content Fade. To apply a transparency gradient to the edges of a container (e.g., to indicate more content is available to scroll or to fade out text), use CSS Masking with a linear gradient. This approach is superior to using a semi-
+- `guides/visual-design/typography.md` : Typography. - Use unitless numbers for `line-height` (e.g., `1.5`) to ensure relative scaling during font-size inheritance.
+- `guides/visual-design/visual-effects.md` : Visual effects. 
+- `guides/visual-design/visually-stable-font-fallbacks.md` : Visually Stable Font Fallbacks. ### 1. Identify the aspect ratio of your preferred font
+- `guides/visual-design/visually-stable-mixed-fonts.md` : Visually Stable Mixed Fonts. 
+- `guides/visual-design/visually-texture-content.md` : Visually Texture Content. To apply realistic weathering or texture patterns (like grunge, noise, or paper texture) to an element, use CSS Masking (`mask-image`) with a repeating texture image. This allows you to make the content itself appear tex
+- `guides/wasm/cpp-on-the-web.md` : Compiling C and C++ to WebAssembly with Emscripten. When compiling and linking with `emcc` or `em++`, use modern modular flags:
+- `guides/webmcp/agentic-forms.md` : Agentic Forms. *   `toolname`: Unique name for the tool.
+- `guides/webmcp/agentic-javascript-tools.md` : Agentic JavaScript Tools. Tools are registered by passing a tool definition object and an optional options object (`ModelContextRegisterToolOptions`), which supports two optional members:
+- `guides/webmcp/webmcp.md` : WebMCP. - **Imperative API**: Use `document.modelContext.registerTool()` for complex logic and dynamic interactions.
