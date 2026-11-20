@@ -893,3 +893,34 @@ lc-form-field [lcSuffix] {
     transition: none;
   }
 }
+
+/* lcTruncate : une ligne, « … » ; au survol défilement par text-indent (relatif au sens de lecture, donc valable en RTL).
+   --lc-truncate-overflow et --lc-truncate-duration sont posées par la directive ; vitesse : --lc-truncate-speed. */
+.lc-truncate {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lc-truncate--scrolling {
+  text-overflow: clip;
+  animation: lc-truncate-scroll var(--lc-truncate-duration) linear infinite;
+}
+
+@keyframes lc-truncate-scroll {
+  0%,
+  10% {
+    text-indent: 0;
+  }
+
+  50%,
+  60% {
+    text-indent: calc(-1 * var(--lc-truncate-overflow));
+  }
+
+  100% {
+    text-indent: 0;
+  }
+}
