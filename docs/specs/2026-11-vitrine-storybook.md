@@ -133,7 +133,7 @@ Organisation de Kendo reprise : *Get Started* → catégories → par composant 
 ## 10. Critères d'acceptation
 - [x] CA-1 (`index.json` du build public : 0 story `QA/`) : Le build public ne contient aucune story de QA ; `npm run storybook` en local les montre sous *QA*, en dernier.
 - [x] CA-2 (`parameters.options.storySort` ; *Introduction* en tête) : La barre latérale suit l'ordre fixé au § 5.1 ; l'arrivée sur le site ouvre la page *Accueil*.
-- [x] CA-3 (17 nouvelles pages ; écart : `lc-chart` générique sans page, voir § 13) : Chaque composant public (liste issue de `CATALOGUE.md`) a une page de documentation ; les 17 composants sans démo en ont une.
+- [x] CA-3 (18 nouvelles pages, dont `Charts/Custom chart` pour `lc-chart`) : Chaque composant public (liste issue de `CATALOGUE.md`) a une page de documentation ; les 17 composants sans démo en ont une.
 - [x] CA-4 (`node tools/qa/storybook-controls.mjs` : 60 Playground, 275 contrôles, 0 échec ; contrôles dépendant d'un état déclarés par story) : Chaque page composant a une story *Aire de jeu* ; chaque contrôle qu'elle affiche modifie le rendu (test Playwright).
 - [x] CA-5 (`parameters: fixedExample` sur les exemples figés ; relu par `code-reviewer`, pas d'outil automatique) : Aucune autre story n'affiche de contrôle sans effet (`controls.disable` ou contrôles liés).
 - [x] CA-6 (`docs/storybook/foundations/foundation-pages.ts` lit `baseValues()`) : Pages *Démarrer* et *Fondations* présentes ; les valeurs de tokens sont lues depuis `packages/tokens`, pas recopiées.
@@ -178,6 +178,6 @@ Jalon 1 (T1–T2) : site en ligne, propre, sans QA — quelques heures. Jalon 2 
 - **T3** : une seule direction d'accueil réalisée, pas de maquettes comparées ni de test `novice-user`.
 - **CA-8** : les pages de documentation suivent le thème du système ; la bascule de la barre d'outils ne change que l'aperçu des composants.
 - **CA-9** : non fait. Passer `a11y.test` à `error` demande d'abord de corriger les violations existantes (avertissements visibles dans l'onglet Accessibility).
-- **CA-3** : `lc-chart` (graphique générique ECharts) n'a pas de page ; `LcConfirmDialogComponent` est documenté par `LcDialogService.confirm()`.
+- **CA-3** : `lc-chart` (options ECharts brutes) documenté sous `Charts/Custom chart`, ajouté après coup ; `LcConfirmDialogComponent` est documenté par `LcDialogService.confirm()`.
 - **Défauts trouvés et corrigés** : démo Checkbox (`errors` attend `{ message }`), contrôle `themeColor` affiché à tort sur les champs de date et numériques, trois erreurs de type dans les stories (le build Storybook ne vérifie pas les types : `npx tsc -p .storybook/tsconfig.json --noEmit`).
 - **Démo du tableau filtrable** : données de gestion de copropriété gardées (pas de vocabulaire de prêt).
