@@ -68,6 +68,7 @@ N/A.
 - Les clés absentes de `data` ou de lignes devenues non cochables restent dans `selection` (le consommateur décide) ; elles ne comptent ni pour la case d'en-tête ni pour l'annonce ; une ligne non cochable déjà sélectionnée s'affiche cochée et désactivée.
 - Annonce : une région `aria-live="polite"` donne « {n} sélectionnées sur {m} » (lignes cochables de `data`, par `LC_LABELS`) après chaque changement fait dans le tableau ; rien au premier rendu ni quand le consommateur change `selection`.
 - Clavier : Tab atteint chaque case ; Espace la bascule (comportement natif).
+- Colonnes collantes : avec `selectable`, la colonne de cases et la première colonne de données restent toutes deux collantes pendant le défilement horizontal ; la seconde est décalée de la largeur de la première (`--lc-button-hit-size`, 44 px), sur grand écran comme avec `--lc-table-sticky-start-size` (petit écran : la butée de défilement ajoute la largeur de la colonne de cases). L'annonce n'est écrite que par un geste dans le tableau : ni `selection.set` du parent ni un changement de `data` ne la réécrivent.
 
 **K2, `lc-toggletip`** :
 - Utilisation : `<button type="button" [lcToggletip]="detail">…</button>` et `<lc-toggletip #detail>…contenu…</lc-toggletip>`. Le déclencheur est un `button` natif stylé librement par le consommateur (par exemple en pastille).
@@ -119,11 +120,11 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 - Catalogue : `npm run catalogue:build` puis `catalogue:check`.
 
 ## 10. Critères d'acceptation
-- [ ] CA-K1-1 (unitaire) : sans `selectable`, ni colonne de cases ni région d'annonce dans le DOM, et les tests existants de `lc-table` passent sans changement ; avec `selectable`, une première colonne de cases, en-tête compris.
-- [ ] CA-K1-2 (unitaire) : la case d'en-tête coche toutes les lignes cochables de `data` (groupes repliés compris), les décoche toutes, et a `indeterminate` vrai quand une partie seulement est cochée ; les lignes refusées par `isRowSelectable` ont une case désactivée et ne changent jamais ; elle est désactivée sans ligne cochable.
-- [ ] CA-K1-3 (unitaire) : `selection` reflète les clés `trackBy` des lignes cochées, dans les deux sens (`selection.set` depuis le parent coche les cases ; un clic émet un nouveau `Set`) ; après un tri, les mêmes lignes restent cochées.
-- [ ] CA-K1-4 (unitaire) : chaque case a un nom accessible ; après un clic, la région polie contient « {n} sélectionnées sur {m} » (français et anglais) ; rien n'est annoncé au premier rendu ni après `selection.set` du parent ; `selectAllHint` est affiché et relié par `aria-describedby`.
-- [ ] CA-K1-5 (unitaire) : quand `data` perd des lignes cochées, le compte et l'état de l'en-tête sont recalculés sans elles ; leurs clés restent dans `selection`.
+- [x] CA-K1-1 (unitaire) : sans `selectable`, ni colonne de cases ni région d'annonce dans le DOM, et les tests existants de `lc-table` passent sans changement ; avec `selectable`, une première colonne de cases, en-tête compris.
+- [x] CA-K1-2 (unitaire) : la case d'en-tête coche toutes les lignes cochables de `data` (groupes repliés compris), les décoche toutes, et a `indeterminate` vrai quand une partie seulement est cochée ; les lignes refusées par `isRowSelectable` ont une case désactivée et ne changent jamais ; elle est désactivée sans ligne cochable.
+- [x] CA-K1-3 (unitaire) : `selection` reflète les clés `trackBy` des lignes cochées, dans les deux sens (`selection.set` depuis le parent coche les cases ; un clic émet un nouveau `Set`) ; après un tri, les mêmes lignes restent cochées.
+- [x] CA-K1-4 (unitaire) : chaque case a un nom accessible ; après un clic, la région polie contient « {n} sélectionnées sur {m} » (français et anglais) ; rien n'est annoncé au premier rendu ni après `selection.set` du parent ; `selectAllHint` est affiché et relié par `aria-describedby`.
+- [x] CA-K1-5 (unitaire) : quand `data` perd des lignes cochées, le compte et l'état de l'en-tête sont recalculés sans elles ; leurs clés restent dans `selection`.
 - [ ] CA-K2-1 (unitaire) : la bulle s'ouvre au `click` du bouton et jamais sur `mouseenter` seul ; elle se ferme au second clic, sur Échap (focus resté sur le bouton), au clic hors du bouton et de la bulle, et quand le focus sort des deux ; le focus qui passe du bouton à un lien de la bulle ne la ferme pas.
 - [ ] CA-K2-2 (unitaire) : avec deux bulles, ouvrir la seconde ferme la première ; le bouton porte `aria-expanded` et `aria-controls` vers un identifiant existant ; la région `role="status"` est présente et vide bulle fermée, remplie à l'ouverture ; retirer le bouton du DOM ferme la bulle.
 - [ ] CA-K2-3 (unitaire, puis manuel) : la stratégie de position a un repli dans les quatre directions et pousse la bulle dans la fenêtre ; à 360 px, la bulle d'une story placée au bord est entière (vérification manuelle).
@@ -131,14 +132,14 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 - [ ] CA-K3-1 (unitaire) : sans débordement mesuré, ni `title`, ni classe de défilement au survol.
 - [ ] CA-K3-2 (unitaire, puis story) : avec débordement, au survol la directive pose `--lc-truncate-overflow` égal au débordement et la classe de défilement, et les retire à la sortie ; dans la story, le texte se termine par « … » au repos et défile au survol.
 - [ ] CA-K3-3 (unitaire) : avec `prefers-reduced-motion: reduce`, aucune classe de défilement ; `title` donne le texte entier, posé seulement s'il déborde ; le réglage est relu à chaque survol.
-- [ ] CA-K4-1 (unitaire) : `rowClass` pose sur les lignes de données les classes rendues (chaîne et tableau), aucune pour `null` ; story : fond et liseré par une feuille de la story (tokens seulement), contraste du texte vérifié dans les deux thèmes.
+- [x] CA-K4-1 (unitaire) : `rowClass` pose sur les lignes de données les classes rendues (chaîne et tableau), aucune pour `null` ; story : fond et liseré par une feuille de la story (tokens seulement), contraste du texte vérifié dans les deux thèmes.
 - [ ] CA-K-5 : libellés par `LC_LABELS` en français et en anglais (unitaire) ; aucune couleur, taille ni durée en dur (revue) ; chaque story passe `storybook-browser.mjs` en clair et en sombre ; `catalogue:check` vert.
 
 ## 11. Découpage en tâches
-- [ ] K1 : sélection dans `lc-table`, tests, story (M).
+- [x] K1 (fait le 2026-11-20 : QA GO, revue appliquée ; preuves `table-selection.acceptance.spec.ts`, `table.component.spec.ts`) : sélection dans `lc-table`, tests, story (M).
 - [ ] K2 : positions partagées avec `lcTooltip`, `lc-toggletip`, tests, story (M).
 - [ ] K3 : `lcTruncate`, token `--lc-truncate-speed`, tests, story (S).
-- [ ] K4 : `rowClass` dans `lc-table`, tests, story (S).
+- [x] K4 (fait le 2026-11-20, `rowClass`) : `rowClass` dans `lc-table`, tests, story (S).
 - [ ] K5 : catalogue, publication locale pour copro-ticket (`deps:refresh`) (S).
 
 ## 12. Risques et questions ouvertes

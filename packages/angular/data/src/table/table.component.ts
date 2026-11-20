@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, contentChildren, inject, input, isDevMode, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode, model, output, signal } from '@angular/core';
 import { LC_LABELS, LcFormatService, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from './cell.directive';
 import {
@@ -130,6 +130,7 @@ let nextId = 0;
   host: {
     class: 'lc-table',
     '[class.lc-table--sticky-header]': 'stickyHeader()',
+    '[class.lc-table--selectable]': 'selectable()',
     '[class.lc-table--compact]': "density() === 'compact'",
   },
 })
@@ -163,13 +164,13 @@ export class LcTableComponent<T> {
   readonly groupToggled = output<{ key: string; expanded: boolean }>();
 
   protected readonly hintId = `lc-table-hint-${nextId++}`;
-  private readonly announced = signal(false);
+  /** Dernier texte annoncé : écrit seulement par un geste dans le tableau, jamais par `selection.set` du parent ni par `data`. */
+  protected readonly announcement = signal('');
   /** Clés des lignes cochables de tout `data` (groupes repliés compris). */
   protected readonly selectableKeys = computed(() => {
     const keyOf = this.trackBy();
     const test = this.isRowSelectable();
     const keys = this.data().filter((row) => test(row)).map((row) => keyOf(row));
-    if (isDevMode() && new Set(keys).size !== keys.length) console.warn('lc-table: `trackBy` renvoie deux fois la même clé, la sélection est ambiguë.');
     return keys;
   });
   private readonly selectedCount = computed(() => this.selectableKeys().filter((key) => this.selection().has(key)).length);
@@ -177,7 +178,12 @@ export class LcTableComponent<T> {
     const count = this.selectedCount();
     return { checked: count > 0 && count === this.selectableKeys().length, indeterminate: count > 0 && count < this.selectableKeys().length };
   });
-  protected readonly announcement = computed(() => (this.announced() ? this.labels.selectionCount(this.selectedCount(), this.selectableKeys().length) : ''));
+  private readonly warnDuplicateKeys = effect(() => {
+    if (!isDevMode() || !this.selectable()) return;
+    const keyOf = this.trackBy();
+    const keys = this.data().map((row) => keyOf(row));
+    if (new Set(keys).size !== keys.length) console.warn('lc-table: `trackBy` renvoie deux fois la même clé, la sélection est ambiguë.');
+  });
   protected readonly maxRows = LC_TABLE_MAX_ROWS;
   protected readonly cellTemplates = computed(() => new Map(this.cells().map((cell) => [cell.lcCell(), cell.template])));
   private readonly cells = contentChildren(LcCellDirective);
@@ -208,7 +214,7 @@ export class LcTableComponent<T> {
 
   private commitSelection(next: Set<unknown>): void {
     this.selection.set(next);
-    this.announced.set(true);
+    this.announcement.set(this.labels.selectionCount(this.selectedCount(), this.selectableKeys().length));
   }
 
   protected rowClasses(row: T): string | readonly string[] | null {

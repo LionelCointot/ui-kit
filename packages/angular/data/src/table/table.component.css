@@ -32,7 +32,9 @@
   text-align: start;
 }
 
-.lc-table__caption--hidden {
+.lc-table__caption--hidden,
+.lc-table__sr-only {
+  white-space: nowrap;
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -96,6 +98,14 @@ tr > :first-child,
 /* Petit écran : défilement horizontal par colonne entière (aucune colonne coupée au repos). La première colonne est collante :
    `--lc-table-sticky-start-size` (largeur de cette colonne, à poser par l'usage) décale la butée pour qu'une colonne calée
    ne passe pas dessous. */
+/* Avec `selectable`, la colonne de cases et la première colonne de données restent collantes : la seconde est décalée de la largeur de la première
+   (cible tactile). */
+:host(.lc-table--selectable) tr > :nth-child(2) {
+  position: sticky;
+  inset-inline-start: var(--lc-button-hit-size, 44px);
+  z-index: 1;
+}
+
 @media (max-width: 37.5rem) {
   .lc-table__scroll {
     scroll-snap-type: x mandatory;
@@ -109,9 +119,22 @@ tr > :first-child,
   tr > :not(:first-child) {
     scroll-snap-align: start;
   }
+
+  :host(.lc-table--selectable) .lc-table__scroll {
+    scroll-padding-inline-start: calc(var(--lc-button-hit-size, 44px) + var(--lc-table-sticky-start-size, 0px));
+  }
+
+  :host(.lc-table--selectable) tr > :first-child {
+    inline-size: auto;
+  }
+
+  :host(.lc-table--selectable) tr > :nth-child(2) {
+    inline-size: var(--lc-table-sticky-start-size, auto);
+  }
 }
 
 :host(.lc-table--sticky-header) thead tr > :first-child,
+:host(.lc-table--sticky-header.lc-table--selectable) thead tr > :nth-child(2),
 :host(.lc-table--sticky-header) thead .lc-table__cell--sticky-start,
 :host(.lc-table--sticky-header) thead .lc-table__cell--sticky-end {
   z-index: 3;
@@ -150,14 +173,6 @@ tbody tr:not(.lc-table__group):hover td {
 
 :host(.lc-table--compact) .lc-table__select-hit {
   min-block-size: 0;
-}
-
-.lc-table__sr-only {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 
 .lc-table__empty td {

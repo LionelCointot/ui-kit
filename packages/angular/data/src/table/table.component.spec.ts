@@ -531,7 +531,12 @@ describe('LcTableComponent : sélection et teinte (K1, K4)', () => {
     expect(live()).toBe('');
     await click(boxes()[1]);
     expect(live()).toBe('2 sélectionnées sur 3');
-    expect(fixture.nativeElement).toBeTruthy();
+    host.selection.set(new Set());
+    await fixture.whenStable();
+    expect(live()).toBe('2 sélectionnées sur 3');
+    host.data.set(rows.slice(0, 2));
+    await fixture.whenStable();
+    expect(live()).toBe('2 sélectionnées sur 3');
   });
 
   it('CA-K1-4 : annonce en anglais', async () => {
@@ -546,13 +551,23 @@ describe('LcTableComponent : sélection et teinte (K1, K4)', () => {
     await click(head());
     host.data.set(rows.filter((row) => row.id !== 1));
     await fixture.whenStable();
-    expect(live()).toBe('2 sélectionnées sur 2');
+    expect(live()).toBe('3 sélectionnées sur 3');
     expect(head().checked).toBe(true);
     expect(host.selection().has(1)).toBe(true);
     host.selection.set(new Set([1]));
     await fixture.whenStable();
     expect(head().checked).toBe(false);
     expect(head().indeterminate).toBe(false);
+  });
+
+  it('avertit en développement d\'une clé trackBy en double, sur tout data', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { fixture, host } = await setup();
+    expect(warn).not.toHaveBeenCalled();
+    host.data.set([rows[0], rows[0]]);
+    await fixture.whenStable();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('trackBy'));
+    warn.mockRestore();
   });
 
   it('CA-K4-1 : rowClass pose les classes rendues (chaîne, tableau) sur les lignes de données ; aucune pour null', async () => {
