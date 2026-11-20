@@ -3,7 +3,6 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { preferredTheme, darkTheme } from './brand';
 
-
 /** Thème de départ : celui du système, pour que le manager, les pages de documentation et l'aperçu concordent. */
 const startTheme = preferredTheme() === darkTheme ? 'dark' : 'default';
 // Les pages MDX (accueil, démarrage) ne rendent aucune story : on pose le thème dès le chargement.

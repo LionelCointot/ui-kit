@@ -42,7 +42,7 @@ class StepperDemoComponent {
   template: `
     <lc-stepper ariaLabel="Progression du parcours" [steps]="steps()" [linear]="false" (stepSelect)="goTo($event)" (directionChange)="direction.set($event)" />
     <p style="margin-block-start:16px">Étape {{ current() + 1 }} sur 5 · dernier sens : {{ direction() ?? 'aucun' }}</p>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:var(--lc-sys-space-2)">
       <button type="button" (click)="move(-1)" [disabled]="current() === 0">Précédent</button>
       <button type="button" (click)="move(1)" [disabled]="current() === 4">Suivant</button>
     </div>
@@ -66,7 +66,7 @@ class StepperNavDemoComponent {
   imports: [LcStepperComponent, LcStepActionDirective, LcButtonComponent, LcIconComponent],
   template: `
     <div style="container-type:inline-size">
-      <div [style.display]="'grid'" [style.grid-template-columns]="columns()" style="gap:24px">
+      <div [style.display]="'grid'" [style.grid-template-columns]="columns()" style="gap:var(--lc-sys-space-6)">
         <lc-stepper variant="rail" ariaLabel="Fil du projet" [steps]="steps()" [compact]="compact()">
           <ng-template lcStepAction let-step>
             @if (step.answer) {

@@ -98,7 +98,7 @@ export const States: Story = {
   render: () => ({
     props: { cities: CITIES, display, trackBy, city: signal<City | null>(CITIES[1]) },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Normal"><lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" /></lc-form-field>
         <lc-form-field label="Désactivé"><lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" disabled /></lc-form-field>
         <lc-form-field label="Lecture seule"><lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" readonly /></lc-form-field>

@@ -94,7 +94,7 @@ export const States: Story = {
   render: () => ({
     props: { value: signal<number | null>(40), empty: signal<number | null>(null) },
     template: `
-      <div style="display:grid;gap:24px;max-width:28rem">
+      <div style="display:grid;gap:var(--lc-sys-space-6);max-width:28rem">
         <lc-form-field label="Normal"><lc-slider [(value)]="value" unit="%" /></lc-form-field>
         <lc-form-field label="Sans valeur"><lc-slider [(value)]="empty" unit="%" /></lc-form-field>
         <lc-form-field label="Désactivé"><lc-slider [(value)]="value" unit="%" disabled /></lc-form-field>
@@ -110,7 +110,7 @@ export const Sizes: Story = {
   render: () => ({
     props: { value: signal<number | null>(50) },
     template: `
-      <div style="display:grid;gap:16px;max-width:28rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:28rem">
         <lc-slider [(value)]="value" size="small" ariaLabel="Petit" unit="%" />
         <lc-slider [(value)]="value" size="medium" ariaLabel="Moyen" unit="%" />
         <lc-slider [(value)]="value" size="large" ariaLabel="Grand" unit="%" />

@@ -158,7 +158,7 @@ export const At360Pixels: Story = {
   render: () => ({
     props: { items: [...SHORT, { id: 'l', label: 'Un libellé particulièrement long qui doit passer à la ligne sans déborder', active: true }] },
     template: `
-      <div style="max-width:360px;border:1px dashed var(--lc-sys-color-border, #888);padding:var(--lc-sys-space-2, 8px)">
+      <div style="max-width:360px;border:1px dashed var(--lc-sys-color-border);padding:var(--lc-sys-space-2, 8px)">
         <lc-form-field label="Éléments" hint="Une aide sous le libellé.">
           <lc-list-editor [items]="items" [minActive]="1" />
         </lc-form-field>

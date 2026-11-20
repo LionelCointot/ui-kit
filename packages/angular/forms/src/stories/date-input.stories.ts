@@ -17,7 +17,7 @@ import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
   selector: 'lc-date-input-demo',
   imports: [LcFormFieldComponent, LcDateInputComponent],
   template: `
-    <div style="display:grid;gap:24px;max-width:20rem">
+    <div style="display:grid;gap:var(--lc-sys-space-6);max-width:20rem">
       <lc-form-field label="Date de début"><lc-date-input [(value)]="start" /></lc-form-field>
       <lc-form-field label="Date de fin (obligatoire)" required><lc-date-input [(value)]="end" /></lc-form-field>
       <lc-form-field label="Lecture seule"><lc-date-input [value]="'2026-11-12'" readonly /></lc-form-field>
@@ -276,7 +276,7 @@ export const CalendarStates: Story = {
   decorators: [moduleMetadata({ imports: [LcDateInputComponent] }), CALENDAR],
   render: () => ({
     template: `
-      <div style="display:grid;gap:16px;max-width:20rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:20rem">
         <lc-date-input ariaLabel="Vide" />
         <lc-date-input ariaLabel="Avec valeur" value="2026-11-12" />
         <lc-date-input ariaLabel="Invalide" invalid touched />

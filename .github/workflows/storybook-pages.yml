@@ -22,7 +22,8 @@ permissions:
 
 concurrency:
   group: storybook-pages-${{ github.ref }}
-  cancel-in-progress: true
+  # Ne jamais interrompre un déploiement de main en cours.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:

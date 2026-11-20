@@ -196,7 +196,7 @@ export const PhotosAt360Pixels: Story = {
       ],
     },
     template: `
-      <div style="max-width:360px;border:1px dashed var(--lc-sys-color-border, #888);padding:var(--lc-sys-space-2, 8px)">
+      <div style="max-width:360px;border:1px dashed var(--lc-sys-color-border);padding:var(--lc-sys-space-2, 8px)">
         <lc-form-field label="Photos" hint="Ajoutez des photos du problème." hintPlacement="above">
           <lc-file-upload accept="image/*" multiple [items]="items" [showSize]="false" chooseIcon="image-plus"
             errorPlaceholderIcon="image-off" [fullWidthMobile]="true" [removeLabelVisible]="true" />

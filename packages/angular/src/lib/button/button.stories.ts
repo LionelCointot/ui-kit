@@ -36,9 +36,9 @@ export const Variants: Story = {
   parameters: fixedExample,
   render: () => ({
     template: `
-      <div style="display:grid;gap:12px">
+      <div style="display:grid;gap:var(--lc-sys-space-3)">
         @for (fill of ['solid','outline','flat']; track fill) {
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:var(--lc-sys-space-2);flex-wrap:wrap">
             @for (color of ['primary','secondary','success','warning','error','highlight','neutral']; track color) {
               <button lcButton [fillMode]="fill" [themeColor]="color">{{ color }}</button>
             }
@@ -52,7 +52,7 @@ export const Variants: Story = {
 export const Sizes: Story = {
   parameters: fixedExample,
   render: () => ({
-    template: `<div style="display:flex;gap:8px;align-items:center">
+    template: `<div style="display:flex;gap:var(--lc-sys-space-2);align-items:center">
       <button lcButton size="small">Petit</button><button lcButton size="medium">Moyen</button><button lcButton size="large">Grand</button></div>`,
   }),
 };
@@ -66,7 +66,7 @@ export const HitArea: Story = {
   parameters: fixedExample,
   render: () => ({
     template: `
-      <div style="display:flex;gap:16px;align-items:center">
+      <div style="display:flex;gap:var(--lc-sys-space-4);align-items:center">
         <button lcButton size="small">Modifier</button>
         <button lcButton size="small" iconOnly fillMode="flat" themeColor="neutral" aria-label="Déplier"><lc-icon name="plus" /></button>
         <button lcButton>Moyen</button>
@@ -83,7 +83,7 @@ export const Pressed: Story = {
   render: () => ({
     props: { notifications: true },
     template: `
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;gap:var(--lc-sys-space-4);flex-wrap:wrap;align-items:center">
         <button lcButton fillMode="outline" themeColor="neutral" [pressed]="false">Non enfoncé</button>
         <button lcButton fillMode="outline" themeColor="neutral" [pressed]="true">Enfoncé</button>
         <button lcButton [pressed]="true">Plein enfoncé</button>
@@ -102,7 +102,7 @@ export const Pressed: Story = {
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({
-    template: `<div style="display:flex;gap:8px;flex-wrap:wrap">
+    template: `<div style="display:flex;gap:var(--lc-sys-space-2);flex-wrap:wrap">
       <button lcButton disabled>Désactivé</button>
       <button lcButton [loading]="true">Enregistrement</button>
       <button lcButton iconOnly fillMode="outline" aria-label="Ajouter"><lc-icon name="plus" /></button>

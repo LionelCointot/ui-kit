@@ -65,7 +65,7 @@ export const DepartmentByRegion: Story = {
   render: () => ({
     props: { region: signal<string | null>('84'), department: signal<string | null>('69') },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Région"><lc-region-select [(value)]="region" /></lc-form-field>
         <lc-form-field label="Département"><lc-department-select [(value)]="department" [regionCode]="region()" /></lc-form-field>
         <p>Région : {{ region() ?? 'aucune' }} · département : {{ department() ?? 'aucun' }}</p>
@@ -91,7 +91,7 @@ export const States: Story = {
   render: () => ({
     props: { department: signal<string | null>('69') },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Désactivé"><lc-department-select [(value)]="department" disabled /></lc-form-field>
         <lc-form-field label="Lecture seule"><lc-department-select [(value)]="department" readonly /></lc-form-field>
         <lc-form-field label="Invalide" [errors]="['Choisissez un département']"><lc-department-select [value]="null" invalid touched /></lc-form-field>

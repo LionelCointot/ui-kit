@@ -139,7 +139,7 @@ export const LiveApi: Story = {
   render: () => ({
     props: { commune: signal<LcCommune | null>(null), address: signal<LcAddress | null>(null) },
     template: `
-      <div style="display:grid;gap:16px;max-width:28rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:28rem">
         <lc-form-field label="Commune (API Découpage administratif)"><lc-commune-input [(value)]="commune" /></lc-form-field>
         <lc-form-field label="Adresse (API Adresse de la Géoplateforme)"><lc-address-input [(value)]="address" /></lc-form-field>
       </div>`,

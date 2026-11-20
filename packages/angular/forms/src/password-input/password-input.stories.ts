@@ -63,7 +63,7 @@ export const States: Story = {
   render: () => ({
     props: { password: signal('mot-de-passe-secret') },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Normal"><lc-password-input [(value)]="password" /></lc-form-field>
         <lc-form-field label="Désactivé"><lc-password-input [(value)]="password" disabled /></lc-form-field>
         <lc-form-field label="Lecture seule"><lc-password-input [(value)]="password" readonly /></lc-form-field>
@@ -78,7 +78,7 @@ export const Sizes: Story = {
   render: () => ({
     props: { password: signal('secret') },
     template: `
-      <div style="display:grid;gap:12px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-3);max-width:24rem">
         <lc-password-input [(value)]="password" size="small" ariaLabel="Mot de passe (petit)" />
         <lc-password-input [(value)]="password" size="medium" ariaLabel="Mot de passe (moyen)" />
         <lc-password-input [(value)]="password" size="large" ariaLabel="Mot de passe (grand)" />
@@ -92,7 +92,7 @@ export const Variants: Story = {
   render: () => ({
     props: { password: signal('secret') },
     template: `
-      <div style="display:grid;gap:12px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-3);max-width:24rem">
         <lc-password-input [(value)]="password" fillMode="outline" ariaLabel="Mot de passe (contour)" />
         <lc-password-input [(value)]="password" fillMode="flat" ariaLabel="Mot de passe (plat)" />
         <lc-password-input [(value)]="password" rounded="full" ariaLabel="Mot de passe (arrondi)" />
