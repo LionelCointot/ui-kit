@@ -14,6 +14,7 @@ export * from './numeric/money-input.component';
 export * from './numeric/percent-input.component';
 export * from './numeric/number-input.component';
 export * from './date-input/date-input.component';
+export * from './date-input/date-range-input.component';
 export { toIsoDate } from './date-input/date-math';
 export type { LcDateInterval, LcDateIntervalPreset } from './date-input/date-interval';
 export { LC_DATE_PICKER, type LcDatePickerMode } from './date-input/date-picker-mode';

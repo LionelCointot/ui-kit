@@ -1,0 +1,101 @@
+/* Les deux champs côte à côte, empilés sous 28 rem de large du groupe (requête de conteneur : la valeur ne peut pas être un token). */
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.lc-date-range-input__group {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: var(--lc-sys-space-3);
+}
+
+.lc-date-range-input__part {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+}
+
+.lc-date-range-input__part lc-date-input {
+  display: flex;
+}
+
+.lc-date-range-input__label {
+  color: var(--lc-calendar-weekday-text, var(--lc-sys-color-on-surface-muted));
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+/* Un seul bouton pour la période, à la hauteur d'un champ. */
+.lc-date-range-input__button {
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--lc-input-height, var(--lc-sys-control-height-md));
+  block-size: var(--lc-input-height, var(--lc-sys-control-height-md));
+  padding: 0;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-input-border, var(--lc-sys-color-border-strong));
+  border-radius: var(--lc-input-radius, var(--lc-sys-radius-md));
+  background: transparent;
+  color: var(--lc-sys-color-on-surface-muted);
+  cursor: pointer;
+}
+
+.lc-date-range-input__button:hover {
+  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  color: var(--lc-sys-color-on-surface);
+}
+
+.lc-date-range-input__button:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: 0;
+}
+
+.lc-date-range-input__note,
+.lc-date-range-input__error {
+  margin: var(--lc-sys-space-2) 0 0;
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-date-range-input__note {
+  color: var(--lc-calendar-weekday-text, var(--lc-sys-color-on-surface-muted));
+}
+
+.lc-date-range-input__error {
+  color: var(--lc-sys-color-error);
+}
+
+/* Mode natif : les raccourcis en rangée sous les champs. */
+.lc-date-range-input__shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lc-sys-space-2);
+  margin-block-start: var(--lc-sys-space-3);
+}
+
+/* Empilés : le bouton reste à droite de la fin, sur sa ligne. */
+@container (max-width: 28rem) {
+  .lc-date-range-input__group {
+    grid-template-columns: 1fr auto;
+  }
+
+  .lc-date-range-input__part {
+    grid-column: 1;
+  }
+
+  .lc-date-range-input__button {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-date-range-input__button {
+    border-color: ButtonText;
+  }
+}

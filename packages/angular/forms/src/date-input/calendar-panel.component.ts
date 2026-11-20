@@ -17,6 +17,7 @@ import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
 import { addDays, addMonths, addYears, clampIso, clipInterval, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
 import type { LcDateInterval, LcDateIntervalPreset } from './date-interval';
+import { describeInterval } from './date-describe';
 
 export type LcCalendarLevel = 'day' | 'month' | 'year';
 
@@ -277,7 +278,7 @@ export class LcCalendarPanelComponent {
     const today = this.today();
     return this.presets().map((preset, index) => {
       const interval = clipInterval(preset.interval(today), this.min(), this.max());
-      return { id: `${this.uid}-preset-${index}`, label: preset.label, interval, dates: interval ? this.describe(interval) : this.labels.dateNoneAllowed };
+      return { id: `${this.uid}-preset-${index}`, label: preset.label, interval, dates: interval ? describeInterval(this.labels, this.locale, interval) : this.labels.dateNoneAllowed };
     });
   });
 
@@ -427,19 +428,6 @@ export class LcCalendarPanelComponent {
 
   private longDate(iso: string): string {
     return this.longFormat.format(isoToLocalDate(iso)!);
-  }
-
-  /** Dates d'un raccourci sous son libellé ; `Intl` compose la plage (« 13–19 novembre 2026 »), seul le tiret devient « au ». */
-  private describe({ from, to }: LcDateInterval): string {
-    if (!from || !to) return from ? this.labels.dataTable.since(this.longDate(from)) : to ? this.labels.dataTable.until(this.longDate(to)) : '';
-    if (from === to) return this.labels.dateOnDay(this.longDate(from));
-    const parts = this.longFormat.formatRangeToParts(isoToLocalDate(from)!, isoToLocalDate(to)!);
-    const sources = parts.map((part) => part.source);
-    const start = sources.lastIndexOf('startRange');
-    const end = sources.indexOf('endRange');
-    const text = (list: Intl.DateTimeFormatPart[]) => list.map((part) => part.value).join('');
-    const range = start < 0 || end < 0 ? `${this.longDate(from)} ${this.labels.datePeriodTo} ${this.longDate(to)}` : `${text(parts.slice(0, start + 1))} ${this.labels.datePeriodTo} ${text(parts.slice(end))}`;
-    return `${this.labels.datePeriodFrom} ${range}`;
   }
 
   /** Clic, Entrée ou Espace sur une cellule : choisit un jour, ou descend d'un niveau sans rien choisir. */

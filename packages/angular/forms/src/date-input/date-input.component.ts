@@ -1,4 +1,4 @@
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
@@ -35,6 +35,8 @@ import {
   typeDigit, zoneAt, zoneOrder,
 } from './date-mask';
 import { LcCalendarPanelComponent } from './calendar-panel.component';
+import { createCalendarOverlay } from './calendar-overlay';
+import { LC_DATE_PART } from './date-range-part';
 import { compareIso, isValidIsoDate, toIsoDate } from './date-math';
 import { LC_DATE_PICKER, resolveDatePickerMode } from './date-picker-mode';
 
@@ -65,7 +67,7 @@ interface DateEntry {
         (keydown)="onKeydown($event)" (beforeinput)="onBeforeInput($event)" (input)="onText($event)" (click)="onClick()" (focus)="onFocus()" (blur)="onBlur()" />
       <span class="lc-visually-hidden" [id]="hintId">{{ labels.dateInputHint }}</span>
       <span class="lc-visually-hidden" aria-live="polite">{{ announcement() }}</span>
-      @if (!disabled() && !readonly()) {
+      @if (!disabled() && !readonly() && !part) {
         <button #calendarButton type="button" class="lc-field__step lc-date-input__button" aria-haspopup="dialog"
           [attr.aria-expanded]="open()" [attr.aria-label]="buttonName()" (click)="toggle()">
           <lc-icon name="calendar" />
@@ -94,6 +96,8 @@ interface DateEntry {
 export class LcDateInputComponent implements FormValueControl<string | null>, LcFormFieldControl {
   private readonly defaults = inject(LC_DEFAULTS);
   private readonly field = inject(LC_FORM_FIELD, { optional: true });
+  /** Présent quand le champ est une moitié de `lc-date-range-input` : pas de bouton, et la période décide de l'admissibilité. */
+  protected readonly part = inject(LC_DATE_PART, { optional: true });
 
   readonly value = model<string | null>(null);
   /** Date minimale ISO (AAAA-MM-JJ). */
@@ -212,28 +216,8 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     panel.instance.focusInitial();
   }
 
-  /** Même stratégie de position et de défilement que `lc-combobox` ; largeur propre au panneau. Dimensions flexibles : sans place, le panneau se limite à la fenêtre et son corps défile. */
   private createOverlay(): OverlayRef {
-    const overlay = this.injector.get(Overlay);
-    const ref = overlay.create({
-      positionStrategy: overlay.position().flexibleConnectedTo(this.host).withFlexibleDimensions(true).withViewportMargin(8)
-        .withPositions([
-          { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-          { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
-          { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
-          { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
-        ]),
-      scrollStrategy: overlay.scrollStrategies.reposition(),
-      // Sans `minHeight` non nul (0 compte pour absent), le CDK ne retient jamais le dimensionnement flexible : le panneau serait seulement poussé.
-      minHeight: 1,
-    });
-    ref.outsidePointerEvents().subscribe((event) => {
-      if (this.buttonRef()?.nativeElement.contains(event.target as Node)) return; // le bouton bascule lui-même
-      // Un clic sur un autre contrôle garde son focus ; sur du vide, le focus revient au bouton.
-      const active = this.doc.activeElement;
-      this.close(!active || active === this.doc.body || ref.overlayElement.contains(active));
-    });
-    return ref;
+    return createCalendarOverlay(this.injector, this.host, this.doc, (target) => !!this.buttonRef()?.nativeElement.contains(target), (restore) => this.close(restore));
   }
 
   private syncPanel(panel: ComponentRef<LcCalendarPanelComponent>): void {
@@ -368,8 +352,11 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
 
   /** Les zones font foi : la valeur du modèle suit (`null` tant que la date est incomplète). */
   private commit(zones: Zones, error = false): void {
+    const iso = toIso(zones);
+    const rejected = !!iso && !!this.part?.rejects(this, iso);
     this.zones.set(zones);
-    this.entry!.set({ iso: toIso(zones), error, typed: true });
+    this.entry!.set({ iso: rejected ? null : iso, error: error || rejected, typed: true });
+    this.part?.entered(this, rejected ? 'order' : error || (!isEmpty(zones) && iso === null) ? 'incomplete' : null);
   }
 
   /** Réécrit le texte (un collage illisible est annulé), sélectionne la zone active et l'annonce. */

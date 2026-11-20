@@ -175,6 +175,13 @@ export interface LcLabels {
   readonly datePeriodChosenOpen: (from: string) => string;
   readonly dateThisMonth: string;
   readonly dateLastMonth: string;
+  /** Champ de période : nom du groupe, bouton (`text` : « du 3 au 12 novembre 2026 » ou une borne), ligne d'une seule borne, groupe des raccourcis natifs. */
+  readonly datePeriod: string;
+  readonly dateChangePeriod: (text: string) => string;
+  readonly dateStartingFrom: (date: string) => string;
+  readonly dateOpenEnd: (date: string) => string;
+  readonly dateOpenStart: (date: string) => string;
+  readonly dateShortcuts: string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -754,6 +761,12 @@ export const LC_LABELS_FR: LcLabels = {
   datePeriodChosenOpen: (from) => `Période choisie : à partir du ${from}.`,
   dateThisMonth: 'Ce mois-ci',
   dateLastMonth: 'Le mois dernier',
+  datePeriod: 'Période',
+  dateChangePeriod: (text) => `Changer la période, ${text}`,
+  dateStartingFrom: (date) => `à partir du ${date}`,
+  dateOpenEnd: (date) => `Sans date de fin : tout depuis le ${date}.`,
+  dateOpenStart: (date) => `Sans date de début : tout jusqu'au ${date}.`,
+  dateShortcuts: 'Raccourcis',
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -985,6 +998,12 @@ export const LC_LABELS_EN: LcLabels = {
   datePeriodChosenOpen: (from) => `Period selected: starting ${from}, no end date.`,
   dateThisMonth: 'This month',
   dateLastMonth: 'Last month',
+  datePeriod: 'Period',
+  dateChangePeriod: (text) => `Change period, ${text}`,
+  dateStartingFrom: (date) => `starting ${date}`,
+  dateOpenEnd: (date) => `No end date: everything from ${date}.`,
+  dateOpenStart: (date) => `No start date: everything up to ${date}.`,
+  dateShortcuts: 'Shortcuts',
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });
