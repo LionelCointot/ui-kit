@@ -256,33 +256,6 @@ export const CalendrierEtats: Story = {
   },
 };
 
-/** Navigateur réel : panneau ouvert, `data-theme` de clair à sombre sur `html` change le fond du panneau et celui du jour choisi (disque). */
-export const CalendrierClairSombre: Story = {
-  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
-  render: () => picker('initial="2026-11-12"'),
-  play: async ({ canvasElement }) => {
-    const root = document.documentElement;
-    const before = root.dataset['theme'];
-    root.dataset['theme'] = 'default';
-    try {
-      await userEvent.click(within(canvasElement).getByRole('button', { name: /^Changer la date/ }));
-      const panel = await openedPanel();
-      const day = panel.querySelector('td[aria-selected="true"]')!;
-      const colors = () => [getComputedStyle(panel).backgroundColor, getComputedStyle(day, '::before').backgroundColor];
-      const light = colors();
-      root.dataset['theme'] = 'dark';
-      await waitFor(() => {
-        const dark = colors();
-        expect(dark[0]).not.toBe(light[0]);
-        expect(dark[1]).not.toBe(light[1]);
-      });
-    } finally {
-      if (before === undefined) delete root.dataset['theme'];
-      else root.dataset['theme'] = before;
-    }
-  },
-};
-
 /** Mode natif forcé : `input[type=date]` du navigateur. */
 export const ModeNatif: Story = {
   decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }] })],

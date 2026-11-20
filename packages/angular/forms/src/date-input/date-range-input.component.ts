@@ -197,7 +197,7 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   protected readonly shortcuts = computed(() => this.presets() ?? kitDatePresets(this.labels));
   /** Raccourcis du mode natif, rognés par `min` / `max` comme dans le panneau ; appelé au rendu : la date du jour n'est jamais figée. */
   protected nativeShortcuts(): ReturnType<typeof describePresets> {
-    return describePresets(this.labels, this.locale, this.shortcuts(), localDateToIso(new Date()), this.min(), this.max());
+    return describePresets(this.labels, this.locale, this.shortcuts(), localDateToIso(new Date()), this.min(), this.max(), this.format);
   }
 
   /** Bornes ISO valides, sinon `null` : une valeur illisible laisse le champ vide. */
@@ -214,7 +214,7 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
 
   protected readonly buttonName = computed(() => {
     const { from, to } = this.valid();
-    const text = from && to ? describeInterval(this.labels, this.locale, { from, to })
+    const text = from && to ? describeInterval(this.labels, this.locale, { from, to }, this.format)
       : from ? this.labels.dateStartingFrom(this.format(from))
         : to ? this.labels.dataTable.until(this.format(to))
           : null;
@@ -264,7 +264,6 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
     effect(() => {
       if (!this.entry().typed) untracked(() => this.forgetEntry());
     });
-    // `FormValueControl` : le modèle seul fait foi.
     inject(DestroyRef).onDestroy(() => this.overlayRef?.dispose());
     effect(() => {
       const panel = this.panel();

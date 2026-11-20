@@ -21,9 +21,10 @@ export function describePresets(
   today: string,
   min: string | null | undefined,
   max: string | null | undefined,
+  longDate: (iso: string) => string,
 ): { label: string; interval: LcDateInterval | null; dates: string }[] {
   return presets.map((preset) => {
     const interval = clipInterval(preset.interval(today), min, max);
-    return { label: preset.label, interval, dates: interval ? describeInterval(labels, locale, interval) : labels.dateNoneAllowed };
+    return { label: preset.label, interval, dates: interval ? describeInterval(labels, locale, interval, longDate) : labels.dateNoneAllowed };
   });
 }

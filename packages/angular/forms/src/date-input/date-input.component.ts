@@ -27,7 +27,7 @@ import {
 import { transformedValue } from '@angular/forms/signals';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
-  LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcFormatService, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId,
+  LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcFormatService, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId, localDateToIso,
 } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import {
@@ -209,7 +209,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
 
   private openPanel(): void {
     if (this.panel() || this.disabled() || this.readonly()) return;
-    this.overlayRef ??= this.createOverlay();
+    this.overlayRef ??= createCalendarOverlay(this.injector, this.host, this.doc, (target) => !!this.buttonRef()?.nativeElement.contains(target), (restore) => this.close(restore));
     const panel = this.overlayRef.attach(new ComponentPortal(LcCalendarPanelComponent, this.viewContainerRef));
     this.syncPanel(panel);
     panel.instance.picked.subscribe((iso) => this.choose(fromIso(iso)));
@@ -217,10 +217,6 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     panel.instance.closed.subscribe(() => this.close(true));
     this.panel.set(panel);
     panel.instance.focusInitial();
-  }
-
-  private createOverlay(): OverlayRef {
-    return createCalendarOverlay(this.injector, this.host, this.doc, (target) => !!this.buttonRef()?.nativeElement.contains(target), (restore) => this.close(restore));
   }
 
   private syncPanel(panel: ComponentRef<LcCalendarPanelComponent>): void {
@@ -417,11 +413,6 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   }
 
   private today(): Zones {
-    const now = new Date();
-    return {
-      day: String(now.getDate()).padStart(2, '0'),
-      month: String(now.getMonth() + 1).padStart(2, '0'),
-      year: String(now.getFullYear()),
-    };
+    return fromIso(localDateToIso(new Date()));
   }
 }
