@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { fixedExample } from '@lc/storybook';
-import { LcAppShellComponent } from '../app-shell/app-shell.component';
+import { LcAppShellComponent } from '@lionelcointot/ui-angular/layout';
 
 /**
  * Application frame: header, side navigation (a drawer on narrow screens) and main content.

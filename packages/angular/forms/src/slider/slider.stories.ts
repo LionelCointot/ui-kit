@@ -1,8 +1,7 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcSliderComponent } from './slider.component';
+import { LcFormFieldComponent, LcSliderComponent } from '@lionelcointot/ui-angular/forms';
 
 /**
  * Range slider bound to a number (`lc-slider`). The `unit` is only a label: the value stays a plain number.

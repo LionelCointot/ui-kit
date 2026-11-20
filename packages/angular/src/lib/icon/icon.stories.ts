@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample, sizeOptions } from '@lc/storybook';
-import { LcIconComponent } from './icon.component';
-import { LC_DEFAULT_ICONS } from './default-icons';
+import { LcIconComponent, LC_DEFAULT_ICONS } from '@lionelcointot/ui-angular';
 
 const ALL_NAMES = Object.keys(LC_DEFAULT_ICONS).sort();
 

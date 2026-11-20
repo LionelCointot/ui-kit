@@ -1,5 +1,5 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcSparklineComponent } from '../components/sparkline.component';
+import { LcSparklineComponent } from '@lionelcointot/ui-angular/charts';
 
 const VALUES = [10, 9.6, 9.2, 8.7, 8.5, 8, 7.4, 7, 6.5, 6, 5.2, 4.9];
 

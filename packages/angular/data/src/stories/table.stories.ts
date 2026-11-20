@@ -1,8 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcCellDirective } from '../table/cell.directive';
-import { LcTableComponent } from '../table/table.component';
-import { LcSort, LcTableColumn, sortRows } from '../table/table-model';
+import { LcCellDirective, LcTableComponent, LcSort, LcTableColumn, sortRows } from '@lionelcointot/ui-angular/data';
 
 interface Order { id: number; quarter: number; week: string; orders: number; revenue: number; returns: number; status: string }
 

@@ -3,7 +3,7 @@ import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vit
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcConfirmDialogComponent } from '../dialog/confirm-dialog.component';
-import { LcDialogService, type LcConfirmOptions } from '../dialog/dialog.service';
+import { LcDialogService, type LcConfirmOptions } from '@lionelcointot/ui-angular/overlay';
 
 /** Button that asks for a confirmation through `LcDialogService.confirm()` and shows the boolean answer. */
 @Component({

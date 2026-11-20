@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcActivityFeedComponent } from '../activity-feed/activity-feed.component';
-import { LcActivityItemComponent } from '../activity-feed/activity-item.component';
+import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot/ui-angular/data';
 
 const LONG = 'Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious';
 

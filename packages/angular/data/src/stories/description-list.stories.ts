@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcDescriptionListComponent, type LcDescriptionItem } from '../description-list/description-list.component';
+import { LcDescriptionListComponent, type LcDescriptionItem } from '@lionelcointot/ui-angular/data';
 
 const ITEMS: LcDescriptionItem[] = [
   { term: 'Budget', value: 250000, format: 'money' },

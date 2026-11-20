@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { fixedExample } from '@lc/storybook';
-import { LcAlertComponent } from '../alert/alert.component';
+import { LcAlertComponent } from '@lionelcointot/ui-angular/feedback';
 
 const KINDS = ['info', 'success', 'warning', 'error'] as const;
 

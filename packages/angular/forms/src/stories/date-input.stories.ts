@@ -9,9 +9,7 @@ import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcDateInputComponent } from '../date-input/date-input.component';
-import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
+import { LcFormFieldComponent, LcDateInputComponent, LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
 
 @Component({
   selector: 'lc-date-input-demo',

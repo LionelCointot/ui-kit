@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcAvatarComponent } from './avatar.component';
+import { LcAvatarComponent } from '@lionelcointot/ui-angular';
 
 // Photo embarquée (SVG en data URI) : aucune dépendance réseau dans Storybook.
 const PHOTO =

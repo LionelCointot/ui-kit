@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcErrorDetailsDirective, LcErrorStateComponent } from '../error-state/error-state.component';
+import { LcErrorDetailsDirective, LcErrorStateComponent } from '@lionelcointot/ui-angular/feedback';
 
 /**
  * Error state: title, description, a retry button (`retry` output, label overridable) and an optional collapsible

@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import type { LcThemeDefinition } from '@lionelcointot/ui-tokens/theme';
-import { LcThemeBuilderComponent } from '../builder/theme-builder.component';
+import { LcThemeBuilderComponent } from '@lionelcointot/ui-angular/theme-builder';
 
 /**
  * Theme builder page: tune the settings, watch every component change live (across the whole page), then export a `.tokens.json`

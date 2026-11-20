@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcTabComponent, LcTabContentDirective } from '../tabs/tab.component';
-import { LcTabsComponent } from '../tabs/tabs.component';
+import { LcTabComponent, LcTabContentDirective, LcTabsComponent } from '@lionelcointot/ui-angular/navigation';
 
 /**
  * Tab list with automatic or manual activation. Panels are declared with `lc-tab`; heavy content goes in an

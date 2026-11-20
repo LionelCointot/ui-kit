@@ -4,9 +4,7 @@ import { Observable, delay, of, throwError } from 'rxjs';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent, localDateToIso } from '@lionelcointot/ui-angular';
 import { LcStatusBadgeComponent, type LcStatusBadgeKind } from '@lionelcointot/ui-angular/feedback';
-import { LcCellDirective } from '../table/cell.directive';
-import { LcDataTableComponent } from '../data-table/data-table.component';
-import { LcDataColumn, LcDataSource, LcTableQuery, lcLocalSource } from '../data-table/data-table-model';
+import { LcCellDirective, LcDataTableComponent, LcDataColumn, LcDataSource, LcTableQuery, lcLocalSource } from '@lionelcointot/ui-angular/data';
 
 /* Demo data: a request queue (tickets). Dates are relative to today. */
 interface Ticket { id: number; title: string; copro: string; urg: string; state: string; todo: string; mgr: string; recv: number; last: number }

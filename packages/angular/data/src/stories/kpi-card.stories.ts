@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcDescriptionListComponent } from '../description-list/description-list.component';
-import { LcKpiCardComponent, type LcKpiDelta } from '../kpi-card/kpi-card.component';
+import { LcDescriptionListComponent, LcKpiCardComponent, type LcKpiDelta } from '@lionelcointot/ui-angular/data';
 
 type KpiArgs = LcKpiCardComponent & { hasDelta: boolean };
 

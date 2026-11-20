@@ -2,10 +2,7 @@ import { Component, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { LcDrawerComponent } from '../drawer/drawer.component';
-import { LcDrawerInitialFocusDirective } from '../drawer/drawer-initial-focus.directive';
-import { LC_DRAWER_DATA, LcDrawerRef } from '../drawer/drawer-ref';
-import { LcDrawerService, type LcDrawerConfig } from '../drawer/drawer.service';
+import { LcDrawerComponent, LcDrawerInitialFocusDirective, LC_DRAWER_DATA, LcDrawerRef, LcDrawerService, type LcDrawerConfig } from '@lionelcointot/ui-angular/overlay';
 
 interface DrawerData {
   readonly title: string;

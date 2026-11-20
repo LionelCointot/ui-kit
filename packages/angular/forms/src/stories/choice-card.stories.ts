@@ -1,9 +1,7 @@
 import { Component, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcChoiceCardComponent } from '../choice-card/choice-card.component';
-import { LcRadioGroupComponent } from '../radio/radio-group.component';
-import { LcRadioDirective } from '../radio/radio.directive';
+import { LcChoiceCardComponent, LcRadioGroupComponent, LcRadioDirective } from '@lionelcointot/ui-angular/forms';
 
 const OPTIONS = [
   { value: 'short', title: 'Court terme', description: 'Un objectif à moins de deux ans.' },

@@ -1,8 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { fixedExample, sizeOptions } from '@lc/storybook';
-import { LcBadgeComponent } from '../badge/badge.component';
-import { LcStatusBadgeComponent } from '../status-badge/status-badge.component';
+import { LcBadgeComponent, LcStatusBadgeComponent } from '@lionelcointot/ui-angular/feedback';
 
 const KINDS = [
   { kind: 'success', label: 'Opérationnel' },

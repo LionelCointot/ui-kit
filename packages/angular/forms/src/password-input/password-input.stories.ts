@@ -1,8 +1,7 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcPasswordInputComponent } from './password-input.component';
+import { LcFormFieldComponent, LcPasswordInputComponent } from '@lionelcointot/ui-angular/forms';
 
 /**
  * Password field with a show/hide toggle (`lc-password-input`). The value stays a string; `autocomplete` tells the password manager

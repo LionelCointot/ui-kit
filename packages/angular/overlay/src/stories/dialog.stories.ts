@@ -2,9 +2,7 @@ import { Component, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { LcDialogComponent } from '../dialog/dialog.component';
-import { LC_DIALOG_DATA, LcDialogRef } from '../dialog/dialog-ref';
-import { LcDialogService, type LcDialogConfig } from '../dialog/dialog.service';
+import { LcDialogComponent, LC_DIALOG_DATA, LcDialogRef, LcDialogService, type LcDialogConfig } from '@lionelcointot/ui-angular/overlay';
 
 interface DemoData {
   readonly title: string;

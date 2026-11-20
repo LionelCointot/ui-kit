@@ -1,10 +1,8 @@
 import { Component, computed, signal } from '@angular/core';
 import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcPaginatorComponent } from '../paginator/paginator.component';
-import { lcPageSlice } from '../paginator/page-slice';
-import { LcTableComponent } from '../table/table.component';
-import type { LcTableColumn } from '../table/table-model';
+import { LcPaginatorComponent, lcPageSlice, LcTableComponent } from '@lionelcointot/ui-angular/data';
+import type { LcTableColumn } from '@lionelcointot/ui-angular/data';
 
 interface Entry { id: number; name: string; load: number }
 

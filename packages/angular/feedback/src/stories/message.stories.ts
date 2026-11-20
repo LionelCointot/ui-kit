@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcBadgeComponent } from '../badge/badge.component';
-import { LcMessageComponent } from '../message/message.component';
+import { LcBadgeComponent, LcMessageComponent } from '@lionelcointot/ui-angular/feedback';
 
 const LONG = 'Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious';
 

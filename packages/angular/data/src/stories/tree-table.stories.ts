@@ -1,8 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcCellDirective } from '../table/cell.directive';
+import { LcCellDirective, LcTreeTableComponent } from '@lionelcointot/ui-angular/data';
 import { fixedExample } from '@lc/storybook';
-import type { LcTableColumn } from '../table/table-model';
-import { LcTreeTableComponent } from '../tree-table/tree-table.component';
+import type { LcTableColumn } from '@lionelcointot/ui-angular/data';
 
 interface Unit { id: string; name: string; members: number; budget: number; subUnits?: Unit[] }
 
@@ -181,6 +180,8 @@ export const Empty: Story = {
 
 /** 1,500 visible nodes: under the 2,000-row display limit. */
 export const FifteenHundredNodes: Story = {
+  // Story de charge : hors de la page Overview (trop lourde sur mobile), ouverte depuis la barre latérale.
+  tags: ['!autodocs'],
   parameters: fixedExample,
   render: () => ({
     props: { ...base, data: bigTree(1500) },
@@ -191,6 +192,8 @@ export const FifteenHundredNodes: Story = {
 
 /** 2,600 visible nodes: the display is truncated at 2,000 rows and a notice says so. */
 export const TruncatedBeyondTwoThousand: Story = {
+  // Story de charge : hors de la page Overview (trop lourde sur mobile), ouverte depuis la barre latérale.
+  tags: ['!autodocs'],
   parameters: fixedExample,
   render: () => ({
     props: { ...base, data: bigTree(2600) },

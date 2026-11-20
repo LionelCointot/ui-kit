@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, inject, input } from '@a
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, type LcStatusKind } from '@lionelcointot/ui-angular';
 import { fixedExample } from '@lc/storybook';
-import { LcToastOutletComponent } from '../toast/toast-outlet.component';
-import { LcToastService } from '../toast/toast.service';
+import { LcToastOutletComponent, LcToastService } from '@lionelcointot/ui-angular/feedback';
 
 const KINDS: readonly LcStatusKind[] = ['info', 'success', 'warning', 'error'];
 const MESSAGES: Record<LcStatusKind, string> = {

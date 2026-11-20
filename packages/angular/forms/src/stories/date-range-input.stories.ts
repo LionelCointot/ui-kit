@@ -10,10 +10,8 @@ import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import type { LcDateInterval } from '../date-input/date-interval';
-import { LcDateRangeInputComponent } from '../date-input/date-range-input.component';
-import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
+import { LcFormFieldComponent, LcDateRangeInputComponent, LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
+import type { LcDateInterval } from '@lionelcointot/ui-angular/forms';
 
 /** Champ de période posé dans la page ; la valeur est affichée dessous pour la lire dans les stories. */
 @Component({

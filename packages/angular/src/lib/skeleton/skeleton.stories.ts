@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcSkeletonComponent } from './skeleton.component';
-import { LcSpinnerComponent } from '../spinner/spinner.component';
+import { LcSkeletonComponent, LcSpinnerComponent } from '@lionelcointot/ui-angular';
 
 /**
  * Loading placeholder (decorative, `aria-hidden`): a `text` block of one or more lines, a `rect` or a `circle`.
