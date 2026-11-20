@@ -425,52 +425,19 @@ describe('LcFileUploadComponent', () => {
       expect(metas).toEqual(['2.3 MB · Done', '640 KB · Done', '12 B · Done', '1 MB · Done', '2 MB · Done', '999 B · Done']);
     });
 
-    describe('nom coupé (CA-L2-15)', () => {
-      let observers: Array<() => void>;
-      let stemWidths: { scroll: number; client: number };
-      const originalScroll = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
-      const originalClient = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth');
-
-      beforeEach(() => {
-        observers = [];
-        stemWidths = { scroll: 300, client: 100 };
-        vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { observers.push(cb); } observe(): void {} disconnect(): void {} });
-        const isStem = (el: Element) => el.classList.contains('lc-file-upload__stem');
-        Object.defineProperty(Element.prototype, 'scrollWidth', { configurable: true, get(this: Element) { return isStem(this) ? stemWidths.scroll : 0; } });
-        Object.defineProperty(Element.prototype, 'clientWidth', { configurable: true, get(this: Element) { return isStem(this) ? stemWidths.client : 0; } });
-      });
-
-      afterEach(() => {
-        vi.unstubAllGlobals();
-        if (originalScroll) Object.defineProperty(Element.prototype, 'scrollWidth', originalScroll);
-        if (originalClient) Object.defineProperty(Element.prototype, 'clientWidth', originalClient);
-      });
-
-      it('un radical qui déborde reçoit la classe --cut (« … » contre l\'extension) ; le nom complet reste en titre', async () => {
+    describe('nom long (CA-L2-15, revu : passe à la ligne, jamais coupé)', () => {
+      it('le nom complet est lisible sans survol : ni title, ni coupure ; le radical passe à la ligne', async () => {
         const { root, host, settle } = await setup();
         host.items.set([item('l', { name: `${'a'.repeat(100)}.pdf` })]);
         await settle();
         const name = root.querySelector('.lc-file-upload__name')!;
-        expect(name.classList).toContain('lc-file-upload__name--cut');
-        expect(name.getAttribute('title')).toBe(`${'a'.repeat(100)}.pdf`);
-        expect(root.querySelector('.lc-file-upload__extension')!.textContent).toBe('.pdf');
-      });
-
-      it('un nom qui tient n\'est pas marqué, et le redimensionnement de la fenêtre remet la mesure à jour dans les deux sens', async () => {
-        const { root, host, settle } = await setup();
-        stemWidths = { scroll: 50, client: 50 };
-        host.items.set([item('l', { name: 'court.pdf' })]);
-        await settle();
-        const name = () => root.querySelector('.lc-file-upload__name')!;
-        expect(name().classList).not.toContain('lc-file-upload__name--cut');
-        stemWidths = { scroll: 300, client: 100 };
-        observers.forEach((notify) => notify());
-        await settle();
-        expect(name().classList).toContain('lc-file-upload__name--cut');
-        stemWidths = { scroll: 100, client: 100 };
-        observers.forEach((notify) => notify());
-        await settle();
-        expect(name().classList).not.toContain('lc-file-upload__name--cut');
+        expect(name.hasAttribute('title')).toBe(false);
+        expect(name.className).not.toContain('--cut');
+        expect(name.textContent!.trim()).toBe(`${'a'.repeat(100)}.pdf`);
+        expect(name.children).toHaveLength(0);
+        const style = getComputedStyle(name);
+        expect(style.whiteSpace).not.toBe('nowrap');
+        expect(style.overflowWrap).toBe('anywhere');
       });
     });
 
@@ -501,34 +468,12 @@ describe('LcFileUploadComponent', () => {
       expect(icon.componentInstance.name()).toBe('image-off');
     });
 
-    it('nom : radical et extension séparés, nom entier en titre ; pas de séparation sans vraie extension', async () => {
-      const { root, host, settle } = await setup();
-      host.items.set([
-        item('1', { name: 'rapport-final.pdf' }),
-        item('2', { name: 'archive' }),
-        item('3', { name: '.gitignore' }),
-        item('4', { name: 'fichier.uneextensiontroplongue' }),
-      ]);
-      await settle();
-      const parts = Array.from(root.querySelectorAll('.lc-file-upload__name')).map((name) => [
-        name.querySelector('.lc-file-upload__stem')!.textContent,
-        name.querySelector('.lc-file-upload__extension')!.textContent,
-        name.getAttribute('title'),
-      ]);
-      expect(parts).toEqual([
-        ['rapport-final', '.pdf', 'rapport-final.pdf'],
-        ['archive', '', 'archive'],
-        ['.gitignore', '', '.gitignore'],
-        ['fichier.uneextensiontroplongue', '', 'fichier.uneextensiontroplongue'],
-      ]);
-    });
-
     it('un nom de 200 caractères reste entier dans le DOM et dans le nom accessible de « Retirer »', async () => {
       const name = `${'a'.repeat(196)}.png`;
       const { root, host, settle, removeButtons } = await setup();
       host.items.set([item('l', { name })]);
       await settle();
-      expect(root.querySelector('.lc-file-upload__stem')!.textContent).toBe('a'.repeat(196));
+      expect(root.querySelector('.lc-file-upload__name')!.textContent!.trim()).toBe(name);
       expect(removeButtons()[0].getAttribute('aria-label')).toBe(`Retirer ${name}`);
     });
   });
@@ -794,7 +739,7 @@ describe('LcFileUploadComponent', () => {
       host.items.set([item('x', { name: '<img src=x onerror=alert(1)>.png', errorMessage: '<b>gras</b>', status: 'error' })]);
       await settle();
       expect(root.querySelector('.lc-file-upload__row img')).toBeNull();
-      expect(root.querySelector('.lc-file-upload__stem')!.textContent).toBe('<img src=x onerror=alert(1)>');
+      expect(root.querySelector('.lc-file-upload__name')!.textContent!.trim()).toBe('<img src=x onerror=alert(1)>.png');
       expect(root.querySelector('[role=alert] b')).toBeNull();
     });
   });

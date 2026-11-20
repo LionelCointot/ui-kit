@@ -184,6 +184,34 @@ describe('LcAppShellComponent : navMode (D7 : coque sans navigation)', () => {
       expect(q('.lc-shell__backdrop')).toBeNull();
     });
 
+    it('tiroir ouvert : en-tête et contenu principal inertes, tiroir et voile actifs ; retirés à la fermeture', async () => {
+      const { fixture, q } = await setup('drawer', true);
+      const header = q('header.lc-shell__header')!;
+      const main = q('main#lc-main')!;
+      expect(header.hasAttribute('inert')).toBe(false);
+      expect(main.hasAttribute('inert')).toBe(false);
+      const button = q<HTMLButtonElement>('.lc-shell__header button')!;
+      button.click();
+      await fixture.whenStable();
+      expect(header.hasAttribute('inert')).toBe(true);
+      expect(main.hasAttribute('inert')).toBe(true);
+      expect(q('nav')!.hasAttribute('inert')).toBe(false);
+      expect(q('.lc-shell__backdrop')!.hasAttribute('inert')).toBe(false);
+      q('.lc-shell__backdrop')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await fixture.whenStable();
+      expect(header.hasAttribute('inert')).toBe(false);
+      expect(main.hasAttribute('inert')).toBe(false);
+      expect(document.activeElement).toBe(button);
+    });
+
+    it('navigation latérale (non tiroir) : jamais inerte', async () => {
+      const { fixture, host, q } = await setup('side', false);
+      host.open.set(true);
+      await fixture.whenStable();
+      expect(q('header.lc-shell__header')!.hasAttribute('inert')).toBe(false);
+      expect(q('main#lc-main')!.hasAttribute('inert')).toBe(false);
+    });
+
     it('side garde la navigation latérale même sur écran étroit ; drawer garde le tiroir même sur écran large', async () => {
       const side = await setup('side', false);
       expect(side.q('nav')!.classList).not.toContain('lc-shell__nav--drawer');

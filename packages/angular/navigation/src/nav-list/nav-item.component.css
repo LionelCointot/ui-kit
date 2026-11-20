@@ -28,9 +28,8 @@
 .lc-nav-item__label {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Passe à la ligne : le texte entier reste lisible au clavier et au toucher. */
+  overflow-wrap: anywhere;
 }
 
 :host(.lc-nav-item--collapsed) {

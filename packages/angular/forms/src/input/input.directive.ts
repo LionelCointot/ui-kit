@@ -1,4 +1,4 @@
-import { Directive, ElementRef, booleanAttribute, computed, forwardRef, inject, input } from '@angular/core';
+import { Directive, DoCheck, ElementRef, booleanAttribute, computed, forwardRef, inject, input } from '@angular/core';
 import { LC_DEFAULTS, LcSize, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD_CONTROL, LcFormFieldControl, LcValidationMessage } from '../form-field/form-field-control';
 import { nativeControlAria } from '../shared/native-control';
@@ -23,7 +23,7 @@ import { nativeControlAria } from '../shared/native-control';
     '(input)': 'resizeToContent()',
   },
 })
-export class LcInputDirective implements LcFormFieldControl {
+export class LcInputDirective implements LcFormFieldControl, DoCheck {
   private readonly defaults = inject(LC_DEFAULTS);
   private readonly element = inject<ElementRef<HTMLInputElement | HTMLTextAreaElement>>(ElementRef).nativeElement;
 
@@ -48,8 +48,17 @@ export class LcInputDirective implements LcFormFieldControl {
     this.element.focus();
   }
 
+  /** Dernière valeur mesurée : un changement par programme (formulaire, `[value]`) n'émet pas d'événement `input`. */
+  private measuredValue: string | null = null;
+
+  ngDoCheck(): void {
+    if (!this.autoResize() || this.element.tagName !== 'TEXTAREA') return;
+    if (this.element.value !== this.measuredValue) this.resizeToContent();
+  }
+
   protected resizeToContent(): void {
     if (!this.autoResize() || this.element.tagName !== 'TEXTAREA') return;
+    this.measuredValue = this.element.value;
     this.element.style.height = 'auto';
     this.element.style.height = `${this.element.scrollHeight}px`;
   }

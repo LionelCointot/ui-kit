@@ -72,6 +72,18 @@ describe('LcTruncateDirective', () => {
     expect(el.style.getPropertyValue('--lc-truncate-overflow')).toBe('');
   });
 
+  it('le focus clavier révèle aussi le texte ; il ne s\'arrête que quand survol et focus ont cessé', async () => {
+    const { el } = await setup();
+    const scrolling = () => el.classList.contains('lc-truncate--scrolling');
+    el.dispatchEvent(new FocusEvent('focusin'));
+    expect(scrolling()).toBe(true);
+    enter(el);
+    leave(el);
+    expect(scrolling()).toBe(true);
+    el.dispatchEvent(new FocusEvent('focusout'));
+    expect(scrolling()).toBe(false);
+  });
+
   it('la durée suit la vitesse du jeton --lc-truncate-speed', async () => {
     const { el } = await setup();
     el.style.setProperty('--lc-truncate-speed', '100');

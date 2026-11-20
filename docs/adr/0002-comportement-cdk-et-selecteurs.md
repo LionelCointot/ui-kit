@@ -1,6 +1,6 @@
 # ADR-0002 : Comportement délégué au CDK, sélecteurs d'attribut et contrôles de formulaire
 
-- **Statut** : Acceptée
+- **Statut** : Acceptée ; amendée par ADR-0009 (2026-11-20 : CDK par défaut, primitives natives admises sous conditions)
 - **Date** : 2026-11-08
 
 ## Contexte

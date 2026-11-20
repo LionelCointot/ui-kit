@@ -390,6 +390,14 @@ describe('LcDataTableComponent', () => {
       expect(el.querySelectorAll('.lc-data-table__chip')).toHaveLength(1);
     });
 
+    it('pastille : la valeur passe à la ligne au lieu d\'être tronquée', async () => {
+      await setup({ query: q({ state: ['Close', 'Nouvelle'] }), chips: 'always' });
+      const value = getComputedStyle(el.querySelector('.lc-data-table__chip-value')!);
+      expect(value.textOverflow).not.toBe('ellipsis');
+      expect(value.whiteSpace).not.toBe('nowrap');
+      expect(value.overflowWrap).toBe('anywhere');
+    });
+
     it('CA-13 : pastille « Modifier le filtre X : résumé » ; retrait : émet, focus à la pastille suivante, puis au bouton Filtres', async () => {
       await setup({ query: q({ state: ['Close', 'Nouvelle'], urgent: 'urgent' }), narrow: true });
       const edit = el.querySelector<HTMLButtonElement>('[id$="-chip-state"]')!;
@@ -418,14 +426,14 @@ describe('LcDataTableComponent', () => {
       await setup();
       const th = () => funnel('date').closest('th')!;
       const sort = () => th().querySelector<HTMLButtonElement>('.lc-data-table__sort')!;
-      expect(th().getAttribute('aria-sort')).toBe('none');
+      expect(th().hasAttribute('aria-sort')).toBe(false);
       await click(sort());
       expect(th().getAttribute('aria-sort')).toBe('ascending');
       await click(sort());
       expect(th().getAttribute('aria-sort')).toBe('descending');
       expect(bodyIds()[0]).toBe('Demande 10');
       await click(sort());
-      expect(th().getAttribute('aria-sort')).toBe('none');
+      expect(th().hasAttribute('aria-sort')).toBe(false);
       expect(host.emitted.map((e) => e.sort)).toEqual([{ columnId: 'date', direction: 'asc' }, { columnId: 'date', direction: 'desc' }, null]);
     });
 
@@ -459,6 +467,15 @@ describe('LcDataTableComponent', () => {
   });
 
   describe('téléphone (CA-14, CA-15)', () => {
+    it('résumé de section du panneau : passe à la ligne au lieu d\'être tronqué', async () => {
+      await setup({ query: q({ state: ['Close'] }), narrow: true });
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const summary = getComputedStyle(el.querySelector('.lc-data-table__section-summary')!);
+      expect(summary.textOverflow).not.toBe('ellipsis');
+      expect(summary.whiteSpace).not.toBe('nowrap');
+      expect(summary.overflowWrap).toBe('anywhere');
+    });
+
     it('CA-14 : bouton « Filtres (N) » nommé « Filtres, N actifs » ; libellés des cartes', async () => {
       await setup({ query: q({ state: ['Close'], city: ['Brest'] }), narrow: true });
       const button = el.querySelector<HTMLButtonElement>('[id$="-filters"]')!;
@@ -488,6 +505,18 @@ describe('LcDataTableComponent', () => {
       expect(host.emitted).toEqual([q({ state: ['Close'] })]);
     });
 
+    it('panneau : le premier contrôle porte autofocus, le dialogue n\'est pas focalisé à la main, Échap n\'est pas doublé', async () => {
+      await setup({ narrow: true });
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      expect(dialog.querySelector('button')!.hasAttribute('autofocus')).toBe(true);
+      expect(dialog.hasAttribute('tabindex')).toBe(false);
+      const close = vi.fn();
+      dialog.close = close;
+      await key(dialog, 'Escape'); // le navigateur ferme seul : pas de second chemin de fermeture
+      expect(close).not.toHaveBeenCalled();
+    });
+
     it('CA-15 : Échap ferme sans appliquer et rend le focus au bouton Filtres', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
@@ -495,7 +524,8 @@ describe('LcDataTableComponent', () => {
       await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__section-toggle')!);
       await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
       await click(boxes(dialog)[1]);
-      await key(dialog, 'Escape');
+      dialog.dispatchEvent(new Event('close')); // Échap natif : le navigateur ferme le dialogue puis émet `close`
+      await stable();
       expect(dialog.querySelector('.lc-data-table__panel-apply')).toBeNull();
       expect(host.emitted).toHaveLength(0);
       expect(document.activeElement).toBe(el.querySelector('[id$="-filters"]'));

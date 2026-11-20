@@ -165,12 +165,11 @@
 </ng-template>
 
 <!-- Panneau des filtres (téléphone) : dialogue modal plein écran, rien n'est appliqué avant « Afficher » -->
-<dialog #panel class="lc-data-table__panel" tabindex="-1" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()"
-  (keydown.escape)="$event.preventDefault(); closePanel()">
+<dialog #panel class="lc-data-table__panel" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()">
   @if (panelOpen()) {
     <div class="lc-data-table__panel-head">
       <h2 class="lc-data-table__panel-title" [id]="uid + '-panel-title'">{{ text.filters(0) }}</h2>
-      <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" [attr.aria-label]="text.closeWithoutApplying" (click)="closePanel()">
+      <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" [attr.aria-label]="text.closeWithoutApplying" autofocus (click)="closePanel()">
         <lc-icon name="x" />
       </button>
     </div>
