@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { LC_DEFAULT_ICONS } from '@lionelcointot/ui-angular';
+import { LC_DEFAULT_ICONS, LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from './cell.directive';
 import { LcTableComponent } from './table.component';
 import { LcSort, LcTableColumn, LcTableGrouping } from './table-model';
@@ -415,5 +415,166 @@ describe('LcTableComponent', () => {
       expect(compact).toContain('--_cell-padding-inline:var(--lc-table-cell-padding-inline,var(--lc-sys-space-3))');
       expect(compact).toContain('--_cell-padding-block:var(--lc-sys-space-1)');
     });
+  });
+});
+
+@Component({
+  imports: [LcTableComponent],
+  template: `
+    <lc-table caption="Lignes" [data]="data()" [columns]="columns" [trackBy]="trackBy" [groupBy]="grouping()" [(sort)]="sort"
+      [selectable]="selectable()" [(selection)]="selection" [isRowSelectable]="canSelect" selectAllHint="Agit sur tout le jeu"
+      [rowClass]="tone" [footer]="{ amount: 1 }" />
+  `,
+})
+class SelectionHostComponent {
+  readonly data = signal<readonly Row[]>(rows);
+  readonly columns: readonly LcTableColumn<Row>[] = [
+    { id: 'name', header: 'Nom', value: (row) => row.name, sortable: true },
+    { id: 'amount', header: 'Montant', value: (row) => row.amount },
+  ];
+  readonly trackBy = (row: Row) => row.id;
+  readonly selectable = signal(true);
+  readonly selection = signal<ReadonlySet<unknown>>(new Set());
+  readonly sort = signal<LcSort | null>(null);
+  readonly grouping = signal<LcTableGrouping<Row> | undefined>(undefined);
+  /** Bob (id 3) n'est pas cochable. */
+  readonly canSelect = (row: Row) => row.id !== 3;
+  readonly tone = (row: Row) => (row.id === 1 ? 'a' : row.id === 2 ? ['b', 'c'] : null);
+}
+
+describe('LcTableComponent : sélection et teinte (K1, K4)', () => {
+  async function setup(labels?: typeof LC_LABELS_EN) {
+    if (labels) TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: labels }] });
+    const fixture = TestBed.createComponent(SelectionHostComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const boxes = () => Array.from(element.querySelectorAll<HTMLInputElement>('tbody input.lc-checkbox'));
+    const head = () => element.querySelector<HTMLInputElement>('thead input.lc-checkbox')!;
+    const click = async (box: HTMLInputElement) => {
+      box.click();
+      await fixture.whenStable();
+    };
+    const live = () => element.querySelector('[aria-live]')?.textContent?.trim();
+    return { fixture, host: fixture.componentInstance, element, boxes, head, click, live };
+  }
+
+  it('CA-K1-1 : sans selectable, ni cases ni région ; avec, une colonne de plus partout', async () => {
+    const { fixture, host, element } = await setup();
+    expect(element.querySelectorAll('input.lc-checkbox').length).toBe(5);
+    expect(element.querySelectorAll('thead th').length).toBe(3);
+    host.selectable.set(false);
+    await fixture.whenStable();
+    expect(element.querySelector('input')).toBeNull();
+    expect(element.querySelector('[aria-live]')).toBeNull();
+    expect(element.querySelectorAll('thead th').length).toBe(2);
+  });
+
+  it('CA-K1-1 : lignes de groupe, pied et ligne vide reçoivent la colonne en plus', async () => {
+    const { fixture, host, element } = await setup();
+    host.grouping.set({ key: (row) => row.group, label: (key) => key });
+    await fixture.whenStable();
+    expect(element.querySelectorAll('.lc-table__group')[0].querySelectorAll('td').length).toBe(3);
+    expect(element.querySelectorAll('tfoot td').length).toBe(3);
+    host.data.set([]);
+    await fixture.whenStable();
+    expect(element.querySelector('.lc-table__empty td')!.getAttribute('colspan')).toBe('3');
+  });
+
+  it('CA-K1-2 : l\'en-tête coche tout le cochable (groupes repliés compris), décoche, passe en partiel ; refus intouchés', async () => {
+    const { fixture, host, boxes, head, click } = await setup();
+    expect(boxes()[2].disabled).toBe(true);
+    await click(head());
+    expect([...host.selection()].sort()).toEqual([1, 2, 4]);
+    expect(head().checked).toBe(true);
+    await click(head());
+    expect(host.selection().size).toBe(0);
+    await click(boxes()[0]);
+    expect(head().indeterminate).toBe(true);
+    await click(head());
+    expect(host.selection().size).toBe(3);
+    host.grouping.set({ key: (row) => row.group, label: (key) => key });
+    host.selection.set(new Set());
+    await fixture.whenStable();
+    await click(head());
+    expect(host.selection().size).toBe(3);
+    host.data.set(rows.filter((row) => row.id === 3));
+    await fixture.whenStable();
+    expect(head().disabled).toBe(true);
+  });
+
+  it('CA-K1-3 : un clic émet un nouveau Set ; selection.set du parent coche ; le tri garde les lignes cochées', async () => {
+    const { fixture, host, boxes, click, element } = await setup();
+    const before = host.selection();
+    await click(boxes()[1]);
+    expect(host.selection()).not.toBe(before);
+    expect(before.size).toBe(0);
+    expect([...host.selection()]).toEqual([2]);
+    host.selection.set(new Set([1]));
+    await fixture.whenStable();
+    expect(boxes()[0].checked).toBe(true);
+    host.sort.set({ columnId: 'name', direction: 'asc' });
+    await fixture.whenStable();
+    const checkedNames = boxes().filter((box) => box.checked).map((box) => box.closest('tr')!.querySelectorAll('td')[1].textContent!.trim());
+    expect(checkedNames).toEqual(['Charlie']);
+    expect(element.querySelector('tbody tr')).not.toBeNull();
+  });
+
+  it('CA-K1-4 : noms accessibles, annonce après un clic seulement, aide reliée (français)', async () => {
+    const { fixture, host, boxes, head, click, live, element } = await setup();
+    expect(boxes()[0].getAttribute('aria-label')).toBe('Sélectionner la ligne');
+    expect(head().getAttribute('aria-label')).toBe('Tout sélectionner');
+    const hint = element.querySelector(`#${head().getAttribute('aria-describedby')}`);
+    expect(hint?.textContent).toContain('Agit sur tout le jeu');
+    expect(live()).toBe('');
+    host.selection.set(new Set([1]));
+    await fixture.whenStable();
+    expect(live()).toBe('');
+    await click(boxes()[1]);
+    expect(live()).toBe('2 sélectionnées sur 3');
+    host.selection.set(new Set());
+    await fixture.whenStable();
+    expect(live()).toBe('2 sélectionnées sur 3');
+    host.data.set(rows.slice(0, 2));
+    await fixture.whenStable();
+    expect(live()).toBe('2 sélectionnées sur 3');
+  });
+
+  it('CA-K1-4 : annonce en anglais', async () => {
+    const { boxes, head, click, live } = await setup(LC_LABELS_EN);
+    expect(head().getAttribute('aria-label')).toBe('Select all');
+    await click(boxes()[0]);
+    expect(live()).toBe('1 selected of 3');
+  });
+
+  it('CA-K1-5 : des lignes cochées disparues du jeu ne comptent plus mais restent dans selection', async () => {
+    const { fixture, host, head, click, live } = await setup();
+    await click(head());
+    host.data.set(rows.filter((row) => row.id !== 1));
+    await fixture.whenStable();
+    expect(live()).toBe('3 sélectionnées sur 3');
+    expect(head().checked).toBe(true);
+    expect(host.selection().has(1)).toBe(true);
+    host.selection.set(new Set([1]));
+    await fixture.whenStable();
+    expect(head().checked).toBe(false);
+    expect(head().indeterminate).toBe(false);
+  });
+
+  it('avertit en développement d\'une clé trackBy en double, sur tout data', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { fixture, host } = await setup();
+    expect(warn).not.toHaveBeenCalled();
+    host.data.set([rows[0], rows[0]]);
+    await fixture.whenStable();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('trackBy'));
+    warn.mockRestore();
+  });
+
+  it('CA-K4-1 : rowClass pose les classes rendues (chaîne, tableau) sur les lignes de données ; aucune pour null', async () => {
+    const { element } = await setup();
+    const trs = element.querySelectorAll('tbody tr');
+    expect(trs[0].classList.contains('a')).toBe(true);
+    expect(trs[1].classList.contains('b') && trs[1].classList.contains('c')).toBe(true);
+    expect(trs[2].className).toBe('');
   });
 });

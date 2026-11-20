@@ -139,3 +139,36 @@ export const Empty: Story = {
     template: `<lc-table caption="Commandes par semaine" [data]="[]" [columns]="columns" [trackBy]="trackBy" />`,
   }),
 };
+
+/** Tones live in a plain stylesheet in <head>: a template `<style>` is emulated-encapsulated and would not reach the rows rendered inside `lc-table`. */
+function installTones(): true {
+  if (!document.getElementById('story-table-tones')) {
+    const style = document.createElement('style');
+    style.id = 'story-table-tones';
+    style.textContent = `
+      .story-tone { --lc-table-row-background: var(--_bg); color: var(--_fg); }
+      .story-tone > :first-child { border-inline-start: var(--lc-sys-border-width-thick) solid var(--_bar); }
+      .story-tone--success { --_bg: var(--lc-sys-color-success-container); --_fg: var(--lc-sys-color-on-success-container); --_bar: var(--lc-sys-color-success); }
+      .story-tone--info { --_bg: var(--lc-sys-color-info-container); --_fg: var(--lc-sys-color-on-info-container); --_bar: var(--lc-sys-color-info); }
+      .story-tone--error { --_bg: var(--lc-sys-color-error-container); --_fg: var(--lc-sys-color-on-error-container); --_bar: var(--lc-sys-color-error); }
+      .story-tone--warning { --_bg: var(--lc-sys-color-warning-container); --_fg: var(--lc-sys-color-on-warning-container); --_bar: var(--lc-sys-color-warning); }`;
+    document.head.appendChild(style);
+  }
+  return true;
+}
+
+/** Selection column (`selectable`, `[(selection)]`): Bob's row cannot be ticked (`isRowSelectable`), the header box is partial when only some rows are ticked, and The selection column and the first data column both stay sticky while the table scrolls sideways (narrow container). `rowClass` adds classes to data rows; here the story's own stylesheet tints them with `--lc-table-row-background` (kit tokens only; colour is never the only cue: the status column says it too). Check it in both themes. */
+export const SelectionAndTones: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: {
+      data: orders.slice(0, 6), columns, trackBy, tonesInstalled: installTones(),
+      selection: new Set<unknown>([1, 2]),
+      canSelect: (row: Order) => row.id !== 3,
+      tone: (row: Order) => (row.id <= 4 ? `story-tone story-tone--${['success', 'info', 'error', 'warning'][row.id - 1]}` : null),
+    },
+    template: `<div style="max-inline-size: 28rem"><lc-table caption="Commandes à traiter" [data]="data" [columns]="columns" [trackBy]="trackBy" [selectable]="true" [(selection)]="selection"
+      [isRowSelectable]="canSelect" [rowClass]="tone" selectAllHint="La case en haut du tableau agit sur toutes les commandes." /></div>
+      <p>{{ selection.size }} sélectionnée(s)</p>`,
+  }),
+};
