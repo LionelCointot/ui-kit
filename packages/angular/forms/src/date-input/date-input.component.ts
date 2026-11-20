@@ -7,6 +7,7 @@ import {
   Component,
   ComponentRef,
   ElementRef,
+  Injector,
   booleanAttribute,
   DestroyRef,
   computed,
@@ -146,9 +147,9 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
   private readonly blurred = signal(false);
 
-  private readonly overlay = inject(Overlay);
+  // Overlay et LcFormatService ne sont demandés qu'à l'usage : le mode natif n'en construit aucun.
+  private readonly injector = inject(Injector);
   private readonly viewContainerRef = inject(ViewContainerRef);
-  private readonly format = inject(LcFormatService);
   private readonly buttonRef = viewChild<ElementRef<HTMLButtonElement>>('calendarButton');
   private overlayRef?: OverlayRef;
   /** Panneau ouvert ; créé à l'ouverture, détruit à la fermeture. */
@@ -161,7 +162,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   });
   protected readonly buttonName = computed(() => {
     const value = this.validValue();
-    return value ? this.labels.dateChange(this.format.date(value, 'long')) : this.labels.dateChoose;
+    return value ? this.labels.dateChange(this.injector.get(LcFormatService).date(value, 'long')) : this.labels.dateChoose;
   });
 
   constructor() {
@@ -211,17 +212,20 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     panel.instance.focusInitial();
   }
 
-  /** Même stratégie de position et de défilement que `lc-combobox` ; largeur propre au panneau (304 px). */
+  /** Même stratégie de position et de défilement que `lc-combobox` ; largeur propre au panneau. Dimensions flexibles : sans place, le panneau se limite à la fenêtre et son corps défile. */
   private createOverlay(): OverlayRef {
-    const ref = this.overlay.create({
-      positionStrategy: this.overlay.position().flexibleConnectedTo(this.host).withFlexibleDimensions(false).withViewportMargin(8)
+    const overlay = this.injector.get(Overlay);
+    const ref = overlay.create({
+      positionStrategy: overlay.position().flexibleConnectedTo(this.host).withFlexibleDimensions(true).withViewportMargin(8)
         .withPositions([
           { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
           { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
           { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
           { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
         ]),
-      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      scrollStrategy: overlay.scrollStrategies.reposition(),
+      // Sans `minHeight` non nul (0 compte pour absent), le CDK ne retient jamais le dimensionnement flexible : le panneau serait seulement poussé.
+      minHeight: 1,
     });
     ref.outsidePointerEvents().subscribe((event) => {
       if (this.buttonRef()?.nativeElement.contains(event.target as Node)) return; // le bouton bascule lui-même

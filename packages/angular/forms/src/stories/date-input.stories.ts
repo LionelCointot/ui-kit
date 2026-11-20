@@ -1,6 +1,7 @@
 import { Component, booleanAttribute, input, linkedSignal, signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { page } from 'vitest/browser';
 // Le projet Vitest « storybook » ne charge pas les feuilles globales d'angular.json : on les charge ici pour mesurer le vrai rendu.
 import '../../../../tokens/dist/css/lc-tokens.css';
 import '../../../../tokens/dist/css/theme-default.css';
@@ -182,6 +183,53 @@ export const CalendrierDansUnChampDeFormulaire: Story = {
     expect(canvas.getByTestId('value')).toHaveTextContent('Valeur : aucune');
     expect((canvas.getByRole('textbox') as HTMLInputElement).value).toBe('jj/mm/aaaa');
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Choisir une date' })).toHaveFocus());
+  },
+};
+
+/** Navigateur réel : le jour choisi est aussi aujourd'hui et porte le focus clavier ; le point d'aujourd'hui reste à l'intérieur du disque, sans le toucher. */
+export const CalendrierAujourdhuiChoisiFocus: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return picker(`initial="${today}"`);
+  },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /^Changer la date/ }));
+    const panel = await openedPanel();
+    const day = await waitFor(() => {
+      const cell = panel.querySelector<HTMLElement>('td[aria-selected="true"][aria-current="date"]');
+      expect(cell).toHaveFocus();
+      return cell!;
+    });
+    const dot = getComputedStyle(day, '::after');
+    const disc = getComputedStyle(day, '::before');
+    // Le disque est inscrit avec une marge ; le point est posé plus haut que son bord bas, donc à l'intérieur.
+    expect(parseFloat(dot.bottom)).toBeGreaterThan(parseFloat(disc.bottom) + 1);
+    expect(parseFloat(dot.bottom) + parseFloat(dot.height)).toBeLessThan(day.getBoundingClientRect().height / 2);
+  },
+};
+
+/** Navigateur réel, fenêtre de 400 px de haut : le panneau reste dans la fenêtre, son corps défile et « Aujourd'hui » se clique. */
+export const CalendrierFenetreBasse: Story = {
+  decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
+  render: () => picker('initial="2026-11-12"'),
+  play: async ({ canvasElement }) => {
+    await page.viewport(1280, 400);
+    try {
+      await waitFor(() => expect(window.innerHeight).toBe(400));
+      await userEvent.click(within(canvasElement).getByRole('button', { name: /^Changer la date/ }));
+      const panel = await openedPanel();
+      await waitFor(() => expect(panel.getBoundingClientRect().bottom).toBeLessThanOrEqual(400));
+      expect(panel.getBoundingClientRect().top).toBeGreaterThanOrEqual(0);
+      const today = within(panel).getByRole('button', { name: "Aujourd'hui" });
+      expect(today.getBoundingClientRect().bottom).toBeLessThanOrEqual(400);
+      await userEvent.click(today);
+      await waitFor(() => expect(document.querySelector('lc-calendar-panel')).toBeNull());
+      expect(within(canvasElement).getByTestId('value')).not.toHaveTextContent('2026-11-12');
+    } finally {
+      await page.viewport(1280, 720);
+    }
   },
 };
 

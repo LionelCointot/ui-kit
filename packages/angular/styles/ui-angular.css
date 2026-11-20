@@ -405,6 +405,7 @@ lc-form-field [lcSuffix] {
   display: flex;
   flex-direction: column;
   inline-size: max-content;
+  min-block-size: 0;
   /* Écart avec le champ, dessous comme dessus (la surcouche colle le panneau au cadre). */
   margin-block: var(--lc-sys-space-1);
   /* Le contour est compté dans le padding : la largeur totale reste 7 cellules + 2 marges (304 px). */
@@ -418,6 +419,11 @@ lc-form-field [lcSuffix] {
   animation: lc-calendar-fade var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
 }
 
+/* Focalisé par un clic dans une zone morte : aucun anneau, le panneau n'est pas un contrôle. */
+.lc-calendar:focus {
+  outline: none;
+}
+
 @keyframes lc-calendar-fade {
   from {
     opacity: 0;
@@ -426,6 +432,9 @@ lc-form-field [lcSuffix] {
 
 .lc-calendar__months {
   display: flex;
+  /* Fenêtre trop basse : le corps défile, le pied reste atteignable. */
+  min-block-size: 0;
+  overflow: auto;
   gap: var(--lc-calendar-month-gap, var(--lc-sys-space-6));
 }
 
@@ -564,6 +573,8 @@ lc-form-field [lcSuffix] {
 
 .lc-calendar__day[aria-disabled='true'] {
   color: var(--lc-calendar-day-disabled-text, var(--lc-sys-color-on-surface-subtle));
+  /* Repère qui ne repose pas sur la couleur. */
+  text-decoration: line-through;
   cursor: not-allowed;
 }
 
@@ -588,15 +599,21 @@ lc-form-field [lcSuffix] {
   vertical-align: middle;
 }
 
-/* Niveaux mois et années : 4 colonnes sur 3 lignes, même largeur ; des lignes espacées remplissent le corps, la pilule et l'anneau restent à la hauteur d'une cellule de jours. */
+/* Niveaux mois et années : 4 colonnes sur 3 lignes, même largeur ; des lignes espacées remplissent le corps (3 cellules + 4 intervalles d'une cellule = 7 cellules) et centrent la grille ; la pilule et l'anneau restent à la hauteur d'une cellule de jours. */
 .lc-calendar__grid--wide {
   border-collapse: separate;
-  border-spacing: 0 var(--lc-sys-space-8);
+  border-spacing: 0 var(--lc-sys-space-10);
 }
 
 /* Dans la pilule, le point reste à l'intérieur, sous le libellé. */
 .lc-calendar__grid--wide .lc-calendar__day[aria-current='date']::after {
   inset-block-end: calc(var(--lc-sys-space-1) + var(--lc-sys-border-width-thin));
+}
+
+/* Jour choisi et aujourd'hui : le point remonte pour rester dans le disque (ou la pilule), sans toucher son bord. */
+.lc-calendar__day[aria-selected='true'][aria-current='date']::after,
+.lc-calendar__grid--wide .lc-calendar__day[aria-selected='true'][aria-current='date']::after {
+  inset-block-end: calc(var(--lc-sys-space-1) * 1.5);
 }
 
 /* Niveau des années : le titre est du texte, sans contour ni chevron. */
