@@ -1,6 +1,6 @@
 # Spec : sélection et teinte de ligne dans `lc-table`, info-bulle cliquable, texte tronqué qui défile (K1 à K4)
 
-- **Statut** : En revue (demandé par l'utilisateur le 2026-11-20, pendant la conception de l'écran « Ouverture des copropriétés » de `copro-ticket`)
+- **Statut** : Validée le 2026-11-20 par l'utilisateur (« Oui »), en cours de réalisation
 - **Date** : 2026-11-20
 - **Source** : maquettes `copro-ticket/docs/design/explorations/2026-11-import-progressif/` (direction B : `b-deux-colonnes.html`, `b-detail.html`, `b-detail-copro.html`) ; spec `copro-ticket/docs/specs/2026-11-import-progressif.md`, section 5.4
 - **Liés** : `2026-11-catalogue-composants.md`, `2026-11-composants-suivi-de-demandes.md` (D4 tri de colonne, D5 info-bulle), `DESIGN.md`
