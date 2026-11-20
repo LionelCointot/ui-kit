@@ -432,15 +432,25 @@ lc-form-field [lcSuffix] {
 
 .lc-calendar__months {
   display: flex;
+  flex-direction: column;
   /* Fenêtre trop basse : le corps défile, le pied reste atteignable. */
   min-block-size: 0;
   overflow: auto;
+}
+
+/* Une rangée d'en-têtes au-dessus d'une rangée de grilles : précédent, titres et suivant se tabulent avant la grille. */
+.lc-calendar__row {
+  display: flex;
   gap: var(--lc-calendar-month-gap, var(--lc-sys-space-6));
 }
 
-/* Hauteur fixe : en-tête + ligne des jours + 6 semaines, pour ne pas sauter d'un mois à l'autre. */
+/* Hauteur fixe : ligne des jours + 6 semaines, pour ne pas sauter d'un mois à l'autre. */
 .lc-calendar__month {
-  block-size: calc(8 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+  block-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+}
+
+.lc-calendar__month,
+.lc-calendar__header {
   inline-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
 }
 

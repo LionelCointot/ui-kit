@@ -40,6 +40,9 @@ import { LC_DATE_PART } from './date-range-part';
 import { compareIso, isValidIsoDate, toIsoDate } from './date-math';
 import { LC_DATE_PICKER, resolveDatePickerMode } from './date-picker-mode';
 
+/** Types de saisie qui insèrent du texte : lus par `beforeinput`, jamais laissés au navigateur. */
+const INSERTIONS: ReadonlySet<string> = new Set(['insertText', 'insertFromPaste', 'insertFromDrop', 'insertReplacementText']);
+
 /** Saisie du champ à zones vers le modèle : `iso` `undefined` laisse la valeur telle quelle ; `error` remonte par `transformedValue`. */
 interface DateEntry {
   readonly iso: string | null | undefined;
@@ -64,7 +67,7 @@ interface DateEntry {
         [id]="inputId()" [value]="mask().text" [disabled]="disabled()" [readOnly]="readonly()"
         [attr.aria-label]="ariaLabel() || null" [attr.aria-invalid]="showInvalid() ? 'true' : null"
         [attr.aria-required]="isRequired() ? 'true' : null" [attr.aria-describedby]="describedBy()"
-        (keydown)="onKeydown($event)" (beforeinput)="onBeforeInput($event)" (input)="onText($event)" (click)="onClick()" (focus)="onFocus()" (blur)="onBlur()" />
+        (keydown)="onKeydown($event)" (beforeinput)="onBeforeInput($event)" (paste)="onPaste($event)" (input)="onText($event)" (click)="onClick()" (focus)="onFocus()" (blur)="onBlur()" />
       <span class="lc-visually-hidden" [id]="hintId">{{ labels.dateInputHint }}</span>
       <span class="lc-visually-hidden" aria-live="polite">{{ announcement() }}</span>
       @if (!disabled() && !readonly() && !part) {
@@ -291,7 +294,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
 
   /**
    * Toute la saisie passe par `keydown` (retenu plutôt que `beforeinput` : un seul gestionnaire pour chiffres, flèches
-   * et effacements, `beforeinput` ne voyant pas les flèches). Collage et remplissage automatique arrivent par `input`.
+   * et effacements, `beforeinput` ne voyant pas les flèches). Collage et remplissage automatique arrivent par `paste` et `beforeinput` ; `input` n'est qu'un repli.
    */
   protected onKeydown(event: KeyboardEvent): void {
     const { key } = event;
@@ -318,11 +321,28 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     event.preventDefault();
   }
 
-  /** Clavier virtuel : un chiffre inséré vaut une frappe ; tout autre texte inséré est refusé. */
+  /**
+   * Texte inséré d'un coup (frappe de clavier virtuel, collage, glisser-déposer, remplissage automatique, `fill()`) : un seul
+   * chiffre vaut une frappe ; une date entière lisible remplace TOUT le champ, quelle que soit la sélection ; le reste est ignoré.
+   */
   protected onBeforeInput(event: InputEvent): void {
-    if (this.readonly() || event.inputType !== 'insertText' || !event.cancelable) return;
+    if (this.readonly() || !event.cancelable || !INSERTIONS.has(event.inputType)) return;
     event.preventDefault();
-    if (event.data && /^\d$/.test(event.data)) this.apply(typeDigit(this.zones(), this.active(), event.data, this.order));
+    this.insert(event.data ?? event.dataTransfer?.getData('text/plain') ?? '');
+  }
+
+  /** Collage : lu ici, avant `beforeinput`, pour que la sélection (la zone active, toujours) ne limite pas le remplacement. */
+  protected onPaste(event: ClipboardEvent): void {
+    if (this.readonly()) return;
+    event.preventDefault();
+    this.insert(event.clipboardData?.getData('text') ?? '');
+  }
+
+  private insert(text: string): void {
+    const trimmed = text.trim();
+    if (/^\d$/.test(trimmed)) return this.apply(typeDigit(this.zones(), this.active(), trimmed, this.order));
+    const change = trimmed.length > 1 ? parsePaste(trimmed, this.order) : null;
+    if (change) this.apply(change); // texte illisible : ignoré en silence
   }
 
   /** Seul un remplacement de tout le texte (collage, remplissage automatique) est lu ; le reste (composition, touche morte, coupe) est annulé sans message. */
@@ -356,7 +376,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
     const rejected = !!iso && !!this.part?.rejects(this, iso);
     this.zones.set(zones);
     this.entry!.set({ iso: rejected ? null : iso, error: error || rejected, typed: true });
-    this.part?.entered(this, rejected ? 'order' : error || (!isEmpty(zones) && iso === null) ? 'incomplete' : null);
+    this.part?.entered(this, rejected ? 'order' : error || (!isEmpty(zones) && iso === null) ? 'incomplete' : null, iso);
   }
 
   /** Réécrit le texte (un collage illisible est annulé), sélectionne la zone active et l'annonce. */

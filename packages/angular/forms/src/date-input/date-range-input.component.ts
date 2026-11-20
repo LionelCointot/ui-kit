@@ -16,7 +16,7 @@ import {
   forwardRef,
   inject,
   input,
-  linkedSignal,
+  isDevMode,
   model,
   output,
   signal,
@@ -35,9 +35,9 @@ import { createCalendarOverlay } from './calendar-overlay';
 import { describeInterval } from './date-describe';
 import { LcDateInputComponent } from './date-input.component';
 import type { LcDateInterval, LcDateIntervalPreset } from './date-interval';
-import { clipInterval, isValidIsoDate } from './date-math';
+import { isValidIsoDate } from './date-math';
 import { LC_DATE_PICKER, resolveDatePickerMode } from './date-picker-mode';
-import { kitDatePresets } from './date-presets';
+import { describePresets, kitDatePresets } from './date-presets';
 import { LC_DATE_PART, LcDatePartHost } from './date-range-part';
 
 /** Seuils de la fenêtre (pas de la feuille de styles : `BreakpointObserver`) : deux mois dès 640 px, raccourcis en colonne dès 840 px. */
@@ -59,6 +59,9 @@ const isoOrUndefined = (value: unknown): string | undefined => (typeof value ===
 
 const EMPTY: LcDateInterval = { from: null, to: null };
 
+/** Interne : ce que `LC_DATE_PART` donne aux deux champs, hors de l'API de la classe. */
+const PARTS = new WeakMap<object, LcDatePartHost>();
+
 /**
  * Saisie de période : deux champs « Du » et « Au » (des `lc-date-input`, donc la même saisie par zones, ou deux
  * `input[type=date]` en mode natif) et, en mode calendrier, un seul bouton qui ouvre le panneau de période.
@@ -71,26 +74,30 @@ const EMPTY: LcDateInterval = { from: null, to: null };
   template: `
     <div #group class="lc-date-range-input__group" role="group" [attr.aria-label]="ariaLabel() || labels.datePeriod"
       [attr.aria-describedby]="describedBy()" (focusout)="onFocusOut($event)">
-      @for (epoch of [epoch()]; track epoch) {
-        <div class="lc-date-range-input__part">
-          <label class="lc-date-range-input__label" [for]="inputId()">{{ labels.dataTable.from }}</label>
-          <lc-date-input #fromInput [inputId]="inputId()" [value]="value().from" (valueChange)="setBound('start', $event)"
-            [min]="fromMin()" [max]="fromMax()" [disabled]="disabled()" [readonly]="readonly()" [required]="required()"
+      <div class="lc-date-range-input__part">
+        <label class="lc-date-range-input__label" [for]="inputId()">{{ labels.dataTable.from }}</label>
+        @for (epoch of [epoch()]; track epoch) {
+          <lc-date-input #fromInput [inputId]="inputId()" [value]="current().from" (valueChange)="setBound('start', $event)"
+            [min]="min()" [max]="fromMax()" [disabled]="disabled()" [readonly]="readonly()" [required]="required()"
             [invalid]="startInvalid()" [touched]="true" [size]="size()" [fillMode]="fillMode()" [rounded]="rounded()" />
-        </div>
+        }
+      </div>
+      <div class="lc-date-range-input__end">
         <div class="lc-date-range-input__part">
           <label class="lc-date-range-input__label" [for]="toId">{{ labels.dataTable.to }}</label>
-          <lc-date-input #toInput [inputId]="toId" [value]="value().to" (valueChange)="setBound('end', $event)"
-            [min]="toMin()" [max]="toMax()" [disabled]="disabled()" [readonly]="readonly()" [required]="required()"
-            [invalid]="endInvalid()" [touched]="true" [size]="size()" [fillMode]="fillMode()" [rounded]="rounded()" />
+          @for (epoch of [epoch()]; track epoch) {
+            <lc-date-input #toInput [inputId]="toId" [value]="current().to" (valueChange)="setBound('end', $event)"
+              [min]="toMin()" [max]="max()" [disabled]="disabled()" [readonly]="readonly()" [required]="required()"
+              [invalid]="endInvalid()" [touched]="true" [size]="size()" [fillMode]="fillMode()" [rounded]="rounded()" />
+          }
         </div>
-      }
-      @if (isCalendar && !disabled() && !readonly()) {
-        <button #calendarButton type="button" class="lc-date-range-input__button" aria-haspopup="dialog"
-          [attr.aria-expanded]="open()" [attr.aria-label]="buttonName()" (click)="toggle()">
-          <lc-icon name="calendar" />
-        </button>
-      }
+        @if (isCalendar && !disabled() && !readonly()) {
+          <button #calendarButton type="button" class="lc-date-range-input__button" aria-haspopup="dialog"
+            [attr.aria-expanded]="open()" [attr.aria-label]="buttonName()" (click)="toggle()">
+            <lc-icon name="calendar" />
+          </button>
+        }
+      </div>
     </div>
     @if (openLine(); as line) {
       <p class="lc-date-range-input__note" [id]="noteId">{{ line }}</p>
@@ -115,11 +122,11 @@ const EMPTY: LcDateInterval = { from: null, to: null };
   // Les deux champs ne sont pas des contrôles de formulaire : ils ne lisent ni `lc-form-field` ni ne portent de bouton ; la période décide.
   viewProviders: [
     { provide: LC_FORM_FIELD, useValue: null },
-    { provide: LC_DATE_PART, useExisting: forwardRef(() => LcDateRangeInputComponent) },
+    { provide: LC_DATE_PART, useFactory: () => PARTS.get(inject(LcDateRangeInputComponent))! },
   ],
   host: { class: 'lc-date-range-input' },
 })
-export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateInterval>, 'min' | 'max'>, LcFormFieldControl, LcDatePartHost {
+export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateInterval>, 'min' | 'max'>, LcFormFieldControl {
   // skipSelf : nos `viewProviders` masquent `lc-form-field` aux deux champs, pas à nous.
   private readonly field = inject(LC_FORM_FIELD, { optional: true, skipSelf: true });
 
@@ -151,6 +158,7 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   private readonly locale = inject(LC_LOCALE).locale;
   private readonly doc = inject(DOCUMENT);
   private readonly injector = inject(Injector);
+  private readonly formats = inject(LcFormatService);
   private readonly viewContainerRef = inject(ViewContainerRef);
   protected readonly isCalendar = resolveDatePickerMode(inject(LC_DATE_PICKER), this.doc) === 'calendar';
   protected readonly toId = lcUniqueId('date-range-to');
@@ -162,7 +170,11 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   private readonly group = viewChild.required<ElementRef<HTMLElement>>('group');
   private readonly buttonRef = viewChild<ElementRef<HTMLButtonElement>>('calendarButton');
 
+  /** Valeur lue, jamais `undefined` (un `[value]` lié à `undefined` vaut une période vide). */
+  protected readonly current = computed(() => this.value() ?? EMPTY);
   private readonly states = signal<Record<Part, PartState>>({ start: null, end: null });
+  /** Date lue dans une borne refusée pour l'ordre : elle est réévaluée quand l'autre borne change. */
+  private refused: Record<Part, string | null> = { start: null, end: null };
   private readonly blurred = signal(false);
   /** Change quand le panneau remet les champs en forme : les champs sont recréés, leur texte repart de la valeur. */
   protected readonly epoch = signal(0);
@@ -183,28 +195,22 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   protected readonly open = computed(() => this.panel() !== null);
 
   protected readonly shortcuts = computed(() => this.presets() ?? kitDatePresets(this.labels));
-  /** Raccourcis du mode natif, rognés par `min` / `max` comme dans le panneau. */
-  protected readonly nativeShortcuts = computed(() => {
-    const today = localDateToIso(new Date());
-    return this.shortcuts().map((preset) => {
-      const interval = clipInterval(preset.interval(today), this.min() ?? null, this.max() ?? null);
-      return { label: preset.label, interval, dates: interval ? describeInterval(this.labels, this.locale, interval) : this.labels.dateNoneAllowed };
-    });
-  });
+  /** Raccourcis du mode natif, rognés par `min` / `max` comme dans le panneau ; appelé au rendu : la date du jour n'est jamais figée. */
+  protected nativeShortcuts(): ReturnType<typeof describePresets> {
+    return describePresets(this.labels, this.locale, this.shortcuts(), localDateToIso(new Date()), this.min(), this.max());
+  }
 
   /** Bornes ISO valides, sinon `null` : une valeur illisible laisse le champ vide. */
   private readonly valid = computed<LcDateInterval>(() => {
-    const { from, to } = this.value();
+    const { from, to } = this.current();
     return { from: from && isValidIsoDate(from) ? from : null, to: to && isValidIsoDate(to) ? to : null };
   });
 
   // En mode natif, chaque champ est borné par l'autre ; en mode calendrier, seul le panneau borne.
-  protected readonly fromMin = computed(() => this.min());
-  protected readonly toMax = computed(() => this.max());
   protected readonly fromMax = computed(() => (this.isCalendar ? this.max() : (this.valid().to ?? this.max())));
   protected readonly toMin = computed(() => (this.isCalendar ? this.min() : (this.valid().from ?? this.min())));
 
-  private readonly format = (iso: string) => this.injector.get(LcFormatService).date(iso, 'long');
+  private readonly format = (iso: string) => this.formats.date(iso, 'long');
 
   protected readonly buttonName = computed(() => {
     const { from, to } = this.valid();
@@ -215,23 +221,48 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
     return text ? this.labels.dateChangePeriod(text) : this.labels.dateChoosePeriod;
   });
 
-  /** Une seule borne remplie : la phrase le dit en clair. */
+  /** Fin avant début (saisie refusée) : le message de l'ordre. */
+  private readonly orderError = computed(() =>
+    this.states().start === 'order' || this.states().end === 'order' ? this.labels.dataTable.dateOrderError : null);
+
+  /** Une seule borne remplie : la phrase le dit en clair (pas pendant une erreur d'ordre : la borne refusée n'est pas « sans date »). */
   protected readonly openLine = computed(() => {
     const { from, to } = this.valid();
+    if (this.orderError()) return null;
     return from && !to ? this.labels.dateOpenEnd(this.format(from)) : to && !from ? this.labels.dateOpenStart(this.format(to)) : null;
   });
 
-  /** Fin avant début : hors `lc-form-field` (qui affiche l'erreur `parse` lui-même), le message s'affiche sous le groupe. */
-  protected readonly orderMessage = computed(() => (!this.field && (this.states().start === 'order' || this.states().end === 'order') ? this.labels.dataTable.dateOrderError : null));
+  /**
+   * Le message d'ordre s'affiche exactement une fois : par `lc-form-field` quand l'erreur lui parvient (`errors` sous `[formField]`,
+   * le champ la montre une fois touché), sinon ici, sous le groupe.
+   */
+  protected readonly orderMessage = computed(() => {
+    const message = this.orderError();
+    const byField = !!message && !!this.field?.showInvalid() && this.errors().some((error) => error.message === message);
+    return byField ? null : message;
+  });
 
   private readonly groupInvalid = computed(() => (this.field ? this.field.showInvalid() : this.invalid() && (this.touched() || this.blurred())));
   protected readonly describedBy = computed(() =>
     joinIds(this.field?.describedBy(), this.openLine() && this.noteId, this.orderMessage() && this.errorId));
 
   constructor() {
+    // Ce que les deux champs appellent pendant la saisie en mode calendrier : hors de l'API de la classe.
+    PARTS.set(this, {
+      rejects: (part, iso) => {
+        const { from, to } = this.valid();
+        return part === this.fromInput() ? !!to && iso > to : !!from && iso < from;
+      },
+      entered: (part, state, iso) => {
+        const key: Part = part === this.fromInput() ? 'start' : 'end';
+        this.states.update((states) => ({ ...states, [key]: state }));
+        this.refused[key] = state === 'order' ? iso : null;
+        this.write(state === null && iso ? this.reconsider(key, this.current()) : this.current());
+      },
+    });
     // Une valeur posée par le code ou par le panneau efface les états de saisie.
     effect(() => {
-      if (!this.entry().typed) untracked(() => this.states.set({ start: null, end: null }));
+      if (!this.entry().typed) untracked(() => this.forgetEntry());
     });
     // `FormValueControl` : le modèle seul fait foi.
     inject(DestroyRef).onDestroy(() => this.overlayRef?.dispose());
@@ -241,31 +272,36 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
       if (this.disabled() || this.readonly()) untracked(() => this.close(false));
       else this.syncPanel(panel);
     });
+    if (isDevMode()) {
+      effect(() => {
+        if (this.value() == null) console.warn('[lc-date-range-input] `value` est `undefined` : traité comme une période vide.');
+      });
+    }
   }
 
   protected readonly startInvalid = computed(() => this.states().start !== null || this.groupInvalid());
   protected readonly endInvalid = computed(() => this.states().end !== null || this.groupInvalid());
 
-  // --- Partie de période (`LcDatePartHost`) : appelé par les `lc-date-input` pendant la saisie en mode calendrier.
-
-  rejects(part: unknown, iso: string): boolean {
-    const { from, to } = this.valid();
-    return part === this.fromInput() ? !!to && iso > to : !!from && iso < from;
-  }
-
-  entered(part: unknown, state: PartState): void {
-    const key: Part = part === this.fromInput() ? 'start' : 'end';
-    this.states.update((states) => ({ ...states, [key]: state }));
-    this.write(this.value());
-  }
-
   /** Une borne change : l'autre ne bouge pas. En natif, une fin avant le début est refusée ici (en calendrier, le champ l'a déjà refusée). */
   protected setBound(part: Part, iso: string | null): void {
-    const key = part === 'start' ? "from" : "to"; // guillemets doubles : un test d'architecture lit les imports au regex
-    const next = { ...this.value(), [key]: iso };
+    const key = part === 'start' ? 'from' : 'to';
+    const next = { ...this.current(), [key]: iso };
     const refused = !!next.from && !!next.to && next.from > next.to;
-    if (!this.isCalendar) this.states.update((states) => ({ ...states, [part]: refused ? 'order' : null }));
-    this.write(refused ? { ...next, [key]: null } : next);
+    if (this.isCalendar) return this.write(refused ? { ...next, [key]: null } : next);
+    this.states.update((states) => ({ ...states, [part]: refused ? 'order' : null }));
+    this.refused[part] = refused ? iso : null;
+    this.write(refused ? { ...next, [key]: null } : iso ? this.reconsider(part, next) : next);
+  }
+
+  /** Une borne vient d'être posée : l'autre, refusée pour l'ordre, est réévaluée ; devenue valable, elle entre dans la valeur. */
+  private reconsider(changed: Part, interval: LcDateInterval): LcDateInterval {
+    const other: Part = changed === 'start' ? 'end' : 'start';
+    const iso = this.refused[other];
+    if (this.states()[other] !== 'order' || !iso) return interval;
+    if (other === 'end' ? !!interval.from && iso < interval.from : !!interval.to && iso > interval.to) return interval;
+    this.states.update((states) => ({ ...states, [other]: null }));
+    this.refused[other] = null;
+    return { ...interval, [other === 'end' ? 'to' : 'from']: iso };
   }
 
   private write(interval: LcDateInterval): void {
@@ -273,11 +309,16 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
     this.entry.set({ interval, state: start === 'order' || end === 'order' ? 'order' : start || end, typed: true });
   }
 
+  private forgetEntry(): void {
+    this.states.set({ start: null, end: null });
+    this.refused = { start: null, end: null };
+  }
+
   /** Raccourci, effacement ou fin du panneau : la valeur est posée telle quelle et les champs remis en forme. */
   protected choose(interval: LcDateInterval): void {
     const dirty = this.states().start !== null || this.states().end !== null;
     this.entry.set({ interval, state: null, typed: false });
-    this.states.set({ start: null, end: null });
+    this.forgetEntry();
     if (dirty) this.epoch.update((epoch) => epoch + 1);
     this.close(true);
   }

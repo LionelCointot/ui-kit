@@ -6,6 +6,7 @@ import {
   afterNextRender,
   booleanAttribute,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -15,9 +16,9 @@ import {
 } from '@angular/core';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
-import { addDays, addMonths, addYears, clampIso, clipInterval, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
+import { addDays, addMonths, addYears, clampIso, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
 import type { LcDateInterval, LcDateIntervalPreset } from './date-interval';
-import { describeInterval } from './date-describe';
+import { describePresets } from './date-presets';
 
 export type LcCalendarLevel = 'day' | 'month' | 'year';
 
@@ -95,10 +96,10 @@ const MONDAY = '2026-11-02';
             }
           </div>
         }
-        <div class="lc-calendar__months" [class.lc-calendar__months--two]="months() === 2" (mouseleave)="previewEnd.set(null)">
-          @for (month of panels(); track month.id; let i = $index; let last = $last) {
-            <div class="lc-calendar__month" [class.lc-calendar__month--full]="months() === 2 && level() !== 'day'">
-              <div class="lc-calendar__header">
+        <div class="lc-calendar__months" (mouseleave)="previewEnd.set(null)">
+          <div class="lc-calendar__row">
+            @for (month of panels(); track month.id; let i = $index; let last = $last) {
+              <div class="lc-calendar__header" [class.lc-calendar__month--full]="months() === 2 && level() !== 'day'">
                 @if (i === 0) {
                   <button type="button" class="lc-calendar__nav" [attr.aria-label]="navLabels().previous" [disabled]="previousDisabled()" (click)="shift(-1)">
                     <lc-icon name="chevron-left" />
@@ -120,36 +121,42 @@ const MONDAY = '2026-11-02';
                   </button>
                 }
               </div>
-              <table class="lc-calendar__grid" [class.lc-calendar__grid--wide]="!month.head" role="grid" [attr.aria-labelledby]="month.id" (keydown)="onKeydown($event)">
-                @if (month.head) {
-                  <thead>
-                    <tr role="row">
-                      @for (weekday of weekdays; track weekday.long) {
-                        <th role="columnheader" scope="col"><abbr [attr.title]="weekday.long">{{ weekday.narrow }}</abbr></th>
-                      }
-                    </tr>
-                  </thead>
-                }
-                <tbody>
-                  @for (week of month.rows; track $index) {
-                    <tr role="row">
-                      @for (cell of week; track $index) {
-                        @if (cell) {
-                          <td class="lc-calendar__day" role="gridcell" [attr.tabindex]="cell.iso.startsWith(activeKey()) ? 0 : -1"
-                            [attr.aria-selected]="cell.selected" [attr.aria-disabled]="cell.disabled ? 'true' : null"
-                            [attr.aria-current]="cell.today ? 'date' : null" [attr.title]="cell.today ? labels.dateToday : null"
-                            [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" [attr.data-range]="cell.range"
-                            (click)="onCellClick($event, cell.iso)" (mouseenter)="hover(cell)">{{ cell.label }}</td>
-                        } @else {
-                          <td role="presentation"></td>
+            }
+          </div>
+          <div class="lc-calendar__row">
+            @for (month of panels(); track month.id) {
+              <div class="lc-calendar__month" [class.lc-calendar__month--full]="months() === 2 && level() !== 'day'">
+                <table class="lc-calendar__grid" [class.lc-calendar__grid--wide]="!month.head" role="grid" [attr.aria-labelledby]="month.id" (keydown)="onKeydown($event)">
+                  @if (month.head) {
+                    <thead>
+                      <tr role="row">
+                        @for (weekday of weekdays; track weekday.long) {
+                          <th role="columnheader" scope="col"><abbr [attr.title]="weekday.long">{{ weekday.narrow }}</abbr></th>
                         }
-                      }
-                    </tr>
+                      </tr>
+                    </thead>
                   }
-                </tbody>
-              </table>
-            </div>
-          }
+                  <tbody>
+                    @for (week of month.rows; track $index) {
+                      <tr role="row">
+                        @for (cell of week; track $index) {
+                          @if (cell) {
+                            <td class="lc-calendar__day" role="gridcell" [attr.tabindex]="cell.iso.startsWith(activeKey()) ? 0 : -1"
+                              [attr.aria-selected]="cell.selected" [attr.aria-disabled]="cell.disabled ? 'true' : null"
+                              [attr.aria-current]="cell.today ? 'date' : null" [attr.title]="cell.today ? labels.dateToday : null"
+                              [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" [attr.data-range]="cell.range"
+                              (click)="onCellClick($event, cell.iso)" (mouseenter)="hover(cell)">{{ cell.label }}</td>
+                          } @else {
+                            <td role="presentation"></td>
+                          }
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -239,8 +246,6 @@ export class LcCalendarPanelComponent {
   protected readonly anchor = signal<string | null>(null);
   /** Fin envisagée (survol ou flèches) tant que le début est posé : sert l'aperçu. */
   protected readonly previewEnd = signal<string | null>(null);
-  /** Annonce « Période choisie : … » de la ligne d'état, jusqu'au prochain début. */
-  private readonly announcement = signal<string | null>(null);
   /** Année qui sert de repère à la page d'années (`yearPage` : la page commence sept ans avant). */
   private readonly pageBase = linkedSignal(() => clampBase(yearOf(this.start())));
   protected readonly activeKey = computed(() => this.active().slice(0, PREFIX[this.level()]));
@@ -269,17 +274,13 @@ export class LcCalendarPanelComponent {
 
   protected readonly status = computed(() => {
     const anchor = this.anchor();
-    return anchor ? this.labels.dateStartPicked(this.longDate(anchor)) : (this.announcement() ?? this.labels.dateChooseStart);
+    return anchor ? this.labels.dateStartPicked(this.longDate(anchor)) : this.labels.dateChooseStart;
   });
 
   /** Raccourcis rognés par `min` / `max` ; `interval` est nul quand il n'en reste rien (bouton désactivé). */
   protected readonly presetItems = computed(() => {
     if (this.mode() !== 'range') return [];
-    const today = this.today();
-    return this.presets().map((preset, index) => {
-      const interval = clipInterval(preset.interval(today), this.min(), this.max());
-      return { id: `${this.uid}-preset-${index}`, label: preset.label, interval, dates: interval ? describeInterval(this.labels, this.locale, interval) : this.labels.dateNoneAllowed };
-    });
+    return describePresets(this.labels, this.locale, this.presets(), this.today(), this.min(), this.max()).map((preset, index) => ({ ...preset, id: `${this.uid}-preset-${index}` }));
   });
 
   protected readonly panels = computed<Panel[]>(() => {
@@ -335,6 +336,23 @@ export class LcCalendarPanelComponent {
     return year >= LAST_YEAR || (!!max && `${pad(level === 'month' ? year + 1 : this.pageBase() + 5)}-01-01` > max);
   });
 
+  constructor() {
+    // Moins de mois affichés (fenêtre réduite, panneau ouvert) : le jour actif revient dans les mois visibles et garde le focus.
+    effect(() => {
+      const months = this.months();
+      const shown = this.shown();
+      untracked(() => {
+        if (this.level() !== 'day') return;
+        const active = this.active();
+        const index = (yearOf(active) - yearOf(shown)) * 12 + monthOf(active) - monthOf(shown);
+        const inside = Math.min(months - 1, Math.max(0, index));
+        if (inside === index) return;
+        this.active.set(addMonths(active, inside - index));
+        this.refocusIfLost();
+      });
+    });
+  }
+
   /** À appeler à l'ouverture : rend le focus au jour de départ (jour choisi, sinon aujourd'hui, sinon le plus proche autorisé). */
   focusInitial(): void {
     this.level.set('day');
@@ -353,12 +371,9 @@ export class LcCalendarPanelComponent {
     return (!!min && last < min) || (!!max && first > max);
   }
 
-  /**
-   * Le second clic d'un double clic tombe sur la grille du niveau suivant : il ne choisit rien. Exception : les jours d'une
-   * période, où il retombe sur le même jour et fait la fin d'une période d'un jour.
-   */
+  /** Le second clic d'un double clic tombe sur la grille du niveau suivant, ou sur le même jour : il ne choisit rien, sans exception. */
   protected onCellClick(event: MouseEvent, iso: string): void {
-    if (event.detail <= 1 || (this.mode() === 'range' && this.level() === 'day')) this.pick(iso);
+    if (event.detail <= 1) this.pick(iso);
   }
 
   private inShownMonths(iso: string): boolean {
@@ -389,12 +404,10 @@ export class LcCalendarPanelComponent {
     this.previewEnd.set(null);
     if (!anchor) {
       this.anchor.set(iso);
-      this.announcement.set(null);
       return;
     }
     const [from, to] = anchor <= iso ? [anchor, iso] : [iso, anchor];
     this.anchor.set(null);
-    this.announcement.set(this.labels.datePeriodChosen(this.longDate(from), this.longDate(to)));
     this.rangePicked.emit({ from, to });
   }
 
@@ -402,7 +415,6 @@ export class LcCalendarPanelComponent {
     const from = this.anchor();
     if (!from) return;
     this.resetChoice();
-    this.announcement.set(this.labels.datePeriodChosenOpen(this.longDate(from)));
     this.rangePicked.emit({ from, to: null });
   }
 
@@ -423,7 +435,6 @@ export class LcCalendarPanelComponent {
   private resetChoice(): void {
     this.anchor.set(null);
     this.previewEnd.set(null);
-    this.announcement.set(null);
   }
 
   private longDate(iso: string): string {

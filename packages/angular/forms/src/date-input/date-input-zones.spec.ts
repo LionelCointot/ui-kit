@@ -224,6 +224,75 @@ describe('lc-date-input, champ à zones (mode calendrier)', () => {
     expect(host.value()).toBe('2026-11-12');
   });
 
+  describe('texte inséré d’un coup : remplace tout le champ, quelle que soit la sélection', () => {
+    const insert = (input: HTMLInputElement, inputType: string, data: string) => {
+      const event = new InputEvent('beforeinput', { inputType, data, bubbles: true, cancelable: true });
+      input.dispatchEvent(event);
+      return event;
+    };
+    const paste = (input: HTMLInputElement, text: string) => {
+      const event = new Event('paste', { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+      input.dispatchEvent(event);
+      return event;
+    };
+
+    it.each(['insertText', 'insertFromPaste', 'insertFromDrop', 'insertReplacementText'])('%s d’une date entière (zone active sélectionnée) : le champ entier est remplacé, l’événement est annulé', async (type) => {
+      const { fixture, host, input } = await setup();
+      host.value.set('2026-03-04');
+      await fixture.whenStable();
+      input.focus();
+      expect(insert(input, type, '12.11.2026').defaultPrevented).toBe(true);
+      await fixture.whenStable();
+      expect(input.value).toBe('12/11/2026');
+      expect(host.value()).toBe('2026-11-12');
+      insert(input, type, '2026-12-01');
+      await fixture.whenStable();
+      expect(host.value()).toBe('2026-12-01');
+    });
+
+    it('collage (événement paste) : la date entière remplace tout, la sélection ne compte pas ; formes ISO et locale', async () => {
+      const { fixture, host, input } = await setup();
+      host.value.set('2026-03-04');
+      await fixture.whenStable();
+      input.focus();
+      expect(paste(input, '12/11/2026').defaultPrevented).toBe(true);
+      await fixture.whenStable();
+      expect(host.value()).toBe('2026-11-12');
+      paste(input, ' 2026-01-31 ');
+      await fixture.whenStable();
+      expect(host.value()).toBe('2026-01-31');
+      expect(input.value).toBe('31/01/2026');
+    });
+
+    it('un seul chiffre reste une frappe ; un texte illisible (ou partiel) est ignoré en silence, le champ ne change pas', async () => {
+      const { fixture, host, input } = await setup();
+      host.value.set('2026-03-04');
+      await fixture.whenStable();
+      input.focus();
+      insert(input, 'insertText', '1');
+      await fixture.whenStable();
+      expect(input.value).toBe('01/03/2026');
+      for (const text of ['abc', '45/11/2026', '12/11', '']) {
+        expect(insert(input, 'insertText', text).defaultPrevented).toBe(true);
+        expect(paste(input, text).defaultPrevented).toBe(true);
+      }
+      await fixture.whenStable();
+      expect(input.value).toBe('01/03/2026');
+      expect(host.value()).toBe('2026-03-01');
+      expect(input.getAttribute('aria-invalid')).toBeNull();
+    });
+
+    it('lecture seule : rien n’est lu ni annulé', async () => {
+      const { fixture, host, input } = await setup();
+      host.readonly.set(true);
+      await fixture.whenStable();
+      expect(insert(input, 'insertText', '12/11/2026').defaultPrevented).toBe(false);
+      expect(paste(input, '12/11/2026').defaultPrevented).toBe(false);
+      expect(host.value()).toBeNull();
+    });
+  });
+
   it('un collage de jour au-dessus de 31 est ignoré en silence', async () => {
     const { fixture, host, input } = await setup();
     host.value.set('2026-11-12');

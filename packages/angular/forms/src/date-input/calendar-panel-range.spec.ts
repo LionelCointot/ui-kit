@@ -66,13 +66,50 @@ describe('calendar-panel, mode période', () => {
     expect(range).toHaveBeenCalledExactlyOnceWith({ from: '2026-11-05', to: '2026-11-12' });
   });
 
-  it('un clic répété ne gêne pas une période d’un seul jour', async () => {
-    const { range, cell, fixture } = await setup();
+  it('un double clic ne choisit rien, sans exception ; deux clics distincts sur un même jour font une période d’un jour', async () => {
+    const { range, cell, fixture, status } = await setup();
     const day = cell('2026-11-12');
     day.dispatchEvent(new MouseEvent('click', { detail: 1, bubbles: true }));
     day.dispatchEvent(new MouseEvent('click', { detail: 2, bubbles: true }));
     await fixture.whenStable();
+    expect(range).not.toHaveBeenCalled();
+    expect(status()).toContain('Début : 12 novembre 2026');
+    cell('2026-11-12').dispatchEvent(new MouseEvent('click', { detail: 1, bubbles: true }));
+    await fixture.whenStable();
     expect(range).toHaveBeenCalledExactlyOnceWith({ from: '2026-11-12', to: '2026-11-12' });
+  });
+
+  it('titre puis double clic sur un mois : le second clic ne pose aucun début sur le jour qui apparaît dessous', async () => {
+    const { el, click, cell, status, fixture, titles } = await setup({ selection: { from: '2026-11-12', to: '2026-11-14' } });
+    await click(el.querySelector('button.lc-calendar__title'));
+    const may = [...el.querySelectorAll('td')].find((c) => c.getAttribute('aria-label') === 'mai 2026')!;
+    may.dispatchEvent(new MouseEvent('click', { detail: 1, bubbles: true }));
+    await fixture.whenStable();
+    expect(titles()[0]).toBe('mai 2026');
+    cell('2026-05-01').dispatchEvent(new MouseEvent('click', { detail: 2, bubbles: true }));
+    await fixture.whenStable();
+    expect(status()).toBe('Choisissez la date de début.');
+  });
+
+  it('panneau à deux mois, jour actif dans le second : un seul mois affiché, le jour actif revient dedans et garde le focus', async () => {
+    const { fixture, el, press, titles } = await setup({ selection: { from: '2026-11-12', to: '2026-11-14' } });
+    fixture.componentInstance.focusInitial();
+    await fixture.whenStable();
+    for (let i = 0; i < 3; i++) await press('ArrowDown'); // 12 novembre + 21 jours : 3 décembre
+    expect(document.activeElement?.getAttribute('data-date')).toBe('2026-12-03');
+    fixture.componentRef.setInput('months', 1);
+    await fixture.whenStable();
+    await fixture.whenStable();
+    expect(titles()).toEqual(['novembre 2026']);
+    expect(el.querySelectorAll('td[tabindex="0"]')).toHaveLength(1);
+    expect(el.querySelector('td[tabindex="0"]')!.getAttribute('data-date')).toBe('2026-11-03');
+    expect(document.activeElement).toBe(el.querySelector('td[tabindex="0"]'));
+  });
+
+  it('deux mois : précédent, titres et suivant se tabulent avant la grille (une rangée d’en-têtes commune)', async () => {
+    const { el } = await setup();
+    const order = [...el.querySelectorAll('.lc-calendar__nav, .lc-calendar__title, td[tabindex="0"]')].map((e) => e.className.includes('nav--next') ? 'suivant' : e.className.includes('nav') ? 'précédent' : e.tagName === 'TD' ? 'grille' : 'titre');
+    expect(order).toEqual(['précédent', 'titre', 'titre', 'suivant', 'grille']);
   });
 
   it('une période complète : aria-selected partout, extrémités en disque, bande coupée en fin de semaine', async () => {
@@ -104,7 +141,7 @@ describe('calendar-panel, mode période', () => {
     await click(cell('2026-11-03'));
     await click(button(/Sans date de fin/));
     expect(range).toHaveBeenCalledExactlyOnceWith({ from: '2026-11-03', to: null });
-    expect(status()).toBe('Période choisie : à partir du 3 novembre 2026.');
+    expect(status()).toBe('Choisissez la date de début.'); // plus d'annonce de fin : le panneau est fermé au même instant
   });
 
   it('« Changer le début » : revient à l’invite sans fermer, le focus retourne à l’ancien début', async () => {

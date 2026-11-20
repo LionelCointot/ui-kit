@@ -7,8 +7,8 @@ import { InjectionToken } from '@angular/core';
 export interface LcDatePartHost {
   /** Vrai si la date saisie par `part` est refusée (fin avant début) : la valeur vaut alors `null`, la saisie reste invalide. */
   rejects(part: unknown, iso: string): boolean;
-  /** Après chaque saisie : `incomplete` (date à moitié tapée), `order` (refusée), sinon `null`. */
-  entered(part: unknown, state: 'incomplete' | 'order' | null): void;
+  /** Après chaque saisie : `incomplete` (date à moitié tapée), `order` (refusée), sinon `null` ; `iso` est la date lue, aussi quand elle est refusée. */
+  entered(part: unknown, state: 'incomplete' | 'order' | null, iso: string | null): void;
 }
 
 export const LC_DATE_PART = new InjectionToken<LcDatePartHost>('LC_DATE_PART');

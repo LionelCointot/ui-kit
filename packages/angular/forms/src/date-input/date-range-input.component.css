@@ -1,21 +1,43 @@
-/* Les deux champs côte à côte, empilés sous 28 rem de large du groupe (requête de conteneur : la valeur ne peut pas être un token). */
+/*
+ * Les deux champs côte à côte, empilés quand la place manque : les lignes d'un flex à retour se replient d'elles-mêmes, et la
+ * largeur naturelle reste celle du contenu (une requête de conteneur la ramènerait à 0 dans une ligne flex ou une grille automatique).
+ * Seuil : deux champs d'au moins `--_part-basis` de large, plus le bouton qui reste collé à « Au ».
+ */
 :host {
+  --_part-basis: 12rem;
+  --_button-size: var(--lc-input-height, var(--lc-sys-control-height-md));
+
   display: block;
-  container-type: inline-size;
+  inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .lc-date-range-input__group {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: var(--lc-sys-space-3);
 }
 
 .lc-date-range-input__part {
   display: flex;
+  flex: 1 1 var(--_part-basis);
   flex-direction: column;
   gap: var(--lc-sys-space-1);
   min-inline-size: 0;
+}
+
+/* « Au » et le bouton calendrier se replient ensemble ; la base compte le bouton pour que « Du » et « Au » restent de même largeur. */
+.lc-date-range-input__end {
+  display: flex;
+  flex: 1 1 var(--_part-basis);
+  align-items: end;
+  gap: var(--lc-sys-space-3);
+  min-inline-size: 0;
+}
+
+.lc-date-range-input__end:has(.lc-date-range-input__button) {
+  flex-basis: calc(var(--_part-basis) + var(--lc-sys-space-3) + var(--_button-size));
 }
 
 .lc-date-range-input__part lc-date-input {
@@ -36,8 +58,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  inline-size: var(--lc-input-height, var(--lc-sys-control-height-md));
-  block-size: var(--lc-input-height, var(--lc-sys-control-height-md));
+  inline-size: var(--_button-size);
+  block-size: var(--_button-size);
   padding: 0;
   border: var(--lc-sys-border-width-thin) solid var(--lc-input-border, var(--lc-sys-color-border-strong));
   border-radius: var(--lc-input-radius, var(--lc-sys-radius-md));
@@ -76,22 +98,6 @@
   flex-wrap: wrap;
   gap: var(--lc-sys-space-2);
   margin-block-start: var(--lc-sys-space-3);
-}
-
-/* Empilés : le bouton reste à droite de la fin, sur sa ligne. */
-@container (max-width: 28rem) {
-  .lc-date-range-input__group {
-    grid-template-columns: 1fr auto;
-  }
-
-  .lc-date-range-input__part {
-    grid-column: 1;
-  }
-
-  .lc-date-range-input__button {
-    grid-column: 2;
-    grid-row: 2;
-  }
 }
 
 @media (forced-colors: active) {
