@@ -47,6 +47,15 @@ const yearOf = (iso: string): number => Number(iso.slice(0, 4));
 const monthOf = (iso: string): number => Number(iso.slice(5, 7));
 const rowsOfFour = <T>(cells: T[]): T[][] => [0, 1, 2].map((row) => cells.slice(row * 4, row * 4 + 4));
 
+/** Années traitées : 1000 à 9999. La page d'années se repère par `base` (elle commence 7 ans avant, finit 4 ans après). */
+const FIRST_YEAR = 1000;
+const LAST_YEAR = 9999;
+const clampBase = (base: number): number => Math.min(LAST_YEAR - 4, Math.max(FIRST_YEAR + 7, base));
+const inSupportedYears = (iso: string): boolean => {
+  const year = isoToLocalDate(iso)?.getFullYear() ?? 0;
+  return year >= FIRST_YEAR && year <= LAST_YEAR;
+};
+
 const NO_SELECTION: LcDateInterval = { from: null, to: null };
 const MONDAY = '2026-11-02';
 
@@ -103,7 +112,7 @@ const MONDAY = '2026-11-02';
                       <td class="lc-calendar__day" role="gridcell" [attr.tabindex]="cell.iso.startsWith(activeKey()) ? 0 : -1"
                         [attr.aria-selected]="cell.selected" [attr.aria-disabled]="cell.disabled ? 'true' : null"
                         [attr.aria-current]="cell.today ? 'date' : null" [attr.title]="cell.today ? labels.dateToday : null"
-                        [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" (click)="pick(cell.iso)">{{ cell.label }}</td>
+                        [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" (click)="onCellClick($event, cell.iso)">{{ cell.label }}</td>
                     } @else {
                       <td role="presentation"></td>
                     }
@@ -129,6 +138,8 @@ const MONDAY = '2026-11-02';
     class: 'lc-calendar',
     role: 'dialog',
     'aria-modal': 'true',
+    // Un clic dans une zone morte (marge, en-têtes, pied) focalise le panneau : Échap et le piège de focus restent actifs.
+    tabindex: '-1',
     '[attr.aria-label]': 'dialogName()',
     '(keydown.escape)': 'onEscape($event)',
   },
@@ -168,7 +179,7 @@ export class LcCalendarPanelComponent {
   /** Premier jour du premier mois affiché (niveau des jours). */
   private readonly shown = linkedSignal(() => firstOfMonth(this.start()));
   /** Année qui sert de repère à la page d'années (`yearPage` : la page commence sept ans avant). */
-  private readonly pageBase = linkedSignal(() => yearOf(this.start()));
+  private readonly pageBase = linkedSignal(() => clampBase(yearOf(this.start())));
   protected readonly activeKey = computed(() => this.active().slice(0, PREFIX[this.level()]));
 
   private readonly titleFormat = new Intl.DateTimeFormat(this.locale, { month: 'long', year: 'numeric' });
@@ -217,19 +228,24 @@ export class LcCalendarPanelComponent {
         : { previous: datePreviousYears, next: dateNextYears };
   });
 
+  /** Précédent et suivant : désactivés au bout de 1000 à 9999, puis quand la page voisine est entièrement hors `min` / `max`. */
   protected readonly previousDisabled = computed(() => {
     const min = this.min();
-    if (!min) return false;
     const level = this.level();
-    if (level === 'day') return lastOfMonth(addMonths(this.shown(), -1)) < min;
-    return `${pad(level === 'month' ? yearOf(this.active()) - 1 : this.pageBase() - 8)}-12-31` < min;
+    if (level === 'day') {
+      return this.shown() <= `${FIRST_YEAR}-01-01` || (!!min && lastOfMonth(addMonths(this.shown(), -1)) < min);
+    }
+    const year = level === 'month' ? yearOf(this.active()) : this.pageBase() - 7;
+    return year <= FIRST_YEAR || (!!min && `${pad(level === 'month' ? year - 1 : this.pageBase() - 8)}-12-31` < min);
   });
   protected readonly nextDisabled = computed(() => {
     const max = this.max();
-    if (!max) return false;
     const level = this.level();
-    if (level === 'day') return firstOfMonth(addMonths(this.shown(), this.months())) > max;
-    return `${pad(level === 'month' ? yearOf(this.active()) + 1 : this.pageBase() + 5)}-01-01` > max;
+    if (level === 'day') {
+      return addMonths(this.shown(), this.months() - 1) >= `${LAST_YEAR}-12-01` || (!!max && firstOfMonth(addMonths(this.shown(), this.months())) > max);
+    }
+    const year = level === 'month' ? yearOf(this.active()) : this.pageBase() + 4;
+    return year >= LAST_YEAR || (!!max && `${pad(level === 'month' ? year + 1 : this.pageBase() + 5)}-01-01` > max);
   });
 
   /** À appeler à l'ouverture : rend le focus au jour de départ (jour choisi, sinon aujourd'hui, sinon le plus proche autorisé). */
@@ -247,6 +263,11 @@ export class LcCalendarPanelComponent {
     const first = level === 'day' ? iso : level === 'month' ? firstOfMonth(iso) : `${pad(yearOf(iso))}-01-01`;
     const last = level === 'day' ? iso : level === 'month' ? lastOfMonth(iso) : `${pad(yearOf(iso))}-12-31`;
     return (!!min && last < min) || (!!max && first > max);
+  }
+
+  /** Le second clic d'un double clic tombe sur la grille du niveau suivant : il ne choisit rien. */
+  protected onCellClick(event: MouseEvent, iso: string): void {
+    if (event.detail <= 1) this.pick(iso);
   }
 
   protected choose(iso: string): void {
@@ -278,7 +299,7 @@ export class LcCalendarPanelComponent {
       if (yearOf(this.active()) !== yearOf(this.shown())) this.active.set(this.shown());
       this.level.set('month');
     } else {
-      this.pageBase.set(yearOf(this.active()));
+      this.pageBase.set(clampBase(yearOf(this.active())));
       this.level.set('year');
     }
     this.focusActive();
@@ -294,7 +315,7 @@ export class LcCalendarPanelComponent {
     }
     const years = level === 'month' ? direction : 12 * direction;
     this.active.set(addYears(this.active(), years));
-    if (level === 'year') this.pageBase.update((base) => base + years);
+    if (level === 'year') this.pageBase.update((base) => clampBase(base + years));
     this.refocusIfLost();
   }
 
@@ -312,7 +333,7 @@ export class LcCalendarPanelComponent {
       return;
     }
     const target = this.target(event);
-    if (!target) return;
+    if (!target || !inSupportedYears(target)) return;
     event.preventDefault();
     this.move(target);
     this.focusActive();
@@ -348,7 +369,7 @@ export class LcCalendarPanelComponent {
       let base = this.pageBase();
       while (yearOf(iso) < base - 7) base -= 12;
       while (yearOf(iso) > base + 4) base += 12;
-      this.pageBase.set(base);
+      this.pageBase.set(clampBase(base));
     } else if (level === 'day') {
       const first = firstOfMonth(iso);
       if (first < this.shown()) this.shown.set(first);
