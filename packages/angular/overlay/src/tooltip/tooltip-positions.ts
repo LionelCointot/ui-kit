@@ -11,8 +11,8 @@ const ORDER: Record<LcOverlayDirection, LcOverlayDirection[]> = {
 };
 
 /* Aucun `offsetX`/`offsetY` : le CDK les applique en `translate` après la poussée dans la fenêtre, et ce sont des nombres de px
-   (pas de token). L'écart avec l'élément est donc un remplissage transparent du panneau (token `space-1`), compté dans sa taille :
-   il est pris en compte pour le choix de la position et pour la poussée, et l'info-bulle reste entière dans la fenêtre. */
+   (pas de token). L'écart avec l'élément est donc un remplissage transparent du panneau du panneau (token `space`), compté dans sa taille :
+   il est pris en compte pour le choix de la position et pour la poussée, et le panneau reste entier dans la fenêtre. */
 export const POSITIONS: Record<LcOverlayDirection, ConnectedPosition> = {
   above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' },
   below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' },
@@ -22,3 +22,6 @@ export const POSITIONS: Record<LcOverlayDirection, ConnectedPosition> = {
 
 /** Positions CDK dans l'ordre de repli de la direction demandée (interne, partagé par `lcTooltip` et `lc-toggletip`). */
 export const positionsFor = (direction: LcOverlayDirection): ConnectedPosition[] => ORDER[direction].map((d) => POSITIONS[d]);
+
+/** Direction d'une position de `POSITIONS` (par la position CDK qu'un `positionChanges` renvoie). */
+export const DIRECTION_OF = new Map<ConnectedPosition, LcOverlayDirection>((Object.keys(POSITIONS) as LcOverlayDirection[]).map((d) => [POSITIONS[d], d]));

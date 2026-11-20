@@ -1,5 +1,5 @@
 /*
- * API publique du point d'entrée @lionelcointot/ui-angular/overlay : dialogues, tiroirs latéraux (CDK Dialog) info-bulles et info-bulles ouvertes au clic.
+ * API publique du point d'entrée @lionelcointot/ui-angular/overlay : dialogues, tiroirs latéraux (CDK Dialog), info-bulles et info-bulles ouvertes au clic.
  */
 export { LC_DIALOG_DATA, LcDialogRef } from './dialog/dialog-ref';
 export * from './dialog/dialog.service';

@@ -2,7 +2,7 @@ import { FlexibleConnectedPositionStrategy, Overlay, OverlayRef } from '@angular
 import { TemplatePortal } from '@angular/cdk/portal';
 import { DestroyRef, Directive, ElementRef, Injector, ViewContainerRef, afterNextRender, inject, input, isDevMode, signal } from '@angular/core';
 import { LcToggletipComponent } from './toggletip.component';
-import { type LcOverlayDirection, POSITIONS, positionsFor } from '../tooltip/tooltip-positions';
+import { type LcOverlayDirection, DIRECTION_OF, positionsFor } from '../tooltip/tooltip-positions';
 
 /**
  * Info-bulle ouverte au clic : `<button type="button" [lcToggletip]="detail">` et `<lc-toggletip #detail>…</lc-toggletip>`.
@@ -13,7 +13,7 @@ import { type LcOverlayDirection, POSITIONS, positionsFor } from '../tooltip/too
   selector: '[lcToggletip]',
   host: {
     '[attr.aria-expanded]': 'isOpen()',
-    '[attr.aria-controls]': 'lcToggletip().id',
+    '[attr.aria-controls]': 'isOpen() ? lcToggletip().id : null',
     '(click)': 'toggle()',
     '(focusout)': 'onFocusOut($event)',
   },
@@ -46,7 +46,7 @@ export class LcToggletipDirective {
     const strategy = this.overlay.position().flexibleConnectedTo(this.element).withPositions(positionsFor(this.lcToggletipPosition())).withPush(true);
     const ref = (this.overlayRef = this.overlay.create({ positionStrategy: strategy, scrollStrategy: this.overlay.scrollStrategies.reposition() }));
     strategy.positionChanges.subscribe(({ connectionPair }) => {
-      panel.direction.set((Object.keys(POSITIONS) as LcOverlayDirection[]).find((key) => POSITIONS[key] === connectionPair) ?? 'below');
+      panel.direction.set(DIRECTION_OF.get(connectionPair) ?? 'below');
       this.pointArrow(panel, ref);
     });
     ref.attach(new TemplatePortal(panel.panel(), this.viewContainer));
@@ -69,6 +69,7 @@ export class LcToggletipDirective {
       panel.filled.set(true);
       afterNextRender(() => {
         // Le CDK n'émet `positionChanges` que si la position change : la flèche est donc replacée à la main, une fois le contenu mesuré.
+        if (this.overlayRef !== ref) return;
         ref.updatePosition();
         this.pointArrow(panel, ref);
       }, { injector: this.injector });
@@ -86,7 +87,9 @@ export class LcToggletipDirective {
     this.overlayRef.dispose();
     this.overlayRef = undefined;
     this.isOpen.set(false);
-    this.lcToggletip().filled.set(false);
+    const panel = this.lcToggletip();
+    panel.filled.set(false);
+    panel.arrowOffset.set(null);
   }
 
   /** Place la flèche sur le centre du bouton, même quand la bulle a été poussée dans la fenêtre. */

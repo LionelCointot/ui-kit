@@ -100,11 +100,18 @@ describe('LcToggletipDirective', () => {
     it('aria-expanded suit l\'état et aria-controls vise la région role="status" ouverte', async () => {
       const a = el('#a');
       expect(a.getAttribute('aria-expanded')).toBe('false');
+      expect(a.hasAttribute('aria-controls')).toBe(false);
       await click(a);
       expect(a.getAttribute('aria-expanded')).toBe('true');
       expect(document.getElementById(a.getAttribute('aria-controls')!)).toBe(panels()[0]);
       await click(a);
       expect(a.getAttribute('aria-expanded')).toBe('false');
+      expect(a.hasAttribute('aria-controls')).toBe(false);
+    });
+
+    it('ne pose jamais `--_arrow-offset` avec une valeur nulle (repli CSS 50 %)', async () => {
+      await click(el('#a'));
+      expect(document.querySelector<HTMLElement>('.lc-toggletip')!.getAttribute('style') ?? '').not.toContain('null');
     });
 
     it('aucune région remplie bulle fermée ; contenu présent à l\'ouverture, retiré à la fermeture', async () => {

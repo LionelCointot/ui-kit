@@ -11,8 +11,9 @@ import type { LcOverlayDirection } from '../tooltip/tooltip-positions';
   selector: 'lc-toggletip',
   template: `
     <ng-template #panel>
-      <div class="lc-toggletip" [attr.data-direction]="direction()" [style.--_arrow-offset]="arrowOffset() + 'px'">
+      <div class="lc-toggletip" [attr.data-direction]="direction()" [style.--_arrow-offset]="arrowOffset() === null ? null : arrowOffset() + 'px'">
         <span class="lc-toggletip__arrow"></span>
+        <!-- tabindex="-1" : un clic sur du texte de la bulle y garde le focus (sinon il tombe sur <body> et le focusout ferme la bulle). -->
         <div class="lc-toggletip__box" role="status" tabindex="-1" [id]="id">
           @if (filled()) {
             <ng-content />
@@ -25,9 +26,12 @@ import type { LcOverlayDirection } from '../tooltip/tooltip-positions';
 })
 export class LcToggletipComponent {
   readonly id = lcUniqueId('toggletip');
-  /** Utilisés par `LcToggletipDirective` seulement. */
+  /** @internal Réservé à `LcToggletipDirective`. */
   readonly panel = viewChild.required<TemplateRef<unknown>>('panel');
+  /** @internal */
   readonly filled = signal(false);
+  /** @internal */
   readonly direction = signal<LcOverlayDirection>('below');
+  /** @internal */
   readonly arrowOffset = signal<number | null>(null);
 }

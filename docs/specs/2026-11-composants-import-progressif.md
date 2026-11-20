@@ -125,10 +125,10 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 - [x] CA-K1-3 (unitaire) : `selection` reflète les clés `trackBy` des lignes cochées, dans les deux sens (`selection.set` depuis le parent coche les cases ; un clic émet un nouveau `Set`) ; après un tri, les mêmes lignes restent cochées.
 - [x] CA-K1-4 (unitaire) : chaque case a un nom accessible ; après un clic, la région polie contient « {n} sélectionnées sur {m} » (français et anglais) ; rien n'est annoncé au premier rendu ni après `selection.set` du parent ; `selectAllHint` est affiché et relié par `aria-describedby`.
 - [x] CA-K1-5 (unitaire) : quand `data` perd des lignes cochées, le compte et l'état de l'en-tête sont recalculés sans elles ; leurs clés restent dans `selection`.
-- [ ] CA-K2-1 (unitaire) : la bulle s'ouvre au `click` du bouton et jamais sur `mouseenter` seul ; elle se ferme au second clic, sur Échap (focus resté sur le bouton), au clic hors du bouton et de la bulle, et quand le focus sort des deux ; le focus qui passe du bouton à un lien de la bulle ne la ferme pas.
-- [ ] CA-K2-2 (unitaire) : avec deux bulles, ouvrir la seconde ferme la première ; le bouton porte `aria-expanded` et `aria-controls` vers un identifiant existant ; la région `role="status"` est présente et vide bulle fermée, remplie à l'ouverture ; retirer le bouton du DOM ferme la bulle.
-- [ ] CA-K2-3 (unitaire, puis manuel) : la stratégie de position a un repli dans les quatre directions et pousse la bulle dans la fenêtre ; à 360 px, la bulle d'une story placée au bord est entière (vérification manuelle).
-- [ ] CA-K2-4 (unitaire) : `lcTooltip` garde exactement son comportement (`tooltip-positions.spec.ts` et ses tests existants passent sans changement).
+- [x] CA-K2-1 (unitaire) : la bulle s'ouvre au `click` du bouton et jamais sur `mouseenter` seul ; elle se ferme au second clic, sur Échap (focus resté sur le bouton), au clic hors du bouton et de la bulle, et quand le focus sort des deux ; le focus qui passe du bouton à un lien de la bulle ne la ferme pas.
+- [x] CA-K2-2 (unitaire) : avec deux bulles, ouvrir la seconde ferme la première ; le bouton porte `aria-expanded` et `aria-controls` vers un identifiant existant ; la région `role="status"` n'existe pas bulle fermée, est créée vide à l'ouverture puis remplie au rendu suivant ; `aria-controls` n'est posé que bulle ouverte ; retirer le bouton du DOM ferme la bulle.
+- [x] CA-K2-3 (unitaire, puis manuel) : la stratégie de position a un repli dans les quatre directions et pousse la bulle dans la fenêtre ; à 360 px, la bulle d'une story placée au bord est entière (vérification manuelle).
+- [x] CA-K2-4 (unitaire) : `lcTooltip` garde exactement son comportement (`tooltip-positions.spec.ts` et ses tests existants passent sans changement).
 - [ ] CA-K3-1 (unitaire) : sans débordement mesuré, ni `title`, ni classe de défilement au survol.
 - [ ] CA-K3-2 (unitaire, puis story) : avec débordement, au survol la directive pose `--lc-truncate-overflow` égal au débordement et la classe de défilement, et les retire à la sortie ; dans la story, le texte se termine par « … » au repos et défile au survol.
 - [ ] CA-K3-3 (unitaire) : avec `prefers-reduced-motion: reduce`, aucune classe de défilement ; `title` donne le texte entier, posé seulement s'il déborde ; le réglage est relu à chaque survol.
@@ -137,7 +137,7 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 
 ## 11. Découpage en tâches
 - [x] K1 (fait le 2026-11-20 : QA GO, revue appliquée ; preuves `table-selection.acceptance.spec.ts`, `table.component.spec.ts`) : sélection dans `lc-table`, tests, story (M).
-- [ ] K2 : positions partagées avec `lcTooltip`, `lc-toggletip`, tests, story (M).
+- [x] K2 (fait le 2026-11-20 : QA GO, revue appliquée ; preuves `toggletip.acceptance.spec.ts`, `toggletip.directive.spec.ts`, captures à 360 px) : positions partagées avec `lcTooltip`, `lc-toggletip`, tests, story (M).
 - [ ] K3 : `lcTruncate`, token `--lc-truncate-speed`, tests, story (S).
 - [x] K4 (fait le 2026-11-20, `rowClass`) : `rowClass` dans `lc-table`, tests, story (S).
 - [ ] K5 : catalogue, publication locale pour copro-ticket (`deps:refresh`) (S).
@@ -156,4 +156,4 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 | 2026-11-20 | `qa-engineer` | plan de test | 7 critères à reformuler, 12 cas oubliés | Retenu : niveau de preuve par critère (unitaire, story, manuel), cas tri, groupes repliés, lignes retirées, ligne devenue non cochable, annonce seulement après un geste, défilement dans la bulle, focus vers un lien de la bulle, texte de droite à gauche |
 
 **Écarts constatés à l'implémentation** :
-- 2026-11-20, K2 : la région `role="status"` n'existe pas bulle fermée ; elle est créée vide à l'ouverture puis remplie au rendu suivant (`afterNextRender`), ce qui suffit à l'annonce sans garder un panneau par bulle (choix de la session principale). À 360 px, un bouton au bord droit ouvre la bulle sur le côté (ordre de repli). Une bulle `below` couvre la ligne suivante tant qu'elle est ouverte. Flèche non inversée en écriture de droite à gauche (`shortcut:`). aucun pour l'instant.
+- 2026-11-20, K2 : la région `role="status"` n'existe pas bulle fermée ; elle est créée vide à l'ouverture puis remplie au rendu suivant (`afterNextRender`), ce qui suffit à l'annonce sans garder un panneau par bulle (choix de la session principale). À 360 px, un bouton au bord droit ouvre la bulle sur le côté (ordre de repli). Une bulle `below` couvre la ligne suivante tant qu'elle est ouverte. Flèche non inversée en écriture de droite à gauche (`shortcut:`). Risque ouvert : l'annonce par la région créée à l'ouverture n'est pas encore essayée au lecteur d'écran ; à vérifier à la main avant de compter dessus.
