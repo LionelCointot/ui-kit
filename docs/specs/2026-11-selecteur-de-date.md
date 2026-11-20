@@ -406,3 +406,18 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 - **Défaut livré puis corrigé** : la date simple fusionnée le 2026-11-20 ne prenait pas, dans un vrai navigateur, une date collée (zone sélectionnée) ni `fill()` de Playwright ; les tests sous jsdom écrivaient la valeur directement et ne le voyaient pas. Corrigé avec la période : tout texte inséré d'un coup qui se lit comme une date remplace le champ. Prouvé sous Chromium seulement.
 - Le catalogue généré ne liste que les composants : CA-40 est reformulé en ce sens.
 - Poids : le point d'entrée `forms` construit pèse 387 Ko non minifiés (`fesm2022/lionelcointot-ui-angular-forms.mjs`) après la livraison ; la mesure d'avant n'a pas été relevée, donc l'ajout exact n'est pas connu.
+
+**Audit de simplification à la livraison** (`code-reviewer`, 2026-11-20 ; rien n'est appliqué sans l'accord de l'utilisateur)
+
+| N° | Constat et preuve | Plus petit changement | Risque |
+|---|---|---|---|
+| 1 | 60 captures périmées ou en double dans `docs/design/captures/2026-11-date-picker/` : préfixes `60-` (18, refaites en `70-`), `50-` (16, antérieures aux corrections du panneau), `30-` (18 sur 20, refaites en `40-`), `20-` (8), `02-`, `03-`, `06-` (6) | Les supprimer ; garder `01-`, `30-champ-panneau-form-field-`, `40-` et `70-` | Nul à faible |
+| 2 | Commentaire orphelin dans `date-range-input.component.ts` (il ne décrit pas la ligne qu'il surmonte) | Le supprimer | Nul |
+| 3 | `createOverlay()` de `date-input.component.ts` n'a qu'un appelant | L'intégrer à `openPanel` | Nul |
+| 4 | `today()` de `date-input.component.ts` refait en huit lignes ce que donnent `localDateToIso` et `fromIso` | Les appeler | Faible |
+| 5 | Deux fichiers de tests nommés d'après l'historique (`date-range-input-corrections.spec.ts`, `calendar-panel-corrections.spec.ts`), avec leurs propres montages en double | Déplacer leurs 18 tests dans les fichiers de tests des composants | Faible à moyen |
+| 6 | Story `CalendrierClairSombre` du développeur : même preuve que `ChangementDeTheme` de la QA | Supprimer celle du développeur | Faible |
+| 7 | Trois écritures du même format de date longue (panneau, `date-describe.ts`, `LcFormatService`) | N'en garder qu'une (`LcFormatService`) | Moyen : à ne faire que si l'utilisateur le veut |
+
+Regardé et gardé : les 46 libellés de date (tous employés), les 25 tokens du calendrier (tous employés et déclarés), toutes les fonctions de `date-math.ts` et `date-mask.ts`, les points d'extension (`presets`, `today`), aucun reste des messages retirés.
+
