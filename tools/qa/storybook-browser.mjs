@@ -33,7 +33,7 @@ function serve() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-const NEW_STORY_FRAGMENTS = ['indicateur-d-état', 'jauge', 'tableau-hi', 'pagination', 'bloc-de-code', 'groupe-de-navigation', 'barres-par-role', 'aires-par-role', 'actions-bouton--variantes', 'curseur--pourcentage', 'theme-builder'];
+const NEW_STORY_FRAGMENTS = ['feedback-status-badge', 'feedback-meter', 'data-tree-table', 'data-paginator', 'data-code-block', 'navigation-nav-group', 'bar-chart--by-role', 'area-chart--by-role', 'buttons-button--variants', 'forms-slider', 'theme-builder'];
 
 async function openStory(browser, base, id, theme) {
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
@@ -67,7 +67,7 @@ async function axeRun(browser, base, entries) {
 
 /** Temps de rendu des 2 000 lignes visibles de lc-tree-table (CA-K3.5 : < 500 ms). */
 async function perf(browser, base) {
-  const id = 'données-tableau-hiérarchique--troncature-au-dela-de-deux-mille';
+  const id = 'data-tree-table--truncated-beyond-two-thousand';
   const measures = [];
   for (let run = 0; run < 5; run += 1) {
     const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
@@ -115,7 +115,7 @@ async function dom(browser, base) {
 
   // CA-K4.1 : atteindre la dernière page avec « Suivant » (clic réel).
   {
-    const { page, context, errors } = await openStory(browser, base, 'données-pagination--defaut', 'default');
+    const { page, context, errors } = await openStory(browser, base, 'data-paginator--playground', 'default');
     const next = page.getByRole('button', { name: 'Suivant' });
     let steps = 0;
     while ((await next.isEnabled()) && steps < 20) {
@@ -131,7 +131,7 @@ async function dom(browser, base) {
 
   // CA-K8.2 : groupe replié, liens hors tabulation et hors arbre d'accessibilité.
   {
-    const { page, context } = await openStory(browser, base, 'navigation-groupe-de-navigation--repliable', 'default');
+    const { page, context } = await openStory(browser, base, 'navigation-nav-group--collapsible', 'default');
     const toggle = page.locator('button.lc-nav-group__toggle').first();
     const before = await toggle.getAttribute('aria-expanded');
     await toggle.focus();
@@ -150,7 +150,7 @@ async function dom(browser, base) {
 
   // CA-K8.1 : mode réduit, titre lisible (dans l'arbre) mais invisible, séparateur présent.
   {
-    const { page, context } = await openStory(browser, base, 'navigation-groupe-de-navigation--liste-reduite', 'default');
+    const { page, context } = await openStory(browser, base, 'navigation-nav-group--reduced-list', 'default');
     const info = await page.evaluate(() => {
       const groups = [...document.querySelectorAll('lc-nav-group')];
       return groups.map((group) => {
@@ -166,7 +166,7 @@ async function dom(browser, base) {
 
   // CA-K7.3 : numéros de ligne non sélectionnables.
   {
-    const { page, context } = await openStory(browser, base, 'données-bloc-de-code--numeros-de-ligne', 'default');
+    const { page, context } = await openStory(browser, base, 'data-code-block--line-numbers', 'default');
     const result = await page.evaluate(() => {
       const line = document.querySelector('.lc-code-block__line');
       const style = getComputedStyle(line, '::before');
@@ -185,7 +185,7 @@ async function dom(browser, base) {
 
   // CA-K3.2 : un seul arrêt de tabulation dans le tableau hiérarchique.
   {
-    const { page, context } = await openStory(browser, base, 'données-tableau-hiérarchique--tous-deplies', 'default');
+    const { page, context } = await openStory(browser, base, 'data-tree-table--all-expanded', 'default');
     const tableStops = new Set();
     await page.locator('lc-tree-table').first().evaluate((table) => table.scrollIntoView());
     await page.evaluate(() => document.activeElement?.blur());
@@ -261,7 +261,7 @@ async function treegrid(browser, base) {
   };
 
   {
-    const { page, context } = await open('données-tableau-hiérarchique--tous-deplies');
+    const { page, context } = await open('data-tree-table--all-expanded');
     let current = await state(page);
     const total = current.count;
     check('treegrid départ : focus sur la première ligne, niveau 1, un seul tabindex=0', current.index === 0 && current.level === '1' && current.tabStops === 1, JSON.stringify(current));
@@ -334,7 +334,7 @@ async function treegrid(browser, base) {
 
   {
     // Tri sur la grande arborescence : la hiérarchie et le focus unique survivent, durée mesurée.
-    const { page, context } = await openStory(browser, base, 'données-tableau-hiérarchique--troncature-au-dela-de-deux-mille', 'default');
+    const { page, context } = await openStory(browser, base, 'data-tree-table--truncated-beyond-two-thousand', 'default');
     await page.waitForSelector('lc-tree-table tbody tr[aria-level]');
     const sortButton = page.locator('lc-tree-table thead th button.lc-table__sort').nth(2);
     const timings = [];
