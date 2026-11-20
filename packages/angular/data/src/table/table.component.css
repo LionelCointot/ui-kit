@@ -133,6 +133,70 @@ tbody tr:not(.lc-table__group):hover td {
   background: color-mix(in srgb, var(--lc-sys-color-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-sys-color-surface-raised));
 }
 
+/* Colonne de cases : la zone de frappe fait 44 px (le libellé enveloppe la case). */
+.lc-table__select {
+  inline-size: 1px;
+  padding-block: 0;
+  text-align: center;
+}
+
+.lc-table__select-hit {
+  display: grid;
+  place-items: center;
+  min-inline-size: var(--lc-button-hit-size, 44px);
+  min-block-size: var(--lc-button-hit-size, 44px);
+  margin-inline: calc(var(--_cell-padding-inline) * -1);
+}
+
+:host(.lc-table--compact) .lc-table__select-hit {
+  min-block-size: 0;
+}
+
+.lc-table__sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Teinte d'une ligne (`rowTone`) : fond et texte du conteneur du rôle, liseré de début de ligne. */
+tbody tr.lc-table__row--success td {
+  background: var(--lc-table-row-success-background, var(--lc-sys-color-success-container));
+  color: var(--lc-table-row-success-color, var(--lc-sys-color-on-success-container));
+}
+
+tbody tr.lc-table__row--success > :first-child {
+  border-inline-start: var(--lc-sys-border-width-thick) solid var(--lc-table-row-success-accent, var(--lc-sys-color-success));
+}
+
+tbody tr.lc-table__row--info td {
+  background: var(--lc-table-row-info-background, var(--lc-sys-color-info-container));
+  color: var(--lc-table-row-info-color, var(--lc-sys-color-on-info-container));
+}
+
+tbody tr.lc-table__row--info > :first-child {
+  border-inline-start: var(--lc-sys-border-width-thick) solid var(--lc-table-row-info-accent, var(--lc-sys-color-info));
+}
+
+tbody tr.lc-table__row--error td {
+  background: var(--lc-table-row-error-background, var(--lc-sys-color-error-container));
+  color: var(--lc-table-row-error-color, var(--lc-sys-color-on-error-container));
+}
+
+tbody tr.lc-table__row--error > :first-child {
+  border-inline-start: var(--lc-sys-border-width-thick) solid var(--lc-table-row-error-accent, var(--lc-sys-color-error));
+}
+
+tbody tr.lc-table__row--warning td {
+  background: var(--lc-table-row-warning-background, var(--lc-sys-color-warning-container));
+  color: var(--lc-table-row-warning-color, var(--lc-sys-color-on-warning-container));
+}
+
+tbody tr.lc-table__row--warning > :first-child {
+  border-inline-start: var(--lc-sys-border-width-thick) solid var(--lc-table-row-warning-accent, var(--lc-sys-color-warning));
+}
+
 .lc-table__empty td {
   padding-block: var(--lc-sys-space-8);
   color: var(--lc-sys-color-on-surface-muted);
