@@ -711,6 +711,7 @@ lc-form-field [lcSuffix] {
 .lc-calendar__preset-dates {
   color: var(--lc-calendar-weekday-text, var(--lc-sys-color-on-surface-muted));
   font-size: var(--lc-sys-font-size-xs);
+  text-wrap: balance;
 }
 
 .lc-calendar__status-row {

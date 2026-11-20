@@ -4,7 +4,7 @@
  * Seuil : deux champs d'au moins `--_part-basis` de large, plus le bouton qui reste collé à « Au ».
  */
 :host {
-  --_part-basis: 12rem;
+  --_part-basis: calc(var(--lc-sys-space-16) * 3); /* 192 px */
   --_button-size: var(--lc-input-height, var(--lc-sys-control-height-md));
 
   display: block;
@@ -92,10 +92,10 @@
   color: var(--lc-sys-color-error);
 }
 
-/* Mode natif : les raccourcis en rangée sous les champs. */
+/* Mode natif : les raccourcis en grille régulière sous les champs. */
 .lc-date-range-input__shortcuts {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--_part-basis), 1fr));
   gap: var(--lc-sys-space-2);
   margin-block-start: var(--lc-sys-space-3);
 }

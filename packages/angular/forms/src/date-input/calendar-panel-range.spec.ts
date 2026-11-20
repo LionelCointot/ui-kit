@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { LC_LABELS_EN, LC_LABELS_FR } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LABELS_EN, LC_LABELS_FR, LC_LOCALE } from '@lionelcointot/ui-angular';
 import type { LcDateInterval } from './date-interval';
 import { LcCalendarPanelComponent } from './calendar-panel.component';
 import { kitDatePresets } from './date-presets';
@@ -88,7 +88,7 @@ describe('calendar-panel, mode période', () => {
     expect(titles()[0]).toBe('mai 2026');
     cell('2026-05-01').dispatchEvent(new MouseEvent('click', { detail: 2, bubbles: true }));
     await fixture.whenStable();
-    expect(status()).toBe('Choisissez la date de début.');
+    expect(status()).toBe('Période : du 12 au 14 novembre 2026 inclus. Cliquez un jour pour la changer.'); // aucun début posé
   });
 
   it('panneau à deux mois, jour actif dans le second : un seul mois affiché, le jour actif revient dedans et garde le focus', async () => {
@@ -110,6 +110,34 @@ describe('calendar-panel, mode période', () => {
     const { el } = await setup();
     const order = [...el.querySelectorAll('.lc-calendar__nav, .lc-calendar__title, td[tabindex="0"]')].map((e) => e.className.includes('nav--next') ? 'suivant' : e.className.includes('nav') ? 'précédent' : e.tagName === 'TD' ? 'grille' : 'titre');
     expect(order).toEqual(['précédent', 'titre', 'titre', 'suivant', 'grille']);
+  });
+
+  it('ligne d’état d’un panneau rouvert sur une sélection : elle la dit jusqu’au premier clic, « Changer le début » redemande le début', async () => {
+    const { fixture, status, click, cell, button } = await setup({ selection: { from: '2026-11-12', to: '2026-11-20' } });
+    expect(status()).toBe('Période : du 12 au 20 novembre 2026 inclus. Cliquez un jour pour la changer.');
+    fixture.componentRef.setInput('selection', { from: '2026-11-18', to: null });
+    await fixture.whenStable();
+    expect(status()).toBe('Depuis le 18 novembre 2026, sans date de fin. Cliquez un jour pour changer.');
+    fixture.componentRef.setInput('selection', { from: null, to: '2026-11-20' });
+    await fixture.whenStable();
+    expect(status()).toBe('Jusqu’au 20 novembre 2026 inclus, sans date de début. Cliquez un jour pour changer.'.replace('’', "'"));
+    fixture.componentRef.setInput('selection', { from: null, to: null });
+    await fixture.whenStable();
+    expect(status()).toBe('Choisissez la date de début.');
+    fixture.componentRef.setInput('selection', { from: '2026-11-12', to: '2026-11-20' });
+    await fixture.whenStable();
+    expect(button(/Changer le début/)).toBeUndefined();
+    await click(cell('2026-11-03'));
+    expect(status()).toContain('Début : 3 novembre 2026');
+    await click(button(/Changer le début/));
+    expect(status()).toBe('Choisissez la date de début.');
+  });
+
+  it('ligne d’état en anglais', async () => {
+    TestBed.overrideProvider(LC_LABELS, { useValue: LC_LABELS_EN });
+    TestBed.overrideProvider(LC_LOCALE, { useValue: { locale: 'en-US', currency: 'USD' } });
+    const { status } = await setup({ selection: { from: '2026-11-12', to: '2026-11-20' } });
+    expect(status()).toBe('Period: from November 12 to 20, 2026 inclusive. Click a day to change it.');
   });
 
   it('une période complète : aria-selected partout, extrémités en disque, bande coupée en fin de semaine', async () => {

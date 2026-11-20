@@ -179,6 +179,10 @@ export interface LcLabels {
   readonly dateStartingFrom: (date: string) => string;
   readonly dateOpenEnd: (date: string) => string;
   readonly dateOpenStart: (date: string) => string;
+  /** Ligne d'état d'un panneau rouvert sur une sélection : `period` est la phrase de `describeInterval`. */
+  readonly dateCurrentPeriod: (period: string) => string;
+  readonly dateCurrentFrom: (date: string) => string;
+  readonly dateCurrentUntil: (date: string) => string;
   readonly dateShortcuts: string;
 }
 
@@ -762,6 +766,9 @@ export const LC_LABELS_FR: LcLabels = {
   dateStartingFrom: (date) => `à partir du ${date}`,
   dateOpenEnd: (date) => `Sans date de fin : tout depuis le ${date}.`,
   dateOpenStart: (date) => `Sans date de début : tout jusqu'au ${date}.`,
+  dateCurrentPeriod: (period) => `Période : ${period} inclus. Cliquez un jour pour la changer.`,
+  dateCurrentFrom: (date) => `Depuis le ${date}, sans date de fin. Cliquez un jour pour changer.`,
+  dateCurrentUntil: (date) => `Jusqu'au ${date} inclus, sans date de début. Cliquez un jour pour changer.`,
   dateShortcuts: 'Raccourcis',
 };
 
@@ -997,6 +1004,9 @@ export const LC_LABELS_EN: LcLabels = {
   dateStartingFrom: (date) => `starting ${date}`,
   dateOpenEnd: (date) => `No end date: everything from ${date}.`,
   dateOpenStart: (date) => `No start date: everything up to ${date}.`,
+  dateCurrentPeriod: (period) => `Period: ${period} inclusive. Click a day to change it.`,
+  dateCurrentFrom: (date) => `Since ${date}, no end date. Click a day to change.`,
+  dateCurrentUntil: (date) => `Until ${date} inclusive, no start date. Click a day to change.`,
   dateShortcuts: 'Shortcuts',
 };
 

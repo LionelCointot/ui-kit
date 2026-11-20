@@ -18,6 +18,7 @@ import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
 import { addDays, addMonths, addYears, clampIso, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
 import type { LcDateInterval, LcDateIntervalPreset } from './date-interval';
+import { describeInterval } from './date-describe';
 import { describePresets } from './date-presets';
 
 export type LcCalendarLevel = 'day' | 'month' | 'year';
@@ -244,6 +245,8 @@ export class LcCalendarPanelComponent {
   });
   /** Début posé au premier clic, fin attendue (mode `range`). */
   protected readonly anchor = signal<string | null>(null);
+  /** « Changer le début » : la ligne redemande le début, sans redire la sélection. */
+  private readonly changing = signal(false);
   /** Fin envisagée (survol ou flèches) tant que le début est posé : sert l'aperçu. */
   protected readonly previewEnd = signal<string | null>(null);
   /** Année qui sert de repère à la page d'années (`yearPage` : la page commence sept ans avant). */
@@ -274,7 +277,12 @@ export class LcCalendarPanelComponent {
 
   protected readonly status = computed(() => {
     const anchor = this.anchor();
-    return anchor ? this.labels.dateStartPicked(this.longDate(anchor)) : this.labels.dateChooseStart;
+    if (anchor) return this.labels.dateStartPicked(this.longDate(anchor));
+    // Panneau rouvert sur une sélection : la ligne la dit, pour qu'on ne craigne pas de l'écraser.
+    const { from, to } = this.selection();
+    if (this.changing() || (!from && !to)) return this.labels.dateChooseStart;
+    return from && to ? this.labels.dateCurrentPeriod(describeInterval(this.labels, this.locale, { from, to }))
+      : from ? this.labels.dateCurrentFrom(this.longDate(from)) : this.labels.dateCurrentUntil(this.longDate(to!));
   });
 
   /** Raccourcis rognés par `min` / `max` ; `interval` est nul quand il n'en reste rien (bouton désactivé). */
@@ -423,6 +431,7 @@ export class LcCalendarPanelComponent {
     const old = this.anchor();
     this.resetChoice();
     if (!old) return;
+    this.changing.set(true);
     this.level.set('day');
     this.move(old);
     this.focusActive();
@@ -433,6 +442,7 @@ export class LcCalendarPanelComponent {
   }
 
   private resetChoice(): void {
+    this.changing.set(false);
     this.anchor.set(null);
     this.previewEnd.set(null);
   }
