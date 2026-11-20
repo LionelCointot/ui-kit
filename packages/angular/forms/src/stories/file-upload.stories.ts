@@ -1,12 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import {
-  LcFileUploadComponent,
-  type LcFileUploadItem,
-  type LcFileUploadRejection,
-} from '../file-upload/file-upload.component';
+import { LcFormFieldComponent, LcFileUploadComponent, type LcFileUploadItem, type LcFileUploadRejection } from '@lionelcointot/ui-angular/forms';
 
 /** Aperçu d'exemple : une adresse fournie par l'application (ici une image intégrée, sans réseau). */
 const PREVIEW =

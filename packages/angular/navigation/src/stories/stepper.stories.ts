@@ -2,8 +2,7 @@ import { Component, input, signal } from '@angular/core';
 import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { LcStepActionDirective } from '../stepper/step-action.directive';
-import { LcStepperComponent, type LcStep } from '../stepper/stepper.component';
+import { LcStepActionDirective, LcStepperComponent, type LcStep } from '@lionelcointot/ui-angular/navigation';
 
 const NAMES = ['Profil', 'Objectif', 'Ressources', 'Options', 'Résumé'];
 

@@ -2,14 +2,7 @@ import { Component, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import {
-  LcListEditorComponent,
-  type LcListEditorItem,
-  type LcListEditorMove,
-  type LcListEditorRename,
-  type LcListEditorToggle,
-} from '../list-editor/list-editor.component';
+import { LcFormFieldComponent, LcListEditorComponent, type LcListEditorItem, type LcListEditorMove, type LcListEditorRename, type LcListEditorToggle } from '@lionelcointot/ui-angular/forms';
 
 const SHORT: readonly LcListEditorItem[] = [
   { id: 'a', label: 'Premier', active: true },

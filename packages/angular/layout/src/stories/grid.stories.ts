@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcGridComponent } from '../grid/grid.component';
-import { LcGridItemComponent } from '../grid/grid-item.component';
+import { LcGridComponent, LcGridItemComponent } from '@lionelcointot/ui-angular/layout';
 
 const BOX = 'padding:var(--lc-sys-space-4);background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-md)';
 

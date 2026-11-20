@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcProgressBarComponent } from '../progress-bar/progress-bar.component';
+import { LcProgressBarComponent } from '@lionelcointot/ui-angular/feedback';
 
 /**
  * Progress bar (`role="progressbar"`): a value from 0 to 100, or `null` for an indeterminate progress.

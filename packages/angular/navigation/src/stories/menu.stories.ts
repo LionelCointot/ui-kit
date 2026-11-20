@@ -1,8 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcMenuComponent } from '../menu/menu.component';
-import { LcMenuItemComponent } from '../menu/menu-item.component';
-import { LcMenuTriggerDirective } from '../menu/menu-trigger.directive';
+import { LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective } from '@lionelcointot/ui-angular/navigation';
 
 type Args = LcMenuComponent & { itemIcon: string; destructive: boolean; itemDisabled: boolean };
 

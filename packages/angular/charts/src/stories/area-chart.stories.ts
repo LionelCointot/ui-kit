@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcAreaChartComponent } from '../components/area-chart.component';
-import type { LcCartesianData } from '../types';
+import { LcAreaChartComponent } from '@lionelcointot/ui-angular/charts';
+import type { LcCartesianData } from '@lionelcointot/ui-angular/charts';
 
 const months = Array.from({ length: 12 }, (_, index) => `2026-${String(index + 1).padStart(2, '0')}`);
 const channels: LcCartesianData = {

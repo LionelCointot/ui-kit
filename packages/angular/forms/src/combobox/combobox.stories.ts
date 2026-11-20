@@ -1,10 +1,7 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcComboboxOptionDirective } from './combobox-option.directive';
-import { LcComboboxComponent } from './combobox.component';
-import { LcHighlightComponent } from './highlight.component';
+import { LcFormFieldComponent, LcComboboxOptionDirective, LcComboboxComponent, LcHighlightComponent } from '@lionelcointot/ui-angular/forms';
 
 interface City {
   readonly id: string;

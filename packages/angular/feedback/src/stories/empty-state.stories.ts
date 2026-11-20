@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { fixedExample } from '@lc/storybook';
-import { LcEmptyStateComponent } from '../empty-state/empty-state.component';
+import { LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
 
 /**
  * Empty state: optional icon, title, description and actions (`[lcEmptyActions]` slot).

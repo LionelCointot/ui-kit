@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcCheckboxDirective } from '../checkbox/checkbox.directive';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
+import { LcCheckboxDirective, LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
 
 /**
  * Styled native checkbox (`input[type=checkbox][lcCheckbox]`). The label is a native `<label>` around or next to the input.

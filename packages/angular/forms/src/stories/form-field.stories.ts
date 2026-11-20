@@ -1,15 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcInputDirective } from '../input/input.directive';
-import { LcMoneyInputComponent } from '../numeric/money-input.component';
-import { LcPercentInputComponent } from '../numeric/percent-input.component';
-import { LcNumberInputComponent } from '../numeric/number-input.component';
-import { LcSegmentedControlComponent } from '../segmented-control/segmented-control.component';
-import { LcSwitchComponent } from '../switch/switch.component';
-import { LcSelectDirective } from '../select/select.directive';
-import { LcDateInputComponent } from '../date-input/date-input.component';
+import { LcFormFieldComponent, LcInputDirective, LcMoneyInputComponent, LcPercentInputComponent, LcNumberInputComponent, LcSegmentedControlComponent, LcSwitchComponent, LcSelectDirective, LcDateInputComponent } from '@lionelcointot/ui-angular/forms';
 
 @Component({
   selector: 'lc-forms-demo',

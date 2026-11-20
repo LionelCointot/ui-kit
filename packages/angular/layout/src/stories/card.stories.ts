@@ -1,10 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { LcCardComponent } from '../card/card.component';
-import { LcCardHeaderComponent } from '../card/card-header.component';
-import { LcGridComponent } from '../grid/grid.component';
-import { LcGridItemComponent } from '../grid/grid-item.component';
+import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcGridItemComponent } from '@lionelcointot/ui-angular/layout';
 
 /**
  * Card: an elevated surface with an optional header (`lc-card-header`: title, subtitle, actions) and footer (`[lcCardFooter]`).

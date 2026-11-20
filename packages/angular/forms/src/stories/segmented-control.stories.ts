@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcSegmentedControlComponent } from '../segmented-control/segmented-control.component';
+import { LcSegmentedControlComponent } from '@lionelcointot/ui-angular/forms';
 
 const OPTIONS = [{ value: 'simple', label: 'Simple' }, { value: 'detailed', label: 'Détaillé' }];
 

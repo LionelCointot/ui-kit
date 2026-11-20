@@ -1,10 +1,7 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
-import { LcMoneyInputComponent } from '../numeric/money-input.component';
-import { LcNumberInputComponent } from '../numeric/number-input.component';
-import { LcPercentInputComponent } from '../numeric/percent-input.component';
+import { LcFormFieldComponent, LcMoneyInputComponent, LcNumberInputComponent, LcPercentInputComponent } from '@lionelcointot/ui-angular/forms';
 
 /**
  * Localised numeric fields: `lc-number-input` (optional unit and stepper), `lc-money-input` and `lc-percent-input`.

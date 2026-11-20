@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcChartComponent } from '../components/chart.component';
-import type { LcChartTable } from '../types';
+import { LcChartComponent } from '@lionelcointot/ui-angular/charts';
+import type { LcChartTable } from '@lionelcointot/ui-angular/charts';
 
 const months = ['Jan.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin'];
 const tickets = [182, 205, 196, 240, 228, 251];

@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcCodeBlockComponent } from '../code-block/code-block.component';
+import { LcCodeBlockComponent } from '@lionelcointot/ui-angular/data';
 
 const LOG = Array.from({ length: 60 }, (_, index) =>
   `2026-11-11T08:${String(index).padStart(2, '0')}:00Z INFO service=orders request=${1000 + index} duration=${(index * 13) % 250}ms status=${index % 11 === 0 ? 500 : 200}`,

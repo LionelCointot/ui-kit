@@ -1,9 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import {
-  LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective,
-} from '../disclosure/disclosure.component';
+import { LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective } from '@lionelcointot/ui-angular/layout';
 
 /**
  * Expandable row: a summary line that shows or hides its content. Optional actions, heading semantics,

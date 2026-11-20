@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { LcTooltipDirective } from '../tooltip/tooltip.directive';
+import { LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
 
 /**
  * Tooltip attached to any element with `[lcTooltip]`: it shows after 500 ms of hover or focus, 4 px from the element,

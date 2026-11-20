@@ -3,11 +3,8 @@ import { signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
-import { LcAddressInputComponent } from '../address-input/address-input.component';
-import { LcCommuneInputComponent } from '../commune-input/commune-input.component';
-import { LcGeoDataSource } from '../geo-data-source';
-import type { LcAddress, LcAddressQuery, LcCommune, LcCommuneQuery, LcDepartment, LcRegion } from '../geo.types';
-import { provideLcGeo } from '../provide-lc-geo';
+import { LcAddressInputComponent, LcCommuneInputComponent, LcGeoDataSource, provideLcGeo } from '@lionelcointot/ui-angular/geo';
+import type { LcAddress, LcAddressQuery, LcCommune, LcCommuneQuery, LcDepartment, LcRegion } from '@lionelcointot/ui-angular/geo';
 
 const SAMPLE_COMMUNES: readonly LcCommune[] = [
   { code: '69123', name: 'Lyon', postalCodes: ['69001', '69002', '69003', '69004', '69005'], postalCode: null, departmentCode: '69', regionCode: '84', population: 522250 },

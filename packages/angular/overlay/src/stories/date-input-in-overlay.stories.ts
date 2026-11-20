@@ -9,12 +9,8 @@ import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
 // `forms` n'importe pas `overlay` dans le code publié : cette story, qui n'est pas publiée, combine les deux par chemin relatif.
-import { LcDateInputComponent } from '../../../forms/src/date-input/date-input.component';
-import { LC_DATE_PICKER } from '../../../forms/src/date-input/date-picker-mode';
-import { LcDialogComponent } from '../dialog/dialog.component';
-import { LcDialogService } from '../dialog/dialog.service';
-import { LcDrawerComponent } from '../drawer/drawer.component';
-import { LcDrawerService } from '../drawer/drawer.service';
+import { LcDateInputComponent, LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
+import { LcDialogComponent, LcDialogService, LcDrawerComponent, LcDrawerService } from '@lionelcointot/ui-angular/overlay';
 
 @Component({
   selector: 'lc-date-in-dialog-content',

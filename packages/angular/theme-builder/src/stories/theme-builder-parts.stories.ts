@@ -1,9 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { type LcThemeDefinition, resolveTheme } from '@lionelcointot/ui-tokens/theme';
-import { LcThemeContrastReportComponent } from '../contrast-report/theme-contrast-report.component';
-import { LcThemeEditorComponent } from '../editor/theme-editor.component';
-import { LcThemePreviewComponent } from '../preview/theme-preview.component';
+import { LcThemeContrastReportComponent, LcThemeEditorComponent, LcThemePreviewComponent } from '@lionelcointot/ui-angular/theme-builder';
 
 const teal: LcThemeDefinition = {
   name: 'teal',

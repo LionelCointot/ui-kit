@@ -2,7 +2,7 @@ import { Component, OnDestroy, signal } from '@angular/core';
 import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { LcLogViewComponent, type LcLogLine } from '../log-view/log-view.component';
+import { LcLogViewComponent, type LcLogLine } from '@lionelcointot/ui-angular/data';
 
 const KINDS = ['out', 'out', 'out', 'info', 'err'] as const;
 const makeLines = (count: number, from = 1): LcLogLine[] =>

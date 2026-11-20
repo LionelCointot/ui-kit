@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcStackComponent } from '../stack/stack.component';
+import { LcStackComponent } from '@lionelcointot/ui-angular/layout';
 
 const BOX = 'padding:var(--lc-sys-space-3) var(--lc-sys-space-4);background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-md)';
 

@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcSegmentedBarComponent } from '../components/segmented-bar.component';
-import type { LcPart } from '../types';
+import { LcSegmentedBarComponent } from '@lionelcointot/ui-angular/charts';
+import type { LcPart } from '@lionelcointot/ui-angular/charts';
 
 const BUDGET: LcPart[] = [
   { id: 'build', label: 'Développement', value: 250000 },

@@ -2,9 +2,7 @@ import { Component, signal } from '@angular/core';
 import { RouterLink, provideRouter } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcNavGroupComponent } from '../nav-group/nav-group.component';
-import { LcNavItemComponent } from '../nav-list/nav-item.component';
-import { LcNavListComponent } from '../nav-list/nav-list.component';
+import { LcNavGroupComponent, LcNavItemComponent, LcNavListComponent } from '@lionelcointot/ui-angular/navigation';
 
 @Component({ selector: 'lc-nav-group-page', template: '' })
 class PageComponent {}

@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcButtonComponent } from './button.component';
-import { LcIconComponent } from '../icon/icon.component';
+import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 
 /**
  * Action button applied to a native `<button>` or `<a>` (`button[lcButton]`, `a[lcButton]`).

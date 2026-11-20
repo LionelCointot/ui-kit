@@ -2,10 +2,7 @@ import { signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
-import { LcDepartmentSelectComponent } from '../code-select/department-select.component';
-import { LcRegionSelectComponent } from '../code-select/region-select.component';
-import { LcGeoDataSource } from '../geo-data-source';
-import { provideLcGeo } from '../provide-lc-geo';
+import { LcDepartmentSelectComponent, LcRegionSelectComponent, LcGeoDataSource, provideLcGeo } from '@lionelcointot/ui-angular/geo';
 import { FakeGeoDataSource } from '../testing/fake-geo-data-source';
 
 /**

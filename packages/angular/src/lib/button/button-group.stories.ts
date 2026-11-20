@@ -1,8 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcButtonGroupComponent } from './button-group.component';
-import { LcButtonComponent } from './button.component';
-import { LcIconComponent } from '../icon/icon.component';
+import { LcButtonGroupComponent, LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 
 /**
  * Group of buttons (`role="group"`) with a required accessible name; with `attached`, the borders are joined.

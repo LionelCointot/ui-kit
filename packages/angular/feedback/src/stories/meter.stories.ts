@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample, sizeOptions } from '@lc/storybook';
-import { LcMeterComponent } from '../meter/meter.component';
+import { LcMeterComponent } from '@lionelcointot/ui-angular/feedback';
 
 const COLORS = ['primary', 'success', 'warning', 'error', 'neutral'] as const;
 

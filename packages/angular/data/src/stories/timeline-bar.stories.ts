@@ -1,6 +1,6 @@
 import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcTimelineBarComponent, type LcTimelineLane, type LcTimelineSegment, type LcTimelineTick } from '../timeline-bar/timeline-bar.component';
+import { LcTimelineBarComponent, type LcTimelineLane, type LcTimelineSegment, type LcTimelineTick } from '@lionelcointot/ui-angular/data';
 
 const PHASES: LcTimelineSegment[] = [
   { id: 'a', weight: 60, label: 'Phase A', colorSlot: 1, marker: 'circle' },

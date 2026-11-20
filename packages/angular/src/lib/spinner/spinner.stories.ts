@@ -1,7 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { commonArgTypes, fixedExample } from '@lc/storybook';
-import { LcButtonComponent } from '../button/button.component';
-import { LcSpinnerComponent } from './spinner.component';
+import { LcButtonComponent, LcSpinnerComponent } from '@lionelcointot/ui-angular';
 
 /**
  * Loading indicator: a decorative ring plus a visually hidden text announced to screen readers (`role="status"`).

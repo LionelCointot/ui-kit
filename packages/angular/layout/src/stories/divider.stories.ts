@@ -1,6 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
-import { LcDividerComponent } from '../divider/divider.component';
+import { LcDividerComponent } from '@lionelcointot/ui-angular/layout';
 
 /**
  * Horizontal or vertical separator (`role="separator"`).
