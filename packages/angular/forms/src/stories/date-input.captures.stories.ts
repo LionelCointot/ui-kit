@@ -41,3 +41,8 @@ export const Vide: Story = {};
 export const AvecValeur: Story = { args: { initial: '2026-11-12' } };
 export const AvecBornes: Story = { args: { initial: '2026-11-12', min: '2026-11-10', max: '2026-11-25' } };
 export const Etats: Story = { args: { states: true } };
+const today = new Date();
+/** Jour à la fois choisi, d'aujourd'hui et (par la capture) sous le focus : les trois repères sur une même cellule. */
+export const AujourdhuiChoisi: Story = {
+  args: { initial: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}` },
+};
