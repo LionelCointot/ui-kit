@@ -140,7 +140,7 @@ Organisation de Kendo reprise : *Get Started* → catégories → par composant 
 - [ ] CA-7 (workflow et badge livrés ; publication non constatée : Pages à activer, dépôt privé) : Une fusion sur `main` publie le site sur GitHub Pages ; l'URL est dans le `README.md` (badge) ; une PR lance le build sans déployer.
 - [ ] CA-8 (thème du kit livré ; écart : la bascule de la barre d'outils ne change que l'aperçu) : Thème Storybook aux couleurs du kit, bascule clair / sombre appliquée au manager et à l'aperçu.
 - [ ] CA-9 (non fait : `a11y.test` reste à `todo`, voir § 13) : Addon a11y : aucune violation sérieuse ou critique sur les stories publiques (`a11y.test: 'error'` pour le build public).
-- [ ] CA-10 : `npx ng test ui-angular --watch=false` et les tests de stories passent, stories de QA comprises.
+- [x] CA-10 (2026-11-20 : stories 77 fichiers / 441 tests, unitaires 85 fichiers / 1 900 tests, `npm run build` OK) : `npx ng test ui-angular --watch=false` et les tests de stories passent, stories de QA comprises.
 
 ## 11. Découpage en tâches
 Ordre pensé pour livrer de la valeur visible tôt ; une branche par tâche.
