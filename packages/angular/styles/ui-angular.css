@@ -408,6 +408,8 @@ lc-form-field [lcSuffix] {
   min-block-size: 0;
   /* Écart avec le champ, dessous comme dessus (la surcouche colle le panneau au cadre). */
   margin-block: var(--lc-sys-space-1);
+  /* Jamais plus haut que la fenêtre (marge de la surcouche 2 x space-2, écarts compris) : la surcouche le pousse dans la fenêtre, et le corps défile. */
+  max-block-size: calc(100dvh - 2 * var(--lc-sys-space-2) - 2 * var(--lc-sys-space-1));
   /* Le contour est compté dans le padding : la largeur totale reste 7 cellules + 2 marges (304 px). */
   padding: calc(var(--lc-calendar-padding, var(--lc-sys-space-3)) - var(--lc-sys-border-width-thin));
   border: var(--lc-sys-border-width-thin) solid var(--lc-calendar-border, var(--lc-sys-color-border));
@@ -433,9 +435,7 @@ lc-form-field [lcSuffix] {
 .lc-calendar__months {
   display: flex;
   flex-direction: column;
-  /* Fenêtre trop basse : le corps défile, le pied reste atteignable. */
   min-block-size: 0;
-  overflow: auto;
 }
 
 /* Une rangée d'en-têtes au-dessus d'une rangée de grilles : précédent, titres et suivant se tabulent avant la grille. */
@@ -456,7 +456,7 @@ lc-form-field [lcSuffix] {
 
 .lc-calendar__header {
   display: grid;
-  grid-template-columns: var(--lc-calendar-cell-size, var(--lc-sys-space-10)) auto var(--lc-calendar-cell-size, var(--lc-sys-space-10));
+  grid-template-columns: var(--lc-calendar-cell-size, var(--lc-sys-space-10)) minmax(0, 1fr) var(--lc-calendar-cell-size, var(--lc-sys-space-10));
   align-items: center;
 }
 
@@ -491,10 +491,20 @@ lc-form-field [lcSuffix] {
   grid-column: 2;
   justify-self: center;
   gap: var(--lc-sys-space-2);
-  margin-inline: var(--lc-sys-space-3);
-  padding-inline: var(--lc-sys-space-3);
+  margin-inline: var(--lc-sys-space-1);
+  padding-inline: var(--lc-sys-space-2);
   border: var(--lc-sys-border-width-thin) solid var(--lc-calendar-title-border, var(--lc-sys-color-border-strong));
   font-weight: var(--lc-sys-font-weight-semibold);
+  /* Une seule ligne, quelle que soit la police : le titre ne dépasse pas la colonne de l'en-tête, il se tronque (le nom complet est dans aria-label). */
+  min-inline-size: 0;
+  max-inline-size: calc(100% - 2 * var(--lc-sys-space-1));
+  white-space: nowrap;
+}
+
+.lc-calendar__title > span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lc-calendar__nav:hover:not(:disabled),
@@ -637,7 +647,9 @@ lc-form-field [lcSuffix] {
   display: flex;
   flex-direction: column;
   gap: var(--lc-sys-space-2);
+  /* Fenêtre trop basse : tout le corps (raccourcis compris) défile, le pied reste atteignable. */
   min-block-size: 0;
+  overflow: auto;
 }
 
 .lc-calendar__layout--column {

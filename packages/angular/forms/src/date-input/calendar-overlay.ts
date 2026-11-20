@@ -3,7 +3,8 @@ import type { Injector } from '@angular/core';
 
 /**
  * Surcouche du panneau de calendrier, commune aux champs de date : même stratégie de position et de défilement que
- * `lc-combobox`, largeur propre au panneau. Dimensions flexibles : sans place, le panneau se limite à la fenêtre et son corps défile.
+ * `lc-combobox`, largeur propre au panneau. Sans place ni dessous ni dessus, le CDK pousse le panneau dans la fenêtre (quitte à recouvrir le champ) ;
+ * il ne se réduit que si la fenêtre est trop basse : sa hauteur est plafonnée par le CSS (`max-block-size` de `.lc-calendar`) et son corps défile.
  * `onOutside` reçoit chaque clic extérieur ; `isButton` désigne le bouton calendrier, qui bascule lui-même.
  */
 export function createCalendarOverlay(
@@ -15,7 +16,7 @@ export function createCalendarOverlay(
 ): OverlayRef {
   const overlay = injector.get(Overlay);
   const ref = overlay.create({
-    positionStrategy: overlay.position().flexibleConnectedTo(origin).withFlexibleDimensions(true).withViewportMargin(8)
+    positionStrategy: overlay.position().flexibleConnectedTo(origin).withFlexibleDimensions(false).withPush(true).withViewportMargin(8)
       .withPositions([
         { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
         { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
@@ -23,8 +24,6 @@ export function createCalendarOverlay(
         { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
       ]),
     scrollStrategy: overlay.scrollStrategies.reposition(),
-    // Sans `minHeight` non nul (0 compte pour absent), le CDK ne retient jamais le dimensionnement flexible : le panneau serait seulement poussé.
-    minHeight: 1,
   });
   ref.outsidePointerEvents().subscribe((event) => {
     if (isButton(event.target as Node)) return;
