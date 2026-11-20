@@ -582,7 +582,7 @@ export const DoubleClicSurUnMoisEnPeriode: Story = {
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(valueText(canvasElement)).toBe('2026-11-12|2026-11-14');
     expect(panel(), 'le panneau reste ouvert').not.toBeNull();
-    expect(status(), 'aucun début posé').toBe('Choisissez la date de début.');
+    expect(status(), 'aucun début posé : la ligne dit la période existante').toBe('Période : du 12 au 14 novembre 2026 inclus. Cliquez un jour pour la changer.');
   },
 };
 

@@ -498,3 +498,29 @@ export const ValeurUndefined: Story = {
     }
   },
 };
+
+// ---------- Dernier passage : rangée de raccourcis du mode natif à 390 px
+
+/** CA-36 (navigateur) : à 390 px, la rangée de raccourcis du mode natif est régulière (boutons de même largeur et de même hauteur, colonnes alignées) et ne déborde pas. */
+export const RaccourcisNatifsA390px: Story = {
+  decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }] })],
+  render: () => ({ template: `<lc-sp-contexts where="alone" />` }),
+  play: async ({ canvasElement }) => {
+    try {
+      await page.viewport(390, 800);
+      await waitFor(() => expect(window.innerWidth).toBe(390));
+      await waitFor(() => expect(canvasElement.querySelectorAll('input[type="date"]')).toHaveLength(2));
+      const buttons = [...canvasElement.querySelectorAll<HTMLElement>('[role="group"][aria-label="Raccourcis"] button')];
+      expect(buttons).toHaveLength(4);
+      const boxes = buttons.map((b) => rect(b));
+      log('natif 390', boxes.map((b) => ({ l: Math.round(b.left), t: Math.round(b.top), w: Math.round(b.width), h: Math.round(b.height) })));
+      expect(new Set(boxes.map((b) => Math.round(b.width))).size, 'même largeur').toBe(1);
+      expect(new Set(boxes.map((b) => Math.round(b.height))).size, 'même hauteur').toBe(1);
+      expect(new Set(boxes.map((b) => Math.round(b.left))).size, 'au plus deux colonnes alignées').toBeLessThanOrEqual(2);
+      expect(Math.max(...boxes.map((b) => b.right))).toBeLessThanOrEqual(390);
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390);
+    } finally {
+      await reset();
+    }
+  },
+};

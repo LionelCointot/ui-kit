@@ -735,3 +735,68 @@ describe('Validateurs min / max de Signal Forms posés sur le champ de période 
     expect(panel()!.querySelectorAll('td[aria-disabled="true"]')).toHaveLength(0);
   });
 });
+
+describe('CA-30 ligne d’état à l’ouverture sur une sélection existante', () => {
+  it('CA-30 : période complète : « Période : du 12 au 20 novembre 2026 inclus. Cliquez un jour pour la changer. »', async () => {
+    const { open, status } = await mount({ value: { from: '2026-11-12', to: '2026-11-20' } });
+    await open();
+    expect(status()).toBe('Période : du 12 au 20 novembre 2026 inclus. Cliquez un jour pour la changer.');
+  });
+
+  it('CA-30 : début seul : « Depuis le 18 novembre 2026, sans date de fin. Cliquez un jour pour changer. »', async () => {
+    const { open, status } = await mount({ value: { from: '2026-11-18', to: null } });
+    await open();
+    expect(status()).toBe('Depuis le 18 novembre 2026, sans date de fin. Cliquez un jour pour changer.');
+  });
+
+  it('CA-30 : fin seule : « Jusqu’au 20 novembre 2026 inclus, sans date de début. Cliquez un jour pour changer. »', async () => {
+    const { open, status } = await mount({ value: { from: null, to: '2026-11-20' } });
+    await open();
+    expect(status()).toBe("Jusqu'au 20 novembre 2026 inclus, sans date de début. Cliquez un jour pour changer.");
+  });
+
+  it('CA-30 : sans sélection : « Choisissez la date de début. »', async () => {
+    const { open, status } = await mount();
+    await open();
+    expect(status()).toBe('Choisissez la date de début.');
+  });
+
+  it('CA-30 : après un premier clic, la phrase d’avant ; « Changer le début » revient à « Choisissez la date de début. », valeur inchangée', async () => {
+    const { host, open, cell, click, buttonByText, status } = await mount({ value: { from: '2026-11-12', to: '2026-11-20' } });
+    await open();
+    await click(cell('2026-11-03'));
+    expect(status()).toBe('Début : 3 novembre 2026. Choisissez la date de fin, ou cliquez sur « Sans date de fin ».');
+    await click(buttonByText(/^Changer le début$/)!);
+    expect(status()).toBe('Choisissez la date de début.');
+    expect(host.value()).toEqual({ from: '2026-11-12', to: '2026-11-20' });
+  });
+
+  it('CA-30 : sélection d’un jour : la ligne d’état suit la valeur posée par le code tant qu’aucun jour n’est cliqué', async () => {
+    const { host, open, status, settle } = await mount({ value: { from: '2026-11-12', to: '2026-11-20' } });
+    await open();
+    host.value.set({ from: '2026-11-18', to: null });
+    await settle();
+    expect(status()).toBe('Depuis le 18 novembre 2026, sans date de fin. Cliquez un jour pour changer.');
+  });
+
+  it('CA-30 et CA-38 : en anglais, textes réellement affichés', async () => {
+    const full = await mount({ english: true, value: { from: '2026-11-12', to: '2026-11-20' } });
+    await full.open();
+    const texts = [full.status()];
+    document.body.replaceChildren();
+    TestBed.resetTestingModule();
+    const from = await mount({ english: true, value: { from: '2026-11-18', to: null } });
+    await from.open();
+    texts.push(from.status());
+    document.body.replaceChildren();
+    TestBed.resetTestingModule();
+    const until = await mount({ english: true, value: { from: null, to: '2026-11-20' } });
+    await until.open();
+    texts.push(until.status());
+    expect(texts).toEqual([
+      'Period: from November 12 to 20, 2026 inclusive. Click a day to change it.',
+      'Since November 18, 2026, no end date. Click a day to change.',
+      'Until November 20, 2026 inclusive, no start date. Click a day to change.',
+    ]);
+  });
+});
