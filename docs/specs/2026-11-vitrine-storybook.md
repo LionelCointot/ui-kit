@@ -141,6 +141,9 @@ Organisation de Kendo reprise : *Get Started* → catégories → par composant 
 - [ ] CA-8 (thème du kit livré ; écart : la bascule de la barre d'outils ne change que l'aperçu) : Thème Storybook aux couleurs du kit, bascule clair / sombre appliquée au manager et à l'aperçu.
 - [ ] CA-9 (non fait : `a11y.test` reste à `todo`, voir § 13) : Addon a11y : aucune violation sérieuse ou critique sur les stories publiques (`a11y.test: 'error'` pour le build public).
 - [x] CA-10 (2026-11-20 : stories 77 fichiers / 441 tests, unitaires 85 fichiers / 1 900 tests, `npm run build` OK) : `npx ng test ui-angular --watch=false` et les tests de stories passent, stories de QA comprises.
+- [ ] CA-11 (ajout 2026-11-20, demande : « Je pensais dans show code ça serait le code pour implémenter comme kendo ui ») : l'onglet Code et « Show code » affichent, pour chaque story publique, un composant Angular complet et prêt à coller : `import` d'Angular et des composants du kit depuis leur point d'entrée public, `@Component` avec `imports`, `template`, et une classe qui déclare les valeurs et données utilisées par le gabarit.
+- [ ] CA-12 : dans un Playground, le code affiché suit les réglages (changer `fillMode` change la valeur dans la classe).
+- [ ] CA-13 : le code affiché de chaque story publique compile tel quel dans une application Angular 22 qui dépend du kit (vérifié par un test automatique sur tous les extraits).
 
 ## 11. Découpage en tâches
 Ordre pensé pour livrer de la valeur visible tôt ; une branche par tâche.
