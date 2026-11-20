@@ -13,7 +13,7 @@ export interface SnippetProp {
   uses: string[];
   /** Le texte lit `args` ou une variable du `render` : il ne peut pas être recopié dans l'extrait. */
   args: boolean;
-  /** Le texte est un littéral objet ou tableau (sans conversion de type) : on lui ajoute `as const`. */
+  /** Le texte est un littéral objet ou tableau (sans conversion de type) : `as const` s'il contient du texte. */
   literal: boolean;
 }
 export interface SnippetLocal {
@@ -33,6 +33,8 @@ export interface SnippetInput {
   storyName?: string;
   /** Options des contrôles à choix (valeurs texte) : le champ est typé par l'union de ces valeurs. */
   options?: Record<string, readonly string[]>;
+  /** Types affichés par la table d'API (`argTypes.x.table.type.summary`) : typent les champs sans valeur. */
+  types?: Record<string, string>;
   /** Composant de la story, pour générer le gabarit quand la story n'en fournit pas. */
   component?: { selector?: string[]; inputs: string[]; outputs: string[] };
   /** Reconnaissance des signaux et des actions Storybook, injectée pour garder ce module sans dépendance. */
@@ -85,6 +87,9 @@ function balanced(text: string, open: number): string {
   return text.slice(open + 1);
 }
 
+// shortcut: analyse par expressions régulières à portée plate (une variable locale vaut pour tout le gabarit), pas un vrai parseur ;
+// à remplacer par `parseTemplate` de @angular/compiler si un cas réel la met en défaut. `selectorMatches` ne gère que `tag[attr=valeur]`
+// (pas de `:not()`, ni de classe `.x`, ni d'attribut `*=`).
 export function analyzeTemplate(template: string): TemplateAnalysis {
   const expressions: string[] = [];
   const statements: string[] = [];
@@ -114,6 +119,12 @@ export function analyzeTemplate(template: string): TemplateAnalysis {
         if (track) expressions.push(track[1]);
         for (const alias of part.replace(/^\s*let\s+/, '').matchAll(/(\w+)\s*=\s*\$\w+/g)) declared.add(alias[1]);
       }
+    } else if (m[0].startsWith('@defer')) {
+      // `on viewport`, `prefetch on idle`… sont des mots-clés ; seules les conditions `when <expression>` lisent la classe.
+      for (const part of inner.split(';')) {
+        const when = /^\s*(?:prefetch\s+)?when\s+([\s\S]*)$/.exec(part);
+        if (when) expressions.push(when[1]);
+      }
     } else {
       const [expression, ...rest] = inner.split(';');
       expressions.push(expression);
@@ -133,7 +144,8 @@ export function analyzeTemplate(template: string): TemplateAnalysis {
   const called = new Map<string, string>();
   const pipes = new Set<string>();
   const scan = (source: string) => {
-    const code = source.replace(STRING_LITERAL, "''");
+    // Clés d'objet littéral (`{ active: isActive }`) : ce ne sont pas des champs de la classe.
+    const code = source.replace(STRING_LITERAL, "''").replace(/([{,]\s*)[A-Za-z_$][\w$]*\s*:/g, '$1');
     for (const m of code.matchAll(/(?<![|])\|(?![|])\s*([A-Za-z_]\w*)/g)) pipes.add(m[1]);
     for (const m of code.matchAll(/\(?\s*([\w\s,]*?)\s*\)?\s*=>/g)) m[1].split(',').forEach((name) => declared.add(name.trim()));
     for (const m of code.matchAll(/(?<![\w$.])([A-Za-z_][\w$]*)(\s*\()?/g)) {
@@ -295,6 +307,14 @@ function methodStub(name: string, args: string): string {
   return `${name}(${parameters}): void {\n  // À compléter : réaction à l'événement.\n}`;
 }
 
+/** Champ sans valeur : typé par les options du contrôle ou le type de la table d'API, sinon par un type à renseigner. */
+function undefinedField(name: string, input: SnippetInput): string {
+  const options = input.options?.[name];
+  const known = options ? options.map(quote).join(' | ') : input.types?.[name];
+  const type = known ? (/\bundefined\b/.test(known) ? known : `${known} | undefined`) : 'any';
+  return `readonly ${name}: ${type} = undefined;${known ? '' : ' // À renseigner : type de l\'entrée'}`;
+}
+
 /** Champ (ou méthode) de la classe pour un identifiant du gabarit. */
 function member(name: string, analysis: TemplateAnalysis, input: SnippetInput): { code: string; usesSignal: boolean; uses: string[] } {
   const { props } = input;
@@ -302,13 +322,15 @@ function member(name: string, analysis: TemplateAnalysis, input: SnippetInput): 
   const value = props[name];
   const args = analysis.called.get(name);
   if (!has) {
-    return { code: args !== undefined ? methodStub(name, args) : `readonly ${name} = undefined;`, usesSignal: false, uses: [] };
+    return { code: args !== undefined ? methodStub(name, args) : undefinedField(name, input), usesSignal: false, uses: [] };
   }
+  if (value === undefined) return { code: undefinedField(name, input), usesSignal: false, uses: [] };
   if (typeof value === 'function' && isStub(value)) return { code: methodStub(name, args ?? '$event'), usesSignal: false, uses: [] };
   const written = input.storyName && input.fileName ? input.data.files[normalizeFileName(input.fileName)]?.stories[input.storyName]?.[name] : undefined;
   const mutable = analysis.mutated.has(name) && !input.isSignal(value);
   if (written && !written.args) {
-    const text = written.literal && !mutable ? `${written.text} as const` : written.text;
+    // `as const` seulement si le littéral contient du texte : sans lui, `'solid'` serait typé `string` et refusé par une entrée à union.
+    const text = written.literal && !mutable && /['"`]/.test(written.text) ? `${written.text} as const` : written.text;
     return { code: `${mutable ? '' : 'readonly '}${name} = ${text};`, usesSignal: false, uses: written.uses };
   }
   if (typeof value === 'function' && !input.isSignal(value)) {
@@ -316,8 +338,9 @@ function member(name: string, analysis: TemplateAnalysis, input: SnippetInput): 
     return { code: `${name} = ${source};`, usesSignal: false, uses: [] };
   }
   const options = input.options?.[name];
+  const formatted = formatValue(value, input.isSignal);
   const keepsLiterals = !mutable && typeof value === 'object' && value !== null && !(value instanceof Date) && !input.isSignal(value);
-  const literal = formatValue(value, input.isSignal) + (keepsLiterals && !/signal\(|=>|function/.test(formatValue(value, input.isSignal)) ? ' as const' : '');
+  const literal = keepsLiterals && /['"]/.test(formatted) && !/signal\(|=>|function/.test(formatted) ? `${formatted} as const` : formatted;
   const type = typeof value === 'string' && options?.includes(value) ? `: ${options.map(quote).join(' | ')}` : '';
   return { code: `${mutable ? '' : 'readonly '}${name}${type} = ${literal};`, usesSignal: literal.includes('signal('), uses: [] };
 }

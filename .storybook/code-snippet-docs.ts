@@ -35,6 +35,19 @@ function selectOptions(argTypes: Record<string, { options?: unknown[] }> = {}): 
   return options;
 }
 
+/** Type affiché par la table d'API de chaque argument (`boolean`, `string | undefined`…), sans les types génériques de signaux. */
+function tableTypes(argTypes: Record<string, { table?: { type?: { summary?: string } }; options?: unknown[] }> = {}): Record<string, string> {
+  const types: Record<string, string> = {};
+  for (const [name, argType] of Object.entries(argTypes)) {
+    const summary = argType.table?.type?.summary;
+    const options = (argType.options ?? []).filter((option) => option !== undefined);
+    if (summary && /^[\w\s|'".<>\[\]-]+$/.test(summary) && !/Signal|\bany\b/.test(summary)) types[name] = summary;
+    // Contrôle à choix de booléens, nombres ou `null` (ex. `[null, false, true]`) : union de ces valeurs.
+    else if (options.length > 0 && options.every((option) => option === null || ['boolean', 'number'].includes(typeof option))) types[name] = options.map(String).join(' | ');
+  }
+  return types;
+}
+
 /** Code affiché : le composant Angular complet de la story, avec les valeurs courantes des contrôles. */
 export function transformSnippet(code: string, context: any): string {
   try {
@@ -46,10 +59,13 @@ export function transformSnippet(code: string, context: any): string {
       fileName: context.parameters?.['fileName'],
       storyName: context.name,
       options: selectOptions(context.argTypes),
+      types: tableTypes(context.argTypes),
       component: componentMeta(context.component),
       isSignal,
     });
-  } catch {
+  } catch (error) {
+    // Hors production seulement (storybook dev) : sans ce message, un échec laisserait l'ancien code affiché sans explication.
+    if ((import.meta as { env?: { DEV?: boolean } }).env?.DEV) console.warn(`Code affiché indisponible pour la story ${context?.id}`, error);
     return code;
   }
 }

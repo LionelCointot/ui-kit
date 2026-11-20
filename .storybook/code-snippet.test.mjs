@@ -95,3 +95,22 @@ test('gabarit : tableau littéral de @for remonté en champ, indentation recalé
   assert.equal(hoisted.fields[0].code, "readonly fillValues = ['solid','flat'] as const;");
   assert.equal(reindentTemplate('<div>\n      <p></p>\n    </div>', '  '), '  <div>\n    <p></p>\n  </div>');
 });
+
+test("analyse : clés d'objet littéral et mots-clés de @defer ne sont pas des champs", () => {
+  const a = analyzeTemplate(`<p [ngClass]="{active: isActive, 'is-off': off}">x</p> @defer (on viewport; prefetch on idle; when ready) { <b>y</b> }`);
+  assert.deepEqual(a.roots.sort(), ['isActive', 'off', 'ready']);
+});
+
+test('un champ sans valeur est typé par les options, la table d\'API ou un type à renseigner', () => {
+  const template = '<lc-table [a]="pressed" [b]="mode" [c]="min" />';
+  const code = build({ template, props: { mode: undefined }, options: { mode: ['x', 'y'] }, types: { pressed: 'boolean' } });
+  assert.match(code, /readonly pressed: boolean \| undefined = undefined;/);
+  assert.match(code, /readonly mode: 'x' \| 'y' \| undefined = undefined;/);
+  assert.match(code, /readonly min: any = undefined; \/\/ À renseigner/);
+});
+
+test('as const seulement pour un littéral qui contient du texte', () => {
+  const code = build({ template: '<lc-table [a]="nums" [b]="words" />', props: { nums: [1, 2], words: ['a'] } });
+  assert.match(code, /readonly nums = \[1, 2\];/);
+  assert.match(code, /readonly words = \['a'\] as const;/);
+});
