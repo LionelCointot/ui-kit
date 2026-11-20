@@ -15,7 +15,7 @@ import {
   untracked,
 } from '@angular/core';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
-import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcFormatService, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
 import { addDays, addMonths, addYears, clampIso, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
 import type { LcDateInterval, LcDateIntervalPreset } from './date-interval';
 import { describeInterval } from './date-describe';
@@ -256,7 +256,8 @@ export class LcCalendarPanelComponent {
   private readonly titleFormat = new Intl.DateTimeFormat(this.locale, { month: 'long', year: 'numeric' });
   private readonly monthFormat = new Intl.DateTimeFormat(this.locale, { month: 'short' });
   private readonly dayFormat = new Intl.DateTimeFormat(this.locale, { dateStyle: 'full' });
-  private readonly longFormat = new Intl.DateTimeFormat(this.locale, { dateStyle: 'long' });
+  private readonly formats = inject(LcFormatService);
+  private readonly longDate = (iso: string) => this.formats.date(iso, 'long');
   protected readonly weekdays = Array.from({ length: 7 }, (_, index) => {
     const date = isoToLocalDate(addDays(MONDAY, index))!;
     return {
@@ -281,14 +282,14 @@ export class LcCalendarPanelComponent {
     // Panneau rouvert sur une sélection : la ligne la dit, pour qu'on ne craigne pas de l'écraser.
     const { from, to } = this.selection();
     if (this.changing() || (!from && !to)) return this.labels.dateChooseStart;
-    return from && to ? this.labels.dateCurrentPeriod(describeInterval(this.labels, this.locale, { from, to }))
+    return from && to ? this.labels.dateCurrentPeriod(describeInterval(this.labels, this.locale, { from, to }, this.longDate))
       : from ? this.labels.dateCurrentFrom(this.longDate(from)) : this.labels.dateCurrentUntil(this.longDate(to!));
   });
 
   /** Raccourcis rognés par `min` / `max` ; `interval` est nul quand il n'en reste rien (bouton désactivé). */
   protected readonly presetItems = computed(() => {
     if (this.mode() !== 'range') return [];
-    return describePresets(this.labels, this.locale, this.presets(), this.today(), this.min(), this.max()).map((preset, index) => ({ ...preset, id: `${this.uid}-preset-${index}` }));
+    return describePresets(this.labels, this.locale, this.presets(), this.today(), this.min(), this.max(), this.longDate).map((preset, index) => ({ ...preset, id: `${this.uid}-preset-${index}` }));
   });
 
   protected readonly panels = computed<Panel[]>(() => {
@@ -445,10 +446,6 @@ export class LcCalendarPanelComponent {
     this.changing.set(false);
     this.anchor.set(null);
     this.previewEnd.set(null);
-  }
-
-  private longDate(iso: string): string {
-    return this.longFormat.format(isoToLocalDate(iso)!);
   }
 
   /** Clic, Entrée ou Espace sur une cellule : choisit un jour, ou descend d'un niveau sans rien choisir. */
