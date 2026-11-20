@@ -1,5 +1,13 @@
 # Brief : sélecteur de date (date simple B, période C)
 
+> **État à la livraison (2026-11-20).** Ce brief a servi à concevoir ; le livré s'en écarte sur les points suivants, décidés ensuite (détail : spec, sections 0 et 13).
+> - Plus aucun message propre aux champs de date : ni « Date incomplète… », ni « Date non reconnue… », ni message sous le cadre. Une date incomplète ne montre qu'un cadre invalide ; un collage illisible est ignoré. Seul reste, pour la période, « La date de fin est avant la date de début. ».
+> - Un jour qui n'existe pas ne se saisit pas : chiffre ignoré, ou jour ramené au dernier jour du mois (annonce au lecteur d'écran seulement).
+> - L'annonce « Période choisie : … » à la fermeture est retirée ; le bouton calendrier, qui reprend le focus, dit la période.
+> - Le panneau rouvert sur une sélection existante le dit : « Période : du 12 au 20 novembre 2026 inclus. Cliquez un jour pour la changer. ».
+> - Les dates se disent comme `Intl` les rend : « 1 novembre », pas « 1er novembre ».
+> - Zone active du champ en `primary` / `on-primary` ; jours hors bornes barrés ; raccourcis natifs en une colonne à 390 px.
+
 Complète la §5.4 de `docs/specs/2026-11-selecteur-de-date.md`. Direction retenue par l'utilisateur : **B** (saisie par zones, calendrier à trois niveaux) pour la date simple, **C** pour la période. Maquettes : `docs/design/explorations/2026-11-date-picker/`. Statut : aligné sur la spec réécrite (révision après le test `novice-user`, 2026-11-19). Types de la spec : `LcDateInterval` (`from` / `to`), jeton `LC_DATE_PICKER` (aucune entrée `picker`). Tokens : `--lc-sys-*` seulement ; les `--lc-calendar-*` vont dans `packages/tokens/src/components/calendar.tokens.json` (références `{sys.…}`, comme `card.tokens.json`) et dans le CSS avec repli sur `--lc-sys-*`. Aucun `--lc-ref-*`, aucune valeur en dur.
 
 ## 0. Décisions de conception

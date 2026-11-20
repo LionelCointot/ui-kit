@@ -24,8 +24,8 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
 
 ## Documentation
-- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md` (chacune se termine par ses écarts constatés à l'implémentation)
-- ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`)
+- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md`, `2026-11-selecteur-de-date.md` (chacune se termine par ses écarts constatés à l'implémentation)
+- ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`) ; `0008` (champ de date : calendrier du kit sur pointeur fin, sélecteur du système sinon, jeton `LC_DATE_PICKER`)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
 - Direction visuelle : `DESIGN.md` (système visuel de référence des projets consommateurs) ; `PRODUCT.md` pas encore créé (`/impeccable init`)
 
@@ -66,7 +66,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 - Aucune liste de régions, départements ou communes dans le code : `geo` lit les API officielles (tests : `fetch` simulé ou source factice, jamais le réseau).
 - Ne pas ajouter de vocabulaire métier (finance, prêt…) ni de composant sans consommateur identifié.
 - Ne pas utiliser de fonctionnalité CSS hors Baseline 2024 (pas d'*anchor positioning*).
-- Limites connues : le contrôle de palette de `lc-tokens` ne vérifie que le contraste (pas la distinction pour daltoniens) ; `charts` pèse ~563 Kio minifiés (objectif 350 non tenu, ECharts 6) ; pas de `lc-dropdown-list` ni de phase 5 (hors `lc-combobox`).
+- Limites connues : le contrôle de palette de `lc-tokens` ne vérifie que le contraste (pas la distinction pour daltoniens) ; `charts` pèse ~563 Kio minifiés (objectif 350 non tenu, ECharts 6) ; pas de `lc-dropdown-list` ni de phase 5 (hors `lc-combobox` et le calendrier de `lc-date-input` / `lc-date-range-input`) ; saisie de date par zones non essayée au lecteur d'écran, collage prouvé sous Chromium seulement.
 - Ne pas commiter de secrets ; ne pas ajouter de dépendance sans la justifier ; ne pas modifier du code hors périmètre.
 
 ## Skills (`.claude/skills/`)

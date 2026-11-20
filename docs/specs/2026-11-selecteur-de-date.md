@@ -1,6 +1,6 @@
 # Spec : sélecteur de date (date simple et période)
 
-- **Statut** : Validée le 2026-11-19 par l'utilisateur (« oui pour le devis »), sans test au lecteur d'écran (« on test pas cette a cessibilite la »)
+- **Statut** : Implémentée le 2026-11-20 (date simple et période ; vérifications en section 13). Validée le 2026-11-19 par l'utilisateur (« oui pour le devis »), sans test au lecteur d'écran (« on test pas cette a cessibilite la »)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-19
 - **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0002 Comportement CDK et sélecteurs](../adr/0002-comportement-cdk-et-selecteurs.md) · [0006 Thèmes à l'exécution](../adr/0006-themes-a-l-execution.md) · [0008 Sélecteur de date : calendrier du kit ou sélecteur du système](../adr/0008-selecteur-de-date-kit-ou-systeme.md) (nouveau)
@@ -69,7 +69,7 @@ Le catalogue (`2026-11-catalogue-composants.md`, n° 9) reportait le calendrier 
 | Personne sur téléphone | Touche le champ | Le sélecteur de date du système s'ouvre, comme aujourd'hui |
 | Gestionnaire (audit) | Choisit « 7 derniers jours » | Les deux champs sont remplis et le panneau se ferme |
 | Gestionnaire (audit) | Clique un jour de début puis un jour de fin | La période est surlignée, la valeur porte les deux dates |
-| Gestionnaire (audit) | Clique un jour de début, puis « Sans date de fin » | La valeur porte le début seul : « depuis le 1er novembre » |
+| Gestionnaire (audit) | Clique un jour de début, puis « Sans date de fin » | La valeur porte le début seul : « depuis le 1 novembre » |
 | Intégrateur | Garde `<lc-date-input [formField]="…">` tel quel | Aucun changement de code ; le calendrier du kit apparaît sur ordinateur |
 
 ## 5. Solution proposée
@@ -86,6 +86,11 @@ forms/src/date-input/
   calendar-panel.component.ts    (nouveau, interne)
   date-math.ts                   (nouveau, interne : fonctions pures sur des dates ISO)
   date-mask.ts                   (nouveau, interne : fonctions pures de la saisie par zones)
+  date-interval.ts               (nouveau, public : types LcDateInterval, LcDateIntervalPreset)
+  date-range-part.ts             (nouveau, interne : jeton LC_DATE_PART, par lequel le champ de période pilote ses deux champs)
+  calendar-overlay.ts            (nouveau, interne : surcouche partagée par les deux champs)
+  date-describe.ts               (nouveau, interne : phrase d'une période, « du 13 au 19 novembre 2026 »)
+  date-presets.ts                (nouveau, interne : les quatre raccourcis du kit)
 packages/tokens/src/components/calendar.tokens.json   (nouveau)
 ```
 
@@ -94,7 +99,7 @@ packages/tokens/src/components/calendar.tokens.json   (nouveau)
 - **`toIsoDate`** (fonction publique existante) : inchangée, toujours exportée, toujours « jour d'abord ». L'analyse selon la locale est une fonction interne distincte.
 - **`date-picker-mode.ts`** : jeton `LC_DATE_PICKER` (`'auto' | 'native' | 'calendar'`, défaut `'auto'`). En `auto`, `document.defaultView.matchMedia('(pointer: fine) and (hover: hover)')` est lu une fois à la création du champ : vrai donne le calendrier du kit ; faux, absent ou en erreur donne le champ natif (ADR 0008). Storybook et les tests fournissent le jeton pour forcer un mode.
 - **`calendar-panel.component.ts`** : un seul composant interne, paramétré par le nombre de mois (1 ou 2), le niveau (`day`, `month`, `year`) et une sélection `{ from, to }` (la date simple est `from` seul). Une grille générique de cellules sert les trois niveaux. Il ne connaît ni champ ni surcouche : il reçoit valeur et bornes, émet un choix. Les deux champs l'ouvrent dans une surcouche CDK accrochée au champ, avec la stratégie de position et de défilement de `lc-combobox`.
-- **Styles** : le panneau vit dans la surcouche, hors du composant ; ses règles vont dans la feuille globale `styles/ui-angular.css`, comme `.lc-combobox-panel`. Tokens de composant `--lc-calendar-*` (liste au brief, §1) déclarés dans `calendar.tokens.json` avec repli sur `--lc-sys-*` ; aucun `--lc-ref-*`, aucune valeur en dur. Les paires de contraste du brief s'ajoutent à `contrast-pairs.json`.
+- **Styles** : le panneau vit dans la surcouche, hors du composant ; ses règles vont dans la feuille globale `styles/ui-angular.css`, comme `.lc-combobox-panel`. Tokens de composant `--lc-calendar-*` (liste au brief, §1, plus `zone-bg` et `zone-text` passés en `primary` / `on-primary`, section 13) déclarés dans `calendar.tokens.json` avec repli sur `--lc-sys-*` ; aucun `--lc-ref-*`, aucune valeur en dur. Les paires de contraste du brief s'ajoutent à `contrast-pairs.json`.
 - **Thème** : la surcouche est attachée à `body` et hérite du thème posé sur `html` par `LcThemeService` (`data-theme` et variables en ligne), aperçu du theme-builder compris. Un thème posé sur un sous-arbre de la page ne s'applique pas au panneau : même limite que `lc-combobox` et les dialogues.
 
 ### 5.2 Modèle de données
@@ -159,13 +164,13 @@ Mode natif : rendu et comportement actuels, sans bouton ni panneau.
 Sortie `touch`, méthode `focus()` (champ de début). Règles :
 
 - Deux champs à zones identiques à celui de `lc-date-input`, précédés de « Du » et « Au » (libellés existants de `LC_LABELS`), et un seul bouton calendrier.
-- Une seule borne remplie est une valeur valide, dans les deux sens : `{ from: '2026-11-01', to: null }` (« depuis le 1er novembre ») et `{ from: null, to: '2026-11-30' }`. Un champ laissé vide n'est pas une erreur.
+- Une seule borne remplie est une valeur valide, dans les deux sens : `{ from: '2026-11-01', to: null }` (« depuis le 1 novembre ») et `{ from: null, to: '2026-11-30' }`. Un champ laissé vide n'est pas une erreur.
 - **Règle unique : une borne inutilisable vaut `null`, avec un message.** Borne incomplète : état invalide, sans message. Fin tapée avant le début : la borne en cours de frappe vaut `null`, message existant « La date de fin est avant la date de début. ». La valeur émise a donc toujours `from <= to` quand les deux existent.
 - Au calendrier, cliquer un second jour antérieur au premier inverse les deux.
-- Raccourcis du kit : « 7 derniers jours » et « 30 derniers jours » (libellé existant `lastDays`, aujourd'hui compris, comme `dateRangeBounds` du tableau de données), « Ce mois-ci » (du 1er au dernier jour du mois), « Le mois dernier » (le mois précédent entier). Cliquer un raccourci remplit les deux champs et ferme le panneau : les dates retenues se lisent dans les champs. Chaque raccourci affiche ses dates en petit sous son libellé (« du 13 au 19 novembre 2026 »), sans attendre le survol ; les tournures (même mois, mois différents, années différentes, un seul jour, raccourci désactivé) sont au brief, §2. Un raccourci qui dépasse `min` ou `max` est rogné aux bornes ; s'il n'en reste rien, il est désactivé.
+- Raccourcis du kit : « 7 derniers jours » et « 30 derniers jours » (libellé existant `lastDays`, aujourd'hui compris, comme `dateRangeBounds` du tableau de données), « Ce mois-ci » (du 1 au dernier jour du mois), « Le mois dernier » (le mois précédent entier). Cliquer un raccourci remplit les deux champs et ferme le panneau : les dates retenues se lisent dans les champs. Chaque raccourci affiche ses dates en petit sous son libellé (« du 13 au 19 novembre 2026 »), sans attendre le survol ; les tournures (même mois, mois différents, années différentes, un seul jour, raccourci désactivé) sont au brief, §2. Un raccourci qui dépasse `min` ou `max` est rogné aux bornes ; s'il n'en reste rien, il est désactivé.
 - « Sans date de fin » : bouton du pied, présent une fois le début choisi au calendrier ; il valide le début seul et ferme.
 - « Changer le début » : bouton à côté de la ligne d'état, présent une fois le début choisi ; il revient à « Choisissez la date de début. » sans fermer le panneau.
-- Une seule borne remplie : une ligne sous les champs le dit en clair, « Sans date de fin : tout depuis le 1er novembre 2026. » ou « Sans date de début : tout jusqu'au 30 novembre 2026. ».
+- Une seule borne remplie : une ligne sous les champs le dit en clair, « Sans date de fin : tout depuis le 1 novembre 2026. » ou « Sans date de début : tout jusqu'au 30 novembre 2026. ».
 - « Aujourd'hui » : montre le mois en cours dans le panneau, sans rien choisir ; il n'est jamais désactivé et garde le focus. « Effacer la période » : vide les deux bornes et ferme ; absent si le champ est obligatoire.
 - Mode natif : deux `input[type=date]`, le premier borné par la fin choisie, le second par le début ; pas de panneau ; les raccourcis en rangée de boutons sous les champs.
 
@@ -189,7 +194,7 @@ Directions choisies par l'utilisateur : **B** (date simple) et **C** (période).
 
 **Clavier** : dialogue `role="dialog"` et `aria-modal="true"`, nommé ; focus piégé ; premier focus sur le jour choisi, sinon aujourd'hui, sinon le jour autorisé le plus proche. Une seule étape de tabulation pour la grille ; ordre : précédent, titre, suivant, grille, boutons du pied. Grille `role="grid"` nommée par le titre, lignes `row`, cellules `gridcell` portant `aria-selected`, en-têtes `columnheader`, aujourd'hui `aria-current="date"`. Flèches : jour et semaine (aux niveaux mois et années : ±1 et ±4). Début et Fin : lundi et dimanche de la semaine. Page précédente et suivante : un pas du niveau (mois, année, douze ans). Maj + Page : une année, au niveau des jours. Entrée ou Espace : choisir, ou changer de niveau sur le titre. Échap : ferme tout le panneau sans rien changer, focus rendu au bouton ; pendant le choix d'une fin, le début est abandonné. Clic hors du panneau : ferme sans rien changer ; le focus revient au bouton, sauf si un autre contrôle vient d'être cliqué. Une zone d'annonce polie, à côté du titre, relit le titre quand le mois, l'année ou le niveau change (les enfants d'un bouton ne sont pas annoncés de façon sûre).
 
-**Précisions du brief, reprises telles quelles** (le brief fait foi) : ordre de tabulation du panneau de période (raccourcis, « Changer le début », précédent, titre, suivant, grille, pied) ; après « Changer le début », le focus revient sur la cellule de l'ancien début ; la page d'années s'ouvre sept ans avant l'année affichée (2026 donne 2019 à 2030) ; le bouton calendrier d'une période à une seule borne se nomme « Changer la période, à partir du 1er novembre 2026 » ; un chiffre ignoré fait relire la zone au lecteur d'écran ; colonne des raccourcis de 192 px, raccourcis sur deux lignes (libellé, dates), en grille de deux colonnes sous 840 px.
+**Précisions du brief, reprises telles quelles** (le brief fait foi) : ordre de tabulation du panneau de période (raccourcis, « Changer le début », précédent, titre, suivant, grille, pied) ; après « Changer le début », le focus revient sur la cellule de l'ancien début ; la page d'années s'ouvre sept ans avant l'année affichée (2026 donne 2019 à 2030) ; le bouton calendrier d'une période à une seule borne se nomme « Changer la période, à partir du 1 novembre 2026 » ; un chiffre ignoré fait relire la zone au lecteur d'écran ; colonne des raccourcis de 192 px, raccourcis sur deux lignes (libellé, dates), en grille de deux colonnes sous 840 px.
 
 **États du champ** : désactivé et lecture seule (ni bouton ni panneau, zones non modifiables), invalide, obligatoire. Aucun état de chargement : rien n'est chargé.
 
@@ -287,7 +292,7 @@ Période :
 - [x] CA-28 : `lc-date-range-input` fonctionne avec `[formField]` ; il fonctionne avec `[(value)]` ; sa valeur est un `LcDateInterval`.
 - [x] CA-29 : deux clics dans le panneau donnent `{ from, to }` dans l'ordre ; un second jour antérieur au premier inverse les deux ; le panneau se ferme au second clic ; un clic alors qu'une période complète existe commence un nouveau début.
 - [x] CA-30 : après le premier clic, la ligne d'état affiche « Début : 3 novembre 2026. Choisissez la date de fin, ou cliquez sur « Sans date de fin ». », les jours survolés ou parcourus aux flèches portent la marque d'aperçu, et les boutons « Sans date de fin » et « Changer le début » apparaissent ; le premier donne `{ from, to: null }` et ferme ; le second revient à « Choisissez la date de début. », panneau ouvert, valeur inchangée ; Échap à ce moment ferme et laisse la valeur d'avant. Le panneau ouvert sur une période déjà choisie affiche « Période : du 12 au 20 novembre 2026 inclus. Cliquez un jour pour la changer. » tant qu'aucun jour n'a été cliqué.
-- [x] CA-31 : une seule borne est une valeur valide, dans les deux sens (`{ from: '2026-11-01', to: null }` et `{ from: null, to: '2026-11-30' }`), sans état invalide ; la ligne sous les champs affiche alors « Sans date de fin : tout depuis le 1er novembre 2026. » ou « Sans date de début : tout jusqu'au 30 novembre 2026. ».
+- [x] CA-31 : une seule borne est une valeur valide, dans les deux sens (`{ from: '2026-11-01', to: null }` et `{ from: null, to: '2026-11-30' }`), sans état invalide ; la ligne sous les champs affiche alors « Sans date de fin : tout depuis le 1 novembre 2026. » ou « Sans date de début : tout jusqu'au 30 novembre 2026. ».
 - [x] CA-32 : taper une fin antérieure au début : la borne tapée vaut `null`, état invalide, message « La date de fin est avant la date de début. » ; une borne incomplète à la sortie vaut `null`, état invalide, sans message.
 - [x] CA-33 : avec la date du jour figée au 19 novembre 2026 : « 7 derniers jours » = 13 au 19 novembre ; « 30 derniers jours » = 21 octobre au 19 novembre ; « Ce mois-ci » = 1er au 30 novembre ; « Le mois dernier » = 1er au 31 octobre. Au 1er mars 2026, « Le mois dernier » = 1er au 28 février ; au 1er janvier 2026, 1er au 31 décembre 2025. Cliquer un raccourci remplit les deux champs et ferme le panneau ; chaque raccourci affiche ses dates sous son libellé (« du 13 au 19 novembre 2026 »). Avec `max` = aujourd'hui, « Ce mois-ci » s'arrête à aujourd'hui ; un raccourci entièrement hors bornes est désactivé ; `presets = []` n'affiche aucun raccourci.
 - [x] CA-34 : le panneau contient deux mois quand la fenêtre fait 640 px de large ou plus, un seul à 639 px (faux `matchMedia` sous jsdom) ; (navigateur) à 360 px de large, pas de défilement horizontal.
@@ -303,7 +308,7 @@ Transverse :
 Vérifications manuelles (hors tests automatiques) :
 - V-1 : retiré. L'utilisateur a décidé de ne pas tester le champ à zones au lecteur d'écran ; les attributs et annonces prévus restent exigés par CA-6, CA-12 et CA-19.
 - [x] V-2 : test `novice-user` sur captures de l'écran réel : la personne choisit une date, une date lointaine, puis une période avec et sans fin, sans mot incompris ni hésitation bloquante.
-- [ ] V-3 : les tests de bout en bout de copro-ticket et de finance-credit passent avec le kit mis à jour.
+- [x] V-3 : les consommateurs fonctionnent avec le kit mis à jour, sans changement de code : copro-ticket (1 558 tests du front, construction, 7 parcours de bout en bout) ; finance-credit (58 tests du front, construction ; il n'a pas de parcours de bout en bout), après construction du front de finance-sdk. Vérifié le 2026-11-20 sur le poste, sans rien enregistrer dans ces dépôts.
 
 ## 11. Découpage en tâches
 
@@ -317,7 +322,7 @@ Vérifications manuelles (hors tests automatiques) :
 | T5 (livrée) | Branchement dans `lc-date-input` : bouton, surcouche, focus, « Aujourd'hui », « Effacer », cas du dialogue, stories et tests en navigateur | M | CA-12 à CA-14, CA-18, CA-21 à CA-23, CA-25, CA-26 |
 | T6 (livrée) | Période dans le panneau : deux mois, aperçu, ligne d'état, « Sans date de fin », « Changer le début », raccourcis, règle des titres | M | CA-29, CA-30, CA-33 à CA-35 |
 | T7 (livrée) | `lc-date-range-input` : deux champs à zones, modes, erreurs, stories, catalogue | M | CA-28, CA-31, CA-32, CA-36, CA-37, CA-39, CA-40 |
-| T8 | Vérification finale : `novice-user` sur captures, tests de bout en bout des consommateurs, catalogue de spec (n° 9), `CLAUDE.md` | S | V-2, V-3 |
+| T8 (livrée) | Vérification finale : `novice-user` sur captures, tests de bout en bout des consommateurs, catalogue de spec (n° 9), `CLAUDE.md` | S | V-2, V-3 |
 
 **Fusion** : la date simple (T0 à T5) est fusionnée entière dans `main` le 2026-11-20, après vérification complète ; T1 et T2 avaient été retenues sur la branche de session jusque-là, pour ne pas livrer un champ à zones sans calendrier.
 
@@ -329,10 +334,10 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
   1. Ordinateur à écran tactile avec souris ou pavé tactile : calendrier du kit. Le sélecteur du système ne sert que sur les appareils sans pointeur fin (téléphone, tablette).
   2. « Ce mois-ci » va jusqu'à la fin du mois ; un écran d'historique pose `max` à aujourd'hui pour l'arrêter là.
   3. Utilisateur principal (section 4).
-  4. Une date incomplète vaut « pas de date » (`null`), avec un message à la sortie du champ.
+  4. Une date incomplète vaut « pas de date » (`null`), cadre invalide sans message (décision de l'utilisateur).
 - **Risques** :
   - **Lecteur d'écran sur le champ à zones, risque accepté par l'utilisateur le 2026-11-19** : un `input` masqué est annoncé comme un champ de texte, et la lecture de la zone sélectionnée varie d'un lecteur à l'autre. Aucun essai avec NVDA ou VoiceOver n'est fait : une personne aveugle pourrait avoir du mal à saisir une date au clavier sur ordinateur (sur téléphone, le sélecteur du système n'est pas concerné). Si un besoin apparaît, repli possible sur trois `spinbutton`, au prix d'un changement du contrat de `lc-form-field`.
-  - Sélection de zone par `setSelectionRange` : fragile avec le remplissage automatique et les claviers virtuels ; limité par le fait que le mode calendrier ne s'active que sur pointeur fin.
+  - Sélection de zone par `setSelectionRange` : fragile avec le remplissage automatique et les claviers virtuels ; limité par le fait que le mode calendrier ne s'active que sur pointeur fin. **Réalisé et corrigé** : le collage et `fill()` ne remplissaient pas le champ dans un vrai navigateur (section 13).
   - Le rendu de `lc-date-input` change sur ordinateur dès la mise à jour du kit. Un test de bout en bout qui remplit le champ par sa valeur ISO continue de marcher ; un test qui relirait la valeur affichée du champ (`toHaveValue('2026-11-12')`) casserait. Aucun n'a été trouvé dans copro-ticket ; V-3 le vérifie pour les deux consommateurs.
   - Piège de focus du panneau dans un dialogue du kit : pas de précédent (`lc-combobox` n'en a pas) ; couvert par CA-22, à prototyper tôt en T5.
   - `transformedValue` est récent (Angular 22) et n'est pas encore employé dans le kit : T2 commence par le vérifier.
@@ -374,12 +379,13 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 | 2026-11-20 | T6 et T7 | `qa-engineer`, trois passages ; tests relancés par la session principale | GO | Premier passage NO-GO (huit stories laissées rouges, vertes sans modification après correction). 68 tests d'acceptation de la période (CA-11, CA-28 à CA-39) ; au total 1 900 tests et 361 en navigateur réel, verts sur deux lancements de suite ; `build`, `catalogue:check` et tests des tokens verts. Prouvé dans Chromium : sélection à la souris et au clavier, aperçu, « Sans date de fin », « Changer le début », raccourcis, niveaux à deux mois, largeurs de 360 à 1 280 px, fenêtre basse, thème, Échap dans un dialogue et un tiroir, largeur du champ dans `lc-form-field`, collage et `fill()` sur les trois champs. |
 | 2026-11-20 | T6 et T7 | `ui-ux-designer` | CONFORME AVEC RÉSERVES | Sur captures de l'écran réel. Retenu et corrigé : dates des raccourcis sur deux lignes équilibrées ; raccourcis du mode natif en grille régulière ; seuil d'empilement exprimé par token ; captures sombres refaites. Laissé : champs empilés de largeurs différentes sous 449 px (le bouton reste collé au second champ). Non repris : le résumé « N jours » et les jours des mois voisins de la maquette C, absents de la spec validée (question posée à l'utilisateur). |
 | 2026-11-20 | T6 et T7 | `novice-user` (V-2, période) | COMPRIS AVEC DIFFICULTÉ, tâches accomplies | Sur captures de l'écran réel : période au calendrier ou à la frappe, raccourci (dates connues avant de cliquer), « Changer le début », « Sans date de fin », message d'ordre compris. Retenu et corrigé : le panneau rouvert sur une période déjà choisie le dit, avec « inclus ». Notés sans changement : pas de bouton « Appliquer », jours barrés sans raison affichée, champs remplis seulement à la fin de la sélection. |
+| 2026-11-20 | livraison | `cadreur` | CONFORME AVEC ÉCARTS (documentation seulement) | Le livré répond à la demande et aux décisions successives de l'utilisateur ; aucun test ne prouve une règle abandonnée. Retenu et corrigé : « 1 novembre » partout à la place de « 1er » ; liste des fichiers de la section 5.1 ; risques et choix périmés de la section 12 ; note d'état en tête du brief ; `CLAUDE.md` et le catalogue de spec (n° 47 et `lc-date-input`). À dire à l'utilisateur : O6 est livré par attributs et annonces, jamais écouté au lecteur d'écran. |
 
 **Écarts constatés à l'implémentation**
 - T0 : le repli « JJ/MM/AAAA » de `toIsoDate` n'est pas atteignable par une saisie dans le champ natif (un `input[type=date]` rend une valeur vide pour tout texte non ISO) ; il est donc caractérisé en appelant la fonction, pas par le champ. `lc-date-input` n'a pas encore de story : T5 en ajoute.
 - T1 : les types vivent dans `date-interval.ts`, à côté de `date-math.ts` ; les raccourcis de période sont des fonctions de calcul sans libellé (les libellés arrivent avec T6). Le sélecteur ne traite que les années 1000 à 9999 : une année qui commence par 0 ne se saisit pas.
 - T2 : les erreurs de saisie passent bien par `transformedValue` (vérifié avant d'écrire le reste). La frappe est traitée dans `keydown`, le collage et le remplissage automatique dans `input`, les claviers virtuels dans `beforeinput`.
-- T2 : hors formulaire, le message est posé sous le cadre dans une marge de l'hôte dont la hauteur suit celle du message (mesurée, suivie par `ResizeObserver`), parce que l'hôte est le cadre lui-même et ne peut rien contenir dans son flux sans changer le contrat.
+- T2 : (périmé) le message propre au champ, posé sous le cadre, a été retiré avec T5 sur décision de l'utilisateur : le champ n'affiche plus aucun message.
 - T2 : tokens `--lc-calendar-zone-bg` et `--lc-calendar-zone-text` créés (zone active) ; onze libellés ajoutés à `LC_LABELS` (une surcharge partielle des libellés chez un consommateur reste valable).
 - T2 : limites connues : `value.set(null)` alors que la valeur est déjà `null` ne vide pas un texte partiel (`reset()` du formulaire, lui, le vide) ; une annonce identique répétée n'est pas relue par le lecteur d'écran ; après un second chiffre impossible, la suite tapée va dans la zone suivante (janvier : 3, 2, 0, 2, 6 donne 03/01/26, à compléter).
 - T2 : le contrôle des contrastes ne se lance pas par `npx lc-tokens check` seul sur les couches du kit (il demande un fichier de thème complet) ; la preuve retenue est `tokens:build`, qui vérifie les contrastes, et les tests du paquet de tokens. CA-27 est à reformuler en ce sens à T3.
@@ -399,3 +405,4 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 - T6 et T7 : en mode natif à 390 px de large, les quatre raccourcis sont en une colonne (grille régulière), pas en deux colonnes.
 - **Défaut livré puis corrigé** : la date simple fusionnée le 2026-11-20 ne prenait pas, dans un vrai navigateur, une date collée (zone sélectionnée) ni `fill()` de Playwright ; les tests sous jsdom écrivaient la valeur directement et ne le voyaient pas. Corrigé avec la période : tout texte inséré d'un coup qui se lit comme une date remplace le champ. Prouvé sous Chromium seulement.
 - Le catalogue généré ne liste que les composants : CA-40 est reformulé en ce sens.
+- Poids : le point d'entrée `forms` construit pèse 387 Ko non minifiés (`fesm2022/lionelcointot-ui-angular-forms.mjs`) après la livraison ; la mesure d'avant n'a pas été relevée, donc l'ajout exact n'est pas connu.

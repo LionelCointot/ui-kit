@@ -84,7 +84,7 @@ Le socle définit les tokens et l'API commune. Il reste à spécifier **chaque c
 | 48 | Curseur | `lc-slider` | `forms` | `input[type=range]` natif | **Livré** (même spec) |
 | 49 | Régions, départements, communes, adresses | `lc-region-select`, `lc-department-select`, `lc-commune-input`, `lc-address-input`, `provideLcGeo` | `geo` (importe `forms`) | `lc-combobox` + API officielles ([ADR 0007](../adr/0007-donnees-geographiques-francaises.md)) | **Livré** (même spec) |
 | 46 | Sélection multiple | `lc-multi-select` | `forms` | CDK listbox | P5 (à la demande) |
-| 47 | Calendrier | `lc-date-picker` | `forms` | CDK Overlay + grille | P5 (à la demande) |
+| 47 | Calendrier | `lc-date-picker` | `forms` | CDK Overlay + grille | Réalisé autrement : calendrier de `lc-date-input` et `lc-date-range-input` (spec `2026-11-selecteur-de-date.md`) |
 
 ### 5.2 Modèle de données (types partagés)
 
@@ -206,7 +206,7 @@ Comportement commun :
 - `null` si le champ est vide ;
 - flèches haut et bas = ± `step` (`number` et `percent`).
 
-**`lc-date-input`** : valeur (model) `string | null` au **format ISO `AAAA-MM-JJ`** (aucun objet `Date`, donc aucun décalage de fuseau, cohérent avec `DateOnly` côté .NET). Entrées `min`, `max` (ISO). S'appuie sur `input[type=date]`, natif et accessible. Le calendrier personnalisé est reporté à `lc-date-picker` (P5).
+**`lc-date-input`** : valeur (model) `string | null` au **format ISO `AAAA-MM-JJ`** (aucun objet `Date`, donc aucun décalage de fuseau, cohérent avec `DateOnly` côté .NET). Entrées `min`, `max` (ISO). S'appuie sur `input[type=date]`, natif et accessible. Le calendrier personnalisé, d'abord reporté à `lc-date-picker` (P5), est livré dans `lc-date-input` lui-même, avec le champ de période `lc-date-range-input` (spec `2026-11-selecteur-de-date.md`) : calendrier du kit sur pointeur fin, champ natif sinon.
 
 **`lc-password-input`** : `FormValueControl<string>` (model `value`) sur un `input` natif dont le `type` bascule entre `password` et `text` par un bouton `lcButton` icône seule (`eye` / `eye-off`, `aria-pressed`, `aria-controls` = champ, nom `LC_LABELS.showPassword` / `hidePassword`). Entrées : `autocomplete: 'current-password' | 'new-password'` (défaut `current-password`), `placeholder`, `inputId`, `ariaLabel`, plus les entrées communes. Le mot de passe est masqué à chaque nouvelle instance ; le bouton reste actif en lecture seule.
 
@@ -482,7 +482,7 @@ Pour chaque composant :
 
 ## 12. Risques et questions ouvertes
 
-- **`input[type=date]`** : rendu différent entre WebView2, WKWebView et WebKitGTK. Acceptable en v1 ; `lc-date-picker` s'il est jugé gênant.
+- **`input[type=date]`** : rendu différent entre WebView2, WKWebView et WebKitGTK. Depuis la spec `2026-11-selecteur-de-date.md`, le calendrier du kit remplace le rendu natif sur pointeur fin.
 - **Angular Aria** : si son statut n'est pas stable en v22, `lc-tabs` et `lc-dropdown-list` s'appuient sur le CDK (`FocusKeyManager`, `cdk/listbox`), sans changement d'API.
 - **Saisie numérique localisée** : les cas ambigus (« 1.234 ») sont tranchés par règle. À valider par des tests utilisateurs informels.
 - **Dimension du catalogue** : 37 éléments jusqu'à la P3. Le rythme de livraison doit suivre les besoins réels du module Crédit (ne pas livrer de composant sans consommateur).
