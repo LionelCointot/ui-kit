@@ -6,6 +6,8 @@ import { preferredTheme, darkTheme } from './brand';
 
 /** Thème de départ : celui du système, pour que le manager, les pages de documentation et l'aperçu concordent. */
 const startTheme = preferredTheme() === darkTheme ? 'dark' : 'default';
+// Les pages MDX (accueil, démarrage) ne rendent aucune story : on pose le thème dès le chargement.
+document.documentElement.setAttribute('data-theme', startTheme);
 
 /** Sélecteur de thème : pose data-theme sur <html> (default ou dark), comme LcThemeService en production. */
 const preview: Preview = {
@@ -50,7 +52,7 @@ const preview: Preview = {
           'Introduction',
           'Getting started',
           'Foundations',
-          ['Colors', 'Typography', 'Spacing and shape', 'Elevation and motion', 'Icons', 'Theming'],
+          ['Colors', 'Typography', 'Spacing and shape', 'Elevation and motion', 'Icons'],
           'Buttons',
           'Forms',
           'Data',

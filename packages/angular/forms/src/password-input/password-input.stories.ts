@@ -1,41 +1,65 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { commonArgTypes, fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcPasswordInputComponent } from './password-input.component';
 
+/**
+ * Password field with a show/hide toggle (`lc-password-input`). The value stays a string; `autocomplete` tells the password manager
+ * whether to fill an existing password or generate a new one.
+ *
+ * Import: `import { LcPasswordInputComponent } from '@lionelcointot/ui-angular/forms';`
+ */
 const meta: Meta<LcPasswordInputComponent> = {
   title: 'Forms/Password input',
   component: LcPasswordInputComponent,
   decorators: [moduleMetadata({ imports: [LcPasswordInputComponent, LcFormFieldComponent] })],
   argTypes: {
-    size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
-    fillMode: { control: 'inline-radio', options: ['solid', 'outline', 'flat'] },
-    rounded: { control: 'select', options: ['none', 'small', 'medium', 'large', 'full'] },
+    size: commonArgTypes.size,
+    fillMode: commonArgTypes.fillMode,
+    rounded: commonArgTypes.rounded,
     autocomplete: { control: 'inline-radio', options: ['current-password', 'new-password'] },
   },
-  args: { autocomplete: 'current-password', placeholder: '', disabled: false, readonly: false },
-  render: (args) => ({
-    props: { ...args, password: signal('') },
-    template: `
-      <div style="max-width:24rem">
-        <lc-form-field label="Mot de passe">
-          <lc-password-input [(value)]="password" [autocomplete]="autocomplete" [placeholder]="placeholder"
-            [size]="size" [fillMode]="fillMode" [rounded]="rounded" [disabled]="disabled" [readonly]="readonly" />
-        </lc-form-field>
-      </div>`,
-  }),
+  args: {
+    autocomplete: 'current-password', placeholder: '', disabled: false, readonly: false, required: false, invalid: false, touched: false,
+    size: 'medium', fillMode: 'solid', rounded: 'medium',
+  },
 };
 export default meta;
 type Story = StoryObj<LcPasswordInputComponent>;
 
-export const Defaut: Story = {};
-
-/** Création de compte : `new-password` propose au gestionnaire de mots de passe d'en générer un. */
-export const NouveauMotDePasse: Story = {
-  args: { autocomplete: 'new-password', placeholder: '12 caractères minimum' },
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
+  render: (args) => ({
+    props: { ...args, password: signal('') },
+    template: `
+      <div style="max-width:24rem">
+        <lc-form-field label="Mot de passe" [errors]="invalid ? ['Mot de passe incorrect'] : []">
+          <lc-password-input [(value)]="password" [autocomplete]="autocomplete" [placeholder]="placeholder"
+            [size]="size" [fillMode]="fillMode" [rounded]="rounded" [disabled]="disabled" [readonly]="readonly"
+            [required]="required" [invalid]="invalid" [touched]="touched" />
+        </lc-form-field>
+      </div>`,
+  }),
 };
 
-export const Etats: Story = {
+/** Account creation: `new-password` lets the password manager generate a password. */
+export const NewPassword: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { password: signal('') },
+    template: `
+      <div style="max-width:24rem">
+        <lc-form-field label="Nouveau mot de passe" hint="12 caractères minimum">
+          <lc-password-input [(value)]="password" autocomplete="new-password" placeholder="12 caractères minimum" />
+        </lc-form-field>
+      </div>`,
+  }),
+};
+
+/** Normal, disabled, read-only and invalid fields side by side. */
+export const States: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { password: signal('mot-de-passe-secret') },
     template: `
@@ -48,7 +72,9 @@ export const Etats: Story = {
   }),
 };
 
-export const Tailles: Story = {
+/** `small`, `medium` and `large` sizes. */
+export const Sizes: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { password: signal('secret') },
     template: `
@@ -60,7 +86,9 @@ export const Tailles: Story = {
   }),
 };
 
-export const Variantes: Story = {
+/** `outline` and `flat` fill modes, and fully rounded corners. */
+export const Variants: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { password: signal('secret') },
     template: `

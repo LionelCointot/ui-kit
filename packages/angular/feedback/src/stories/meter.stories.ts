@@ -1,60 +1,86 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample, sizeOptions } from '@lc/storybook';
 import { LcMeterComponent } from '../meter/meter.component';
 
 const COLORS = ['primary', 'success', 'warning', 'error', 'neutral'] as const;
 
+/**
+ * Gauge (`role="meter"`): a measured value inside a known range, with an accessible label and optional spoken text.
+ * Unlike a progress bar, it shows a quantity, not the advance of a task.
+ *
+ * Import: `import { LcMeterComponent } from '@lionelcointot/ui-angular/feedback';`
+ */
 const meta: Meta<LcMeterComponent> = {
   title: 'Feedback/Meter',
   component: LcMeterComponent,
   decorators: [moduleMetadata({ imports: [LcMeterComponent] })],
   argTypes: {
     themeColor: { control: 'select', options: [...COLORS] },
-    size: { control: 'inline-radio', options: ['small', 'medium', 'large'] },
+    size: { control: 'inline-radio', options: [...sizeOptions] },
   },
-  args: { value: 72, min: 0, max: 100, label: 'Taux de remplissage', themeColor: 'primary', size: 'small', showValue: true },
+  args: { value: 72, min: 0, max: 100, label: 'Taux de remplissage', valueText: undefined, themeColor: 'primary', size: 'small', showValue: true },
+};
+export default meta;
+type Story = StoryObj<LcMeterComponent>;
+
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
   render: (args) => ({
     props: args,
     template: `<div style="max-width:20rem"><lc-meter [value]="value" [min]="min" [max]="max" [label]="label" [valueText]="valueText"
       [themeColor]="themeColor" [size]="size" [showValue]="showValue" /></div>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcMeterComponent>;
 
-export const Defaut: Story = {};
-
-export const Couleurs: Story = {
+/** The five theme colors. */
+export const Colors: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { colors: COLORS },
-    template: `<div style="display:grid;gap:12px;max-width:24rem">
+    template: `<div style="display:grid;gap:var(--lc-sys-space-3);max-width:24rem">
       @for (color of colors; track color) { <lc-meter [value]="64" [label]="'Taux de remplissage (' + color + ')'" [themeColor]="color" [showValue]="true" /> }</div>`,
   }),
 };
 
-export const Tailles: Story = {
+/** `small`, `medium` and `large`. */
+export const Sizes: Story = {
+  parameters: fixedExample,
   render: () => ({
-    template: `<div style="display:grid;gap:12px;max-width:24rem">
+    template: `<div style="display:grid;gap:var(--lc-sys-space-3);max-width:24rem">
       <lc-meter [value]="40" label="Petite jauge" size="small" [showValue]="true" />
       <lc-meter [value]="40" label="Jauge moyenne" size="medium" [showValue]="true" />
       <lc-meter [value]="40" label="Grande jauge" size="large" [showValue]="true" /></div>`,
   }),
 };
 
-/** Valeur absente : piste vide, « — » visible, « Non mesuré » lu par les lecteurs d'écran. */
-export const NonMesure: Story = {
-  args: { value: null },
+/** Missing value: empty track, a visible dash, and "Non mesuré" read by screen readers. */
+export const NotMeasured: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `<div style="max-width:20rem"><lc-meter [value]="null" label="Taux de remplissage" [showValue]="true" /></div>`,
+  }),
 };
 
-/** Valeur hors bornes : le remplissage est recadré, la valeur lue reste celle fournie. */
-export const HorsBornes: Story = {
-  args: { value: 130, label: 'Quota utilisé', valueText: '130 % du quota' },
+/** Out-of-range value: the fill is clamped, the spoken value stays the one provided. */
+export const OutOfRange: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `<div style="max-width:20rem"><lc-meter [value]="130" label="Quota utilisé" valueText="130 % du quota" [showValue]="true" /></div>`,
+  }),
 };
 
-export const PlageEtTexteLu: Story = {
-  args: { value: 18, min: 10, max: 30, label: 'Température', valueText: '18 degrés', themeColor: 'warning' },
+/** Custom `min` / `max` and a `valueText` read instead of the raw number. */
+export const CustomRangeAndSpokenText: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `<div style="max-width:20rem"><lc-meter [value]="18" [min]="10" [max]="30" label="Température" valueText="18 degrés" themeColor="warning" [showValue]="true" /></div>`,
+  }),
 };
 
-/** Dans une cellule de tableau, sans valeur affichée à côté (la valeur est dans une autre colonne). */
-export const SansValeurAffichee: Story = {
-  args: { value: 85, showValue: false, themeColor: 'error', label: 'Quota utilisé' },
+/** In a table cell, without the value shown next to it (the value lives in another column). */
+export const WithoutVisibleValue: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `<div style="max-width:20rem"><lc-meter [value]="85" [showValue]="false" themeColor="error" label="Quota utilisé" /></div>`,
+  }),
 };

@@ -1,5 +1,9 @@
 # ui-kit
 
+[![Storybook](https://img.shields.io/badge/Storybook-vitrine-ff4785?logo=storybook&logoColor=white)](https://lionelcointot.github.io/ui-kit/)
+
+**Vitrine des composants : https://lionelcointot.github.io/ui-kit/** (Storybook publié par `.github/workflows/storybook-pages.yml` à chaque fusion sur `main`).
+
 Bibliothèque de composants Angular et de design tokens, **générique** et réutilisable par tous les projets : boutons, champs (dont montants, pourcentages, durées, dates), tableaux, mise en page, navigation, dialogues, retours d'état, indicateurs et graphiques. Le style est entièrement piloté par des tokens : chaque projet applique son thème sans modifier la bibliothèque.
 
 > **Statut** : spécification. Le code arrive phase par phase (voir les specs).

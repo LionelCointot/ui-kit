@@ -7,10 +7,12 @@ const angularPackagesDir = resolve(here, '../packages/angular');
 const tokensThemeModule = resolve(here, '../packages/tokens/theme/index.js');
 
 /**
- * Build public (vitrine GitHub Pages) : `STORYBOOK_PUBLIC=1` retire les stories de QA (`*.qa.stories.ts`).
- * Sans la variable (développement, tests `addon-vitest`), toutes les stories sont chargées ; la QA est rangée sous « QA ».
+ * Vitrine publique (GitHub Pages) : sans les stories de QA (`*.qa.stories.ts`). Activée par les scripts npm
+ * `storybook:public` et `build-storybook:public` (nom du script, valable sous Windows) ou par `STORYBOOK_PUBLIC=1`.
+ * Sinon (développement, tests `addon-vitest`), toutes les stories sont chargées ; la QA est rangée sous « QA ».
  */
-const publicBuild = process.env['STORYBOOK_PUBLIC'] === '1';
+const publicBuild =
+  process.env['STORYBOOK_PUBLIC'] === '1' || (process.env['npm_lifecycle_event'] ?? '').endsWith(':public');
 
 /** Descripteur d'un maillon d'extraction (API expérimentale de Storybook, non typée dans StorybookConfig). */
 interface DocgenProviderDescriptor { moduleSpecifier: string; options: Record<string, unknown> }

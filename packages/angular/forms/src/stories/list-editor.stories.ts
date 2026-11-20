@@ -1,5 +1,6 @@
 import { Component, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import {
@@ -73,64 +74,91 @@ class ListEditorDemoComponent {
   }
 }
 
+/**
+ * Editable list managed by the application (`lc-list-editor`): add, rename, reorder (buttons or Alt + arrows) and enable or disable items.
+ * The component only emits requests (`add`, `rename`, `move`, `toggle`); the application owns the state and passes `items` back.
+ *
+ * Import: `import { LcListEditorComponent } from '@lionelcointot/ui-angular/forms';`
+ */
 const meta: Meta<LcListEditorComponent> = {
   title: 'Forms/List editor',
   component: LcListEditorComponent,
   decorators: [moduleMetadata({ imports: [LcListEditorComponent, LcFormFieldComponent, ListEditorDemoComponent] })],
-  args: { items: SHORT, minActive: 0, maxLength: null, addLabel: 'Nouvel élément', disabled: false, busy: false, ariaLabel: 'Éléments' },
-  argTypes: { maxLength: { control: 'number' } },
-  render: (args) => ({
-    props: args,
-    template: `
-      <div style="max-width:40rem">
-        <lc-list-editor [items]="items" [minActive]="minActive" [maxLength]="maxLength" [addLabel]="addLabel"
-          [disabled]="disabled" [busy]="busy" [ariaLabel]="ariaLabel" />
-      </div>`,
-  }),
+  args: {
+    minActive: 0, maxLength: null, addLabel: 'Nouvel élément', addButtonLabel: 'Ajouter', addError: null, emptyText: 'Aucun élément.',
+    listLabel: 'Liste des éléments', disabled: false, busy: false, ariaLabel: 'Éléments',
+  },
+  argTypes: {
+    maxLength: { control: 'number' },
+    items: { control: false },
+    savedItems: { control: false },
+    isDuplicate: { control: false },
+    add: { action: 'add' },
+    rename: { action: 'rename' },
+    move: { action: 'move' },
+    toggle: { action: 'toggle' },
+  },
 };
 export default meta;
 type Story = StoryObj<LcListEditorComponent>;
 
-/** Trois éléments, dont un désactivé (badge « Désactivé » en plus du libellé estompé). */
-export const Courte: Story = {};
+/** Fixed list in a 40 rem column; `attributes` are plain template attributes. */
+const fixed = (items: readonly LcListEditorItem[], attributes = ''): Story => ({
+  parameters: fixedExample,
+  render: () => ({ props: { items }, template: `<div style="max-width:40rem"><lc-list-editor [items]="items" ariaLabel="Éléments" ${attributes} /></div>` }),
+});
 
-/** Un élément protégé : ni renommable ni désactivable, mais réordonnable ; la raison vient de l'application. */
-export const LigneProtegee: Story = {
-  args: { items: [...SHORT, { id: 'p', label: 'Toujours présent', active: true, locked: true, lockedReason: 'Fourni par le système, il ne peut pas être modifié.' }] },
-};
-
-/** Erreurs fournies par l'application : sous une ligne (`error`) et sous le champ d'ajout (`addError`). Vide, trop long et doublon : voir `Interactif`. */
-export const ErreursDeLApplication: Story = {
-  render: () => ({
-    props: { items: [SHORT[0], { ...SHORT[1], error: 'Ce libellé existe déjà dans une autre liste.' }, SHORT[2]] },
+/** Every input is bound: change them in the Controls panel (the list itself stays fixed; see `Interactive` for a live one). */
+export const Playground: Story = {
+  render: (args) => ({
+    props: { ...args, items: SHORT },
     template: `
       <div style="max-width:40rem">
-        <lc-list-editor [items]="items" ariaLabel="Éléments" addError="Ce libellé est refusé par le serveur." />
+        <lc-list-editor [items]="items" [minActive]="minActive" [maxLength]="maxLength" [addLabel]="addLabel"
+          [addButtonLabel]="addButtonLabel" [addError]="addError" [emptyText]="emptyText" [listLabel]="listLabel"
+          [disabled]="disabled" [busy]="busy" [ariaLabel]="ariaLabel" (add)="add($event)" (rename)="rename($event)"
+          (move)="move($event)" (toggle)="toggle($event)" />
       </div>`,
   }),
 };
 
-/** Un seul élément actif avec `minActive` à 1 : son interrupteur est inerte (`aria-disabled`, atteignable au clavier) et le dit. */
-export const DernierElementActif: Story = {
-  args: { items: [{ id: 'a', label: 'Seul actif', active: true }, { id: 'b', label: 'Désactivé', active: false }, { id: 'c', label: 'Autre désactivé', active: false }], minActive: 1 },
-};
+/** Three items, one of them disabled (a "Désactivé" badge in addition to the dimmed label). */
+export const Short: Story = fixed(SHORT);
 
-export const ListeLongue: Story = { args: { items: LONG, minActive: 1 } };
+/** A locked item cannot be renamed or disabled but can be reordered; the reason comes from the application. */
+export const LockedRow: Story = fixed([...SHORT, { id: 'p', label: 'Toujours présent', active: true, locked: true, lockedReason: 'Fourni par le système, il ne peut pas être modifié.' }]);
 
-export const Occupee: Story = {
-  args: { items: [SHORT[0], { ...SHORT[1], busy: true }, SHORT[2]], busy: false },
-};
+/** Errors supplied by the application: under a row (`error`) and under the add field (`addError`). Empty, too long and duplicate: see `Interactive`. */
+export const ApplicationErrors: Story = fixed(
+  [SHORT[0], { ...SHORT[1], error: 'Ce libellé existe déjà dans une autre liste.' }, SHORT[2]],
+  'addError="Ce libellé est refusé par le serveur."',
+);
 
-export const Desactivee: Story = { args: { disabled: true } };
+/** A single active item with `minActive` at 1: its switch is inert (`aria-disabled`, still reachable by keyboard) and says so. */
+export const LastActiveItem: Story = fixed(
+  [{ id: 'a', label: 'Seul actif', active: true }, { id: 'b', label: 'Désactivé', active: false }, { id: 'c', label: 'Autre désactivé', active: false }],
+  '[minActive]="1"',
+);
 
-export const Vide: Story = { args: { items: [] } };
+/** Twenty items, at least one of them active. */
+export const LongList: Story = fixed(LONG, '[minActive]="1"');
 
-/** Largeur d'un téléphone : les commandes passent sous le libellé, sans défilement horizontal (essayez aussi 320 px). */
-export const A360Pixels: Story = {
+/** One row is busy (`busy: true` on the item). */
+export const BusyRow: Story = fixed([SHORT[0], { ...SHORT[1], busy: true }, SHORT[2]]);
+
+/** The whole list is disabled. */
+export const Disabled: Story = fixed(SHORT, 'disabled');
+
+/** No item: the empty text. */
+export const Empty: Story = fixed([]);
+
+/** Phone width: controls wrap under the label, without horizontal scrolling (also try 320 px). */
+export const At360Pixels: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { items: [...SHORT, { id: 'l', label: 'Un libellé particulièrement long qui doit passer à la ligne sans déborder', active: true }] },
     template: `
-      <div style="max-width:360px;border:1px dashed #888;padding:8px">
+      <div style="max-width:360px;border:1px dashed var(--lc-sys-color-border, #888);padding:var(--lc-sys-space-2, 8px)">
         <lc-form-field label="Éléments" hint="Une aide sous le libellé.">
           <lc-list-editor [items]="items" [minActive]="1" />
         </lc-form-field>
@@ -138,8 +166,9 @@ export const A360Pixels: Story = {
   }),
 };
 
-/** Dans `lc-form-field` : le libellé nomme le groupe, l'aide et l'erreur lui sont reliées. */
-export const DansUnChamp: Story = {
+/** In `lc-form-field`: the label names the group, the hint and the error are linked to it. */
+export const InAField: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { items: SHORT },
     template: `
@@ -152,9 +181,10 @@ export const DansUnChamp: Story = {
 };
 
 /**
- * État tenu par la démo : ajoutez (Entrée), renommez (Entrée enregistre, Échap annule), déplacez (boutons ou Alt + flèches),
- * désactivez. Essayez un champ vide, un doublon (« premier »), plus de 20 caractères, ou un libellé contenant « refus ».
+ * State held by the demo: add (Enter), rename (Enter saves, Escape cancels), move (buttons or Alt + arrows), disable.
+ * Try an empty label, a duplicate ("premier"), more than 20 characters, or a label containing "refus".
  */
-export const Interactif: Story = {
+export const Interactive: Story = {
+  parameters: fixedExample,
   render: () => ({ template: `<div style="max-width:40rem"><lc-list-editor-demo /></div>` }),
 };

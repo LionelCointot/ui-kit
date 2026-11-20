@@ -1,0 +1,113 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Getting started" />
+
+# Getting started
+
+The kit ships as two npm packages published on GitHub Packages:
+
+| Package | Contents |
+|---|---|
+| `@lionelcointot/ui-tokens` | Design tokens (DTCG), CSS for the `default` and `dark` themes, the `lc-tokens` CLI (build a product theme, check contrast). No Angular dependency. |
+| `@lionelcointot/ui-angular` | Angular 22 components, one secondary entry point per family. |
+
+## 1. Install
+
+Point the `@lionelcointot` scope to GitHub Packages in your project's `.npmrc`:
+
+```ini
+@lionelcointot:registry=https://npm.pkg.github.com
+```
+
+Then install the packages (Node.js 24.15 or later, as required by Angular CLI 22):
+
+```bash
+npm i @lionelcointot/ui-tokens @lionelcointot/ui-angular @angular/cdk
+npm i echarts   # only if you use @lionelcointot/ui-angular/charts or the theme builder
+```
+
+## 2. Add the styles
+
+In `angular.json` (`styles`) or in your global stylesheet, in this order:
+
+```css
+@import '@lionelcointot/ui-tokens/css/lc-tokens.css';      /* reference and component tokens */
+@import '@lionelcointot/ui-tokens/css/theme-default.css';  /* light theme (:root, [data-theme="default"]) */
+@import '@lionelcointot/ui-tokens/css/theme-dark.css';     /* dark theme ([data-theme="dark"]) */
+@import '@lionelcointot/ui-tokens/css/base.css';           /* box-sizing, body, focus ring, .lc-visually-hidden */
+@import '@lionelcointot/ui-angular/styles/ui-angular.css'; /* directives on native elements (lcInput, lcSelect, lcCheckbox, lcRadio) */
+```
+
+Components with a template carry their own encapsulated styles; the global sheet only styles directives placed on
+native elements. Every style reads CSS variables only.
+
+## 3. Configure the application
+
+```ts
+import { provideZonelessChangeDetection } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { LC_LABELS, LC_LABELS_EN, provideLcUiKit } from '@lionelcointot/ui-angular';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideZonelessChangeDetection(),
+    provideLcUiKit({ locale: 'fr-FR', currency: 'EUR' }), // optional: formatting defaults
+    { provide: LC_LABELS, useValue: LC_LABELS_EN },          // optional: English labels (French by default)
+  ],
+});
+```
+
+## 4. Use a component
+
+Import standalone components from their entry point:
+
+```ts
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { LcFormFieldComponent, LcDateInputComponent } from '@lionelcointot/ui-angular/forms';
+
+@Component({
+  imports: [LcButtonComponent, LcFormFieldComponent, LcDateInputComponent],
+  template: `
+    <lc-form-field label="Date de début">
+      <lc-date-input [(value)]="start" />
+    </lc-form-field>
+    <button lcButton themeColor="primary" (click)="save()">Enregistrer</button>
+  `,
+})
+export class ExampleComponent {}
+```
+
+## Entry points
+
+| Entry point | Contents |
+|---|---|
+| `@lionelcointot/ui-angular` | Common types, `provideLcUiKit`, `LC_LABELS`, format service and pipes, `LcThemeService`, button, button group, icon, spinner, skeleton |
+| `…/forms` | Form field, input, select, checkbox, radio, switch, money / percent / number inputs, date and period inputs, password, segmented control, combobox, slider, file upload, list editor |
+| `…/feedback` | Alert, toast service and outlet, badge, status badge, progress bar, meter, message, empty state, error state |
+| `…/overlay` | Dialog service, dialog, confirmation dialog, drawer, tooltip |
+| `…/layout` | App shell, page, stack, grid, card, disclosure, divider |
+| `…/navigation` | Tabs, navigation list and group, menu |
+| `…/data` | Table, data table, tree table, paginator, code block, description list, KPI card, activity feed, log view |
+| `…/charts` | Line, area, bar, segmented bar and sparkline charts (optional peer dependency `echarts`, load them in a `@defer` block) |
+| `…/geo` | French regions, departments, communes and addresses from the official public APIs |
+| `…/theme-builder` | Live theme editor, contrast report and preview |
+
+## Theming
+
+Themes are sets of `--lc-sys-*` variables. Switch between the built-in themes with the `data-theme` attribute
+(`default` or `dark`) or with `LcThemeService`. To create a product theme, describe it in a `*.tokens.json` file
+(or export one from the [theme builder](?path=/story/tools-theme-builder--playground)) and compile it:
+
+```bash
+npx lc-tokens build --theme brand.tokens.json --name brand --out theme-brand.css
+npx lc-tokens check --theme brand.tokens.json   # contrast checks
+```
+
+See the [Foundations](?path=/story/foundations-colors--colors) pages for every system token.
+
+## Conventions
+
+- Prefix `lc`: elements `lc-…`, attributes `lc…`, CSS variables `--lc-…`, types `Lc…`.
+- Native elements keep their semantics: the kit uses attribute selectors on them (`button[lcButton]`, `input[lcInput]`).
+- Common inputs on every component that supports them: `themeColor`, `fillMode`, `size`, `rounded`, `disabled`.
+- Form controls implement Signal Forms' `FormValueControl<T>`: use `[formField]` or `[(value)]`.

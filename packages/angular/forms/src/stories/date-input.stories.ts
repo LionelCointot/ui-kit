@@ -8,6 +8,7 @@ import '../../../../tokens/dist/css/theme-default.css';
 import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
+import { commonArgTypes, fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcDateInputComponent } from '../date-input/date-input.component';
 import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
@@ -30,21 +31,50 @@ class DateInputDemoComponent {
   readonly end = signal<string | null>(null);
 }
 
-const meta: Meta = {
+/**
+ * Date field (`lc-date-input`) holding an ISO date string (`yyyy-mm-dd`). On a fine pointer it shows day/month/year segments and a calendar panel;
+ * otherwise it falls back to the system date picker (injection token `LC_DATE_PICKER` forces a mode). Bounds with `min` and `max`.
+ *
+ * Import: `import { LcDateInputComponent } from '@lionelcointot/ui-angular/forms';`
+ */
+const meta: Meta<LcDateInputComponent> = {
   title: 'Forms/Date input',
-  decorators: [moduleMetadata({ imports: [DateInputDemoComponent] })],
-  render: () => ({ template: '<lc-date-input-demo />' }),
+  component: LcDateInputComponent,
+  decorators: [moduleMetadata({ imports: [DateInputDemoComponent, LcDateInputComponent, LcFormFieldComponent] })],
+  args: {
+    min: undefined, max: undefined, disabled: false, readonly: false, required: false, invalid: false, touched: false,
+    size: 'medium', fillMode: 'solid', rounded: 'medium', ariaLabel: 'Date',
+  },
+  argTypes: { ...commonArgTypes, min: { control: 'text' }, max: { control: 'text' } },
 };
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<LcDateInputComponent>;
 
-/** Mode calendrier forcé : champ à zones jj/mm/aaaa (chiffres, flèches haut et bas, collage). Un jour impossible ne se saisit pas. */
-export const ModeCalendrier: Story = {
+/** Every input is bound: change them in the Controls panel (`min` and `max` take an ISO date such as 2026-11-30). */
+export const Playground: Story = {
+  render: (args) => ({
+    props: { ...args, date: signal<string | null>('2026-11-12') },
+    template: `
+      <div style="max-width:20rem;min-height:28rem">
+        <lc-date-input [(value)]="date" [min]="min || undefined" [max]="max || undefined" [disabled]="disabled" [readonly]="readonly"
+          [required]="required" [invalid]="invalid" [touched]="touched" [size]="size" [fillMode]="fillMode" [rounded]="rounded"
+          [ariaLabel]="ariaLabel" />
+        <p style="margin-top:1rem">Valeur : {{ date() ?? 'aucune' }}</p>
+      </div>`,
+  }),
+};
+
+/** Forced calendar mode: day/month/year segments (digits, up and down arrows, paste). An impossible day cannot be typed. */
+export const CalendarMode: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: '<lc-date-input-demo />' }),
   decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] })],
 };
 
-/** Navigateur réel : la zone active est sélectionnée après chaque frappe de 1, 2, 1, 1, 2, 0, 2, 6, puis après une valeur posée par le code pendant le focus. */
-export const ZoneActiveSelectionnee: Story = {
+/** Real browser: the active segment is selected after each keystroke, and after a value set by code while focused. */
+export const ActiveSegmentSelected: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: '<lc-date-input-demo />' }),
   decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] })],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -98,8 +128,9 @@ const body = () => within(document.body);
 const openedPanel = () => body().findByRole('dialog');
 const closed = () => waitFor(() => expect(document.querySelector('lc-calendar-panel')).toBeNull());
 
-/** Navigateur réel : le clic sur le bouton ouvre le panneau ; un jour choisi met la valeur et le texte à jour, ferme, et rend le focus au bouton. */
-export const CalendrierVide: Story = {
+/** Real browser: the button opens the panel; a chosen day updates value and text, closes it and returns focus to the button. */
+export const CalendarEmpty: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => picker(),
   play: async ({ canvasElement }) => {
@@ -120,8 +151,9 @@ export const CalendrierVide: Story = {
   },
 };
 
-/** Navigateur réel : avec valeur le bouton se nomme « Changer la date, … » ; Échap ferme sans rien changer et rend le focus au bouton ; Alt + flèche bas rouvre. */
-export const CalendrierAvecValeur: Story = {
+/** Real browser: with a value the button is named "Changer la date, …"; Escape closes without change; Alt + arrow down reopens. */
+export const CalendarWithValue: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => picker('initial="2026-11-12"'),
   play: async ({ canvasElement }) => {
@@ -140,8 +172,9 @@ export const CalendrierAvecValeur: Story = {
   },
 };
 
-/** Navigateur réel : hors des bornes (10 au 25 novembre 2026) un jour est désactivé et ne se choisit pas ; dans les bornes il se choisit. */
-export const CalendrierAvecBornes: Story = {
+/** Real browser: days outside the bounds (10 to 25 November 2026) are disabled and cannot be picked. */
+export const CalendarWithBounds: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => picker('initial="2026-11-12" min="2026-11-10" max="2026-11-25"'),
   play: async ({ canvasElement }) => {
@@ -157,8 +190,9 @@ export const CalendrierAvecBornes: Story = {
   },
 };
 
-/** Navigateur réel : champ obligatoire, le panneau n'a pas « Effacer la date ». */
-export const CalendrierObligatoire: Story = {
+/** Real browser: a required field has no "Effacer la date" action in the panel. */
+export const CalendarRequired: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => picker('required'),
   play: async ({ canvasElement }) => {
@@ -169,8 +203,9 @@ export const CalendrierObligatoire: Story = {
   },
 };
 
-/** Navigateur réel : dans un `lc-form-field`, Alt + flèche bas dans le champ ouvre le panneau, « Effacer la date » vide et rend le focus au bouton. */
-export const CalendrierDansUnChampDeFormulaire: Story = {
+/** Real browser: inside `lc-form-field`, Alt + arrow down opens the panel and "Effacer la date" clears the value. */
+export const CalendarInAField: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => picker('labelled initial="2026-11-12"'),
   play: async ({ canvasElement }) => {
@@ -186,8 +221,9 @@ export const CalendrierDansUnChampDeFormulaire: Story = {
   },
 };
 
-/** Navigateur réel : le jour choisi est aussi aujourd'hui et porte le focus clavier ; le point d'aujourd'hui reste à l'intérieur du disque, sans le toucher. */
-export const CalendrierAujourdhuiChoisiFocus: Story = {
+/** Real browser: the selected day is also today and holds keyboard focus; the today dot stays inside the disc. */
+export const CalendarTodaySelectedFocus: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => {
     const now = new Date();
@@ -210,8 +246,9 @@ export const CalendrierAujourdhuiChoisiFocus: Story = {
   },
 };
 
-/** Navigateur réel, fenêtre de 400 px de haut : le panneau reste dans la fenêtre, son corps défile et « Aujourd'hui » se clique. */
-export const CalendrierFenetreBasse: Story = {
+/** Real browser, 400 px high window: the panel stays in the window, its body scrolls and "Aujourd'hui" is clickable. */
+export const CalendarShortWindow: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [DateInputPickerDemoComponent] }), CALENDAR],
   render: () => picker('initial="2026-11-12"'),
   play: async ({ canvasElement }) => {
@@ -233,8 +270,9 @@ export const CalendrierFenetreBasse: Story = {
   },
 };
 
-/** États du champ en mode calendrier : vide, avec valeur, invalide, désactivé, lecture seule (ces deux derniers sans bouton). */
-export const CalendrierEtats: Story = {
+/** Calendar-mode field states: empty, with value, invalid, disabled, read-only (the last two without a button). */
+export const CalendarStates: Story = {
+  parameters: fixedExample,
   decorators: [moduleMetadata({ imports: [LcDateInputComponent] }), CALENDAR],
   render: () => ({
     template: `
@@ -256,7 +294,9 @@ export const CalendrierEtats: Story = {
   },
 };
 
-/** Mode natif forcé : `input[type=date]` du navigateur. */
-export const ModeNatif: Story = {
+/** Forced native mode: the browser's `input[type=date]`. */
+export const NativeMode: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: '<lc-date-input-demo />' }),
   decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }] })],
 };

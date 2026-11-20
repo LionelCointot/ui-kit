@@ -1,6 +1,6 @@
 # Spec : Vitrine Storybook publiée sur GitHub Pages
 
-- **Statut** : Brouillon
+- **Statut** : Implémentée (en vérification)
 - **Auteur** : session principale
 - **Date** : 2026-11-20
 - **ADR liés** : à créer si la décision « Compodoc » ou « page d'accueil séparée » est retenue (§ 12)
@@ -8,7 +8,11 @@
 ## 0. Fiche de cadrage
 - **Demande, dans les mots de l'utilisateur** : « J'aimerai rendre ce repo plus professionnel : Tout d'abord le storybook fait un peu fouilli et certains composant ne réagissent pas quand ont les modifies ses parametre depuis sotrybook. Ainsi j'aimerai que tu fasse un beau plan professionnel pour montrer les possibilite, comme fait kendo ui afin d'utiliser la page statique ee storybook oour le mettre sur la oage guthub du projet »
 - **Besoin en trois phrases** : Le Storybook doit devenir une vitrine lisible du kit, organisée comme une documentation de bibliothèque commerciale (Kendo UI) : accueil, fondations, puis une page par composant avec démo réglable, exemples et API. Chaque démo « Aire de jeu » doit réagir à ses contrôles. Le Storybook statique est publié automatiquement sur GitHub Pages.
-- **Décisions prises pendant le cadrage** : aucune encore ; voir § 12 (questions à trancher).
+- **Décisions prises pendant le cadrage** (2026-11-20, l'utilisateur a validé le plan par « Vasy », les recommandations du § 12 sont donc retenues) :
+  1. Langue : navigation, pages de documentation et descriptions en anglais ; contenu des démos en français (langue par défaut de `LC_LABELS`).
+  2. Storybook seul, accueil en MDX (pas de site séparé).
+  3. Compodoc : inutile. `@storybook/angular-vite` 10.6 extrait lui-même les métadonnées Angular (T0 tranché sans dépendance).
+  4. Dépôt privé : le workflow GitHub Pages est livré ; l'activation (Settings → Pages → GitHub Actions, avec GitHub Pro ou un dépôt public) reste à faire par l'utilisateur.
 - **Taille** : Fonctionnalité (plusieurs tâches, aucune modification du code des composants publiés hors correctifs révélés).
 - **Angles ouverts** :
   - [x] Architecture : séparation stories publiques / stories de QA, pipeline CI de publication, éventuelle dépendance Compodoc.

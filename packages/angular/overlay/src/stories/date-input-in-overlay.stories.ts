@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import '../../../../tokens/dist/css/lc-tokens.css';
 import '../../../../tokens/dist/css/theme-default.css';
@@ -61,6 +62,12 @@ class DateInOverlayDemoComponent {
   }
 }
 
+/**
+ * A date field (`lc-date-input`) inside a dialog and a drawer: its calendar panel stays above the overlay, traps focus on its own,
+ * and Escape closes the panel before the overlay. Each story opens the overlay and checks this in a real browser.
+ *
+ * Import: `import { LcDialogService, LcDrawerService } from '@lionelcointot/ui-angular/overlay';` and `import { LcDateInputComponent } from '@lionelcointot/ui-angular/forms';`
+ */
 const meta: Meta = {
   title: 'Overlays/Date fields in an overlay',
   decorators: [
@@ -105,16 +112,18 @@ async function checkPanelInside(host: string) {
   await waitFor(() => expect(document.querySelector(host)).toBeNull()); // un second Échap ferme la superposition
 }
 
-/** Navigateur réel : dans un `lc-dialog`, Échap ferme le panneau seul, le focus revient au bouton calendrier. */
-export const DansUnDialogue: Story = {
+/** Real browser: inside an `lc-dialog`, Escape closes the panel alone and focus returns to the calendar button. */
+export const InADialog: Story = {
+  parameters: fixedExample,
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Ouvrir le dialogue' }));
     await checkPanelInside('lc-dialog');
   },
 };
 
-/** Navigateur réel : même vérification dans un `lc-drawer`. */
-export const DansUnTiroir: Story = {
+/** Real browser: same check inside an `lc-drawer`. */
+export const InADrawer: Story = {
+  parameters: fixedExample,
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Ouvrir le tiroir' }));
     await checkPanelInside('lc-drawer');
