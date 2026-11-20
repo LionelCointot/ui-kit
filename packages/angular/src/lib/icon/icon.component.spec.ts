@@ -28,7 +28,7 @@ describe('LcIconComponent', () => {
       expect(icon.classList).toContain('lc-icon--large');
     });
 
-    it.each(['user', 'users', 'user-plus', 'user-pen', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check'])(
+    it.each(['user', 'users', 'user-plus', 'user-pen', 'user-x', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check'])(
       'fournit l\'icône de profil « %s » dans le jeu par défaut',
       (name) => {
         expect(LC_DEFAULT_ICONS[name]).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*>.+<\/svg>$/);
