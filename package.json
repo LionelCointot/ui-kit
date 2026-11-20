@@ -59,5 +59,6 @@
   "description": "Espace de travail du ui-kit (bibliothèque de composants Angular et design tokens)",
   "workspaces": [
     "packages/tokens"
-  ]
+  ],
+  "license": "AGPL-3.0-only"
 }

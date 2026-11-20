@@ -4,6 +4,6 @@
   "lib": {
     "entryFile": "src/public-api.ts"
   },
-  "assets": ["styles/**/*.css", "CATALOGUE.md"],
+  "assets": ["styles/**/*.css", "CATALOGUE.md", "LICENSE"],
   "allowedNonPeerDependencies": []
 }
