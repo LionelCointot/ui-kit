@@ -33,6 +33,8 @@ const ICONS = [
   'image-off', 'circle-off',
   // Ajouts : filtres de colonne du tableau filtrable (entonnoir, effacement, aucun résultat).
   'funnel', 'funnel-x', 'search-x',
+  // Ajout : personne retirée (écran « Ouverture des copropriétés » de copro-ticket).
+  'user-x',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */
