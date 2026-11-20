@@ -9,7 +9,7 @@ import { LcNavListComponent } from '../nav-list/nav-list.component';
 class PageComponent {}
 
 const meta: Meta<LcNavGroupComponent> = {
-  title: 'Navigation/Groupe de navigation',
+  title: 'Navigation/Nav group',
   component: LcNavGroupComponent,
   decorators: [
     applicationConfig({

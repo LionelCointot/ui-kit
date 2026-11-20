@@ -24,7 +24,7 @@ const LANES: LcTimelineLane[] = [
 const LANES_TICKS: LcTimelineTick[] = [0, 60, 120, 180, 240].map((at) => ({ at, label: at === 0 ? '0' : `${at / 12} ans` }));
 
 const meta: Meta<LcTimelineBarComponent> = {
-  title: 'Données/Barre de durées',
+  title: 'Data/Timeline bar',
   component: LcTimelineBarComponent,
   decorators: [moduleMetadata({ imports: [LcTimelineBarComponent] })],
   args: {

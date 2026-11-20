@@ -30,7 +30,7 @@ class FixesComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de date/Acceptation, second passage',
+  title: 'QA/Date input/Acceptance, second pass',
   tags: ['!autodocs'],
   decorators: [moduleMetadata({ imports: [FixesComponent] }), applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] })],
   render: (args) => ({ props: args, template: `<lc-date-panel-fixes [initial]="initial" [min]="min" [max]="max" />` }),

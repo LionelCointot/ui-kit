@@ -132,7 +132,7 @@ const props = (source: LcDataSource<Ticket> | readonly Ticket[], initial: LcTabl
 });
 
 const meta: Meta<LcDataTableComponent<Ticket>> = {
-  title: 'Données/Tableau filtrable',
+  title: 'Data/Data table',
   component: LcDataTableComponent,
   decorators: [moduleMetadata({ imports: [LcDataTableComponent, LcCellDirective, LcStatusBadgeComponent, LcButtonComponent, LcIconComponent] })],
 };

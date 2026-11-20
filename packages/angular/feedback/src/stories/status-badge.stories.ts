@@ -13,7 +13,7 @@ const KINDS = [
 ] as const;
 
 const meta: Meta<LcStatusBadgeComponent> = {
-  title: 'Retours d\'état/Indicateur d\'état',
+  title: 'Feedback/Status badge',
   component: LcStatusBadgeComponent,
   decorators: [moduleMetadata({ imports: [LcStatusBadgeComponent, LcBadgeComponent, LcButtonComponent] })],
   argTypes: {

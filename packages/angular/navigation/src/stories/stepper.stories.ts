@@ -101,7 +101,7 @@ class StepperRailDemoComponent {
 }
 
 const meta: Meta<LcStepperComponent> = {
-  title: 'Navigation/Fil d\'étapes',
+  title: 'Navigation/Stepper',
   component: LcStepperComponent,
   decorators: [moduleMetadata({ imports: [LcStepperComponent, StepperDemoComponent, StepperNavDemoComponent, StepperRailDemoComponent] })],
   argTypes: {

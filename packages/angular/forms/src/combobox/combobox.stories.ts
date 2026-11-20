@@ -29,7 +29,7 @@ const display = (city: City) => city.name;
 const trackBy = (city: City) => city.id;
 
 const meta: Meta<LcComboboxComponent<City>> = {
-  title: 'Formulaires/Liste filtrable',
+  title: 'Forms/Combobox',
   component: LcComboboxComponent,
   decorators: [moduleMetadata({ imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent, LcFormFieldComponent] })],
   argTypes: {

@@ -53,7 +53,7 @@ class StoryGeoDataSource extends LcGeoDataSource {
 }
 
 const meta: Meta<LcCommuneInputComponent> = {
-  title: 'Géographie/Communes et adresses',
+  title: 'Geography/Commune and address search',
   component: LcCommuneInputComponent,
   decorators: [
     moduleMetadata({ imports: [LcCommuneInputComponent, LcAddressInputComponent, LcFormFieldComponent, JsonPipe] }),

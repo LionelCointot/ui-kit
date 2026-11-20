@@ -3,7 +3,7 @@ import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcTooltipDirective } from '../tooltip/tooltip.directive';
 
 const meta: Meta = {
-  title: 'Superpositions/Info-bulle',
+  title: 'Overlays/Tooltip',
   decorators: [moduleMetadata({ imports: [LcTooltipDirective, LcButtonComponent, LcIconComponent] })],
   parameters: { layout: 'fullscreen' },
 };

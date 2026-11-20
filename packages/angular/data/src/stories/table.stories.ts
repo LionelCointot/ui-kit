@@ -26,7 +26,7 @@ const columns: LcTableColumn<Payment>[] = [
 const sum = (rows: readonly Payment[], key: 'capital' | 'interest') => rows.reduce((total, row) => total + row[key], 0);
 
 const meta: Meta<LcTableComponent<Payment>> = {
-  title: 'Données/Tableau',
+  title: 'Data/Table',
   component: LcTableComponent,
   decorators: [moduleMetadata({ imports: [LcTableComponent, LcCellDirective, LcDescriptionListComponent, LcKpiCardComponent] })],
 };

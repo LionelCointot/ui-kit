@@ -3,7 +3,7 @@ import { LcTabComponent, LcTabContentDirective } from '../tabs/tab.component';
 import { LcTabsComponent } from '../tabs/tabs.component';
 
 const meta: Meta<LcTabsComponent> = {
-  title: 'Navigation/Onglets',
+  title: 'Navigation/Tabs',
   component: LcTabsComponent,
   decorators: [moduleMetadata({ imports: [LcTabsComponent, LcTabComponent, LcTabContentDirective] })],
   argTypes: { activation: { control: 'inline-radio', options: ['automatic', 'manual'] } },

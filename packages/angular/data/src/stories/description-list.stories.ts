@@ -24,7 +24,7 @@ class DescriptionListDemoComponent {
 }
 
 const meta: Meta<LcDescriptionListComponent> = {
-  title: 'Données/Liste de définitions',
+  title: 'Data/Description list',
   component: LcDescriptionListComponent,
   decorators: [moduleMetadata({ imports: [LcDescriptionListComponent, DescriptionListDemoComponent] })],
   args: { items: ITEMS, layout: 'inline' },

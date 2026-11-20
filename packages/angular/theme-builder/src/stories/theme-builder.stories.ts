@@ -8,7 +8,7 @@ import { LcThemeBuilderComponent } from '../builder/theme-builder.component';
  * fixe la base de départ (clair ou sombre).
  */
 const meta: Meta<LcThemeBuilderComponent> = {
-  title: 'Outils/Theme builder',
+  title: 'Tools/Theme builder',
   component: LcThemeBuilderComponent,
   decorators: [moduleMetadata({ imports: [LcThemeBuilderComponent] })],
   parameters: { layout: 'fullscreen' },

@@ -5,7 +5,7 @@ import { LcMessageComponent } from '../message/message.component';
 const LONG = 'Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious';
 
 const meta: Meta<LcMessageComponent> = {
-  title: 'Retours d\'état/Message',
+  title: 'Feedback/Message',
   component: LcMessageComponent,
   decorators: [moduleMetadata({ imports: [LcMessageComponent, LcBadgeComponent] })],
   argTypes: { variant: { control: 'inline-radio', options: ['received', 'sent', 'restricted'] } },

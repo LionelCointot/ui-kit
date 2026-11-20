@@ -4,7 +4,7 @@ import { LcMeterComponent } from '../meter/meter.component';
 const COLORS = ['primary', 'success', 'warning', 'error', 'neutral'] as const;
 
 const meta: Meta<LcMeterComponent> = {
-  title: 'Retours d\'état/Jauge',
+  title: 'Feedback/Meter',
   component: LcMeterComponent,
   decorators: [moduleMetadata({ imports: [LcMeterComponent] })],
   argTypes: {

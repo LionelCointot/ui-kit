@@ -32,7 +32,7 @@ class PaginatorDemoComponent {
 }
 
 const meta: Meta<LcPaginatorComponent> = {
-  title: 'Données/Pagination',
+  title: 'Data/Paginator',
   component: LcPaginatorComponent,
   decorators: [moduleMetadata({ imports: [LcPaginatorComponent, PaginatorDemoComponent] })],
   args: { total: 120, pageSize: 25, page: 1, pageSizes: [] },

@@ -11,7 +11,7 @@ const teal: LcThemeDefinition = {
 };
 
 const meta: Meta = {
-  title: 'Outils/Composants du theme builder',
+  title: 'Tools/Theme builder parts',
   decorators: [moduleMetadata({ imports: [LcThemeEditorComponent, LcThemeContrastReportComponent, LcThemePreviewComponent] })],
 };
 export default meta;

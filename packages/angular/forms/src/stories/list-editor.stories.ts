@@ -74,7 +74,7 @@ class ListEditorDemoComponent {
 }
 
 const meta: Meta<LcListEditorComponent> = {
-  title: 'Formulaires/Liste modifiable',
+  title: 'Forms/List editor',
   component: LcListEditorComponent,
   decorators: [moduleMetadata({ imports: [LcListEditorComponent, LcFormFieldComponent, ListEditorDemoComponent] })],
   args: { items: SHORT, minActive: 0, maxLength: null, addLabel: 'Nouvel élément', disabled: false, busy: false, ariaLabel: 'Éléments' },

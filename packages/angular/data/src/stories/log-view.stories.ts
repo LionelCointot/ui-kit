@@ -43,7 +43,7 @@ class LogViewLiveDemoComponent implements OnDestroy {
 }
 
 const meta: Meta<LcLogViewComponent> = {
-  title: 'Données/Journal',
+  title: 'Data/Log view',
   component: LcLogViewComponent,
   decorators: [moduleMetadata({ imports: [LcLogViewComponent, LogViewLiveDemoComponent] })],
   args: { lines: makeLines(40), ariaLabel: 'Sortie du traitement', maxLines: 500, height: '16rem', wrap: true, copyable: true, live: 'off' },

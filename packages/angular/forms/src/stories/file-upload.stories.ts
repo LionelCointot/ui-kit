@@ -85,7 +85,7 @@ class FileUploadDemoComponent {
 }
 
 const meta: Meta<LcFileUploadComponent> = {
-  title: 'Formulaires/Dépôt de fichiers',
+  title: 'Forms/File upload',
   component: LcFileUploadComponent,
   decorators: [moduleMetadata({ imports: [LcFileUploadComponent, LcFormFieldComponent, FileUploadDemoComponent] })],
   args: {

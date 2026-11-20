@@ -5,7 +5,7 @@ import {
 } from '../disclosure/disclosure.component';
 
 const meta: Meta<LcDisclosureComponent> = {
-  title: 'Mise en page/Ligne dépliable',
+  title: 'Layout/Disclosure',
   component: LcDisclosureComponent,
   decorators: [moduleMetadata({
     imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, LcButtonComponent, LcIconComponent],

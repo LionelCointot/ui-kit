@@ -23,7 +23,7 @@ class ControlledDemoComponent {
 }
 
 const meta: Meta<LcSegmentedControlComponent<string>> = {
-  title: 'Formulaires/Interrupteur segmenté',
+  title: 'Forms/Segmented control',
   component: LcSegmentedControlComponent,
   decorators: [moduleMetadata({ imports: [ControlledDemoComponent] })],
   args: { options: OPTIONS, value: 'simple', ariaLabel: 'Niveau de détail' },

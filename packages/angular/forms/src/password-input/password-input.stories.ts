@@ -4,7 +4,7 @@ import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcPasswordInputComponent } from './password-input.component';
 
 const meta: Meta<LcPasswordInputComponent> = {
-  title: 'Formulaires/Mot de passe',
+  title: 'Forms/Password input',
   component: LcPasswordInputComponent,
   decorators: [moduleMetadata({ imports: [LcPasswordInputComponent, LcFormFieldComponent] })],
   argTypes: {

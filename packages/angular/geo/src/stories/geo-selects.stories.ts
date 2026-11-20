@@ -9,7 +9,7 @@ import { FakeGeoDataSource } from '../testing/fake-geo-data-source';
 
 /** Les stories utilisent une source factice (300 ms de latence) : aucun appel réseau. La story « API réelle » appelle les services publics. */
 const meta: Meta<LcDepartmentSelectComponent> = {
-  title: 'Géographie/Régions et départements',
+  title: 'Geography/Region and department selects',
   component: LcDepartmentSelectComponent,
   decorators: [
     moduleMetadata({ imports: [LcDepartmentSelectComponent, LcRegionSelectComponent, LcFormFieldComponent] }),

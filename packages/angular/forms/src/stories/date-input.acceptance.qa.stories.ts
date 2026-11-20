@@ -23,7 +23,7 @@ class AcceptanceComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de date/Acceptation',
+  title: 'QA/Date input/Acceptance',
   tags: ['!autodocs'],
   decorators: [
     moduleMetadata({ imports: [AcceptanceComponent] }),

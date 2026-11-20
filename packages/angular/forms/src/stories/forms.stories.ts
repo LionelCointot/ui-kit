@@ -48,7 +48,7 @@ class FormsDemoComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champs',
+  title: 'Forms/Text fields',
   decorators: [moduleMetadata({ imports: [FormsDemoComponent, LcFormFieldComponent, LcInputDirective] })],
   render: () => ({ template: '<lc-forms-demo />' }),
 };

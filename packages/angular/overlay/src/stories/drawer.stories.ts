@@ -52,7 +52,7 @@ class DrawerDemoComponent {
 }
 
 const meta: Meta<DrawerDemoComponent> = {
-  title: 'Superpositions/Tiroir',
+  title: 'Overlays/Drawer',
   decorators: [moduleMetadata({ imports: [DrawerDemoComponent, LcDrawerComponent, LcDrawerInitialFocusDirective, LcButtonComponent, LcIconComponent] })],
   render: (args) => ({ props: args, template: `<lc-drawer-demo />` }),
 };

@@ -38,7 +38,7 @@ class DialogDemoComponent {
 }
 
 const meta: Meta<DialogDemoComponent> = {
-  title: 'Superpositions/Dialogue',
+  title: 'Overlays/Dialog',
   decorators: [moduleMetadata({ imports: [DialogDemoComponent, LcDialogComponent, LcButtonComponent] })],
   render: (args) => ({ props: args, template: `<lc-dialog-demo [config]="config" />` }),
   args: { config: {} },

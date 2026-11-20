@@ -12,7 +12,7 @@ const PHOTO =
 const NAMES = ['Élodie Martin', 'Jean-Pierre Durand', 'Anne de la Tour', 'Karim', 'Zoë Lefèvre', 'Paul Bernard', 'Sophie Roux', 'Hugo Petit'];
 
 const meta: Meta<LcAvatarComponent> = {
-  title: 'Données/Avatar',
+  title: 'Data/Avatar',
   component: LcAvatarComponent,
   decorators: [moduleMetadata({ imports: [LcAvatarComponent] })],
   argTypes: {

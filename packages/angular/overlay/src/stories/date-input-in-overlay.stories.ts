@@ -62,7 +62,7 @@ class DateInOverlayDemoComponent {
 }
 
 const meta: Meta = {
-  title: 'Superpositions/Champ de date dans une superposition',
+  title: 'Overlays/Date fields in an overlay',
   decorators: [
     moduleMetadata({ imports: [DateInOverlayDemoComponent] }),
     applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] }),

@@ -2,7 +2,7 @@ import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vit
 import { LcIconComponent } from './icon.component';
 
 const meta: Meta<LcIconComponent> = {
-  title: 'Actions/Icône',
+  title: 'Foundations/Icons',
   component: LcIconComponent,
   decorators: [moduleMetadata({ imports: [LcIconComponent] })],
 };

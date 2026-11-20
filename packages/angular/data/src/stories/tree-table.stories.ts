@@ -58,7 +58,7 @@ function bigTree(count: number): Unit[] {
 const base = { data: units, columns, trackBy: (unit: Unit) => unit.id, children: (unit: Unit) => unit.subUnits };
 
 const meta: Meta<LcTreeTableComponent<Unit>> = {
-  title: 'Données/Tableau hiérarchique',
+  title: 'Data/Tree table',
   component: LcTreeTableComponent,
   decorators: [moduleMetadata({ imports: [LcTreeTableComponent, LcCellDirective] })],
 };

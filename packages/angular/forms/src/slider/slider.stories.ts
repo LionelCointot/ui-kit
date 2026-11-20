@@ -4,7 +4,7 @@ import { LcFormFieldComponent } from '../form-field/form-field.component';
 import { LcSliderComponent } from './slider.component';
 
 const meta: Meta<LcSliderComponent> = {
-  title: 'Formulaires/Curseur',
+  title: 'Forms/Slider',
   component: LcSliderComponent,
   decorators: [moduleMetadata({ imports: [LcSliderComponent, LcFormFieldComponent] })],
   argTypes: {

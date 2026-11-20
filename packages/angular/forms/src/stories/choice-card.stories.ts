@@ -31,7 +31,7 @@ class ChoiceCardDemoComponent {
 }
 
 const meta: Meta<LcChoiceCardComponent> = {
-  title: 'Formulaires/Carte de choix',
+  title: 'Forms/Choice card',
   component: LcChoiceCardComponent,
   decorators: [moduleMetadata({ imports: [ChoiceCardDemoComponent, LcRadioGroupComponent, LcRadioDirective, LcChoiceCardComponent] })],
 };

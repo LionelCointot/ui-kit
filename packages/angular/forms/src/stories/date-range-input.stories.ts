@@ -58,7 +58,7 @@ class DateRangeInputFormDemoComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de période',
+  title: 'Forms/Date range input',
   decorators: [moduleMetadata({ imports: [DateRangeInputDemoComponent, DateRangeInputFormDemoComponent] })],
 };
 export default meta;

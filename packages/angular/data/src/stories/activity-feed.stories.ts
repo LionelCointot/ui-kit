@@ -5,7 +5,7 @@ import { LcActivityItemComponent } from '../activity-feed/activity-item.componen
 const LONG = 'Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious';
 
 const meta: Meta<LcActivityFeedComponent> = {
-  title: 'Données/Fil d\'historique',
+  title: 'Data/Activity feed',
   component: LcActivityFeedComponent,
   decorators: [moduleMetadata({ imports: [LcActivityFeedComponent, LcActivityItemComponent] })],
   argTypes: { density: { control: 'inline-radio', options: ['comfortable', 'compact'] } },

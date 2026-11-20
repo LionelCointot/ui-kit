@@ -3,7 +3,7 @@ import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcAppShellComponent } from '../app-shell/app-shell.component';
 
 const meta: Meta<LcAppShellComponent> = {
-  title: 'Mise en page/Coque d\'application',
+  title: 'Layout/App shell',
   component: LcAppShellComponent,
   decorators: [moduleMetadata({ imports: [LcAppShellComponent, LcButtonComponent, LcIconComponent] })],
   parameters: { layout: 'fullscreen' },

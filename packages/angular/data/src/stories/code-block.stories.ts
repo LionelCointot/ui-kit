@@ -8,7 +8,7 @@ const LOG = Array.from({ length: 60 }, (_, index) =>
 const CONFIG = ['server:', '  port: 8080', '  timeout: 30s', 'cache:', '  enabled: true', '  ttl: 600'].join('\n');
 
 const meta: Meta<LcCodeBlockComponent> = {
-  title: 'Données/Bloc de code',
+  title: 'Data/Code block',
   component: LcCodeBlockComponent,
   decorators: [moduleMetadata({ imports: [LcCodeBlockComponent] })],
   args: { code: CONFIG, ariaLabel: 'Configuration du service', wrap: false, lineNumbers: false, copyable: true, maxHeight: '20rem' },

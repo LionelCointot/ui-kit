@@ -18,7 +18,7 @@ const cartesian: LcCartesianData = {
 };
 
 const meta: Meta = {
-  title: 'Graphiques/Graphiques',
+  title: 'Charts/Chart gallery',
   decorators: [moduleMetadata({ imports: [LcLineChartComponent, LcAreaChartComponent, LcBarChartComponent, LcSegmentedBarComponent, LcSparklineComponent] })],
   args: { data: cartesian },
 };

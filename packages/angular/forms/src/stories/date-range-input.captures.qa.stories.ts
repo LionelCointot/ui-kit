@@ -26,7 +26,7 @@ class CaptureComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de période/Captures',
+  title: 'QA/Date range input/Captures',
   tags: ['!autodocs'],
   decorators: [moduleMetadata({ imports: [CaptureComponent] })],
   args: { initial: { from: null, to: null } },

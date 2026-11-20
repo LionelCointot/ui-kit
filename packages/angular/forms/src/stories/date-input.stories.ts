@@ -31,7 +31,7 @@ class DateInputDemoComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de date',
+  title: 'Forms/Date input',
   decorators: [moduleMetadata({ imports: [DateInputDemoComponent] })],
   render: () => ({ template: '<lc-date-input-demo />' }),
 };
