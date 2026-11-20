@@ -29,6 +29,17 @@ Modèle de référence : `packages/angular/src/lib/button/button.stories.ts`.
 6. Pas de story en double avec `Playground` (supprimer un ancien `Default` identique).
 7. Styles de mise en page des démos (`display:flex; gap`) : autorisés dans le gabarit, en `var(--lc-sys-space-*)` plutôt qu'en pixels.
 
+## Code affiché (onglet Code, « Show code »)
+Le code est généré pour chaque story : un composant Angular complet (`import`, `@Component`, classe) à coller dans une application.
+Générateur : `.storybook/code-snippet.ts` (fonctions pures), adaptation Storybook : `.storybook/code-snippet-docs.ts`, données (sélecteurs du kit, imports et démos locales des fichiers de story) : `.storybook/snippet-data.mjs`.
+- Les champs de la classe viennent des valeurs liées par le gabarit : valeurs des contrôles pour les `args` (le code suit le panneau Controls), source écrit dans le `render` pour le reste (une valeur de `props` qui est une fonction, une constante locale…). Tout nom que le gabarit lit doit donc exister dans `props` ou dans `args`.
+- Un tableau issu des `args` de plus de 10 éléments est tronqué à 10 avec un commentaire `// … N de plus` (l'extrait compile quand même) ; les valeurs écrites dans le `render` sont recopiées en entier.
+- Pour construire l'extrait, la fonction `render` de la story est **rappelée** (avec les args courants, à chaque changement de contrôle) : elle ne doit avoir aucun effet de bord (pas d'appel réseau, pas de minuterie, pas d'écriture globale).
+- Les composants de démonstration définis dans le fichier de story (`@Component` local), leurs interfaces et constantes sont recopiés tels quels dans l'extrait.
+- Le gabarit doit compiler en mode strict : pas de chaîne là où l'entrée attend une union (`[headingLevel]="3"` et non `headingLevel="3"` pour un nombre), pas de tableau littéral dans `@for (… of ['a', 'b'])` hors `as const` (le générateur le remonte en champ).
+- Cas que le générateur ne sait pas recopier (valeur calculée dans le corps du `render`, thème de départ lu dans la barre d'outils…) : écrire l'extrait à la main avec `parameters.docs.source.code` (chaîne, sans `${}`).
+- Contrôle : `npm run build-storybook:public && npm run snippets:check` compile chaque extrait avec `ngc` (CA-12 et CA-13) ; tests du générateur : `npm run snippets:test`.
+
 ## Vérifier
 - `STORYBOOK_PUBLIC=1 npm run build-storybook` réussit.
 - `npx vitest run --project storybook <fichiers>` passe (les stories sont aussi des tests de rendu).

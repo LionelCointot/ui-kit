@@ -65,9 +65,9 @@ export const Accordion: Story = {
   render: () => ({
     template: `
       <div lcDisclosureGroup exclusive>
-        <lc-disclosure bordered headingLevel="3" [expanded]="true"><span lcDisclosureSummary>Première section</span><p>Contenu A</p></lc-disclosure>
-        <lc-disclosure bordered headingLevel="3"><span lcDisclosureSummary>Deuxième section</span><p>Contenu B</p></lc-disclosure>
-        <lc-disclosure bordered headingLevel="3"><span lcDisclosureSummary>Troisième section</span><p>Contenu C</p></lc-disclosure>
+        <lc-disclosure bordered [headingLevel]="3" [expanded]="true"><span lcDisclosureSummary>Première section</span><p>Contenu A</p></lc-disclosure>
+        <lc-disclosure bordered [headingLevel]="3"><span lcDisclosureSummary>Deuxième section</span><p>Contenu B</p></lc-disclosure>
+        <lc-disclosure bordered [headingLevel]="3"><span lcDisclosureSummary>Troisième section</span><p>Contenu C</p></lc-disclosure>
       </div>`,
   }),
 };

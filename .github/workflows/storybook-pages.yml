@@ -38,6 +38,13 @@ jobs:
       - run: npm run tokens:build
       - name: Storybook public
         run: npm run build-storybook:public
+      # Navigateur pour les contrôles : les scripts de tools/qa lancent `chromium.launch()` (navigateur de Playwright).
+      - run: npx playwright install --with-deps chromium
+      # Un Storybook mis à jour qui casserait le code affiché (SNIPPET_RENDERED, originalStoryFn) est détecté ici : CA-12 et CA-13.
+      - name: Code affiché compilable
+        run: npm run snippets:check
+      - name: Contrôles des Playground
+        run: node tools/qa/storybook-controls.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist/storybook
