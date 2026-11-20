@@ -408,7 +408,7 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 - Le catalogue généré ne liste que les composants : CA-40 est reformulé en ce sens.
 - Poids : le point d'entrée `forms` construit pèse 387 Ko non minifiés (`fesm2022/lionelcointot-ui-angular-forms.mjs`) après la livraison ; la mesure d'avant n'a pas été relevée, donc l'ajout exact n'est pas connu.
 
-**Audit de simplification à la livraison** (`code-reviewer`, 2026-11-20 ; rien n'est appliqué sans l'accord de l'utilisateur)
+**Audit de simplification à la livraison** (`code-reviewer`, 2026-11-20 ; rien n'est appliqué sans l'accord de l'utilisateur). **Appliqué le 2026-11-20, les sept points**, sur la réponse de l'utilisateur : « Si il faut faire les 7 points ». Relu par `code-reviewer` : APPROUVÉ ; 18 tests déplacés sans changement d'assertion, 1 900 tests et 363 en navigateur réel verts. Reste du point 7 : la plage (« du 13 au 19 novembre 2026 ») garde sa propre mise en forme par `Intl`, que `LcFormatService` ne sait pas composer ; les dates seules passent toutes par `LcFormatService.date(iso, 'long')`.
 
 | N° | Constat et preuve | Plus petit changement | Risque |
 |---|---|---|---|
