@@ -1,0 +1,55 @@
+:host {
+  display: none;
+}
+
+/* L'écart avec le bouton est un remplissage transparent (comme `lcTooltip`) : il compte pour le choix de la position et la poussée. */
+.lc-toggletip {
+  --_gap: var(--lc-sys-space-2);
+  --_arrow: var(--lc-sys-space-3);
+  --_border: var(--lc-sys-border-width-thin) solid var(--lc-toggletip-border-color, var(--lc-sys-color-border));
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: var(--_gap);
+  max-width: min(var(--lc-toggletip-max-width, 20rem), calc(100vw - 2 * var(--lc-sys-space-2)));
+  max-height: calc(100vh - 2 * var(--lc-sys-space-2));
+}
+
+.lc-toggletip__box {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--lc-toggletip-padding, var(--lc-sys-space-3));
+  border: var(--_border);
+  border-radius: var(--lc-toggletip-radius, var(--lc-sys-radius-md));
+  background: var(--lc-toggletip-background, var(--lc-sys-color-surface-raised));
+  box-shadow: var(--lc-toggletip-shadow, var(--lc-sys-shadow-2));
+  color: var(--lc-toggletip-color, var(--lc-sys-color-on-surface));
+  font-size: var(--lc-sys-font-size-sm);
+  line-height: var(--lc-sys-font-line-height-normal);
+  overflow-wrap: anywhere;
+}
+
+.lc-toggletip__arrow {
+  position: absolute;
+  box-sizing: border-box;
+  width: var(--_arrow);
+  height: var(--_arrow);
+  background: var(--lc-toggletip-background, var(--lc-sys-color-surface-raised));
+  border: 0 solid var(--lc-toggletip-border-color, var(--lc-sys-color-border));
+  transform: rotate(45deg);
+  /* Le coin qui pointe vers le bouton porte la bordure ; son centre est posé sur le bord de la boîte. */
+  --_edge: calc(var(--_gap) - var(--_arrow) / 2);
+  --_along: calc(var(--_arrow-offset, 50%) - var(--_arrow) / 2);
+}
+
+[data-direction='below'] .lc-toggletip__arrow { top: var(--_edge); left: var(--_along); border-width: var(--lc-sys-border-width-thin) 0 0 var(--lc-sys-border-width-thin); }
+[data-direction='above'] .lc-toggletip__arrow { bottom: var(--_edge); left: var(--_along); border-width: 0 var(--lc-sys-border-width-thin) var(--lc-sys-border-width-thin) 0; }
+/* shortcut: flèche des côtés non inversée en écriture de droite à gauche ; à revoir au premier consommateur RTL. */
+[data-direction='start'] .lc-toggletip__arrow { right: var(--_edge); top: var(--_along); border-width: var(--lc-sys-border-width-thin) var(--lc-sys-border-width-thin) 0 0; }
+[data-direction='end'] .lc-toggletip__arrow { left: var(--_edge); top: var(--_along); border-width: 0 0 var(--lc-sys-border-width-thin) var(--lc-sys-border-width-thin); }
+
+@media (forced-colors: active) {
+  .lc-toggletip__box,
+  .lc-toggletip__arrow { border-color: CanvasText; }
+}

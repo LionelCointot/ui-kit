@@ -1,29 +1,10 @@
-import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ChangeDetectionStrategy, Component, DestroyRef, Directive, ElementRef, inject, input, signal } from '@angular/core';
 import { lcUniqueId } from '@lionelcointot/ui-angular';
+import { positionsFor } from './tooltip-positions';
 
 const SHOW_DELAY_MS = 500;
-
-type Direction = 'above' | 'below' | 'start' | 'end';
-
-/** Position demandée d'abord, puis son opposé, puis les deux autres : la première qui tient dans la fenêtre est retenue. */
-const ORDER: Record<Direction, Direction[]> = {
-  above: ['above', 'below', 'end', 'start'],
-  below: ['below', 'above', 'end', 'start'],
-  start: ['start', 'end', 'above', 'below'],
-  end: ['end', 'start', 'above', 'below'],
-};
-
-/* Aucun `offsetX`/`offsetY` : le CDK les applique en `translate` après la poussée dans la fenêtre, et ce sont des nombres de px
-   (pas de token). L'écart avec l'élément est donc un remplissage transparent du panneau (token `space-1`), compté dans sa taille :
-   il est pris en compte pour le choix de la position et pour la poussée, et l'info-bulle reste entière dans la fenêtre. */
-const POSITIONS: Record<Direction, ConnectedPosition> = {
-  above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' },
-  below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' },
-  start: { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' },
-  end: { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' },
-};
 
 /** Panneau de l'info-bulle (interne) : l'hôte porte l'écart transparent, `.lc-tooltip__box` la partie visible. */
 @Component({
@@ -96,7 +77,7 @@ export class LcTooltipDirective {
   private show(): void {
     this.overlayRef = this.overlay.create({
       positionStrategy: this.overlay.position().flexibleConnectedTo(this.element.nativeElement)
-        .withPositions(ORDER[this.lcTooltipPosition()].map((position) => POSITIONS[position])).withPush(true),
+        .withPositions(positionsFor(this.lcTooltipPosition())).withPush(true),
       scrollStrategy: this.overlay.scrollStrategies.close(),
     });
     const ref = this.overlayRef.attach(new ComponentPortal(LcTooltipPanelComponent));

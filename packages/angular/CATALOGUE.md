@@ -136,9 +136,11 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
 | `[lcDrawerInitialFocus]` | LcDrawerInitialFocusDirective | directive | – | – |
+| `[lcToggletip]` | LcToggletipDirective | directive | lcToggletip (requis), lcToggletipPosition | – |
 | `[lcTooltip]` | LcTooltipDirective | directive | lcTooltip (requis), lcTooltipPosition | – |
 | `lc-dialog` | LcDialogComponent | composant | title (requis), hideClose | – |
 | `lc-drawer` | LcDrawerComponent | composant | title (requis), hideClose | – |
+| `lc-toggletip` | LcToggletipComponent | composant | – | – |
 | `lc-tooltip-panel` | LcTooltipPanelComponent | composant | – | – |
 
 ## `@lionelcointot/ui-angular/theme-builder`
