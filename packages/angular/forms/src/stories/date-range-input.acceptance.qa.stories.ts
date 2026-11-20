@@ -62,7 +62,7 @@ class RangeInFieldComponent {
 const NOV = { from: '2026-11-12', to: '2026-11-14' };
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de période/Acceptation',
+  title: 'QA/Date range input/Acceptance',
   tags: ['!autodocs'],
   decorators: [
     moduleMetadata({ imports: [RangeAcceptanceComponent, RangeFormAcceptanceComponent, RangeInFieldComponent] }),

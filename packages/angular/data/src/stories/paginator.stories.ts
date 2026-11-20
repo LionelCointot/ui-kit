@@ -1,24 +1,23 @@
 import { Component, computed, signal } from '@angular/core';
+import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcPaginatorComponent } from '../paginator/paginator.component';
-import { lcPageSlice } from '../paginator/page-slice';
-import { LcTableComponent } from '../table/table.component';
-import type { LcTableColumn } from '../table/table-model';
+import { LcPaginatorComponent, lcPageSlice, LcTableComponent } from '@lionelcointot/ui-angular/data';
+import type { LcTableColumn } from '@lionelcointot/ui-angular/data';
 
 interface Entry { id: number; name: string; load: number }
 
-const entries: Entry[] = Array.from({ length: 120 }, (_, index) => ({ id: index + 1, name: `Élément ${index + 1}`, load: (index * 7) % 100 }));
+const entries: Entry[] = Array.from({ length: 120 }, (_, index) => ({ id: index + 1, name: `Tâche ${index + 1}`, load: (index * 7) % 100 }));
 const columns: LcTableColumn<Entry>[] = [
   { id: 'name', header: 'Nom', value: (row) => row.name },
   { id: 'load', header: 'Charge (%)', value: (row) => row.load, format: 'integer' },
 ];
 
-/** Liste de 120 éléments découpée par `lcPageSlice`, avec choix de la taille de page. */
+/** 120 tasks sliced by `lcPageSlice`, with a page size choice. */
 @Component({
   selector: 'lc-paginator-demo',
   imports: [LcPaginatorComponent, LcTableComponent],
   template: `
-    <lc-table caption="Éléments" [data]="visible()" [columns]="columns" [trackBy]="trackBy" />
+    <lc-table caption="Tâches" [data]="visible()" [columns]="columns" [trackBy]="trackBy" />
     <lc-paginator [total]="entries.length" [(page)]="page" [(pageSize)]="pageSize" [pageSizes]="[10, 25, 50]" />
   `,
 })
@@ -31,34 +30,56 @@ class PaginatorDemoComponent {
   protected readonly visible = computed(() => lcPageSlice(entries, this.page(), this.pageSize()));
 }
 
+/**
+ * Pagination bar: previous and next buttons, page position and an optional page size choice.
+ * `page` and `pageSize` are two-way (`model`); the page is clamped to the valid range. Use `lcPageSlice` to cut a list for the current page.
+ *
+ * Import: `import { LcPaginatorComponent, lcPageSlice } from '@lionelcointot/ui-angular/data';`
+ */
 const meta: Meta<LcPaginatorComponent> = {
-  title: 'Données/Pagination',
+  title: 'Data/Paginator',
   component: LcPaginatorComponent,
   decorators: [moduleMetadata({ imports: [LcPaginatorComponent, PaginatorDemoComponent] })],
-  args: { total: 120, pageSize: 25, page: 1, pageSizes: [] },
+  args: { total: 120, pageSize: 25, page: 1, pageSizes: [10, 25, 50], ariaLabel: 'Pagination des tâches' },
+  argTypes: { pageSizes: { control: 'object' }, total: { control: { type: 'number', min: 0 } } },
 };
 export default meta;
 type Story = StoryObj<LcPaginatorComponent>;
 
-export const Defaut: Story = {};
-
-export const AvecTaillesDePage: Story = {
-  args: { pageSizes: [10, 25, 50] },
+/** Every input is bound: change them in the Controls panel. An empty `pageSizes` hides the page size choice. */
+export const Playground: Story = {
+  render: (args) => ({
+    props: args,
+    template: `<lc-paginator [total]="total" [(page)]="page" [(pageSize)]="pageSize" [pageSizes]="pageSizes" [ariaLabel]="ariaLabel" />`,
+  }),
 };
 
-export const DernierePage: Story = {
-  args: { page: 5 },
+/** Without a page size choice: `pageSizes` left empty. */
+export const WithoutPageSizes: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: `<lc-paginator [total]="120" [pageSize]="25" />` }),
 };
 
-export const Vide: Story = {
-  args: { total: 0 },
+/** Positioned on the last page: the next button is disabled. */
+export const LastPage: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { page: 5 }, template: `<lc-paginator [total]="120" [pageSize]="25" [(page)]="page" [pageSizes]="[10, 25, 50]" />` }),
 };
 
-export const PageUnique: Story = {
-  args: { total: 12 },
+/** No item: nothing to page through. */
+export const Empty: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: `<lc-paginator [total]="0" />` }),
 };
 
-/** Liste réelle : tableau découpé par `lcPageSlice`, page recadrée et focus conservé aux bornes. */
-export const AvecTableau: Story = {
+/** Fewer items than a page: a single page. */
+export const SinglePage: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: `<lc-paginator [total]="12" />` }),
+};
+
+/** Real list: a table sliced by `lcPageSlice`, page clamped and focus kept at the bounds. */
+export const WithTable: Story = {
+  parameters: fixedExample,
   render: () => ({ template: '<lc-paginator-demo />' }),
 };

@@ -1,10 +1,10 @@
 import { Component, input, signal } from '@angular/core';
+import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { LcStepActionDirective } from '../stepper/step-action.directive';
-import { LcStepperComponent, type LcStep } from '../stepper/stepper.component';
+import { LcStepActionDirective, LcStepperComponent, type LcStep } from '@lionelcointot/ui-angular/navigation';
 
-const NAMES = ['Votre situation', 'Votre projet', 'Vos ressources', 'Vos hypothèses', 'Résultat'];
+const NAMES = ['Profil', 'Objectif', 'Ressources', 'Options', 'Résumé'];
 
 const stepsAt = (currentIndex: number): LcStep[] =>
   NAMES.map((label, index) => ({
@@ -41,7 +41,7 @@ class StepperDemoComponent {
   template: `
     <lc-stepper ariaLabel="Progression du parcours" [steps]="steps()" [linear]="false" (stepSelect)="goTo($event)" (directionChange)="direction.set($event)" />
     <p style="margin-block-start:16px">Étape {{ current() + 1 }} sur 5 · dernier sens : {{ direction() ?? 'aucun' }}</p>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:var(--lc-sys-space-2)">
       <button type="button" (click)="move(-1)" [disabled]="current() === 0">Précédent</button>
       <button type="button" (click)="move(1)" [disabled]="current() === 4">Suivant</button>
     </div>
@@ -65,8 +65,8 @@ class StepperNavDemoComponent {
   imports: [LcStepperComponent, LcStepActionDirective, LcButtonComponent, LcIconComponent],
   template: `
     <div style="container-type:inline-size">
-      <div [style.display]="'grid'" [style.grid-template-columns]="columns()" style="gap:24px">
-        <lc-stepper variant="rail" ariaLabel="Votre projet" [steps]="steps()" [compact]="compact()">
+      <div [style.display]="'grid'" [style.grid-template-columns]="columns()" style="gap:var(--lc-sys-space-6)">
+        <lc-stepper variant="rail" ariaLabel="Fil du projet" [steps]="steps()" [compact]="compact()">
           <ng-template lcStepAction let-step>
             @if (step.answer) {
               <button type="button" lcButton fillMode="flat" size="small" (click)="goTo(step.id)">
@@ -93,85 +93,135 @@ class StepperRailDemoComponent {
       id: `step-${index + 1}`,
       label,
       state: index < this.current() ? 'done' : index === this.current() ? 'current' : 'upcoming',
-      ...(index < 4 ? { answer: `Réponse ${index + 1}`, detail: `Réglage ${index + 1} : 3 % par an` } : {}),
+      ...(index < 4 ? { answer: `Réponse ${index + 1}`, detail: `Réglage ${index + 1} : valeur par défaut` } : {}),
     }));
   protected goTo(id: string): void {
     this.current.set(Number(id.replace('step-', '')) - 1);
   }
 }
 
+/**
+ * Step indicator for a guided flow: a native ordered list where the consumer owns each step's state
+ * (`done`, `current`, `upcoming`) and updates `steps` itself. Done steps (or every enabled step when `linear` is false) are buttons that emit `stepSelect`.
+ * `variant="rail"` shows answers, details and per-step actions in a vertical project thread.
+ *
+ * Import: `import { LcStepperComponent, LcStepActionDirective } from '@lionelcointot/ui-angular/navigation';`
+ */
 const meta: Meta<LcStepperComponent> = {
-  title: 'Navigation/Fil d\'étapes',
+  title: 'Navigation/Stepper',
   component: LcStepperComponent,
   decorators: [moduleMetadata({ imports: [LcStepperComponent, StepperDemoComponent, StepperNavDemoComponent, StepperRailDemoComponent] })],
   argTypes: {
     compact: { control: 'inline-radio', options: ['auto', true, false] },
     orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
+    variant: { control: 'inline-radio', options: ['default', 'rail'] },
     linear: { control: 'boolean' },
+    steps: { control: false },
   },
-  args: { ariaLabel: 'Progression du parcours', steps: stepsAt(2), compact: 'auto', linear: true, orientation: 'horizontal' },
-  render: (args) => ({
-    props: args,
-    template: `<lc-stepper [steps]="steps" [ariaLabel]="ariaLabel" [compact]="compact" [linear]="linear" [orientation]="orientation" />`,
-  }),
+  args: { ariaLabel: 'Progression du parcours', steps: stepsAt(2), compact: 'auto', linear: true, orientation: 'horizontal', variant: 'default' },
 };
 export default meta;
 type Story = StoryObj<LcStepperComponent>;
 
-/** Horizontal : pastilles reliées par une piste remplie jusqu'à l'étape en cours (étapes faites cliquables). Au-dessus de 768 px : fil complet ; en dessous : « Étape n sur N : nom » et piste fine. */
-export const Defaut: Story = {};
-
-export const Interactif: Story = {
-  render: () => ({ template: `<lc-stepper-demo />` }),
+/** Every input is bound. Horizontal: bullets joined by a track filled up to the current step. Above 768 px the full thread shows; below, "Étape n sur N : nom" and a thin track. */
+export const Playground: Story = {
+  render: (args) => ({
+    props: args,
+    template: `<lc-stepper [steps]="steps" [ariaLabel]="ariaLabel" [compact]="compact" [linear]="linear" [orientation]="orientation" [variant]="variant" />`,
+  }),
 };
 
-export const PremiereEtape: Story = { args: { steps: stepsAt(0) } };
+const fixed = (template: string): Story => ({ parameters: fixedExample, render: () => ({ template }) });
 
-export const Terminee: Story = { args: { steps: NAMES.map((label, index) => ({ id: `step-${index}`, label, state: 'done' as const })) } };
+/** Consumer-driven state: activating a done step takes the flow back to it. */
+export const Interactive: Story = fixed(`<lc-stepper-demo />`);
 
-export const FormeCompacte: Story = { args: { compact: true } };
-
-export const FormeComplete: Story = { args: { compact: false } };
-
-export const Vertical: Story = { args: { orientation: 'vertical' } };
-
-/** `linear` faux : toute étape non désactivée est cliquable, en avant comme en arrière (ici, l'étape 5 est désactivée). */
-export const NonLineaire: Story = {
-  args: { linear: false, steps: stepsAt(1).map((step, index) => (index === 4 ? { ...step, disabled: true } : step)) },
+/** First step current, every other step upcoming. */
+export const FirstStep: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { steps: stepsAt(0) }, template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" />` }),
 };
 
-export const EnErreur: Story = {
-  args: { steps: stepsAt(2).map((step, index) => (index === 1 ? { ...step, invalid: true } : step)) },
+/** Every step done. */
+export const Completed: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { steps: NAMES.map((label, index) => ({ id: `step-${index}`, label, state: 'done' as const })) },
+    template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" />`,
+  }),
 };
 
-export const Facultative: Story = {
-  args: { steps: stepsAt(2).map((step, index) => (index === 3 ? { ...step, optional: true } : step)) },
+/** `compact` forces the narrow form ("Étape n sur N"), whatever the width. */
+export const CompactForm: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { steps: stepsAt(2) }, template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" [compact]="true" />` }),
 };
 
-export const AvecIcones: Story = {
-  args: { steps: stepsAt(2).map((step, index) => ({ ...step, icon: ['user', 'house', 'calculator', 'settings', 'chart-line'][index] })) },
+/** `compact` set to `false` forces the full form, even in a narrow container. */
+export const FullForm: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { steps: stepsAt(2) }, template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" [compact]="false" />` }),
 };
 
-export const Desactivee: Story = {
-  args: { steps: stepsAt(1).map((step, index) => (index === 3 ? { ...step, disabled: true } : step)) },
+/** Vertical orientation. */
+export const Vertical: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { steps: stepsAt(2) }, template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" orientation="vertical" />` }),
 };
 
-/** « Précédent » / « Suivant » : la piste s'allonge ou se raccourcit, la pastille grandit, `directionChange` donne le sens. */
-export const Animation: Story = {
-  render: () => ({ template: `<lc-stepper-nav-demo />` }),
+/** With `linear` false, every enabled step is clickable, forward as well as backward (step 5 is disabled here). */
+export const NonLinear: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { steps: stepsAt(1).map((step, index) => (index === 4 ? { ...step, disabled: true } : step)) },
+    template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" [linear]="false" />`,
+  }),
 };
 
-/** Variante `rail`, bureau : colonne de 290 px dans un conteneur de 1 000 px (≥ 900 px), pastilles reliées, réponse, détail et « Modifier » par étape. */
-export const FilDuProjetBureau: Story = {
-  render: () => ({ template: `<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="bureau" /></div>` }),
+/** An invalid step shows an error bullet and a hidden "(à corriger)" suffix in its name. */
+export const WithError: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { steps: stepsAt(2).map((step, index) => (index === 1 ? { ...step, invalid: true } : step)) },
+    template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" />`,
+  }),
 };
 
-/** Variante `rail`, 360 px : « Étape n sur 5 · nom », 5 segments et « Voir vos réponses » (replié) ; la même liste se déplie dessous. */
-export const FilDuProjet360: Story = {
-  render: () => ({ template: `<div style="width:360px;max-width:100%"><lc-stepper-rail-demo width="mobile" /></div>` }),
+/** An optional step carries a "Facultative" mention under its name. */
+export const Optional: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { steps: stepsAt(2).map((step, index) => (index === 3 ? { ...step, optional: true } : step)) },
+    template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" />`,
+  }),
 };
 
-/** `compact` force la forme choisie, quelle que soit la largeur du conteneur (ici, forme étroite à 1 000 px). */
-export const FilDuProjetForceEtroit: Story = {
-  render: () => ({ template: `<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="mobile" [compact]="true" /></div>` }),
+/** Registry icons replace the step numbers. */
+export const WithIcons: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { steps: stepsAt(2).map((step, index) => ({ ...step, icon: ['user', 'house', 'calculator', 'settings', 'chart-line'][index] })) },
+    template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" />`,
+  }),
 };
+
+/** A disabled step is never clickable and is dimmed. */
+export const Disabled: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { steps: stepsAt(1).map((step, index) => (index === 3 ? { ...step, disabled: true } : step)) },
+    template: `<lc-stepper ariaLabel="Progression du parcours" [steps]="steps" />`,
+  }),
+};
+
+/** "Précédent" / "Suivant": the track grows or shrinks, the bullet scales, `directionChange` gives the direction. */
+export const Animation: Story = fixed(`<lc-stepper-nav-demo />`);
+
+/** `rail` variant on desktop: 290 px column in a 1,000 px container (at least 900 px), joined bullets, answer, detail and an edit action per step. */
+export const RailDesktop: Story = fixed(`<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="bureau" /></div>`);
+
+/** `rail` variant at 360 px: "Étape n sur 5 · nom", 5 segments and a collapsed "Voir vos réponses"; the same list unfolds below. */
+export const RailMobile360: Story = fixed(`<div style="width:360px;max-width:100%"><lc-stepper-rail-demo width="mobile" /></div>`);
+
+/** `compact` forces the chosen form whatever the container width (narrow form at 1,000 px here). */
+export const RailForcedNarrow: Story = fixed(`<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="mobile" [compact]="true" /></div>`);

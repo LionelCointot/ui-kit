@@ -53,7 +53,7 @@ class OverlayDemoComponent {
 }
 
 const meta: Meta = {
-  title: 'Superpositions/Champ de date dans une superposition (acceptation)',
+  title: 'QA/Overlays/Date input in an overlay',
   tags: ['!autodocs'],
   decorators: [
     moduleMetadata({ imports: [OverlayDemoComponent] }),

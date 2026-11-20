@@ -1,28 +1,38 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcTabComponent, LcTabContentDirective } from '../tabs/tab.component';
-import { LcTabsComponent } from '../tabs/tabs.component';
+import { fixedExample } from '@lc/storybook';
+import { LcTabComponent, LcTabContentDirective, LcTabsComponent } from '@lionelcointot/ui-angular/navigation';
 
+/**
+ * Tab list with automatic or manual activation. Panels are declared with `lc-tab`; heavy content goes in an
+ * `ng-template[lcTabContent]` so it renders only when its tab is first selected.
+ *
+ * Import: `import { LcTabsComponent, LcTabComponent, LcTabContentDirective } from '@lionelcointot/ui-angular/navigation';`
+ */
 const meta: Meta<LcTabsComponent> = {
-  title: 'Navigation/Onglets',
+  title: 'Navigation/Tabs',
   component: LcTabsComponent,
   decorators: [moduleMetadata({ imports: [LcTabsComponent, LcTabComponent, LcTabContentDirective] })],
-  argTypes: { activation: { control: 'inline-radio', options: ['automatic', 'manual'] } },
-  args: { ariaLabel: 'Résultats', activation: 'automatic' },
+  argTypes: { activation: { control: 'inline-radio', options: ['automatic', 'manual'] }, selected: { control: 'select', options: [null, 'synthese', 'donnees', 'graphiques'] } },
+  args: { ariaLabel: 'Résultats', activation: 'automatic', selected: null },
+};
+export default meta;
+type Story = StoryObj<LcTabsComponent>;
+
+/** Every input is bound: `selected` picks the active tab, `activation` changes how arrow keys behave. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['activation'] } },
   render: (args) => ({
     props: args,
     template: `
-      <lc-tabs [ariaLabel]="ariaLabel" [activation]="activation">
-        <lc-tab id="synthese" label="Synthèse"><p>Synthèse du prêt</p></lc-tab>
-        <lc-tab id="echeances" label="Échéances" icon="table"><ng-template lcTabContent><p>Tableau</p></ng-template></lc-tab>
+      <lc-tabs [ariaLabel]="ariaLabel" [activation]="activation" [selected]="selected">
+        <lc-tab id="synthese" label="Synthèse"><p>Synthèse du projet</p></lc-tab>
+        <lc-tab id="donnees" label="Données" icon="table"><ng-template lcTabContent><p>Tableau</p></ng-template></lc-tab>
         <lc-tab id="bloque" label="Bloqué" [disabled]="true"><p>Inaccessible</p></lc-tab>
         <lc-tab id="graphiques" label="Graphiques"><ng-template lcTabContent><p>Courbes</p></ng-template></lc-tab>
       </lc-tabs>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcTabsComponent>;
-
-export const Defaut: Story = {};
 
 const MANY = `
   <lc-tab id="apercu" label="Aperçu"><p>Aperçu</p></lc-tab>
@@ -32,21 +42,20 @@ const MANY = `
   <lc-tab id="historique" label="Historique"><p>Historique</p></lc-tab>
   <lc-tab id="parametres" label="Paramètres"><p>Paramètres</p></lc-tab>`;
 
-/**
- * Nombreux onglets dans 360 px : la rangée défile horizontalement, les libellés ne sont pas coupés,
- * un fondu de bord signale les onglets cachés et disparaît en bout de course. La page ne défile pas.
- */
-export const NombreuxOnglets360px: Story = {
-  render: (args) => ({
-    props: args,
+/** Many tabs in 360 px: the row scrolls horizontally, labels are not cut, an edge fade hints at hidden tabs and vanishes at the end. */
+export const ManyTabs360px: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { ariaLabel: 'Résultats', activation: 'automatic' },
     template: `<div style="inline-size:360px;max-inline-size:100%"><lc-tabs [ariaLabel]="ariaLabel" [activation]="activation">${MANY}</lc-tabs></div>`,
   }),
 };
 
-/** Onglet actif hors de la zone visible au départ : la rangée le ramène à l'écran (au clavier aussi, flèches et Fin). */
-export const NombreuxOnglets360pxActifALaFin: Story = {
-  render: (args) => ({
-    props: args,
+/** Active tab initially out of view: the row scrolls it back on screen (also by keyboard, arrows and End). */
+export const ManyTabsActiveAtEnd360px: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { ariaLabel: 'Résultats', activation: 'automatic' },
     template: `<div style="inline-size:360px;max-inline-size:100%"><lc-tabs [ariaLabel]="ariaLabel" [activation]="activation" selected="parametres">${MANY}</lc-tabs></div>`,
   }),
 };

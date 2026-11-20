@@ -1,15 +1,21 @@
 import { signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
-import { LcDepartmentSelectComponent } from '../code-select/department-select.component';
-import { LcRegionSelectComponent } from '../code-select/region-select.component';
-import { LcGeoDataSource } from '../geo-data-source';
-import { provideLcGeo } from '../provide-lc-geo';
+import { LcDepartmentSelectComponent, LcRegionSelectComponent, LcGeoDataSource, provideLcGeo } from '@lionelcointot/ui-angular/geo';
 import { FakeGeoDataSource } from '../testing/fake-geo-data-source';
 
-/** Les stories utilisent une source factice (300 ms de latence) : aucun appel réseau. La story « API réelle » appelle les services publics. */
+/**
+ * Selects for French regions (`lc-region-select`) and departments (`lc-department-select`); the form value is the official code (« 69 »).
+ * The department list can be restricted to a region.
+ *
+ * Import: `import { LcDepartmentSelectComponent, LcRegionSelectComponent } from '@lionelcointot/ui-angular/geo';`
+ *
+ * Live data: this page sends requests to the public geo.api.gouv.fr API (see packages/angular/geo/README.md).
+ * Only the `LiveApi` story does so (excluded from the automated tests); the others use a stand-in source with 300 ms of latency.
+ */
 const meta: Meta<LcDepartmentSelectComponent> = {
-  title: 'Géographie/Régions et départements',
+  title: 'Geography/Region and department selects',
   component: LcDepartmentSelectComponent,
   decorators: [
     moduleMetadata({ imports: [LcDepartmentSelectComponent, LcRegionSelectComponent, LcFormFieldComponent] }),
@@ -23,8 +29,8 @@ const meta: Meta<LcDepartmentSelectComponent> = {
 export default meta;
 type Story = StoryObj<LcDepartmentSelectComponent>;
 
-/** La valeur de formulaire est le code officiel (« 69 ») ; tapez « rho », « 2a » ou « 974 ». */
-export const Departement: Story = {
+/** Every input is bound; type « rho », « 2a » or « 974 ». The value is the official code. */
+export const Playground: Story = {
   render: (args) => ({
     props: { ...args, department: signal<string | null>(null) },
     template: `
@@ -37,7 +43,9 @@ export const Departement: Story = {
   }),
 };
 
+/** A region select; the value is the region code. */
 export const Region: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { region: signal<string | null>('84') },
     template: `
@@ -48,12 +56,13 @@ export const Region: Story = {
   }),
 };
 
-/** Liste restreinte à une région ; changer de région retire un département qui n'en fait plus partie. */
-export const DepartementParRegion: Story = {
+/** Department list restricted to a region; changing region drops a department that no longer belongs to it. */
+export const DepartmentByRegion: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { region: signal<string | null>('84'), department: signal<string | null>('69') },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Région"><lc-region-select [(value)]="region" /></lc-form-field>
         <lc-form-field label="Département"><lc-department-select [(value)]="department" [regionCode]="region()" /></lc-form-field>
         <p>Région : {{ region() ?? 'aucune' }} · département : {{ department() ?? 'aucun' }}</p>
@@ -61,8 +70,9 @@ export const DepartementParRegion: Story = {
   }),
 };
 
-/** Code absent de la liste reçue (ex. un ancien scénario) : conservé, affiché tel quel avec une aide. */
-export const CodeInconnu: Story = {
+/** A code missing from the received list is kept and shown as is, with a hint. */
+export const UnknownCode: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { department: signal<string | null>('975') },
     template: `
@@ -72,11 +82,13 @@ export const CodeInconnu: Story = {
   }),
 };
 
-export const Etats: Story = {
+/** Disabled, read-only and invalid states. */
+export const States: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { department: signal<string | null>('69') },
     template: `
-      <div style="display:grid;gap:16px;max-width:24rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:24rem">
         <lc-form-field label="Désactivé"><lc-department-select [(value)]="department" disabled /></lc-form-field>
         <lc-form-field label="Lecture seule"><lc-department-select [(value)]="department" readonly /></lc-form-field>
         <lc-form-field label="Invalide" [errors]="['Choisissez un département']"><lc-department-select [value]="null" invalid touched /></lc-form-field>
@@ -84,8 +96,9 @@ export const Etats: Story = {
   }),
 };
 
-/** Source en échec : la valeur existante reste affichée par son code, l'ouverture montre l'erreur et « Réessayer ». */
-export const ReseauCoupe: Story = {
+/** Failing source: the existing value stays shown by its code; opening the list shows the error and a retry action. */
+export const NetworkDown: Story = {
+  parameters: fixedExample,
   decorators: [
     applicationConfig({
       providers: (() => {
@@ -104,9 +117,10 @@ export const ReseauCoupe: Story = {
   }),
 };
 
-/** API réelle (non bloquant en CI) : appelle geo.api.gouv.fr depuis le navigateur ; la liste est chargée une fois. */
-export const ApiReelle: Story = {
+/** Live API (not run in CI): calls geo.api.gouv.fr from the browser; the list is loaded once. */
+export const LiveApi: Story = {
   tags: ['!test'],
+  parameters: fixedExample,
   decorators: [applicationConfig({ providers: [provideLcGeo()] })],
   render: () => ({
     props: { department: signal<string | null>('69') },

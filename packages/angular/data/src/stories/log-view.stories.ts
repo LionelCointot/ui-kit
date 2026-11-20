@@ -1,7 +1,8 @@
 import { Component, OnDestroy, signal } from '@angular/core';
+import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { LcLogViewComponent, type LcLogLine } from '../log-view/log-view.component';
+import { LcLogViewComponent, type LcLogLine } from '@lionelcointot/ui-angular/data';
 
 const KINDS = ['out', 'out', 'out', 'info', 'err'] as const;
 const makeLines = (count: number, from = 1): LcLogLine[] =>
@@ -11,7 +12,7 @@ const makeLines = (count: number, from = 1): LcLogLine[] =>
     return { id, kind, prefix: id % 7 === 0 ? 'étape 2' : undefined, text: kind === 'err' ? `Échec de la vérification ${id}` : `Ligne ${id} : traitement en cours de l'élément ${id * 3}` };
   });
 
-/** Ajoute une ligne toutes les 600 ms : le suivi de la fin s'arrête dès qu'on défile vers le haut. */
+/** Appends a line every 600 ms: following the end stops as soon as the reader scrolls up. */
 @Component({
   selector: 'lc-log-view-live-demo',
   imports: [LcLogViewComponent, LcButtonComponent],
@@ -42,31 +43,64 @@ class LogViewLiveDemoComponent implements OnDestroy {
   }
 }
 
-const meta: Meta<LcLogViewComponent> = {
-  title: 'Données/Journal',
+type LogViewArgs = LcLogViewComponent & { lineCount: number };
+
+/**
+ * Scrollable log console: one line per entry (standard output, error or information, with an optional prefix), copy button, wrapping option,
+ * and automatic follow of the end that stops as soon as the reader scrolls up (`following`, two-way). Beyond `maxLines`, the oldest lines are dropped from the DOM and a notice says so.
+ *
+ * Import: `import { LcLogViewComponent, type LcLogLine } from '@lionelcointot/ui-angular/data';`
+ */
+const meta: Meta<LogViewArgs> = {
+  title: 'Data/Log view',
   component: LcLogViewComponent,
   decorators: [moduleMetadata({ imports: [LcLogViewComponent, LogViewLiveDemoComponent] })],
-  args: { lines: makeLines(40), ariaLabel: 'Sortie du traitement', maxLines: 500, height: '16rem', wrap: true, copyable: true, live: 'off' },
-  render: (args) => ({
-    props: args,
-    template: `<lc-log-view [lines]="lines" [ariaLabel]="ariaLabel" [maxLines]="maxLines" [height]="height" [wrap]="wrap" [copyable]="copyable" [live]="live" />`,
-  }),
+  args: {
+    ariaLabel: 'Sortie du traitement', maxLines: 500, height: '16rem', wrap: true, copyable: true, live: 'off', emptyText: 'Aucune ligne pour le moment.', following: true, lineCount: 40,
+  },
+  argTypes: {
+    live: { control: 'inline-radio', options: ['off', 'polite'] },
+    lineCount: { control: { type: 'number', min: 0, max: 200 }, description: 'Number of demo lines (0 shows the empty text). Not an input of the component.' },
+    lines: { control: false }, copyLabel: { control: false }, resumeLabel: { control: false }, truncatedLabel: { control: false },
+  },
 };
 export default meta;
-type Story = StoryObj<LcLogViewComponent>;
+type Story = StoryObj<LogViewArgs>;
 
-export const Defaut: Story = {};
-
-export const Vide: Story = { args: { lines: [] } };
-
-/** Au-delà de `maxLines`, les plus anciennes lignes sont retirées du DOM et un avis l'indique. */
-export const Plafonne: Story = { args: { lines: makeLines(120), maxLines: 50 } };
-
-export const SansRetourALaLigne: Story = {
-  args: { wrap: false, lines: [{ id: 1, text: 'Une ligne très longue : '.repeat(12) }, ...makeLines(5, 2)] },
+/** Every input is bound: change them in the Controls panel. Raise `lineCount` above `maxLines` to see the truncation notice. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['maxLines', 'height', 'emptyText'] } },
+  render: (args) => ({
+    props: { ...args, lines: makeLines(args.lineCount) },
+    template: `<lc-log-view [lines]="lines" [ariaLabel]="ariaLabel" [maxLines]="maxLines" [height]="height" [wrap]="wrap" [copyable]="copyable"
+      [live]="live" [emptyText]="emptyText" [(following)]="following" />`,
+  }),
 };
 
-/** Ajout continu : suivi automatique de la fin, bouton « Revenir en bas » après un défilement vers le haut. */
-export const AjoutContinu: Story = {
+/** No line: the log shows its empty text. */
+export const Empty: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: `<lc-log-view ariaLabel="Sortie du traitement" [lines]="[]" />` }),
+};
+
+/** Beyond `maxLines`, the oldest lines are dropped from the DOM and a notice says so. */
+export const CappedAtMaxLines: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { lines: makeLines(120) }, template: `<lc-log-view ariaLabel="Sortie du traitement" [lines]="lines" [maxLines]="50" />` }),
+};
+
+/** No wrapping: a very long line scrolls horizontally. */
+export const WithoutWrapping: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { lines: [{ id: 1, text: 'Une ligne très longue : '.repeat(12) }, ...makeLines(5, 2)] },
+    template: `<lc-log-view ariaLabel="Sortie du traitement" [lines]="lines" [wrap]="false" />`,
+  }),
+};
+
+/** Continuous append: the end is followed automatically; a "Revenir en bas" button appears after scrolling up. */
+export const ContinuousAppend: Story = {
+  parameters: fixedExample,
   render: () => ({ template: `<lc-log-view-live-demo />` }),
 };

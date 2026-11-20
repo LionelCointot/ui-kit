@@ -1,12 +1,10 @@
 import { JsonPipe } from '@angular/common';
 import { signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample } from '@lc/storybook';
 import { LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
-import { LcAddressInputComponent } from '../address-input/address-input.component';
-import { LcCommuneInputComponent } from '../commune-input/commune-input.component';
-import { LcGeoDataSource } from '../geo-data-source';
-import type { LcAddress, LcAddressQuery, LcCommune, LcCommuneQuery, LcDepartment, LcRegion } from '../geo.types';
-import { provideLcGeo } from '../provide-lc-geo';
+import { LcAddressInputComponent, LcCommuneInputComponent, LcGeoDataSource, provideLcGeo } from '@lionelcointot/ui-angular/geo';
+import type { LcAddress, LcAddressQuery, LcCommune, LcCommuneQuery, LcDepartment, LcRegion } from '@lionelcointot/ui-angular/geo';
 
 const SAMPLE_COMMUNES: readonly LcCommune[] = [
   { code: '69123', name: 'Lyon', postalCodes: ['69001', '69002', '69003', '69004', '69005'], postalCode: null, departmentCode: '69', regionCode: '84', population: 522250 },
@@ -52,19 +50,47 @@ class StoryGeoDataSource extends LcGeoDataSource {
   }
 }
 
+/**
+ * Search-as-you-type fields for a French commune (`lc-commune-input`) and a postal address (`lc-address-input`).
+ * The value is a flat object (INSEE code, postal codes, department...).
+ *
+ * Import: `import { LcCommuneInputComponent, LcAddressInputComponent } from '@lionelcointot/ui-angular/geo';`
+ *
+ * Live data: this page sends requests to the public geo.api.gouv.fr / data.geopf.fr (address search) APIs
+ * (see packages/angular/geo/README.md). The live-API story is excluded from the automated tests; the other stories use a stand-in source.
+ */
 const meta: Meta<LcCommuneInputComponent> = {
-  title: 'Géographie/Communes et adresses',
+  title: 'Geography/Commune and address search',
   component: LcCommuneInputComponent,
   decorators: [
     moduleMetadata({ imports: [LcCommuneInputComponent, LcAddressInputComponent, LcFormFieldComponent, JsonPipe] }),
     applicationConfig({ providers: [{ provide: LcGeoDataSource, useValue: new StoryGeoDataSource() }] }),
   ],
+  args: { departmentCode: undefined },
+  argTypes: { departmentCode: { control: 'text' } },
 };
 export default meta;
 type Story = StoryObj<LcCommuneInputComponent>;
 
-/** Source factice : tapez « ly » ou « 69001 ». La valeur est un objet plat (code INSEE, codes postaux, département…). */
+/** Every input is bound; stand-in source: type « ly » or « 69001 ». Set a department code (« 69 ») to restrict the search. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['departmentCode'] } },
+  render: (args) => ({
+    props: { ...args, commune: signal<LcCommune | null>(null) },
+    template: `
+      <div style="max-width:24rem">
+        <lc-form-field label="Commune" hint="Le texte saisi est envoyé au service de recherche.">
+          <lc-commune-input [(value)]="commune" [departmentCode]="departmentCode" />
+        </lc-form-field>
+        <pre style="margin-top:1rem">{{ commune() | json }}</pre>
+      </div>`,
+  }),
+};
+
+/** Stand-in source: type « ly » or « 69001 ». The value is a flat object (INSEE code, postal codes, department...). */
 export const Commune: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { commune: signal<LcCommune | null>(null) },
     template: `
@@ -77,7 +103,9 @@ export const Commune: Story = {
   }),
 };
 
-export const CommuneDansUnDepartement: Story = {
+/** Search restricted to one department with `departmentCode`. */
+export const CommuneInADepartment: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { commune: signal<LcCommune | null>(null) },
     template: `
@@ -87,7 +115,9 @@ export const CommuneDansUnDepartement: Story = {
   }),
 };
 
-export const Adresse: Story = {
+/** Address search; stand-in source: type « 8 » then part of the street. */
+export const Address: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { address: signal<LcAddress | null>(null) },
     template: `
@@ -100,14 +130,15 @@ export const Adresse: Story = {
   }),
 };
 
-/** API réelle (non bloquant en CI) : les textes saisis partent vers geo.api.gouv.fr et data.geopf.fr. */
-export const ApiReelle: Story = {
+/** Live APIs (not run in CI): the typed text is sent to geo.api.gouv.fr and data.geopf.fr. */
+export const LiveApi: Story = {
   tags: ['!test'],
+  parameters: fixedExample,
   decorators: [applicationConfig({ providers: [provideLcGeo()] })],
   render: () => ({
     props: { commune: signal<LcCommune | null>(null), address: signal<LcAddress | null>(null) },
     template: `
-      <div style="display:grid;gap:16px;max-width:28rem">
+      <div style="display:grid;gap:var(--lc-sys-space-4);max-width:28rem">
         <lc-form-field label="Commune (API Découpage administratif)"><lc-commune-input [(value)]="commune" /></lc-form-field>
         <lc-form-field label="Adresse (API Adresse de la Géoplateforme)"><lc-address-input [(value)]="address" /></lc-form-field>
       </div>`,

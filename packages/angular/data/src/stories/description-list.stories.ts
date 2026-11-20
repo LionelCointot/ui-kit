@@ -1,11 +1,12 @@
 import { Component, signal } from '@angular/core';
+import { fixedExample } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcDescriptionListComponent, type LcDescriptionItem } from '../description-list/description-list.component';
+import { LcDescriptionListComponent, type LcDescriptionItem } from '@lionelcointot/ui-angular/data';
 
 const ITEMS: LcDescriptionItem[] = [
-  { term: 'Capital', value: 250000, format: 'money' },
-  { term: 'Taux', value: 3.5, format: 'percent', badge: 'estimation' },
-  { term: 'Durée (mois)', value: 240, format: 'integer' },
+  { term: 'Budget', value: 250000, format: 'money' },
+  { term: 'Avancement', value: 62.5, format: 'percent', badge: 'estimation' },
+  { term: 'Tâches ouvertes', value: 24, format: 'integer' },
 ];
 
 const WITH_ACTIONS: LcDescriptionItem[] = ITEMS.map((item) => ({ ...item, action: { label: 'Modifier', ariaLabel: `Modifier : ${item.term}` } }));
@@ -23,28 +24,50 @@ class DescriptionListDemoComponent {
   protected readonly last = signal<string | null>(null);
 }
 
+/**
+ * Definition list (`<dl>`): one term and one formatted value per row, with an optional badge, an emphasised row and a per-row action.
+ * `inline` puts the term and the value on one line; `stacked` puts the value under the term. `itemAction` emits the index of the row.
+ *
+ * Import: `import { LcDescriptionListComponent } from '@lionelcointot/ui-angular/data';`
+ */
 const meta: Meta<LcDescriptionListComponent> = {
-  title: 'Données/Liste de définitions',
+  title: 'Data/Description list',
   component: LcDescriptionListComponent,
   decorators: [moduleMetadata({ imports: [LcDescriptionListComponent, DescriptionListDemoComponent] })],
-  args: { items: ITEMS, layout: 'inline' },
-  render: (args) => ({ props: args, template: `<div style="max-width:28rem"><lc-description-list [items]="items" [layout]="layout" /></div>` }),
+  args: { layout: 'inline' },
+  argTypes: {
+    layout: { control: 'inline-radio', options: ['inline', 'stacked'] },
+    items: { control: false },
+  },
 };
 export default meta;
 type Story = StoryObj<LcDescriptionListComponent>;
 
-export const Defaut: Story = {};
+/** Every input is bound: change the layout in the Controls panel. The items are fixed demo data. */
+export const Playground: Story = {
+  render: (args) => ({
+    props: { ...args, items: ITEMS },
+    template: `<div style="max-width:28rem"><lc-description-list [items]="items" [layout]="layout" /></div>`,
+  }),
+};
 
-/** `action` par ligne : bouton plat (≥ 44 px) ; `itemAction` émet l'index de la ligne. */
-export const ActionParLigne: Story = {
+/** One action per row: flat button (at least 44 px); `itemAction` emits the row index. */
+export const ActionPerRow: Story = {
+  parameters: fixedExample,
   render: () => ({ template: `<div style="max-width:28rem"><lc-description-list-demo /></div>` }),
 };
 
-export const ActionEmpilee: Story = {
-  args: { items: WITH_ACTIONS, layout: 'stacked' },
+/** Actions with the stacked layout. */
+export const StackedActions: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: { items: WITH_ACTIONS }, template: `<div style="max-width:28rem"><lc-description-list [items]="items" layout="stacked" /></div>` }),
 };
 
-/** Seules certaines lignes ont une action. */
-export const ActionPartielle: Story = {
-  args: { items: [WITH_ACTIONS[0], ITEMS[1], { ...ITEMS[2], emphasis: true, action: { label: 'Modifier' } }] },
+/** Only some rows have an action; one row is emphasised. */
+export const PartialActions: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { items: [WITH_ACTIONS[0], ITEMS[1], { ...ITEMS[2], emphasis: true, action: { label: 'Modifier' } }] },
+    template: `<div style="max-width:28rem"><lc-description-list [items]="items" /></div>`,
+  }),
 };

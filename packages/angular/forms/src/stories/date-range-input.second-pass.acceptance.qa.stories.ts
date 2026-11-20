@@ -98,7 +98,7 @@ class PanelComponent {
 }
 
 const meta: Meta = {
-  title: 'Formulaires/Champ de période/Second passage',
+  title: 'QA/Date range input/Second pass',
   tags: ['!autodocs'],
   decorators: [
     moduleMetadata({ imports: [ContextsComponent, FieldsComponent, OrderComponent, UndefinedComponent, PanelComponent] }),

@@ -1,15 +1,27 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcActivityFeedComponent } from '../activity-feed/activity-feed.component';
-import { LcActivityItemComponent } from '../activity-feed/activity-item.component';
+import { fixedExample } from '@lc/storybook';
+import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot/ui-angular/data';
 
 const LONG = 'Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious';
 
+/**
+ * Vertical history feed (ordered list): each item has an icon, a heading, a date and optional content, linked by a line.
+ * Applied to a native `<ol>` (`ol[lcActivityFeed]`) holding `<li lcActivityItem>` elements. `density` tightens the spacing.
+ *
+ * Import: `import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot/ui-angular/data';`
+ */
 const meta: Meta<LcActivityFeedComponent> = {
-  title: 'Données/Fil d\'historique',
+  title: 'Data/Activity feed',
   component: LcActivityFeedComponent,
   decorators: [moduleMetadata({ imports: [LcActivityFeedComponent, LcActivityItemComponent] })],
-  argTypes: { density: { control: 'inline-radio', options: ['comfortable', 'compact'] } },
   args: { density: 'comfortable' },
+  argTypes: { density: { control: 'inline-radio', options: ['comfortable', 'compact'] } },
+};
+export default meta;
+type Story = StoryObj<LcActivityFeedComponent>;
+
+/** Every input is bound: change the density in the Controls panel. */
+export const Playground: Story = {
   render: (args) => ({
     props: args,
     template: `<ol lcActivityFeed [density]="density" style="max-width:32rem">
@@ -21,16 +33,12 @@ const meta: Meta<LcActivityFeedComponent> = {
     </ol>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcActivityFeedComponent>;
 
-export const Defaut: Story = {};
-
-export const Compact: Story = { args: { density: 'compact' } };
-
-export const Densites: Story = {
+/** Both densities side by side. */
+export const Densities: Story = {
+  parameters: fixedExample,
   render: () => ({
-    template: `<div style="display:grid;gap:32px;max-width:32rem">
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);max-width:32rem">
       @for (density of ['comfortable', 'compact']; track density) {
         <ol lcActivityFeed [density]="density">
           <li lcActivityItem icon="check" heading="Étape validée" date="12 mars 2026" dateTime="2026-03-12">Le contrôle est terminé.</li>
@@ -40,20 +48,23 @@ export const Densites: Story = {
   }),
 };
 
-/** Aucun événement : pas de trait. */
-export const Vide: Story = {
+/** No event: no line is drawn. */
+export const Empty: Story = {
+  parameters: fixedExample,
   render: () => ({ template: `<ol lcActivityFeed style="max-width:32rem"></ol>` }),
 };
 
-/** Un seul élément : pas de trait orphelin. */
-export const UnSeulElement: Story = {
+/** A single item: no orphan line. */
+export const SingleItem: Story = {
+  parameters: fixedExample,
   render: () => ({
     template: `<ol lcActivityFeed style="max-width:32rem"><li lcActivityItem icon="history" heading="Élément créé" date="8 mars 2026" dateTime="2026-03-08"></li></ol>`,
   }),
 };
 
-/** Sans icône, sans date, sans contenu, ou avec une date sans valeur machine ; titre et contenu très longs. */
-export const CasLimites: Story = {
+/** Without icon, date or content, or with a date that has no machine value; very long heading and content. */
+export const EdgeCases: Story = {
+  parameters: fixedExample,
   render: () => ({
     props: { long: LONG },
     template: `<ol lcActivityFeed style="max-width:24rem">

@@ -1,16 +1,30 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import {
-  LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective,
-} from '../disclosure/disclosure.component';
+import { LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective } from '@lionelcointot/ui-angular/layout';
 
+/**
+ * Expandable row: a summary line that shows or hides its content. Optional actions, heading semantics,
+ * lazy content and an exclusive accordion (`lcDisclosureGroup`).
+ *
+ * Import: `import { LcDisclosureComponent } from '@lionelcointot/ui-angular/layout';`
+ */
 const meta: Meta<LcDisclosureComponent> = {
-  title: 'Mise en page/Ligne dépliable',
+  title: 'Layout/Disclosure',
   component: LcDisclosureComponent,
   decorators: [moduleMetadata({
     imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, LcButtonComponent, LcIconComponent],
   })],
   args: { expanded: false, headingLevel: null, disabled: false, lazy: false, bordered: false },
+  argTypes: { headingLevel: { control: 'select', options: [null, 2, 3, 4, 5, 6] } },
+};
+export default meta;
+type Story = StoryObj<LcDisclosureComponent>;
+
+/** Every input is bound: change them in the Controls panel. */
+export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['lazy'] } },
   render: (args) => ({
     props: args,
     template: `
@@ -21,19 +35,19 @@ const meta: Meta<LcDisclosureComponent> = {
       </lc-disclosure>`,
   }),
 };
-export default meta;
-type Story = StoryObj<LcDisclosureComponent>;
 
-export const Defaut: Story = {};
+/** Starts open. */
+export const Expanded: Story = { ...Playground, parameters: fixedExample, args: { expanded: true } };
 
-export const Depliee: Story = { args: { expanded: true } };
+/** A heading level gives the summary heading semantics for the page outline. */
+export const WithHeading: Story = { ...Playground, parameters: fixedExample, args: { headingLevel: 3, bordered: true, expanded: true } };
 
-export const AvecTitre: Story = { args: { headingLevel: 3, bordered: true, expanded: true } };
+/** A disabled row cannot be toggled. */
+export const Disabled: Story = { ...Playground, parameters: fixedExample, args: { disabled: true } };
 
-export const Desactivee: Story = { args: { disabled: true } };
-
-/** Plusieurs lignes ouvertes en même temps (sans `lcDisclosureGroup` exclusif) ; le contenu de la dernière n'est créé qu'à l'ouverture. */
-export const Liste: Story = {
+/** Several rows open at once (no exclusive group); the last row's content is only created on first open. */
+export const List: Story = {
+  parameters: fixedExample,
   render: () => ({
     template: `
       <lc-disclosure bordered [expanded]="true"><span lcDisclosureSummary>Première ligne</span><p>Contenu A</p></lc-disclosure>
@@ -45,8 +59,9 @@ export const Liste: Story = {
   }),
 };
 
-/** Accordéon : dans un `lcDisclosureGroup` `exclusive`, ouvrir une ligne referme les autres (le parent pilote `exclusive`, par exemple selon la largeur). */
-export const Accordeon: Story = {
+/** Accordion: in an `exclusive` `lcDisclosureGroup`, opening a row closes the others (the parent drives `exclusive`, for instance by width). */
+export const Accordion: Story = {
+  parameters: fixedExample,
   render: () => ({
     template: `
       <div lcDisclosureGroup exclusive>
