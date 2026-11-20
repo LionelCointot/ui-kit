@@ -14,8 +14,8 @@ import {
 } from '@angular/core';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
-import { addDays, addMonths, addYears, clampIso, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
-import type { LcDateInterval } from './date-interval';
+import { addDays, addMonths, addYears, clampIso, clipInterval, firstOfMonth, lastOfMonth, monthGrid, yearPage } from './date-math';
+import type { LcDateInterval, LcDateIntervalPreset } from './date-interval';
 
 export type LcCalendarLevel = 'day' | 'month' | 'year';
 
@@ -27,6 +27,8 @@ interface Cell {
   readonly selected: boolean;
   readonly disabled: boolean;
   readonly today: boolean;
+  /** Période (mode `range`, jours) : mots séparés par des espaces, lus par la feuille de styles ; `null` hors période. */
+  readonly range: string | null;
 }
 
 interface Panel {
@@ -61,81 +63,110 @@ const MONDAY = '2026-11-02';
 
 /**
  * Panneau de calendrier interne (jamais exporté) : porte `role="dialog"` et `aria-modal` lui-même, piège le focus
- * (CDK) et ne connaît ni champ ni surcouche. Niveau des jours seulement (`level` reste `'day'` jusqu'à T4).
- * L'appelant le pose dans une surcouche, appelle `focusInitial()` à l'ouverture et réagit à `picked`, `cleared`, `closed`.
+ * (CDK) et ne connaît ni champ ni surcouche. Trois niveaux (jours, mois, années) ; en `range`, un ou deux mois,
+ * un choix en deux temps (début, puis fin), des raccourcis et un pied de période.
+ * L'appelant le pose dans une surcouche, appelle `focusInitial()` à l'ouverture et réagit à `picked` (date simple),
+ * `rangePicked` (période : fin ou raccourci ; `to` nul pour « Sans date de fin »), `cleared`, `closed`.
  */
 @Component({
   selector: 'lc-calendar-panel',
   imports: [LcIconComponent, LcButtonComponent],
   hostDirectives: [CdkTrapFocus],
   template: `
-    <div class="lc-calendar__months">
-      @for (month of panels(); track month.id; let i = $index; let last = $last) {
-        <div class="lc-calendar__month">
-          <div class="lc-calendar__header">
-            @if (i === 0) {
-              <button type="button" class="lc-calendar__nav" [attr.aria-label]="navLabels().previous" [disabled]="previousDisabled()" (click)="shift(-1)">
-                <lc-icon name="chevron-left" />
-              </button>
-            }
-            @if (month.up) {
-              <button type="button" class="lc-calendar__title" [attr.aria-label]="month.titleName" (click)="levelUp()">
-                <span [id]="month.id">{{ month.title }}</span>
-                <lc-icon name="chevron-down" />
-              </button>
-            } @else {
-              <span class="lc-calendar__title lc-calendar__title--text" [id]="month.id">{{ month.title }}</span>
-            }
-            <!-- Le titre relu quand le mois, l'année ou le niveau change : hors du bouton, dont les enfants ne sont pas annoncés de façon sûre. -->
-            <span class="lc-visually-hidden" aria-live="polite">{{ month.title }}</span>
-            @if (last) {
-              <button type="button" class="lc-calendar__nav lc-calendar__nav--next" [attr.aria-label]="navLabels().next" [disabled]="nextDisabled()" (click)="shift(1)">
-                <lc-icon name="chevron-right" />
-              </button>
-            }
-          </div>
-          <table class="lc-calendar__grid" [class.lc-calendar__grid--wide]="!month.head" role="grid" [attr.aria-labelledby]="month.id" (keydown)="onKeydown($event)">
-            @if (month.head) {
-              <thead>
-                <tr role="row">
-                  @for (weekday of weekdays; track weekday.long) {
-                    <th role="columnheader" scope="col"><abbr [attr.title]="weekday.long">{{ weekday.narrow }}</abbr></th>
-                  }
-                </tr>
-              </thead>
-            }
-            <tbody>
-              @for (week of month.rows; track $index) {
-                <tr role="row">
-                  @for (cell of week; track $index) {
-                    @if (cell) {
-                      <td class="lc-calendar__day" role="gridcell" [attr.tabindex]="cell.iso.startsWith(activeKey()) ? 0 : -1"
-                        [attr.aria-selected]="cell.selected" [attr.aria-disabled]="cell.disabled ? 'true' : null"
-                        [attr.aria-current]="cell.today ? 'date' : null" [attr.title]="cell.today ? labels.dateToday : null"
-                        [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" (click)="onCellClick($event, cell.iso)">{{ cell.label }}</td>
-                    } @else {
-                      <td role="presentation"></td>
-                    }
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
+    <div class="lc-calendar__layout" [class.lc-calendar__layout--column]="presetsLayout() === 'column'">
+      @if (presetItems().length) {
+        <div class="lc-calendar__presets">
+          @for (preset of presetItems(); track $index) {
+            <button type="button" class="lc-calendar__preset" [disabled]="!preset.interval" [attr.aria-describedby]="preset.id" (click)="applyPreset(preset.interval)">
+              <span class="lc-calendar__preset-label">{{ preset.label }}</span>
+              <span class="lc-calendar__preset-dates" [id]="preset.id" aria-hidden="true">{{ preset.dates }}</span>
+            </button>
+          }
         </div>
       }
+      <div class="lc-calendar__main">
+        @if (mode() === 'range') {
+          <div class="lc-calendar__status-row">
+            <p class="lc-calendar__status" role="status">{{ status() }}</p>
+            @if (anchor()) {
+              <button lcButton fillMode="flat" size="small" type="button" (click)="changeStart()">{{ labels.dateChangeStart }}</button>
+            }
+          </div>
+        }
+        <div class="lc-calendar__months" [class.lc-calendar__months--two]="months() === 2" (mouseleave)="previewEnd.set(null)">
+          @for (month of panels(); track month.id; let i = $index; let last = $last) {
+            <div class="lc-calendar__month" [class.lc-calendar__month--full]="months() === 2 && level() !== 'day'">
+              <div class="lc-calendar__header">
+                @if (i === 0) {
+                  <button type="button" class="lc-calendar__nav" [attr.aria-label]="navLabels().previous" [disabled]="previousDisabled()" (click)="shift(-1)">
+                    <lc-icon name="chevron-left" />
+                  </button>
+                }
+                @if (month.up) {
+                  <button type="button" class="lc-calendar__title" [attr.aria-label]="month.titleName" (click)="levelUp(i)">
+                    <span [id]="month.id">{{ month.title }}</span>
+                    <lc-icon name="chevron-down" />
+                  </button>
+                } @else {
+                  <span class="lc-calendar__title lc-calendar__title--text" [id]="month.id">{{ month.title }}</span>
+                }
+                <!-- Le titre relu quand le mois, l'année ou le niveau change : hors du bouton, dont les enfants ne sont pas annoncés de façon sûre. -->
+                <span class="lc-visually-hidden" aria-live="polite">{{ month.title }}</span>
+                @if (last) {
+                  <button type="button" class="lc-calendar__nav lc-calendar__nav--next" [attr.aria-label]="navLabels().next" [disabled]="nextDisabled()" (click)="shift(1)">
+                    <lc-icon name="chevron-right" />
+                  </button>
+                }
+              </div>
+              <table class="lc-calendar__grid" [class.lc-calendar__grid--wide]="!month.head" role="grid" [attr.aria-labelledby]="month.id" (keydown)="onKeydown($event)">
+                @if (month.head) {
+                  <thead>
+                    <tr role="row">
+                      @for (weekday of weekdays; track weekday.long) {
+                        <th role="columnheader" scope="col"><abbr [attr.title]="weekday.long">{{ weekday.narrow }}</abbr></th>
+                      }
+                    </tr>
+                  </thead>
+                }
+                <tbody>
+                  @for (week of month.rows; track $index) {
+                    <tr role="row">
+                      @for (cell of week; track $index) {
+                        @if (cell) {
+                          <td class="lc-calendar__day" role="gridcell" [attr.tabindex]="cell.iso.startsWith(activeKey()) ? 0 : -1"
+                            [attr.aria-selected]="cell.selected" [attr.aria-disabled]="cell.disabled ? 'true' : null"
+                            [attr.aria-current]="cell.today ? 'date' : null" [attr.title]="cell.today ? labels.dateToday : null"
+                            [attr.aria-label]="cell.name" [attr.data-date]="cell.iso" [attr.data-range]="cell.range"
+                            (click)="onCellClick($event, cell.iso)" (mouseenter)="hover(cell)">{{ cell.label }}</td>
+                        } @else {
+                          <td role="presentation"></td>
+                        }
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
     </div>
     <div class="lc-calendar__footer">
-      <button lcButton fillMode="flat" size="small" type="button" [disabled]="isOut(today())" (click)="choose(today())">
+      <button lcButton fillMode="flat" size="small" type="button" [disabled]="mode() === 'single' && isOut(today())" (click)="onToday()">
         <span class="lc-calendar__today-dot" aria-hidden="true"></span>{{ labels.dateToday }}
       </button>
+      @if (anchor()) {
+        <button lcButton fillMode="flat" size="small" type="button" class="lc-calendar__no-end" (click)="noEnd()">{{ labels.dateNoEnd }}</button>
+      }
       @if (!required()) {
-        <button lcButton fillMode="flat" size="small" type="button" (click)="cleared.emit()">{{ labels.dateClear }}</button>
+        <button lcButton fillMode="flat" size="small" type="button" (click)="cleared.emit()">{{ mode() === 'range' ? labels.dateClearPeriod : labels.dateClear }}</button>
       }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-calendar',
+    '[class.lc-calendar--range]': "mode() === 'range'",
     role: 'dialog',
     'aria-modal': 'true',
     // Un clic dans une zone morte (marge, en-têtes, pied) focalise le panneau : Échap et le piège de focus restent actifs.
@@ -163,7 +194,13 @@ export class LcCalendarPanelComponent {
   /** Cache « Effacer la date ». */
   readonly required = input(false, { transform: booleanAttribute });
 
+  /** Raccourcis de période (mode `range`) ; vide : aucun affiché. */
+  readonly presets = input<readonly LcDateIntervalPreset[]>([]);
+  /** `column` : colonne à gauche des mois ; `grid` : deux colonnes au-dessus des mois. */
+  readonly presetsLayout = input<'column' | 'grid'>('grid');
+
   readonly picked = output<string>();
+  readonly rangePicked = output<LcDateInterval>();
   readonly cleared = output<void>();
   readonly closed = output<void>();
 
@@ -177,7 +214,22 @@ export class LcCalendarPanelComponent {
   /** Jour qui porte le focus (tabindex tournant). */
   protected readonly active = linkedSignal(() => this.start());
   /** Premier jour du premier mois affiché (niveau des jours). */
-  private readonly shown = linkedSignal(() => firstOfMonth(this.start()));
+  // En période, le mois affiché ne saute pas tant que le début reste dans les mois visibles (début posé, valeur réécrite par l'appelant).
+  private readonly shown = linkedSignal<string, string>({
+    source: this.start,
+    computation: (start, previous) => {
+      const first = firstOfMonth(start);
+      const held = previous?.value;
+      const visible = this.mode() === 'range' && held && first >= held && first <= addMonths(held, this.months() - 1);
+      return visible ? held : first;
+    },
+  });
+  /** Début posé au premier clic, fin attendue (mode `range`). */
+  protected readonly anchor = signal<string | null>(null);
+  /** Fin envisagée (survol ou flèches) tant que le début est posé : sert l'aperçu. */
+  protected readonly previewEnd = signal<string | null>(null);
+  /** Annonce « Période choisie : … » de la ligne d'état, jusqu'au prochain début. */
+  private readonly announcement = signal<string | null>(null);
   /** Année qui sert de repère à la page d'années (`yearPage` : la page commence sept ans avant). */
   private readonly pageBase = linkedSignal(() => clampBase(yearOf(this.start())));
   protected readonly activeKey = computed(() => this.active().slice(0, PREFIX[this.level()]));
@@ -185,6 +237,7 @@ export class LcCalendarPanelComponent {
   private readonly titleFormat = new Intl.DateTimeFormat(this.locale, { month: 'long', year: 'numeric' });
   private readonly monthFormat = new Intl.DateTimeFormat(this.locale, { month: 'short' });
   private readonly dayFormat = new Intl.DateTimeFormat(this.locale, { dateStyle: 'full' });
+  private readonly longFormat = new Intl.DateTimeFormat(this.locale, { dateStyle: 'long' });
   protected readonly weekdays = Array.from({ length: 7 }, (_, index) => {
     const date = isoToLocalDate(addDays(MONDAY, index))!;
     return {
@@ -194,6 +247,29 @@ export class LcCalendarPanelComponent {
   });
 
   protected readonly dialogName = computed(() => (this.mode() === 'range' ? this.labels.dateChoosePeriod : this.labels.dateChoose));
+
+  /** Période montrée au niveau des jours : celle en cours de choix (aperçu) ou la sélection ; `anchor` n'existe que pour l'aperçu. */
+  private readonly span = computed(() => {
+    if (this.mode() !== 'range') return null;
+    const anchor = this.anchor();
+    const [a, b] = anchor ? [anchor, this.previewEnd() ?? anchor] : [this.selection().from ?? this.selection().to, this.selection().to ?? this.selection().from];
+    return a && b ? { from: a < b ? a : b, to: a < b ? b : a, anchor } : null;
+  });
+
+  protected readonly status = computed(() => {
+    const anchor = this.anchor();
+    return anchor ? this.labels.dateStartPicked(this.longDate(anchor)) : (this.announcement() ?? this.labels.dateChooseStart);
+  });
+
+  /** Raccourcis rognés par `min` / `max` ; `interval` est nul quand il n'en reste rien (bouton désactivé). */
+  protected readonly presetItems = computed(() => {
+    if (this.mode() !== 'range') return [];
+    const today = this.today();
+    return this.presets().map((preset, index) => {
+      const interval = clipInterval(preset.interval(today), this.min(), this.max());
+      return { id: `${this.uid}-preset-${index}`, label: preset.label, interval, dates: interval ? this.describe(interval) : this.labels.dateNoneAllowed };
+    });
+  });
 
   protected readonly panels = computed<Panel[]>(() => {
     const level = this.level();
@@ -251,6 +327,7 @@ export class LcCalendarPanelComponent {
   /** À appeler à l'ouverture : rend le focus au jour de départ (jour choisi, sinon aujourd'hui, sinon le plus proche autorisé). */
   focusInitial(): void {
     this.level.set('day');
+    this.resetChoice();
     this.active.set(this.start());
     this.shown.set(firstOfMonth(this.start()));
     this.focusActive();
@@ -274,12 +351,85 @@ export class LcCalendarPanelComponent {
     if (!this.isOut(iso)) this.picked.emit(iso);
   }
 
+  /** « Aujourd'hui » : en période il montre le mois en cours sans rien choisir, et le focus reste sur le bouton. */
+  protected onToday(): void {
+    if (this.mode() === 'single') return this.choose(this.today());
+    this.level.set('day');
+    this.active.set(this.today());
+    this.shown.set(firstOfMonth(this.today()));
+  }
+
+  protected hover(cell: Cell): void {
+    if (this.anchor() && this.level() === 'day' && !cell.disabled) this.previewEnd.set(cell.iso);
+  }
+
+  /** Premier jour : le début ; second jour : la période, dans l'ordre. */
+  private pickRangeDay(iso: string): void {
+    if (this.isOut(iso)) return;
+    const anchor = this.anchor();
+    this.previewEnd.set(null);
+    if (!anchor) {
+      this.anchor.set(iso);
+      this.announcement.set(null);
+      return;
+    }
+    const [from, to] = anchor <= iso ? [anchor, iso] : [iso, anchor];
+    this.anchor.set(null);
+    this.announcement.set(this.labels.datePeriodChosen(this.longDate(from), this.longDate(to)));
+    this.rangePicked.emit({ from, to });
+  }
+
+  protected noEnd(): void {
+    const from = this.anchor();
+    if (!from) return;
+    this.resetChoice();
+    this.announcement.set(this.labels.datePeriodChosenOpen(this.longDate(from)));
+    this.rangePicked.emit({ from, to: null });
+  }
+
+  /** « Changer le début » : le bouton disparaît, le focus revient à la cellule de l'ancien début. */
+  protected changeStart(): void {
+    const old = this.anchor();
+    this.resetChoice();
+    if (!old) return;
+    this.level.set('day');
+    this.move(old);
+    this.focusActive();
+  }
+
+  protected applyPreset(interval: LcDateInterval | null): void {
+    if (interval) this.rangePicked.emit(interval);
+  }
+
+  private resetChoice(): void {
+    this.anchor.set(null);
+    this.previewEnd.set(null);
+    this.announcement.set(null);
+  }
+
+  private longDate(iso: string): string {
+    return this.longFormat.format(isoToLocalDate(iso)!);
+  }
+
+  /** Dates d'un raccourci sous son libellé ; `Intl` compose la plage (« 13–19 novembre 2026 »), seul le tiret devient « au ». */
+  private describe({ from, to }: LcDateInterval): string {
+    if (!from || !to) return from ? this.labels.dataTable.since(this.longDate(from)) : to ? this.labels.dataTable.until(this.longDate(to)) : '';
+    if (from === to) return this.labels.dateOnDay(this.longDate(from));
+    const parts = this.longFormat.formatRangeToParts(isoToLocalDate(from)!, isoToLocalDate(to)!);
+    const sources = parts.map((part) => part.source);
+    const start = sources.lastIndexOf('startRange');
+    const end = sources.indexOf('endRange');
+    const text = (list: Intl.DateTimeFormatPart[]) => list.map((part) => part.value).join('');
+    const range = start < 0 || end < 0 ? `${this.longDate(from)} ${this.labels.datePeriodTo} ${this.longDate(to)}` : `${text(parts.slice(0, start + 1))} ${this.labels.datePeriodTo} ${text(parts.slice(end))}`;
+    return `${this.labels.datePeriodFrom} ${range}`;
+  }
+
   /** Clic, Entrée ou Espace sur une cellule : choisit un jour, ou descend d'un niveau sans rien choisir. */
   protected pick(iso: string): void {
     const level = this.level();
     if (level === 'day') {
       this.active.set(iso); // un jour hors bornes reçoit quand même le focus : les flèches repartent de lui
-      return this.choose(iso);
+      return this.mode() === 'range' ? this.pickRangeDay(iso) : this.choose(iso);
     }
     if (this.isOut(iso, level)) return;
     const active = this.active();
@@ -293,10 +443,11 @@ export class LcCalendarPanelComponent {
     this.focusActive();
   }
 
-  /** Titre-bouton : jours vers mois, mois vers années. */
-  protected levelUp(): void {
+  /** Titre-bouton : jours vers mois, mois vers années ; `index` est le mois dont on a cliqué le titre (deux mois). */
+  protected levelUp(index: number): void {
     if (this.level() === 'day') {
-      if (yearOf(this.active()) !== yearOf(this.shown())) this.active.set(this.shown());
+      const month = addMonths(this.shown(), index);
+      if (yearOf(this.active()) !== yearOf(month)) this.active.set(month);
       this.level.set('month');
     } else {
       this.pageBase.set(clampBase(yearOf(this.active())));
@@ -322,6 +473,7 @@ export class LcCalendarPanelComponent {
   protected onEscape(event: Event): void {
     event.preventDefault();
     event.stopPropagation(); // dans un tiroir ou un dialogue, Échap ne ferme que le panneau
+    this.resetChoice(); // pendant le choix de la fin, le début est abandonné
     this.closed.emit();
   }
 
@@ -336,6 +488,7 @@ export class LcCalendarPanelComponent {
     if (!target || !inSupportedYears(target)) return;
     event.preventDefault();
     this.move(target);
+    if (this.anchor() && this.level() === 'day' && !this.isOut(target)) this.previewEnd.set(target);
     this.focusActive();
   }
 
@@ -393,10 +546,12 @@ export class LcCalendarPanelComponent {
   }
 
   private cell(iso: string, level: LcCalendarLevel): Cell {
-    const { from, to } = this.selection();
+    const anchor = this.anchor();
+    const { from, to } = anchor ? { from: anchor, to: null } : this.selection();
     const prefix = iso.slice(0, PREFIX[level]);
-    const range = this.mode() === 'range' && from && to;
-    const selected = level === 'day' ? (range ? iso >= from && iso <= to : iso === from) : [from, to].some((date) => date?.startsWith(prefix));
+    const span = level === 'day' ? this.span() : null;
+    const inSpan = !!span && iso >= span.from && iso <= span.to;
+    const selected = level !== 'day' ? [from, to].some((date) => date?.startsWith(prefix)) : span ? inSpan && (!span.anchor || iso === span.anchor) : iso === from;
     const date = isoToLocalDate(iso)!;
     return {
       iso,
@@ -405,6 +560,26 @@ export class LcCalendarPanelComponent {
       selected,
       disabled: this.isOut(iso, level),
       today: this.today().startsWith(prefix),
+      range: inSpan ? this.rangeTokens(iso, span) : null,
     };
+  }
+
+  /**
+   * Repères d'une cellule de période : `disk` (extrémité), `left` / `right` (la bande continue de ce côté : ni début ni fin de
+   * semaine, ni bord du mois affiché), `preview` (fin pas encore choisie), `hollow` (extrémité d'aperçu, disque creux).
+   */
+  private rangeTokens(iso: string, span: { from: string; to: string; anchor: string | null }): string {
+    const monday = (isoToLocalDate(iso)!.getDay() + 6) % 7 === 0;
+    const sunday = isoToLocalDate(iso)!.getDay() === 0;
+    const disk = iso === span.from || iso === span.to;
+    return [
+      disk && 'disk',
+      iso > span.from && !monday && iso !== firstOfMonth(iso) && 'left',
+      iso < span.to && !sunday && iso !== lastOfMonth(iso) && 'right',
+      span.anchor && 'preview',
+      span.anchor && disk && iso !== span.anchor && 'hollow',
+    ]
+      .filter(Boolean)
+      .join(' ');
   }
 }

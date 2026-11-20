@@ -160,6 +160,21 @@ export interface LcLabels {
   readonly dateNextYears: string;
   /** Titre du niveau des années : première et dernière année affichées. */
   readonly dateYearsRange: (first: number, last: number) => string;
+  /** Panneau de période : ligne d'état, boutons, raccourcis et leurs dates (`date` en forme longue). */
+  readonly dateChooseStart: string;
+  readonly dateStartPicked: (date: string) => string;
+  readonly dateChangeStart: string;
+  readonly dateNoEnd: string;
+  readonly dateClearPeriod: string;
+  readonly dateNoneAllowed: string;
+  /** Mots qui encadrent les dates d'un raccourci : « du 13 au 19 novembre 2026 ». */
+  readonly datePeriodFrom: string;
+  readonly datePeriodTo: string;
+  readonly dateOnDay: (date: string) => string;
+  readonly datePeriodChosen: (from: string, to: string) => string;
+  readonly datePeriodChosenOpen: (from: string) => string;
+  readonly dateThisMonth: string;
+  readonly dateLastMonth: string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -726,6 +741,19 @@ export const LC_LABELS_FR: LcLabels = {
   datePreviousYears: 'Années précédentes',
   dateNextYears: 'Années suivantes',
   dateYearsRange: (first, last) => `${first} à ${last}`,
+  dateChooseStart: 'Choisissez la date de début.',
+  dateStartPicked: (date) => `Début : ${date}. Choisissez la date de fin, ou cliquez sur « Sans date de fin ».`,
+  dateChangeStart: 'Changer le début',
+  dateNoEnd: 'Sans date de fin',
+  dateClearPeriod: 'Effacer la période',
+  dateNoneAllowed: 'Aucune date autorisée sur cette période.',
+  datePeriodFrom: 'du',
+  datePeriodTo: 'au',
+  dateOnDay: (date) => `le ${date}`,
+  datePeriodChosen: (from, to) => `Période choisie : du ${from} au ${to}.`,
+  datePeriodChosenOpen: (from) => `Période choisie : à partir du ${from}.`,
+  dateThisMonth: 'Ce mois-ci',
+  dateLastMonth: 'Le mois dernier',
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -944,6 +972,19 @@ export const LC_LABELS_EN: LcLabels = {
   datePreviousYears: 'Previous years',
   dateNextYears: 'Next years',
   dateYearsRange: (first, last) => `${first} to ${last}`,
+  dateChooseStart: 'Choose the start date.',
+  dateStartPicked: (date) => `Start: ${date}. Choose the end date, or click "No end date".`,
+  dateChangeStart: 'Change start date',
+  dateNoEnd: 'No end date',
+  dateClearPeriod: 'Clear period',
+  dateNoneAllowed: 'No allowed date in this period.',
+  datePeriodFrom: 'from',
+  datePeriodTo: 'to',
+  dateOnDay: (date) => date,
+  datePeriodChosen: (from, to) => `Period selected: from ${from} to ${to}.`,
+  datePeriodChosenOpen: (from) => `Period selected: starting ${from}, no end date.`,
+  dateThisMonth: 'This month',
+  dateLastMonth: 'Last month',
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });
