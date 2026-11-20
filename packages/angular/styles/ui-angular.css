@@ -622,6 +622,178 @@ lc-form-field [lcSuffix] {
   cursor: default;
 }
 
+/* Panneau de période : raccourcis (colonne à gauche, ou grille de deux colonnes au-dessus des mois), ligne d'état, un ou deux mois. */
+.lc-calendar__layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  min-block-size: 0;
+}
+
+.lc-calendar__layout--column {
+  flex-direction: row;
+  gap: var(--lc-sys-space-4);
+}
+
+.lc-calendar__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-2);
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+
+/* Grille : sa largeur est celle des mois, jamais celle de la plus longue date. */
+.lc-calendar__presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--lc-sys-space-2);
+  contain: inline-size;
+}
+
+.lc-calendar__layout--column .lc-calendar__presets {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-content: start;
+  contain: none;
+  inline-size: var(--lc-calendar-presets-width, calc(var(--lc-sys-space-16) * 3));
+  padding-inline-end: var(--lc-sys-space-4);
+  border-inline-end: var(--lc-sys-border-width-thin) solid var(--lc-calendar-border, var(--lc-sys-color-border));
+}
+
+.lc-calendar__preset {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-block-size: var(--lc-sys-control-height-md);
+  padding: var(--lc-sys-space-2) var(--lc-sys-space-3);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-calendar-title-border, var(--lc-sys-color-border-strong));
+  border-radius: var(--lc-sys-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
+}
+
+.lc-calendar__preset:hover:not(:disabled) {
+  background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+}
+
+.lc-calendar__preset:disabled {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: default;
+}
+
+.lc-calendar__preset:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-calendar-focus-ring, var(--lc-sys-color-focus-ring));
+  outline-offset: calc(-1 * var(--lc-sys-focus-ring-width));
+}
+
+.lc-calendar__preset-label {
+  font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-sys-font-weight-medium);
+}
+
+.lc-calendar__preset-dates {
+  color: var(--lc-calendar-weekday-text, var(--lc-sys-color-on-surface-muted));
+  font-size: var(--lc-sys-font-size-xs);
+}
+
+.lc-calendar__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lc-sys-space-2);
+  /* La largeur du panneau est celle des mois, pas celle de la phrase. */
+  contain: inline-size;
+}
+
+/* Deux lignes réservées : le texte du second temps ne fait pas sauter les mois. */
+.lc-calendar__status {
+  flex: 1 1 0;
+  min-block-size: 2lh;
+  margin: 0;
+  color: var(--lc-calendar-weekday-text, var(--lc-sys-color-on-surface-muted));
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+/* Niveaux mois et années avec deux mois : une seule grille, pleine largeur des deux mois. */
+.lc-calendar__month--full,
+.lc-calendar__month--full .lc-calendar__grid {
+  inline-size: calc(14 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)) + var(--lc-calendar-month-gap, var(--lc-sys-space-6)));
+}
+
+/* Période : disque aux extrémités (::before), demi-bande du côté de l'intérieur (fond de la cellule), bande entre les deux (::before). */
+.lc-calendar__day[data-range] {
+  color: var(--lc-calendar-range-text, var(--lc-sys-color-on-primary-container));
+  font-weight: normal;
+}
+
+.lc-calendar__day[data-range]::before,
+.lc-calendar__day[data-range]:hover:not([aria-disabled='true'])::before {
+  box-sizing: border-box;
+  inset: var(--lc-sys-space-1) 0;
+  border-radius: 0;
+  background: var(--lc-calendar-range-bg, var(--lc-sys-color-primary-container));
+}
+
+.lc-calendar__day[data-range]:not([data-range~='left'])::before {
+  border-start-start-radius: var(--lc-sys-radius-full);
+  border-end-start-radius: var(--lc-sys-radius-full);
+}
+
+.lc-calendar__day[data-range]:not([data-range~='right'])::before {
+  border-start-end-radius: var(--lc-sys-radius-full);
+  border-end-end-radius: var(--lc-sys-radius-full);
+}
+
+.lc-calendar__day[data-range~='disk'],
+.lc-calendar__day[data-range~='disk']::before,
+.lc-calendar__day[data-range~='disk']:hover:not([aria-disabled='true'])::before {
+  color: var(--lc-calendar-selected-text, var(--lc-sys-color-on-primary));
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-calendar__day[data-range~='disk']::before,
+.lc-calendar__day[data-range~='disk']:hover:not([aria-disabled='true'])::before {
+  inset: var(--lc-sys-space-1);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-calendar-selected-bg, var(--lc-sys-color-primary));
+}
+
+.lc-calendar__day[data-range~='disk'][data-range~='right'],
+.lc-calendar__day[data-range~='disk'][data-range~='left'] {
+  background: linear-gradient(var(--lc-calendar-range-bg, var(--lc-sys-color-primary-container)), var(--lc-calendar-range-bg, var(--lc-sys-color-primary-container))) no-repeat;
+  background-size: calc(var(--lc-calendar-cell-size, var(--lc-sys-space-10)) / 2) calc(var(--lc-calendar-cell-size, var(--lc-sys-space-10)) - 2 * var(--lc-sys-space-1));
+  background-position: right center;
+}
+
+.lc-calendar__day[data-range~='disk'][data-range~='left'] {
+  background-position: left center;
+}
+
+/* Aperçu : bords haut et bas en tirets, extrémité envisagée en disque creux. */
+.lc-calendar__day[data-range~='preview']:not([data-range~='disk'])::before {
+  border-block: var(--lc-sys-border-width-thin) dashed var(--lc-calendar-range-preview-edge, var(--lc-sys-color-primary));
+}
+
+.lc-calendar__day[data-range~='hollow'],
+.lc-calendar__day[data-range~='hollow']::before,
+.lc-calendar__day[data-range~='hollow']:hover:not([aria-disabled='true'])::before {
+  color: var(--lc-calendar-range-text, var(--lc-sys-color-on-primary-container));
+}
+
+.lc-calendar__day[data-range~='hollow']::before,
+.lc-calendar__day[data-range~='hollow']:hover:not([aria-disabled='true'])::before {
+  border: var(--lc-sys-border-width-thick) solid var(--lc-calendar-range-preview-edge, var(--lc-sys-color-primary));
+  background: var(--lc-calendar-background, var(--lc-sys-color-surface-raised));
+}
+
 /* Contraste forcé : les fonds ne sont pas rendus, le jour choisi, aujourd'hui et le focus gardent une marque en couleurs système. */
 @media (forced-colors: active) {
   .lc-calendar {
@@ -655,6 +827,35 @@ lc-form-field [lcSuffix] {
   .lc-calendar__title:focus-visible,
   .lc-calendar__day:focus-visible {
     outline-color: CanvasText;
+  }
+
+  /* Période : l'intérieur est une bande encadrée (tirets pour l'aperçu), les extrémités gardent le disque Highlight, l'aperçu un disque creux. */
+  .lc-calendar__preset {
+    border-color: ButtonText;
+  }
+
+  .lc-calendar__day[data-range]:not([data-range~='disk']) {
+    color: CanvasText;
+  }
+
+  .lc-calendar__day[data-range]:not([data-range~='disk'])::before {
+    border-block: var(--lc-sys-border-width-thin) solid Highlight;
+    background: Canvas;
+    forced-color-adjust: none;
+  }
+
+  .lc-calendar__day[data-range~='preview']:not([data-range~='disk'])::before {
+    border-block-style: dashed;
+  }
+
+  .lc-calendar__day[data-range~='hollow'] {
+    color: CanvasText;
+  }
+
+  .lc-calendar__day[data-range~='hollow']::before {
+    border-color: Highlight;
+    background: Canvas;
+    forced-color-adjust: none;
   }
 }
 

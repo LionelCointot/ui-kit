@@ -11,6 +11,7 @@ import {
   linkedSignal,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { LC_LABELS, LC_LOCALE, LcButtonComponent, LcIconComponent, isoToLocalDate, lcUniqueId, localDateToIso } from '@lionelcointot/ui-angular';
@@ -212,7 +213,16 @@ export class LcCalendarPanelComponent {
     return clampIso(this.selection().from ?? this.today(), this.min(), this.max());
   });
   /** Jour qui porte le focus (tabindex tournant). */
-  protected readonly active = linkedSignal(() => this.start());
+  // En période, il reste où il est tant qu'il est dans les mois visibles (même raison que `shown`).
+  protected readonly active = linkedSignal<string, string>({
+    source: this.start,
+    // untracked : seule la sélection relance le calcul, pas un changement de niveau ni de mois affiché.
+    computation: (start, previous) => {
+      const held = previous?.value;
+      const visible = untracked(() => this.mode() === 'range' && this.level() === 'day' && !!held && this.inShownMonths(held!));
+      return visible ? held! : start;
+    },
+  });
   /** Premier jour du premier mois affiché (niveau des jours). */
   // En période, le mois affiché ne saute pas tant que le début reste dans les mois visibles (début posé, valeur réécrite par l'appelant).
   private readonly shown = linkedSignal<string, string>({
@@ -220,8 +230,8 @@ export class LcCalendarPanelComponent {
     computation: (start, previous) => {
       const first = firstOfMonth(start);
       const held = previous?.value;
-      const visible = this.mode() === 'range' && held && first >= held && first <= addMonths(held, this.months() - 1);
-      return visible ? held : first;
+      const visible = untracked(() => this.mode() === 'range' && held && first >= held && first <= addMonths(held, this.months() - 1));
+      return visible ? held! : first;
     },
   });
   /** Début posé au premier clic, fin attendue (mode `range`). */
@@ -342,9 +352,17 @@ export class LcCalendarPanelComponent {
     return (!!min && last < min) || (!!max && first > max);
   }
 
-  /** Le second clic d'un double clic tombe sur la grille du niveau suivant : il ne choisit rien. */
+  /**
+   * Le second clic d'un double clic tombe sur la grille du niveau suivant : il ne choisit rien. Exception : les jours d'une
+   * période, où il retombe sur le même jour et fait la fin d'une période d'un jour.
+   */
   protected onCellClick(event: MouseEvent, iso: string): void {
-    if (event.detail <= 1) this.pick(iso);
+    if (event.detail <= 1 || (this.mode() === 'range' && this.level() === 'day')) this.pick(iso);
+  }
+
+  private inShownMonths(iso: string): boolean {
+    const first = firstOfMonth(iso);
+    return first >= this.shown() && first <= addMonths(this.shown(), this.months() - 1);
   }
 
   protected choose(iso: string): void {
