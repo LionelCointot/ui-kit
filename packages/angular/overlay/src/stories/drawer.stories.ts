@@ -9,6 +9,11 @@ interface DrawerData {
   readonly hideClose?: boolean;
 }
 
+interface DrawerData {
+  readonly title: string;
+  readonly hideClose?: boolean;
+}
+
 const PARAGRAPHS = Array.from({ length: 14 }, (_, index) => `Paragraphe ${index + 1} : le contenu du corps défile sous l'en-tête et au-dessus du pied d'actions.`);
 
 /** Composant ouvert dans le tiroir : il place `lc-drawer` dans son gabarit et se ferme avec un résultat. */
