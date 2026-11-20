@@ -115,6 +115,32 @@ describe('LcTruncateDirective', () => {
     expect(el.title).toBe('Mon titre');
   });
 
+  it('mesure à l\'arrêt : la classe de défilement est retirée pendant la mesure, puis reposée', async () => {
+    const { el } = await setup();
+    enter(el);
+    const seen: boolean[] = [];
+    vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(() => {
+      seen.push(el.classList.contains('lc-truncate--scrolling'));
+      return box.scroll;
+    });
+    FakeResizeObserver.instances[0].trigger();
+    expect(seen).toEqual([false]);
+    expect(el.classList.contains('lc-truncate--scrolling')).toBe(true);
+  });
+
+  it('cesse de toucher un title que le consommateur a changé après la directive', async () => {
+    reduced = true;
+    const { el } = await setup();
+    enter(el);
+    expect(el.title).not.toBe('');
+    el.title = 'Titre du consommateur';
+    enter(el);
+    expect(el.title).toBe('Titre du consommateur');
+    box.scroll = 100;
+    enter(el);
+    expect(el.title).toBe('Titre du consommateur');
+  });
+
   it('refait la mesure au redimensionnement, pendant le défilement', async () => {
     const { el } = await setup();
     enter(el);

@@ -1,6 +1,6 @@
 import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
 
-/** Vitesse de repli (px/s) quand le jeton `--lc-truncate-speed` n'est pas chargé. */
+/** shortcut: dupliqué du token `--lc-truncate-speed` (px/s), à garder synchronisé ; sert quand le jeton n'est pas chargé. */
 const FALLBACK_SPEED = 96;
 /** Part de l'animation consacrée au défilement aller (voir `@keyframes lc-truncate-scroll`) : durée totale = aller / part. */
 const FORWARD_SHARE = 0.4;
@@ -22,6 +22,7 @@ export class LcTruncateDirective {
   private readonly element: HTMLElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private hovered = false;
   private ownsTitle = false;
+  private ownedTitle = '';
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -43,12 +44,16 @@ export class LcTruncateDirective {
   /** Mesure le débordement et aligne `title`, classe et variables de défilement. Le mouvement réduit est relu à chaque appel. */
   private sync(): void {
     const el = this.element;
+    // Un text-indent négatif fausse scrollWidth : on mesure à l'arrêt, puis on reprend le défilement si besoin.
+    el.classList.remove('lc-truncate--scrolling');
     const overflow = el.scrollWidth - el.clientWidth;
     const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // Un title qui ne vaut plus ce que nous avons posé est celui du consommateur : on n'y touche plus.
+    if (this.ownsTitle && el.title !== this.ownedTitle) this.ownsTitle = false;
     if (reduced && overflow > 0) {
       if (!el.hasAttribute('title') || this.ownsTitle) {
-        el.title = el.textContent ?? '';
+        this.ownedTitle = el.title = el.textContent ?? '';
         this.ownsTitle = true;
       }
     } else if (this.ownsTitle) {
@@ -62,7 +67,6 @@ export class LcTruncateDirective {
       el.style.setProperty('--lc-truncate-duration', `${overflow / speed / FORWARD_SHARE}s`);
       el.classList.add('lc-truncate--scrolling');
     } else {
-      el.classList.remove('lc-truncate--scrolling');
       el.style.removeProperty('--lc-truncate-overflow');
       el.style.removeProperty('--lc-truncate-duration');
     }

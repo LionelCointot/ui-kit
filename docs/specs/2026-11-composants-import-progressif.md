@@ -129,16 +129,16 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 - [x] CA-K2-2 (unitaire) : avec deux bulles, ouvrir la seconde ferme la première ; le bouton porte `aria-expanded` et `aria-controls` vers un identifiant existant ; la région `role="status"` n'existe pas bulle fermée, est créée vide à l'ouverture puis remplie au rendu suivant ; `aria-controls` n'est posé que bulle ouverte ; retirer le bouton du DOM ferme la bulle.
 - [x] CA-K2-3 (unitaire, puis manuel) : la stratégie de position a un repli dans les quatre directions et pousse la bulle dans la fenêtre ; à 360 px, la bulle d'une story placée au bord est entière (vérification manuelle).
 - [x] CA-K2-4 (unitaire) : `lcTooltip` garde exactement son comportement (`tooltip-positions.spec.ts` et ses tests existants passent sans changement).
-- [ ] CA-K3-1 (unitaire) : sans débordement mesuré, ni `title`, ni classe de défilement au survol.
-- [ ] CA-K3-2 (unitaire, puis story) : avec débordement, au survol la directive pose `--lc-truncate-overflow` égal au débordement et la classe de défilement, et les retire à la sortie ; dans la story, le texte se termine par « … » au repos et défile au survol.
-- [ ] CA-K3-3 (unitaire) : avec `prefers-reduced-motion: reduce`, aucune classe de défilement ; `title` donne le texte entier, posé seulement s'il déborde ; le réglage est relu à chaque survol.
+- [x] CA-K3-1 (unitaire) : sans débordement mesuré, ni `title`, ni classe de défilement au survol.
+- [x] CA-K3-2 (unitaire, puis story) : avec débordement, au survol la directive pose `--lc-truncate-overflow` égal au débordement et la classe de défilement, et les retire à la sortie ; dans la story, le texte se termine par « … » au repos et défile au survol.
+- [x] CA-K3-3 (unitaire) : avec `prefers-reduced-motion: reduce`, aucune classe de défilement ; `title` donne le texte entier, posé seulement s'il déborde ; le réglage est relu à chaque survol.
 - [x] CA-K4-1 (unitaire) : `rowClass` pose sur les lignes de données les classes rendues (chaîne et tableau), aucune pour `null` ; story : fond et liseré par une feuille de la story (tokens seulement), contraste du texte vérifié dans les deux thèmes.
-- [ ] CA-K-5 : libellés par `LC_LABELS` en français et en anglais (unitaire) ; aucune couleur, taille ni durée en dur (revue) ; chaque story passe `storybook-browser.mjs` en clair et en sombre ; `catalogue:check` vert.
+- [x] CA-K-5 (libellés testés en français et en anglais, axe clair et sombre sur les stories table, toggletip, truncate, catalogue vert) : libellés par `LC_LABELS` en français et en anglais (unitaire) ; aucune couleur, taille ni durée en dur (revue) ; chaque story passe `storybook-browser.mjs` en clair et en sombre ; `catalogue:check` vert.
 
 ## 11. Découpage en tâches
 - [x] K1 (fait le 2026-11-20 : QA GO, revue appliquée ; preuves `table-selection.acceptance.spec.ts`, `table.component.spec.ts`) : sélection dans `lc-table`, tests, story (M).
 - [x] K2 (fait le 2026-11-20 : QA GO, revue appliquée ; preuves `toggletip.acceptance.spec.ts`, `toggletip.directive.spec.ts`, captures à 360 px) : positions partagées avec `lcTooltip`, `lc-toggletip`, tests, story (M).
-- [ ] K3 : `lcTruncate`, token `--lc-truncate-speed`, tests, story (S).
+- [x] K3 (fait le 2026-11-20 : QA GO, revue appliquée ; preuves `truncate.acceptance.spec.ts`, `truncate.directive.spec.ts`, captures) : `lcTruncate`, token `--lc-truncate-speed`, tests, story (S).
 - [x] K4 (fait le 2026-11-20, `rowClass`) : `rowClass` dans `lc-table`, tests, story (S).
 - [ ] K5 : catalogue, publication locale pour copro-ticket (`deps:refresh`) (S).
 
