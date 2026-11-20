@@ -1,13 +1,14 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { Observable, delay, of, throwError } from 'rxjs';
+import { fixedExample } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent, localDateToIso } from '@lionelcointot/ui-angular';
 import { LcStatusBadgeComponent, type LcStatusBadgeKind } from '@lionelcointot/ui-angular/feedback';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcDataTableComponent } from '../data-table/data-table.component';
 import { LcDataColumn, LcDataSource, LcTableQuery, lcLocalSource } from '../data-table/data-table-model';
 
-/* Valeurs d'exemple reprises de la maquette validée (file des demandes d'un syndic). Dates relatives à aujourd'hui. */
+/* Demo data: a request queue (tickets). Dates are relative to today. */
 interface Ticket { id: number; title: string; copro: string; urg: string; state: string; todo: string; mgr: string; recv: number; last: number }
 
 const STATES: Record<string, { label: string; icon: string; kind: LcStatusBadgeKind }> = {
@@ -45,7 +46,7 @@ const TICKETS: Ticket[] = [
   t(1018, 'Duplicata de clé du local vélos', 'Résidence Les Tilleuls', 'Normale', 'rejete', '', 'Marc Delorme', 24, 22),
   t(1017, 'Fuite au robinet du local ménage', 'Domaine de la Doua', 'Normale', 'resolu', 'Confirmation attendue', 'Claire Dubois', 25, 5),
   t(1016, 'Gouttière bouchée au-dessus du porche', 'Les Balcons du Parc', 'Normale', 'clos', '', 'Inès Carpentier', 26, 9),
-  t(1014, 'Remboursement de travaux privatifs', 'Parc des Cèdres', 'Normale', 'rejete', '', 'Inès Carpentier', 28, 20),
+  t(1014, 'Devis pour des travaux privatifs', 'Parc des Cèdres', 'Normale', 'rejete', '', 'Inès Carpentier', 28, 20),
 ];
 
 const daysAgo = (days: number) => {
@@ -75,7 +76,7 @@ const columns: LcDataColumn<Ticket>[] = [
   { key: 'open', label: 'Voir la demande', cardOnly: true },
 ];
 
-/** Source serveur simulée : délai, et `distinct` de « Assignée à » en échec au premier appel (le second réussit). */
+/** Simulated server source: delay, and the `distinct` call of the "Assignée à" column fails on the first call (the second succeeds). */
 function simulatedSource(wait = 900): LcDataSource<Ticket> {
   const local = lcLocalSource(TICKETS, columns);
   let failures = 1;
@@ -88,7 +89,7 @@ function simulatedSource(wait = 900): LcDataSource<Ticket> {
   };
 }
 
-/** Source dont les valeurs distinctes ne finissent jamais de charger (configuration « chargement » figée). */
+/** Source whose distinct values never finish loading (frozen loading state). */
 const frozenSource: LcDataSource<Ticket> = {
   rows: (query) => lcLocalSource(TICKETS, columns).rows(query),
   distinct: () => new Observable<never>(),
@@ -99,9 +100,8 @@ const FOUR = query({ state: ['qualifie', 'encours'], urg: ['Urgente', 'Important
 const PHONE = query({ state: ['qualifie', 'encours'], urg: ['Urgente'] });
 const NONE = query({ state: ['rejete'], urg: ['Urgente'] });
 
-const template = (chips = 'auto') => `
-  <lc-data-table caption="File des demandes" [captionHidden]="true" [source]="source" [columns]="columns" [trackBy]="trackBy"
-    [(query)]="query" chips="${chips}">
+const template = (bindings: string) => `
+  <lc-data-table ${bindings} [source]="source" [columns]="columns" [trackBy]="trackBy" [(query)]="query">
     <ng-template lcCell="title" let-row>
       <a class="story-link" href="#" (click)="$event.preventDefault()">{{ row.title }}</a>
       <div class="story-muted">#{{ row.id }}</div>
@@ -126,38 +126,75 @@ const template = (chips = 'auto') => `
     .story-muted { color: var(--lc-sys-color-on-surface-muted); font-size: var(--lc-sys-font-size-xs); }
   </style>`;
 
+/** Bindings of the fixed examples: hidden caption and the given `chips` mode. */
+const fixedBindings = (chips = 'auto') => `caption="File des demandes" [captionHidden]="true" chips="${chips}"`;
+
 const props = (source: LcDataSource<Ticket> | readonly Ticket[], initial: LcTableQuery = query({})) => ({
   source, columns, trackBy: (row: Ticket) => row.id, query: signal(initial),
   urgency: URGENCY, states: STATES, ago, day: (days: number) => shortDate.format(daysAgo(days)),
 });
 
+/**
+ * Filterable data table for a request queue: a funnel button per column opens a filter menu (multi-choice, free text, single choice or date range),
+ * active filters show as a summary line or chips, and below 768 px the rows become cards with a filter panel.
+ * The data comes from an array (filtered locally) or from a `LcDataSource` (server): rows and the distinct values of a column.
+ * `query` (filters and sort) is two-way. Cells are customised with `lcCell` templates.
+ *
+ * Import: `import { LcDataTableComponent, lcLocalSource } from '@lionelcointot/ui-angular/data';`
+ */
 const meta: Meta<LcDataTableComponent<Ticket>> = {
   title: 'Data/Data table',
   component: LcDataTableComponent,
   decorators: [moduleMetadata({ imports: [LcDataTableComponent, LcCellDirective, LcStatusBadgeComponent, LcButtonComponent, LcIconComponent] })],
+  args: { caption: 'File des demandes', captionHidden: true, chips: 'auto', emptyMessage: 'Aucune demande ne correspond aux filtres.' },
+  argTypes: {
+    chips: { control: 'inline-radio', options: ['auto', 'always', 'never'] },
+    source: { control: false }, columns: { control: false }, trackBy: { control: false }, query: { control: false },
+  },
 };
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<LcDataTableComponent<Ticket>>;
 
-/** Configuration a : données locales, sans filtre. Les entonnoirs ouvrent les menus (b à d2) ; sous 768 px, cartes et panneau. */
-export const Defaut: Story = { render: () => ({ props: props(TICKETS), template: template() }) };
-
-/** Configuration e : quatre filtres actifs (entonnoirs pleins, ligne « N sur total », pastilles sous 768 px : configuration i). */
-export const FiltresActifs: Story = { render: () => ({ props: props(TICKETS, FOUR), template: template() }) };
-
-/** Configurations i et j (à voir sous 768 px) : deux filtres, pastilles, bouton « Filtres (2) » et panneau. */
-export const Telephone: Story = { render: () => ({ props: props(TICKETS, PHONE), template: template() }) };
-
-/** Configuration g1 : aucun résultat ; g2 : le menu « Assignée à » n'a aucune valeur. */
-export const AucunResultat: Story = { render: () => ({ props: props(TICKETS, NONE), template: template() }) };
-
-/** Configurations b et h : source serveur simulée (délai de 0,9 s) ; « Assignée à » échoue au premier chargement, « Réessayer » réussit. */
-export const SourceServeur: Story = {
-  render: () => ({ props: props(simulatedSource(), query({ urg: ['Urgente', 'Importante'], mgr: ['Marc Delorme'] })), template: template() }),
+/** Every input is bound: change them in the Controls panel. Open a funnel to filter; filter down to nothing to see `emptyMessage`. Under 768 px: cards and a filter panel. */
+export const Playground: Story = {
+  render: (args) => ({
+    props: { ...props(TICKETS), ...args },
+    template: template('[caption]="caption" [captionHidden]="captionHidden" [chips]="chips" [emptyMessage]="emptyMessage"'),
+  }),
 };
 
-/** Configuration b figée : les valeurs distinctes ne finissent jamais de charger. */
-export const ChargementDesValeurs: Story = { render: () => ({ props: props(frozenSource), template: template() }) };
+/** Four active filters: filled funnels and an "N of total" line (chips under 768 px). */
+export const ActiveFilters: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: props(TICKETS, FOUR), template: template(fixedBindings()) }),
+};
 
-/** Pastilles aussi sur ordinateur (`chips="always"`), à la place de la ligne de résumé. */
-export const PastillesToujours: Story = { render: () => ({ props: props(TICKETS, PHONE), template: template('always') }) };
+/** To view under 768 px: two filters, chips, a "Filtres (2)" button and the panel. */
+export const Phone: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: props(TICKETS, PHONE), template: template(fixedBindings()) }),
+};
+
+/** No result for the active filters; the "Assignée à" menu then has no value to offer. */
+export const NoResult: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: props(TICKETS, NONE), template: template(fixedBindings()) }),
+};
+
+/** Simulated server source (0.9 s delay): "Assignée à" fails on the first load, "Réessayer" succeeds. */
+export const ServerSource: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: props(simulatedSource(), query({ urg: ['Urgente', 'Importante'], mgr: ['Marc Delorme'] })), template: template(fixedBindings()) }),
+};
+
+/** Frozen loading state: the distinct values never finish loading. */
+export const LoadingValues: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: props(frozenSource), template: template(fixedBindings()) }),
+};
+
+/** Chips on desktop too (`chips="always"`), in place of the summary line. */
+export const AlwaysChips: Story = {
+  parameters: fixedExample,
+  render: () => ({ props: props(TICKETS, PHONE), template: template(fixedBindings('always')) }),
+};
