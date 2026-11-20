@@ -81,7 +81,7 @@ export const Playground: Story = {
     template: `
       <div style="max-width:24rem">
         <lc-form-field label="Commune" hint="Le texte saisi est envoyé au service de recherche.">
-          <lc-commune-input [(value)]="commune" [departmentCode]="departmentCode" />
+          <lc-commune-input [(value)]="commune" [departmentCode]="departmentCode || null" />
         </lc-form-field>
         <pre style="margin-top:1rem">{{ commune() | json }}</pre>
       </div>`,

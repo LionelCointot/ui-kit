@@ -1,6 +1,7 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { StorybookConfig } from '@storybook/angular-vite';
+import { buildSnippetData } from './snippet-data.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const angularPackagesDir = resolve(here, '../packages/angular');
@@ -13,6 +14,13 @@ const tokensThemeModule = resolve(here, '../packages/tokens/theme/index.js');
  */
 const publicBuild =
   process.env['STORYBOOK_PUBLIC'] === '1' || (process.env['npm_lifecycle_event'] ?? '').endsWith(':public');
+
+/** Module virtuel des données du code affiché (sélecteurs du kit, imports et démos locales des stories) : voir snippet-data.mjs. */
+const snippetDataModule = {
+  name: 'lc-snippet-data',
+  resolveId: (id: string) => (id === 'virtual:lc-snippet-data' ? '\0virtual:lc-snippet-data' : undefined),
+  load: (id: string) => (id === '\0virtual:lc-snippet-data' ? `export default ${JSON.stringify(buildSnippetData())};` : undefined),
+};
 
 const config: StorybookConfig = {
   stories: [
@@ -39,6 +47,7 @@ const config: StorybookConfig = {
   // (contrat public, voir CLAUDE.md). Storybook lit les sources TypeScript directement :
   // on fait pointer l'alias vers les points d'entrée source plutôt que de modifier `exports`.
   async viteFinal(viteConfig) {
+    viteConfig.plugins = [...(viteConfig.plugins ?? []), snippetDataModule];
     viteConfig.resolve ??= {};
     viteConfig.resolve.alias = [
       ...(Array.isArray(viteConfig.resolve.alias) ? viteConfig.resolve.alias : []),
