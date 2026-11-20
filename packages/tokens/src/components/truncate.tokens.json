@@ -1,0 +1,9 @@
+{
+  "truncate": {
+    "speed": {
+      "$description": "Scroll speed of a truncated text on hover, in pixels per second (unitless number).",
+      "$value": "96",
+      "$type": "number"
+    }
+  }
+}
