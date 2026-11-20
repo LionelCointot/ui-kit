@@ -2,9 +2,9 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import type { Injector } from '@angular/core';
 
 /**
- * Surcouche du panneau de calendrier, commune aux champs de date : même stratégie de position et de défilement que
- * `lc-combobox`, largeur propre au panneau. Sans place ni dessous ni dessus, le CDK pousse le panneau dans la fenêtre (quitte à recouvrir le champ) ;
- * il ne se réduit que si la fenêtre est trop basse : sa hauteur est plafonnée par le CSS (`max-block-size` de `.lc-calendar`) et son corps défile.
+ * Surcouche du panneau de calendrier, commune aux champs de date. Sans place ni dessous ni dessus, le CDK pousse le panneau dans la fenêtre
+ * (quitte à recouvrir le champ) ; il ne se réduit que si la fenêtre est trop basse : sa hauteur est plafonnée par le CSS (`max-block-size` de
+ * `.lc-calendar`, qui compte la marge de fenêtre de 8 px ci-dessous : les deux changent ensemble) et son corps défile.
  * `onOutside` reçoit chaque clic extérieur ; `isButton` désigne le bouton calendrier, qui bascule lui-même.
  */
 export function createCalendarOverlay(

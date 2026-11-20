@@ -408,7 +408,7 @@ lc-form-field [lcSuffix] {
   min-block-size: 0;
   /* Écart avec le champ, dessous comme dessus (la surcouche colle le panneau au cadre). */
   margin-block: var(--lc-sys-space-1);
-  /* Jamais plus haut que la fenêtre (marge de la surcouche 2 x space-2, écarts compris) : la surcouche le pousse dans la fenêtre, et le corps défile. */
+  /* Jamais plus haut que la fenêtre : la surcouche le pousse dans la fenêtre, et le corps défile. 2 x space-2 = la marge de fenêtre de la surcouche (8 px, `withViewportMargin` de calendar-overlay.ts) ; 2 x space-1 = les écarts ci-dessus. */
   max-block-size: calc(100dvh - 2 * var(--lc-sys-space-2) - 2 * var(--lc-sys-space-1));
   /* Le contour est compté dans le padding : la largeur totale reste 7 cellules + 2 marges (304 px). */
   padding: calc(var(--lc-calendar-padding, var(--lc-sys-space-3)) - var(--lc-sys-border-width-thin));

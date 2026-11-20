@@ -103,6 +103,10 @@ export const CorpsEntierDefileSiTropBas: Story = {
       const d = await open(canvasElement);
       const box = d.getBoundingClientRect();
       const body = layout(d);
+      // Marge de fenêtre de la surcouche (8 px) tenue en haut comme en bas : une dérive entre le CSS et la surcouche se voit ici.
+      const pane = d.closest('.cdk-overlay-pane')!.getBoundingClientRect();
+      expect(pane.top, 'marge haute').toBeGreaterThanOrEqual(8);
+      expect(pane.bottom, 'marge basse').toBeLessThanOrEqual(500 - 8);
       expect(box.top).toBeGreaterThanOrEqual(0);
       expect(box.bottom).toBeLessThanOrEqual(500);
       expect(body.scrollHeight, 'le corps défile').toBeGreaterThan(body.clientHeight);
