@@ -62,6 +62,8 @@ type Story = StoryObj<SegmentedBarArgs>;
 
 /** Every input is bound: change them in the Controls panel. The parts are fixed demo data. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['emptyMessage'] } },
   render: (args) => ({
     props: { ...args, parts: args.hasData ? BUDGET : [] },
     template: `<lc-segmented-bar [title]="title" [titleHidden]="titleHidden" [description]="description" [height]="height || undefined" [loading]="loading" [stale]="stale"

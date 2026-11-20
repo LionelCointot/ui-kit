@@ -65,6 +65,8 @@ const EMPTY: LcCartesianData = { categories: [], series: [] };
 
 /** Every input is bound: change them in the Controls panel. Data and axis are fixed demo data. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['emptyMessage'] } },
   render: (args) => ({
     props: { ...args, data: args.hasData ? channels : EMPTY, yAxis: { format: 'money' } },
     template: `<lc-area-chart [title]="title" [titleHidden]="titleHidden" [description]="description" [height]="height" [loading]="loading" [stale]="stale"

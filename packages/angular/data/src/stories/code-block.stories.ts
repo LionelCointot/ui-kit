@@ -26,6 +26,8 @@ type Story = StoryObj<LcCodeBlockComponent>;
 
 /** Every input is bound: change them in the Controls panel. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['maxHeight'] } },
   render: (args) => ({
     props: args,
     template: `<lc-code-block [code]="code" [ariaLabel]="ariaLabel" [wrap]="wrap" [lineNumbers]="lineNumbers" [copyable]="copyable" [maxHeight]="maxHeight" />`,

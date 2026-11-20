@@ -92,6 +92,8 @@ type Story = StoryObj<TreeTableArgs>;
 
 /** Every input is bound: change them in the Controls panel. Click a row's chevron to expand it. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['emptyMessage'] } },
   render: (args) => ({
     props: { ...args, columns, trackBy: base.trackBy, children: base.children, units },
     template: `<lc-tree-table [caption]="caption" [captionHidden]="captionHidden" [expandAllInitially]="expandAllInitially"

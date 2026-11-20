@@ -62,6 +62,8 @@ type Story = StoryObj<TimelineArgs>;
 
 /** Every input is bound: change them in the Controls panel. Segments and ticks are fixed demo data. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['minLabelShare', 'emptyMessage'] } },
   render: (args) => ({
     props: { ...args, segments: args.hasSegments ? PHASES : [], ticks: GRADUATIONS },
     template: `<div style="max-width:40rem"><lc-timeline-bar [segments]="segments" [label]="label" [description]="description"

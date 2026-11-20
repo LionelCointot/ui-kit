@@ -14,10 +14,7 @@ const tokensThemeModule = resolve(here, '../packages/tokens/theme/index.js');
 const publicBuild =
   process.env['STORYBOOK_PUBLIC'] === '1' || (process.env['npm_lifecycle_event'] ?? '').endsWith(':public');
 
-/** Descripteur d'un maillon d'extraction (API expérimentale de Storybook, non typée dans StorybookConfig). */
-interface DocgenProviderDescriptor { moduleSpecifier: string; options: Record<string, unknown> }
-
-const config: StorybookConfig & { experimental_docgenProvider?: unknown } = {
+const config: StorybookConfig = {
   stories: [
     '../docs/storybook/**/*.mdx',
     '../docs/storybook/**/*.stories.ts',
@@ -33,7 +30,8 @@ const config: StorybookConfig & { experimental_docgenProvider?: unknown } = {
   framework: { name: '@storybook/angular-vite', options: { propsTable: 'api' } },
   features: { experimentalDocgenServer: true },
   // Placé en dernier, ce maillon enveloppe l'extraction Angular et retire les membres internes de la table d'API.
-  experimental_docgenProvider: async (existing: DocgenProviderDescriptor[] = []) => [
+  // shortcut: API expérimentale de Storybook 10 (docgen server), à revérifier à chaque montée de version.
+  experimental_docgenProvider: async (existing = []) => [
     ...existing,
     { moduleSpecifier: resolve(here, 'docgen-public-api.mjs'), options: {} },
   ],

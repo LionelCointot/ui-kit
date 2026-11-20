@@ -110,6 +110,8 @@ const fixed = (items: readonly LcListEditorItem[], attributes = ''): Story => ({
 
 /** Every input is bound: change them in the Controls panel (the list itself stays fixed; see `Interactive` for a live one). */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['maxLength', 'emptyText'] } },
   render: (args) => ({
     props: { ...args, items: SHORT },
     template: `

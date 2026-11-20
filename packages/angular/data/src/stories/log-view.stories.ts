@@ -69,6 +69,8 @@ type Story = StoryObj<LogViewArgs>;
 
 /** Every input is bound: change them in the Controls panel. Raise `lineCount` above `maxLines` to see the truncation notice. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['maxLines', 'height', 'emptyText'] } },
   render: (args) => ({
     props: { ...args, lines: makeLines(args.lineCount) },
     template: `<lc-log-view [lines]="lines" [ariaLabel]="ariaLabel" [maxLines]="maxLines" [height]="height" [wrap]="wrap" [copyable]="copyable"

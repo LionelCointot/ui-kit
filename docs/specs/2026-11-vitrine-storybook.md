@@ -131,15 +131,15 @@ Organisation de Kendo reprise : *Get Started* → catégories → par composant 
 - Architecture : `build-storybook:public` ne contient aucun titre `QA/`.
 
 ## 10. Critères d'acceptation
-- [ ] CA-1 : Le build public ne contient aucune story de QA ; `npm run storybook` en local les montre sous *QA*, en dernier.
-- [ ] CA-2 : La barre latérale suit l'ordre fixé au § 5.1 ; l'arrivée sur le site ouvre la page *Accueil*.
-- [ ] CA-3 : Chaque composant public (liste issue de `CATALOGUE.md`) a une page de documentation ; les 17 composants sans démo en ont une.
-- [ ] CA-4 : Chaque page composant a une story *Aire de jeu* ; chaque contrôle qu'elle affiche modifie le rendu (test Playwright).
-- [ ] CA-5 : Aucune autre story n'affiche de contrôle sans effet (`controls.disable` ou contrôles liés).
-- [ ] CA-6 : Pages *Démarrer* et *Fondations* présentes ; les valeurs de tokens sont lues depuis `packages/tokens`, pas recopiées.
-- [ ] CA-7 : Une fusion sur `main` publie le site sur GitHub Pages ; l'URL est dans le `README.md` (badge) ; une PR lance le build sans déployer.
-- [ ] CA-8 : Thème Storybook aux couleurs du kit, bascule clair / sombre appliquée au manager et à l'aperçu.
-- [ ] CA-9 : Addon a11y : aucune violation sérieuse ou critique sur les stories publiques (`a11y.test: 'error'` pour le build public).
+- [x] CA-1 (`index.json` du build public : 0 story `QA/`) : Le build public ne contient aucune story de QA ; `npm run storybook` en local les montre sous *QA*, en dernier.
+- [x] CA-2 (`parameters.options.storySort` ; *Introduction* en tête) : La barre latérale suit l'ordre fixé au § 5.1 ; l'arrivée sur le site ouvre la page *Accueil*.
+- [x] CA-3 (17 nouvelles pages ; écart : `lc-chart` générique sans page, voir § 13) : Chaque composant public (liste issue de `CATALOGUE.md`) a une page de documentation ; les 17 composants sans démo en ont une.
+- [x] CA-4 (`node tools/qa/storybook-controls.mjs` : 60 Playground, 275 contrôles, 0 échec ; contrôles dépendant d'un état déclarés par story) : Chaque page composant a une story *Aire de jeu* ; chaque contrôle qu'elle affiche modifie le rendu (test Playwright).
+- [x] CA-5 (`parameters: fixedExample` sur les exemples figés ; relu par `code-reviewer`, pas d'outil automatique) : Aucune autre story n'affiche de contrôle sans effet (`controls.disable` ou contrôles liés).
+- [x] CA-6 (`docs/storybook/foundations/foundation-pages.ts` lit `baseValues()`) : Pages *Démarrer* et *Fondations* présentes ; les valeurs de tokens sont lues depuis `packages/tokens`, pas recopiées.
+- [ ] CA-7 (workflow et badge livrés ; publication non constatée : Pages à activer, dépôt privé) : Une fusion sur `main` publie le site sur GitHub Pages ; l'URL est dans le `README.md` (badge) ; une PR lance le build sans déployer.
+- [ ] CA-8 (thème du kit livré ; écart : la bascule de la barre d'outils ne change que l'aperçu) : Thème Storybook aux couleurs du kit, bascule clair / sombre appliquée au manager et à l'aperçu.
+- [ ] CA-9 (non fait : `a11y.test` reste à `todo`, voir § 13) : Addon a11y : aucune violation sérieuse ou critique sur les stories publiques (`a11y.test: 'error'` pour le build public).
 - [ ] CA-10 : `npx ng test ui-angular --watch=false` et les tests de stories passent, stories de QA comprises.
 
 ## 11. Découpage en tâches
@@ -167,5 +167,17 @@ Jalon 1 (T1–T2) : site en ligne, propre, sans QA — quelques heures. Jalon 2 
   2. Visibilité du dépôt : `LionelCointot/ui-kit` est **privé** (constaté le 2026-11-20). GitHub Pages sur un dépôt privé exige GitHub Pro (le site publié reste alors public). Options : passer à Pro, rendre le dépôt public, ou pousser le build vers un dépôt public dédié (ex. `ui-kit-docs`).
   3. Storybook seul (recommandé) ou site vitrine sur mesure devant le Storybook ?
   4. Compodoc acceptable comme dépendance de dev (après T0) ?
-- **Dettes** : les données d'exemple de certaines stories utilisent un vocabulaire de prêt (« Échéancier », « Capital restant dû ») contraire à la règle « aucun vocabulaire métier » : à neutraliser pendant T5–T7.
+- **Dettes** : vocabulaire de prêt retiré des démos pendant T5–T7 (grep vérifié par `code-reviewer`).
 - **Risque** : 250 stories à reprendre ; mitigé par le test de convention (T5) qui liste les écarts restants.
+
+## 13. Écarts constatés à l'implémentation (2026-11-20)
+- **Compodoc** : non retenu, inutile ; l'extraction Angular intégrée à `@storybook/angular-vite` 10.6 (mode `experimentalDocgenServer`) fournit la table d'API. Elle garde les membres `protected` : un maillon `.storybook/docgen-public-api.mjs` les retire (API expérimentale, à revérifier à chaque montée de Storybook).
+- **Contrôles des unions** : l'extraction ne déplie pas les unions nommées (`LcFillMode`…) ; options déclarées via `@lc/storybook` (`commonArgTypes`).
+- **Contrôles dépendant d'un état** : certains contrôles n'agissent que dans un état précis (message de liste vide, erreur après `touched`, options de fermeture d'un dialogue). Chaque Playground les déclare (`parameters.controlsCheck.stateDependent`) ; ceux qui s'ouvrent au clic déclarent `openWith` et sont vraiment testés ouverts.
+- **Mode public** : activé par le nom du script npm (`*:public`, valable sous Windows) ou `STORYBOOK_PUBLIC=1` ; un `ng run …:build-storybook` direct publie la QA.
+- **T3** : une seule direction d'accueil réalisée, pas de maquettes comparées ni de test `novice-user`.
+- **CA-8** : les pages de documentation suivent le thème du système ; la bascule de la barre d'outils ne change que l'aperçu des composants.
+- **CA-9** : non fait. Passer `a11y.test` à `error` demande d'abord de corriger les violations existantes (avertissements visibles dans l'onglet Accessibility).
+- **CA-3** : `lc-chart` (graphique générique ECharts) n'a pas de page ; `LcConfirmDialogComponent` est documenté par `LcDialogService.confirm()`.
+- **Défauts trouvés et corrigés** : démo Checkbox (`errors` attend `{ message }`), contrôle `themeColor` affiché à tort sur les champs de date et numériques, trois erreurs de type dans les stories (le build Storybook ne vérifie pas les types : `npx tsc -p .storybook/tsconfig.json --noEmit`).
+- **Démo du tableau filtrable** : données de gestion de copropriété gardées (pas de vocabulaire de prêt).

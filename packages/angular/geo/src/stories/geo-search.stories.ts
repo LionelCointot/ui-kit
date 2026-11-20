@@ -77,6 +77,8 @@ type Story = StoryObj<LcCommuneInputComponent>;
 
 /** Every input is bound; stand-in source: type « ly » or « 69001 ». Set a department code (« 69 ») to restrict the search. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['departmentCode'] } },
   render: (args) => ({
     props: { ...args, commune: signal<LcCommune | null>(null) },
     template: `

@@ -68,6 +68,8 @@ type Story = StoryObj<TableArgs>;
 
 /** Every input is bound: change them in the Controls panel. Click a header to sort (`sortMode="external"` leaves the order to the story, which sorts like a server). */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['sortMode', 'emptyMessage'] } },
   render: (args) => ({
     props: {
       ...args,

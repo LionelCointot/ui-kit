@@ -84,6 +84,8 @@ type Story = StoryObj<ToastArgs>;
 
 /** Click the button: every service option is bound (`kind`, `message`, `durationMs`, `action`). */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['message', 'durationMs', 'withAction'] } },
   render: (args) => ({
     props: args,
     template: `<toast-demo [kind]="kind" [message]="message" [durationMs]="durationMs" [withAction]="withAction" /><lc-toast-outlet />`,

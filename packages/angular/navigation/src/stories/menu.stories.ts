@@ -30,6 +30,8 @@ type Story = StoryObj<Args>;
 
 /** Every input is bound: open the menu with the button, then change the controls. */
 export const Playground: Story = {
+  // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
+  parameters: { controlsCheck: { openWith: 'button' } },
   render: (args) => ({
     props: args,
     template: `

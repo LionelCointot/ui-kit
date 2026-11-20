@@ -29,6 +29,8 @@ type Story = StoryObj<LcSliderComponent>;
 
 /** Every input is bound: change them in the Controls panel. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['invalid', 'touched'] } },
   render: (args) => ({
     props: { ...args, share: signal<number | null>(60) },
     template: `

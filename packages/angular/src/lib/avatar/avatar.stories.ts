@@ -30,6 +30,8 @@ type Story = StoryObj<LcAvatarComponent>;
 
 /** Every input is bound: change them in the Controls panel. An empty `src`, `colorSeed` or `label` means "not set". */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['src'] } },
   render: (args) => ({
     props: args,
     template: `<lc-avatar [name]="name" [src]="src || undefined" [size]="size" [colorSeed]="colorSeed || undefined" [label]="label || undefined" />`,

@@ -157,6 +157,8 @@ type Story = StoryObj<LcDataTableComponent<Ticket>>;
 
 /** Every input is bound: change them in the Controls panel. Open a funnel to filter; filter down to nothing to see `emptyMessage`. Under 768 px: cards and a filter panel. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['emptyMessage'] } },
   render: (args) => ({
     props: { ...props(TICKETS), ...args },
     template: template('[caption]="caption" [captionHidden]="captionHidden" [chips]="chips" [emptyMessage]="emptyMessage"'),

@@ -25,6 +25,8 @@ const ICON_BUTTON = (position: string, label: string, icon = 'bell') =>
 
 /** Both inputs are bound: hover or focus the button. */
 export const Playground: Story = {
+  // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
+  parameters: { controlsCheck: { openWith: 'button' } },
   render: (args) => ({
     props: args,
     template: `<div style="display:flex;justify-content:center;padding:96px 16px">

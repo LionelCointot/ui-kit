@@ -21,7 +21,9 @@ type Story = StoryObj<LcCheckboxDirective>;
 
 /** Every input is bound: change them in the Controls panel (`invalid` and `touched` together show the error). */
 export const Playground: Story = {
-  args: { errors: ['Vous devez accepter les conditions.'] },
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['indeterminate', 'invalid', 'touched'] } },
+  args: { errors: [{ message: 'Vous devez accepter les conditions.' }] },
   render: (args) => ({
     props: args,
     template: `

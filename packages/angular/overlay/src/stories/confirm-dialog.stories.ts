@@ -60,6 +60,8 @@ type Story = StoryObj<LcConfirmOptions>;
 
 /** Every `LcConfirmOptions` field is bound: click the button, then answer the dialog. */
 export const Playground: Story = {
+  // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
+  parameters: { controlsCheck: { openWith: 'button' } },
   render: (args) => ({
     props: args,
     template: `<lc-confirm-demo [title]="title" [message]="message" [confirmLabel]="confirmLabel" [cancelLabel]="cancelLabel" [destructive]="destructive" />`,

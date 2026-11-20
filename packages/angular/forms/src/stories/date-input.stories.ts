@@ -45,13 +45,15 @@ const meta: Meta<LcDateInputComponent> = {
     min: undefined, max: undefined, disabled: false, readonly: false, required: false, invalid: false, touched: false,
     size: 'medium', fillMode: 'solid', rounded: 'medium', ariaLabel: 'Date',
   },
-  argTypes: { ...commonArgTypes, min: { control: 'text' }, max: { control: 'text' } },
+  argTypes: { size: commonArgTypes.size, fillMode: commonArgTypes.fillMode, rounded: commonArgTypes.rounded, min: { control: 'text' }, max: { control: 'text' } },
 };
 export default meta;
 type Story = StoryObj<LcDateInputComponent>;
 
 /** Every input is bound: change them in the Controls panel (`min` and `max` take an ISO date such as 2026-11-30). */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['min', 'max', 'invalid', 'touched'] } },
   render: (args) => ({
     props: { ...args, date: signal<string | null>('2026-11-12') },
     template: `

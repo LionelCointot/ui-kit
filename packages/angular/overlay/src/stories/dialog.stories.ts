@@ -82,6 +82,9 @@ type Story = StoryObj<Args>;
 
 /** Click the button to open the dialog: every control (title, message, close button, size, dismissal, role) is applied. */
 export const Playground: Story = {
+  // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
+  // dismissible : comportement à la fermeture, sans effet visible sur le rendu.
+  parameters: { controlsCheck: { openWith: 'button', stateDependent: ['dismissible'] } },
   render: (args) => ({
     props: { ...args, config: { size: args.size, dismissible: args.dismissible, role: args.role, ariaDescribedBy: 'lc-dialog-demo-message' } satisfies LcDialogConfig<unknown> },
     template: `<lc-dialog-demo [title]="title" [message]="message" [hideClose]="hideClose" [config]="config" />`,

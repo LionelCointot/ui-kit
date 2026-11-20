@@ -21,6 +21,8 @@ type Story = StoryObj<LcTabsComponent>;
 
 /** Every input is bound: `selected` picks the active tab, `activation` changes how arrow keys behave. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['activation'] } },
   render: (args) => ({
     props: args,
     template: `

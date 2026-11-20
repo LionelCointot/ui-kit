@@ -47,6 +47,8 @@ const NAV = (collapsed: boolean, collapsible: boolean) => `<nav aria-label="Navi
 
 /** Every input is bound: the first group follows the controls, the second one stays collapsible. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['expanded'] } },
   render: (args) => ({
     props: args,
     template: `<nav aria-label="Navigation principale" style="max-width:16rem">

@@ -30,6 +30,8 @@ type Story = StoryObj<LcPasswordInputComponent>;
 
 /** Every input is bound: change them in the Controls panel. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['touched'] } },
   render: (args) => ({
     props: { ...args, password: signal('') },
     template: `

@@ -57,7 +57,8 @@ class DrawerDemoComponent {
   }
 }
 
-type Args = LcDrawerComponent & Required<Pick<LcDrawerConfig<DrawerData>, 'side' | 'size' | 'disableClose' | 'closeOnBackdrop'>>;
+/** Entrées de `lc-drawer` montrées dans la démo, plus les options du service passées à `open()`. */
+type Args = DrawerData & Required<Pick<LcDrawerConfig<DrawerData>, 'side' | 'size' | 'disableClose' | 'closeOnBackdrop'>>;
 
 /**
  * Side panel opened by `LcDrawerService.open(Component, config)`: focus is trapped then restored, Escape and a click on the backdrop close it.
@@ -82,6 +83,9 @@ type Story = StoryObj<Args>;
 
 /** Click the button to open the drawer: every control (title, close button, side, size, dismissal) is applied. */
 export const Playground: Story = {
+  // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
+  // closeOnBackdrop : comportement à la fermeture, sans effet visible sur le rendu.
+  parameters: { controlsCheck: { openWith: 'button', stateDependent: ['closeOnBackdrop'] } },
   render: (args) => ({
     props: {
       config: {

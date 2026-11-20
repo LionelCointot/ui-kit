@@ -20,13 +20,15 @@ const meta: Meta<LcNumberInputComponent> = {
     decimals: 0, step: 1, unit: 'mois', showStepper: true, min: 0, max: 360, placeholder: '', size: 'medium', fillMode: 'solid', rounded: 'medium',
     disabled: false, readonly: false, required: false, invalid: false, touched: false,
   },
-  argTypes: { ...commonArgTypes, min: { control: 'number' }, max: { control: 'number' } },
+  argTypes: { size: commonArgTypes.size, fillMode: commonArgTypes.fillMode, rounded: commonArgTypes.rounded, min: { control: 'number' }, max: { control: 'number' } },
 };
 export default meta;
 type Story = StoryObj<LcNumberInputComponent>;
 
 /** Every input is bound: change them in the Controls panel. */
 export const Playground: Story = {
+  // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['min', 'max', 'step', 'invalid', 'touched'] } },
   render: (args) => ({
     props: { ...args, duration: signal<number | null>(24) },
     template: `
