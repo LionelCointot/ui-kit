@@ -423,7 +423,7 @@ describe('LcTableComponent', () => {
   template: `
     <lc-table caption="Lignes" [data]="data()" [columns]="columns" [trackBy]="trackBy" [groupBy]="grouping()" [(sort)]="sort"
       [selectable]="selectable()" [(selection)]="selection" [isRowSelectable]="canSelect" selectAllHint="Agit sur tout le jeu"
-      [rowTone]="tone" [footer]="{ amount: 1 }" />
+      [rowClass]="tone" [footer]="{ amount: 1 }" />
   `,
 })
 class SelectionHostComponent {
@@ -439,7 +439,7 @@ class SelectionHostComponent {
   readonly grouping = signal<LcTableGrouping<Row> | undefined>(undefined);
   /** Bob (id 3) n'est pas cochable. */
   readonly canSelect = (row: Row) => row.id !== 3;
-  readonly tone = (row: Row) => (row.id === 1 ? 'success' : row.id === 2 ? 'error' : row.id === 4 ? ('inconnu' as never) : null);
+  readonly tone = (row: Row) => (row.id === 1 ? 'a' : row.id === 2 ? ['b', 'c'] : null);
 }
 
 describe('LcTableComponent : sélection et teinte (K1, K4)', () => {
@@ -555,12 +555,11 @@ describe('LcTableComponent : sélection et teinte (K1, K4)', () => {
     expect(head().indeterminate).toBe(false);
   });
 
-  it('CA-K4-1 : rowTone pose la classe du rôle ; null et rôle inconnu : aucune', async () => {
+  it('CA-K4-1 : rowClass pose les classes rendues (chaîne, tableau) sur les lignes de données ; aucune pour null', async () => {
     const { element } = await setup();
     const trs = element.querySelectorAll('tbody tr');
-    expect(trs[0].classList.contains('lc-table__row--success')).toBe(true);
-    expect(trs[1].classList.contains('lc-table__row--error')).toBe(true);
+    expect(trs[0].classList.contains('a')).toBe(true);
+    expect(trs[1].classList.contains('b') && trs[1].classList.contains('c')).toBe(true);
     expect(trs[2].className).toBe('');
-    expect(trs[3].className).toBe('');
   });
 });

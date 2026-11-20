@@ -140,7 +140,7 @@ export const Empty: Story = {
   }),
 };
 
-/** Selection column (`selectable`, `[(selection)]`): Bob's row cannot be ticked (`isRowSelectable`), the header box is partial when only some rows are ticked, and `rowTone` tints rows by status role (colour is never the only cue: the status column says it too). Check it in both themes. */
+/** Selection column (`selectable`, `[(selection)]`): Bob's row cannot be ticked (`isRowSelectable`), the header box is partial when only some rows are ticked, and `rowClass` adds classes to data rows; here the story's own stylesheet tints them with `--lc-table-row-background` (kit tokens only; colour is never the only cue: the status column says it too). Check it in both themes. */
 export const SelectionAndTones: Story = {
   parameters: fixedExample,
   render: () => ({
@@ -148,10 +148,18 @@ export const SelectionAndTones: Story = {
       data: orders.slice(0, 6), columns, trackBy,
       selection: new Set<unknown>([1, 2]),
       canSelect: (row: Order) => row.id !== 3,
-      tone: (row: Order) => (row.id === 1 ? 'success' : row.id === 2 ? 'info' : row.id === 3 ? 'error' : row.id === 4 ? 'warning' : null),
+      tone: (row: Order) => (row.id <= 4 ? `story-tone story-tone--${['success', 'info', 'error', 'warning'][row.id - 1]}` : null),
     },
-    template: `<lc-table caption="Commandes à traiter" [data]="data" [columns]="columns" [trackBy]="trackBy" [selectable]="true" [(selection)]="selection"
-      [isRowSelectable]="canSelect" [rowTone]="tone" selectAllHint="La case en haut du tableau agit sur toutes les commandes." />
+    template: `<style>
+      .story-tone { --lc-table-row-background: var(--_bg); color: var(--_fg); }
+      .story-tone > :first-child { border-inline-start: var(--lc-sys-border-width-thick) solid var(--_bar); }
+      .story-tone--success { --_bg: var(--lc-sys-color-success-container); --_fg: var(--lc-sys-color-on-success-container); --_bar: var(--lc-sys-color-success); }
+      .story-tone--info { --_bg: var(--lc-sys-color-info-container); --_fg: var(--lc-sys-color-on-info-container); --_bar: var(--lc-sys-color-info); }
+      .story-tone--error { --_bg: var(--lc-sys-color-error-container); --_fg: var(--lc-sys-color-on-error-container); --_bar: var(--lc-sys-color-error); }
+      .story-tone--warning { --_bg: var(--lc-sys-color-warning-container); --_fg: var(--lc-sys-color-on-warning-container); --_bar: var(--lc-sys-color-warning); }
+    </style>
+    <lc-table caption="Commandes à traiter" [data]="data" [columns]="columns" [trackBy]="trackBy" [selectable]="true" [(selection)]="selection"
+      [isRowSelectable]="canSelect" [rowClass]="tone" selectAllHint="La case en haut du tableau agit sur toutes les commandes." />
       <p>{{ selection.size }} sélectionnée(s)</p>`,
   }),
 };
