@@ -7,7 +7,6 @@ import {
 } from './table-model';
 
 let nextId = 0;
-const TONES: readonly string[] = ['success', 'info', 'error', 'warning'];
 
 /**
  * Tableau de données : `<table>` natif, tri côté client par défaut, ou émis seulement avec `sortMode="external"` (en-tête-bouton, `aria-sort`, `[(sort)]`), groupes repliables
@@ -70,7 +69,7 @@ const TONES: readonly string[] = ['success', 'info', 'error', 'warning'];
                 }
               </tr>
             } @else {
-              <tr [class]="rowClass(item.row)">
+              <tr [class]="rowClasses(item.row)">
                 @if (selectable()) {
                   <td class="lc-table__cell lc-table__select">
                     <label class="lc-table__select-hit">
@@ -159,8 +158,8 @@ export class LcTableComponent<T> {
   readonly selectionLabel = input<string>();
   /** Aide sous le tableau, reliée à la case d'en-tête (`aria-describedby`). */
   readonly selectAllHint = input<string>();
-  /** Teinte d'une ligne par rôle d'état ; `null` : aucune. */
-  readonly rowTone = input<(row: T) => 'success' | 'info' | 'error' | 'warning' | null>();
+  /** Classes posées sur la ligne de données (pas sur les groupes ni le pied). Pour un fond, poser `--lc-table-row-background` : le survol du kit s'y mélange. */
+  readonly rowClass = input<(row: T) => string | readonly string[] | null>();
   readonly groupToggled = output<{ key: string; expanded: boolean }>();
 
   protected readonly hintId = `lc-table-hint-${nextId++}`;
@@ -212,12 +211,8 @@ export class LcTableComponent<T> {
     this.announced.set(true);
   }
 
-  protected rowClass(row: T): string | null {
-    const tone = this.rowTone()?.(row);
-    if (!tone) return null;
-    if (TONES.includes(tone)) return `lc-table__row--${tone}`;
-    if (isDevMode()) console.warn(`lc-table: rôle de teinte inconnu « ${String(tone)} ».`);
-    return null;
+  protected rowClasses(row: T): string | readonly string[] | null {
+    return this.rowClass()?.(row) ?? null;
   }
 
   protected cellClass(column: LcTableColumn<T>): string {

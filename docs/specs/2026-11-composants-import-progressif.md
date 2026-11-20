@@ -1,4 +1,4 @@
-# Spec : sélection et teinte de ligne dans `lc-table`, info-bulle cliquable, texte tronqué qui défile (K1 à K4)
+# Spec : sélection et classes de ligne dans `lc-table`, info-bulle cliquable, texte tronqué qui défile (K1 à K4)
 
 - **Statut** : Validée le 2026-11-20 par l'utilisateur (« Oui »), en cours de réalisation
 - **Date** : 2026-11-20
@@ -33,7 +33,7 @@ La règle de copro-ticket interdit d'écrire ces éléments génériques chez lu
 | K1 | Sélection dans `lc-table` | `data` | Entrée booléenne `selectable` : première colonne de cases `lcCheckbox` ; `selection` en `model()` (clés `trackBy` des lignes cochées, sur tout le jeu de données) ; `isRowSelectable` (prédicat) : case désactivée et ignorée par l'en-tête ; case d'en-tête : coche ou décoche toutes les lignes cochables du jeu, état partiel (`indeterminate`, `aria-checked="mixed"`) |
 | K2 | Info-bulle cliquable `lc-toggletip` | `overlay` | Bulle ancrée à un bouton natif, ouverte au clic, au toucher, à Entrée ou Espace ; fermée par Échap (le focus reste sur le bouton), un clic ailleurs, un second clic ou la perte du focus ; une seule ouverte à la fois ; contenu riche projeté ; flèche ; repli de position si la place manque ; peut porter une information indispensable |
 | K3 | Texte tronqué qui défile `[lcTruncate]` | principal | Sur un élément de texte : une ligne, points de suspension s'il déborde ; au survol, le texte défile jusqu'à la fin puis revient ; rien ne bouge s'il ne déborde pas ; texte entier exposé aux technologies d'assistance |
-| K4 | Teinte de ligne dans `lc-table` | `data` | Une ligne peut prendre la teinte d'un rôle d'état (succès, information, erreur, avertissement) : fond `*-container` et liseré de la couleur du rôle, pour distinguer d'un coup d'œil les lignes qui changent (demandé par la maquette retenue : « vert : tout est nouveau, bleu : modification, rouge pour la suppression, orange pour dire conservation par contrainte ») |
+| K4 | Classes de ligne dans `lc-table` | `data` | Le consommateur peut poser ses propres classes sur chaque ligne de données (fond, liseré : teintes d'état écrites dans sa feuille, avec les tokens du kit), pour distinguer d'un coup d'œil les lignes qui changent (demandé par la maquette retenue : « vert : tout est nouveau, bleu : modification, rouge pour la suppression, orange pour dire conservation par contrainte ») |
 
 ## 3. Hors périmètre (non-objectifs)
 - Sélection par plage (Maj+clic), sélection dans `lc-data-table` et `lc-tree-table` : sans consommateur.
@@ -83,7 +83,7 @@ N/A.
 - Le texte entier reste dans le DOM. Mesure refaite au redimensionnement (`ResizeObserver`) et au changement du texte.
 
 **K4, teinte de ligne dans `lc-table`** (ajout) :
-- `rowTone = input<(row: T) => 'success' | 'info' | 'error' | 'warning' | null>()` : la ligne prend le fond `--lc-sys-color-<rôle>-container`, le texte `on-<rôle>-container` et un liseré de début de ligne `--lc-sys-color-<rôle>` (tokens `--lc-table-row-*` avec repli sur `sys`). Couleur jamais seule porteuse de sens : le consommateur garde un libellé dans la ligne.
+- `rowClass = input<(row: T) => string | readonly string[] | null>()` : classes posées sur la `<tr>` de la ligne de données (ni groupes ni pied), en plus de celles du kit. Le kit ne fournit aucune teinte : le consommateur les écrit dans sa feuille globale avec les tokens `sys`. Pour un fond, il pose `--lc-table-row-background` sur la ligne : les cellules l'utilisent (repli sur le fond du tableau) et le fond de survol du kit s'y mélange au lieu de le masquer. Couleur jamais seule porteuse de sens : le consommateur garde un libellé dans la ligne.
 
 ### 5.4 Interface utilisateur
 Référence visuelle : maquettes de copro-ticket citées en source. Rendu selon `DESIGN.md` du kit : tokens seulement, deux thèmes, focus visible, cibles de 44 px (la case dans sa cellule, le bouton déclencheur). Bulle : `surface-raised`, bordure, rayon et ombre du kit, flèche vers le déclencheur. Chaque élément a sa story (états, deux thèmes, 360 px), dont : tableau avec lignes non cochables, case d'en-tête partielle et lignes teintées ; bulle près d'un bord ; nom tronqué au survol.
@@ -92,7 +92,7 @@ Référence visuelle : maquettes de copro-ticket citées en source. Rendu selon 
 - K1 : `data` vide ou sans ligne cochable : case d'en-tête désactivée ; tri client ou externe : la sélection suit les clés, pas les positions ; groupes repliés : comptés par l'en-tête ; `trackBy` qui rend deux fois la même clé : avertissement console en développement.
 - K2 : déclencheur qui n'est pas un `button` : avertissement en développement ; déclencheur retiré (ligne triée ou supprimée) : bulle fermée ; place manquante de tous les côtés : la bulle est poussée dans la fenêtre.
 - K3 : texte changé pendant le défilement : défilement arrêté, mesure refaite ; parent sans largeur bornée : rien ne déborde, rien ne bouge ; texte de droite à gauche : défilement dans le sens de lecture (`text-indent` est relatif au sens).
-- K4 : rôle inconnu : aucune teinte, avertissement en développement.
+- K4 : `rowClass` renvoie `null` ou une chaîne vide : aucune classe ajoutée.
 
 ## 7. Sécurité, performance, observabilité
 - Sécurité : aucun `innerHTML` ; contenu de la bulle par projection.
@@ -108,7 +108,8 @@ Référence visuelle : maquettes de copro-ticket citées en source. Rendu selon 
 | `transform` pour faire défiler le texte | Accéléré | Déplacerait l'élément entier, pas son texte, sans enveloppe ajoutée | Non : `text-indent` |
 | Ligne dépliée sous la ligne du tableau | Aucun nouvel élément | Écartée par l'utilisateur (« info bulle ») | Non |
 | Boutons « Tout cocher » et « Tout décocher » chez le consommateur | Aucun changement du kit | Écartés par l'utilisateur (« afin que ce soit natif ») | Non |
-| `rowClass` libre | Souple | Styles du consommateur à percer dans le composant ; couleurs hors tokens | Non : `rowTone` |
+| `rowTone` (rôles d'état fournis par le kit) | Teintes prêtes | Moins générique : le kit fixerait des rôles et des couleurs que le consommateur ne maîtrise pas | Non, écarté à la demande de l'utilisateur |
+| `rowClass` (classes du consommateur) | Générique, le kit ne connaît aucun rôle ; fond par variable CSS | Le consommateur écrit ses styles | Oui, retenu à la demande de l'utilisateur |
 
 ## 9. Plan de test
 Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas d'animation, pas de toucher). Faux à réutiliser : `FakeResizeObserver`, `scrollWidth` espionné, `matchMedia` surchargé (`tabs.component.spec.ts`), lecture de la stratégie de position du CDK (`tooltip-positions.spec.ts`). Événements clavier : tester le `click()` du bouton, jsdom ne transforme pas Entrée en clic.
@@ -130,14 +131,14 @@ Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas
 - [ ] CA-K3-1 (unitaire) : sans débordement mesuré, ni `title`, ni classe de défilement au survol.
 - [ ] CA-K3-2 (unitaire, puis story) : avec débordement, au survol la directive pose `--lc-truncate-overflow` égal au débordement et la classe de défilement, et les retire à la sortie ; dans la story, le texte se termine par « … » au repos et défile au survol.
 - [ ] CA-K3-3 (unitaire) : avec `prefers-reduced-motion: reduce`, aucune classe de défilement ; `title` donne le texte entier, posé seulement s'il déborde ; le réglage est relu à chaque survol.
-- [ ] CA-K4-1 (unitaire) : `rowTone` pose sur la ligne la classe du rôle rendu, aucune pour `null` ; story : fond et liseré par tokens, contraste du texte vérifié dans les deux thèmes.
+- [ ] CA-K4-1 (unitaire) : `rowClass` pose sur les lignes de données les classes rendues (chaîne et tableau), aucune pour `null` ; story : fond et liseré par une feuille de la story (tokens seulement), contraste du texte vérifié dans les deux thèmes.
 - [ ] CA-K-5 : libellés par `LC_LABELS` en français et en anglais (unitaire) ; aucune couleur, taille ni durée en dur (revue) ; chaque story passe `storybook-browser.mjs` en clair et en sombre ; `catalogue:check` vert.
 
 ## 11. Découpage en tâches
 - [ ] K1 : sélection dans `lc-table`, tests, story (M).
 - [ ] K2 : positions partagées avec `lcTooltip`, `lc-toggletip`, tests, story (M).
 - [ ] K3 : `lcTruncate`, token `--lc-truncate-speed`, tests, story (S).
-- [ ] K4 : `rowTone` dans `lc-table`, tests, story (S).
+- [ ] K4 : `rowClass` dans `lc-table`, tests, story (S).
 - [ ] K5 : catalogue, publication locale pour copro-ticket (`deps:refresh`) (S).
 
 ## 12. Risques et questions ouvertes
