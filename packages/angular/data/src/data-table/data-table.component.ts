@@ -39,7 +39,7 @@ interface HeaderView<T> {
   readonly labelTail: string;
   readonly active: boolean;
   readonly sortState: 'none' | 'asc' | 'desc';
-  readonly ariaSort: 'none' | 'ascending' | 'descending' | null;
+  readonly ariaSort: 'ascending' | 'descending' | null;
   readonly sortIcon: string;
   readonly funnelLabel: string;
   readonly funnelTip: string;
@@ -150,7 +150,7 @@ export class LcDataTableComponent<T> {
     const cut = column.label.lastIndexOf(' ') + 1;
     return {
       column, active, sortState, labelHead: column.label.slice(0, cut), labelTail: column.label.slice(cut),
-      ariaSort: !column.sortable ? null : sortState === 'asc' ? 'ascending' : sortState === 'desc' ? 'descending' : 'none',
+      ariaSort: sortState === 'asc' ? 'ascending' : sortState === 'desc' ? 'descending' : null,
       sortIcon: sortState === 'asc' ? 'arrow-up' : sortState === 'desc' ? 'arrow-down' : 'arrow-up-down',
       funnelLabel: this.text.filterColumn(column.label, state),
       funnelTip: active ? this.text.activeFilterTooltip(this.summary(column, value, true)) : this.text.filterTooltip,
@@ -336,9 +336,11 @@ export class LcDataTableComponent<T> {
     this.panelDraft.set({ ...this.query().filters });
     this.panelSection.set(section);
     this.panelOpen.set(true);
-    const dialog = this.panel().nativeElement;
-    if (!dialog.open) dialog.showModal?.();
-    afterNextRender(() => dialog.focus(), { injector: this.injector });
+    // Une fois le contenu rendu : `showModal()` donne le focus au contrôle `autofocus`.
+    afterNextRender(() => {
+      const dialog = this.panel().nativeElement;
+      if (!dialog.open) dialog.showModal?.();
+    }, { injector: this.injector });
   }
 
   protected closePanel(): void {

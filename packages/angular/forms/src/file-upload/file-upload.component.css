@@ -128,27 +128,12 @@
   min-inline-size: 0;
 }
 
-/* Nom long : seul le radical est coupé (…), l'extension reste visible ; le nom entier est dans le titre. */
 .lc-file-upload__name {
-  display: flex;
+  display: block;
   max-inline-size: 100%;
   font-weight: var(--lc-sys-font-weight-medium);
-}
-
-.lc-file-upload__stem {
-  overflow: hidden;
-  min-inline-size: 0;
-  white-space: nowrap;
-}
-
-.lc-file-upload__extension {
-  flex: none;
-}
-
-/* Le radical est coupé net (pas de text-overflow : « … » laisserait un vide avant l'extension) ; le composant pose
-   la classe `--cut` quand le radical déborde. */
-.lc-file-upload__name--cut .lc-file-upload__extension::before {
-  content: '…';
+  /* Le nom passe à la ligne : le texte entier reste lisible au clavier et au toucher, sans survol. */
+  overflow-wrap: anywhere;
 }
 
 .lc-file-upload__meta {

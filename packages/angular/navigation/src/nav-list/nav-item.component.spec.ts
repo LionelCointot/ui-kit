@@ -37,4 +37,14 @@ describe('LcNavItemComponent', () => {
     expect(links[1].getAttribute('aria-current')).toBe('page');
     expect(links[1].querySelector('.lc-nav-item__badge')!.textContent).toBe('2');
   });
+
+  it('libellé déplié : passe à la ligne au lieu d\'être tronqué (texte entier sans survol)', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(NavHostComponent);
+    await fixture.whenStable();
+    const label = getComputedStyle((fixture.nativeElement as HTMLElement).querySelector('.lc-nav-item__label')!);
+    expect(label.textOverflow).not.toBe('ellipsis');
+    expect(label.whiteSpace).not.toBe('nowrap');
+    expect(label.overflowWrap).toBe('anywhere');
+  });
 });

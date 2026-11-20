@@ -73,6 +73,7 @@
   inset-inline-start: 0;
   z-index: var(--lc-sys-z-dialog);
   max-inline-size: 85vw;
+  overscroll-behavior: contain;
   box-shadow: var(--lc-sys-shadow-4);
   visibility: hidden;
   transform: translateX(-100%);

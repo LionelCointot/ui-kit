@@ -6,7 +6,9 @@ const FALLBACK_SPEED = 96;
 const FORWARD_SHARE = 0.4;
 
 /**
- * Texte sur une seule ligne, tronqué par « … » ; au survol, il défile jusqu'à la fin puis revient.
+ * Texte sur une seule ligne, tronqué par « … » ; au survol et au focus clavier (si l'élément est focalisable), il défile
+ * jusqu'à la fin puis revient. Le défilement ne se déclenche pas au toucher : l'élément doit alors afficher son texte entier
+ * ailleurs (ligne de détail, élément sélectionné, passage à la ligne).
  * Rien ne bouge s'il ne déborde pas. Avec `prefers-reduced-motion: reduce`, pas de défilement :
  * `title` donne le texte entier, seulement s'il déborde. Styles : feuille globale `ui-angular.css`.
  */
@@ -16,11 +18,14 @@ const FORWARD_SHARE = 0.4;
     class: 'lc-truncate',
     '(mouseenter)': 'setHovered(true)',
     '(mouseleave)': 'setHovered(false)',
+    '(focusin)': 'setFocused(true)',
+    '(focusout)': 'setFocused(false)',
   },
 })
 export class LcTruncateDirective {
   private readonly element: HTMLElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private hovered = false;
+  private focused = false;
   private ownsTitle = false;
   private ownedTitle = '';
 
@@ -38,6 +43,11 @@ export class LcTruncateDirective {
 
   protected setHovered(hovered: boolean): void {
     this.hovered = hovered;
+    this.sync();
+  }
+
+  protected setFocused(focused: boolean): void {
+    this.focused = focused;
     this.sync();
   }
 
@@ -61,7 +71,7 @@ export class LcTruncateDirective {
       this.ownsTitle = false;
     }
 
-    if (this.hovered && !reduced && overflow > 0) {
+    if ((this.hovered || this.focused) && !reduced && overflow > 0) {
       const speed = parseFloat(getComputedStyle(el).getPropertyValue('--lc-truncate-speed')) || FALLBACK_SPEED;
       el.style.setProperty('--lc-truncate-overflow', `${overflow}px`);
       el.style.setProperty('--lc-truncate-duration', `${overflow / speed / FORWARD_SHARE}s`);

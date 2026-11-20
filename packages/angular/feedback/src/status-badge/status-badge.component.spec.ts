@@ -101,6 +101,14 @@ describe('LcStatusBadgeComponent', () => {
     expect(badge.querySelector('.lc-status-badge__label')!.textContent).toBe(long);
   });
 
+  it('un libellé long passe à la ligne : pas de points de suspension, texte entier visible', async () => {
+    const { badge } = await setup();
+    const label = getComputedStyle(badge.querySelector('.lc-status-badge__label')!);
+    expect(getComputedStyle(badge).whiteSpace).not.toBe('nowrap');
+    expect(label.textOverflow).not.toBe('ellipsis');
+    expect(label.overflowWrap).toBe('anywhere');
+  });
+
   // CA-K1.1 (avertissement)
   describe('avertissement en développement', () => {
     afterEach(() => vi.restoreAllMocks());

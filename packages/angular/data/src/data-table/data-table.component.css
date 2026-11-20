@@ -139,9 +139,8 @@ lc-data-table {
 }
 
 .lc-data-table__chip-value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: start;
 }
 
 .lc-data-table__chip-remove {
@@ -592,12 +591,10 @@ lc-data-table {
 
 .lc-data-table__section-summary {
   display: block;
-  overflow: hidden;
+  overflow-wrap: anywhere;
   color: var(--lc-sys-color-on-surface-muted);
   font-size: var(--lc-sys-font-size-sm);
   font-weight: var(--lc-sys-font-weight-regular);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .lc-data-table__section-summary--on {

@@ -90,7 +90,7 @@ describe('LcTooltipDirective : positions de repli (D5)', () => {
         const host = /\[_nghost[^\]]*\]\{([^}]*)\}/.exec(panelStyles())?.[1] ?? '';
         expect(host).toMatch(/(^|;)padding:var\(--lc-sys-space-1\)(;|$)/);
         expect(host).not.toMatch(/background|border|box-shadow/);
-        expect(host).toContain('pointer-events:none');
+        expect(host).not.toContain('pointer-events'); // l'écart reçoit le pointeur : la bulle est survolable (WCAG 1.4.13)
       });
 
       it('CA-D5 : la partie visible est .lc-tooltip__box (fond, texte), l\'écart ne se voit pas', () => {

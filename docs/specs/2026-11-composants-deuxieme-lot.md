@@ -46,7 +46,7 @@ K1 : section « Livré ». K9 : section « Livré (V2) ».
 Référence : les écrans du brief (bloc de dépôt de photos ; réglages d'une liste). Le rendu suit `DESIGN.md` : tokens seulement, deux thèmes, cibles de 44 px, focus visible, utilisable à 360 et 320 px sans défilement horizontal. Chaque composant a ses stories (vide, états, cas limites, dans `lc-form-field`).
 
 ## 6. Cas limites et gestion des erreurs
-- Nom de fichier très long ou sans espace : le radical est coupé, l'extension reste visible, pas de défilement horizontal.
+- Nom de fichier très long ou sans espace : le nom passe à la ligne (écart du 2026-11-20), pas de défilement horizontal.
 - Aperçu qui ne se charge pas : la ligne passe à l'icône « image indisponible ».
 - Limite atteinte : le choix est inactif et le dit ; un dépôt à la souris est refusé (`rejected`, raison `count`).
 - Fichiers refusés (type, nombre) : le composant ne dit rien de plus que ses sorties ; l'application choisit son message.
@@ -77,7 +77,7 @@ Référence : les écrans du brief (bloc de dépôt de photos ; réglages d'une 
 - [ ] CA-L2-3 : le bouton ouvre le sélecteur natif (`accept` et `multiple` transmis) ; un dépôt à la souris donne le même résultat ; `filesAdded` n'émet que des fichiers de type accepté et dans la limite de `maxFiles` (un seul fichier par choix sans `multiple`).
 - [ ] CA-L2-4 : `rejected` émet chaque fichier refusé avec la raison `type` ou `count` ; rien n'est émis quand tout est accepté.
 - [ ] CA-L2-5 : au maximum atteint, le bouton porte `aria-disabled="true"` (il reste atteignable au clavier), un texte visible le dit, il est relié au bouton par `aria-describedby` et annoncé ; ni le sélecteur ni un dépôt n'ajoutent de fichier.
-- [ ] CA-L2-6 : chaque ligne montre un aperçu (ou une icône), le nom (radical coupé, extension visible), la taille lisible dans la langue des libellés, et selon l'état : en attente, barre de progression avec `aria-valuenow` (indéterminée sans valeur), terminé, ou message d'erreur.
+- [ ] CA-L2-6 : chaque ligne montre un aperçu (ou une icône), le nom (passe à la ligne, jamais coupé), la taille lisible dans la langue des libellés, et selon l'état : en attente, barre de progression avec `aria-valuenow` (indéterminée sans valeur), terminé, ou message d'erreur.
 - [ ] CA-L2-7 : « Retirer » (nom accessible « Retirer {nom} ») et, en erreur, « Réessayer » émettent `remove` et `retry` avec l'identifiant de la ligne ; le composant ne modifie jamais `items`.
 - [ ] CA-L2-8 : tout se fait au clavier ; la progression est annoncée au début et à la fin, jamais à chaque pourcentage ; une erreur est annoncée (`role="alert"`) ; après un retrait, le focus va à la ligne suivante, sinon à la précédente, sinon au bouton de choix.
 - [ ] CA-L2-9 : dans `lc-form-field`, le libellé nomme le groupe, l'aide et l'erreur sont reliées par `aria-describedby`, un clic sur le libellé met le focus sur le bouton de choix ; hors du champ, `ariaLabel` nomme le groupe.
@@ -85,7 +85,7 @@ Référence : les écrans du brief (bloc de dépôt de photos ; réglages d'une 
 - [ ] CA-L2-11 : à 360 px et à 320 px, aucun défilement horizontal, cibles de 44 px.
 - [ ] CA-L2-12 : `lc-list-editor` (V2) : ajout, renommage (Entrée valide, Échap annule et rend le focus à « Renommer »), déplacement par boutons (inertes aux extrémités) et par Alt + flèche haut ou bas, activation ; ligne protégée ni renommable ni désactivable mais réordonnable, avec sa raison ; interrupteur inerte sur le dernier élément actif (`minActive`, les protégés comptent) avec sa raison ; erreurs détectées (vide, trop long, doublon) sans émission, erreurs de l'application par ligne et sous le champ d'ajout ; `modified` ; états occupé, désactivé et vide ; tout sort en événements, le composant ne modifie jamais `items`.
 - [ ] CA-L2-14 : `lc-list-editor` : chaque commande est nommée avec le libellé de sa ligne ; après un déplacement, le focus suit la commande dans la nouvelle ligne et la position est annoncée ; après un ajout, le focus reste au champ d'ajout, qui est vidé quand l'élément apparaît, et l'ajout est annoncé ; dans `lc-form-field`, le libellé nomme le groupe ; utilisable à 360 et 320 px sans défilement horizontal, cibles de 44 px.
-- [ ] CA-L2-15 : retouches de `lc-file-upload` (V2) : 999 999 octets s'affichent « 1 Mo » (passage à l'unité supérieure quand l'arrondi atteint 1 000), jamais de décimale nulle (« 2 Mo ») ; un nom coupé affiche « … » contre l'extension, sans espace.
+- [ ] CA-L2-15 : retouches de `lc-file-upload` (V2) : 999 999 octets s'affichent « 1 Mo » (passage à l'unité supérieure quand l'arrondi atteint 1 000), jamais de décimale nulle (« 2 Mo ») ; le nom passe à la ligne, jamais coupé, sans `title` (écart du 2026-11-20, voir « Écarts constatés »).
 - [ ] CA-L2-13 : chaque composant a ses stories ; `npx ng test ui-angular --watch=false`, `npm run build` et `npm run build-storybook` réussissent ; aucun vocabulaire métier.
 
 ## 11. Découpage en tâches
@@ -93,7 +93,6 @@ Référence : les écrans du brief (bloc de dépôt de photos ; réglages d'une 
 - [x] V2 : liste modifiable (K9), deux retouches de `lc-file-upload`, stories, documentation (M, couvre CA-L2-12, CA-L2-14, CA-L2-15 et CA-L2-13 pour V2 ; tests écrits ensuite par la QA)
 
 ## 12. Risques et questions ouvertes
-- Un nom qui se termine par un point ou une longue « extension » n'est pas séparé : le nom entier est coupé alors.
 - Le retrait annoncé et le focus après retrait supposent que l'application retire la ligne de `items` en réponse à `remove` ; si elle demande d'abord une confirmation, rien n'est annoncé ni déplacé tant que la ligne reste.
 - Les tailles utilisent des unités décimales (1 Ko = 1 000 octets), comme l'affichage courant en français.
 - K9 : le brief du consommateur voulait une ligne protégée sans commande et toujours en dernier ; ici elle reste réordonnable. Pour une ligne fixe en dernière position, l'application la rend elle-même après le composant.
@@ -129,7 +128,7 @@ Stories : `Formulaires/Dépôt de fichiers` (`Vide`, `UnFichierEnCours`, `EtatsM
 | Id | Élément | Point d'entrée | API |
 |---|---|---|---|
 | K9 | `lc-list-editor` (`LcListEditorComponent`) | `forms` | Voir ci-dessous |
-| V1 | `lc-file-upload`, deux retouches | `forms` | Taille : passage à l'unité supérieure quand l'arrondi atteint 1 000 (999 999 o : « 1 Mo »), décimale nulle omise (« 2 Mo »). Nom coupé : le radical est coupé net (plus de `text-overflow: ellipsis`, qui laissait un vide avant l'extension) ; le composant mesure les radicaux qui débordent (`ResizeObserver`, absent en test : alors aucune coupe) et pose « … » contre l'extension (classe `lc-file-upload__name--cut`) |
+| V1 | `lc-file-upload`, deux retouches | `forms` | Taille : passage à l'unité supérieure quand l'arrondi atteint 1 000 (999 999 o : « 1 Mo »), décimale nulle omise (« 2 Mo »). Nom long : passe à la ligne (`overflow-wrap: anywhere`), jamais coupé, sans `title` (écart du 2026-11-20, voir « Écarts constatés ») |
 
 **Entrées** : `items: readonly LcListEditorItem[]` ; `savedItems: readonly LcListEditorItem[] | null` (état de référence, défaut `null`) ; `minActive: number` (défaut 0, aucune règle ; les protégés comptent comme actifs) ; `maxLength: number | null` (défaut `null`) ; `isDuplicate: (existant, proposé) => boolean` (défaut : égalité insensible à la casse et aux espaces de bord) ; `addLabel`, `addButtonLabel`, `emptyText`, `listLabel` (remplacent les libellés par défaut) ; `addError: string | null` (erreur du champ d'ajout fournie par l'application) ; `disabled` (tout est désactivé nativement) ; `busy` (opération en cours : commandes inertes par `aria-disabled`, elles gardent le focus) ; `ariaLabel` (nom du groupe hors de `lc-form-field`) ; `id`.
 
@@ -156,3 +155,7 @@ Stories : `Formulaires/Dépôt de fichiers` (`Vide`, `UnFichierEnCours`, `EtatsM
 **Libellés `LC_LABELS`** (FR et EN) : `listEditorList`, `listEditorAddLabel`, `listEditorAdd`, `listEditorEmpty`, `listEditorMoveUp(libellé)`, `listEditorMoveDown(libellé)`, `listEditorRename(libellé)`, `listEditorRenameField(libellé)`, `listEditorSave`, `listEditorToggle(libellé)`, `listEditorActive`, `listEditorInactive`, `listEditorLocked`, `listEditorMinActive(min)`, `listEditorRequired`, `listEditorTooLong(max)`, `listEditorDuplicate`, `listEditorPosition(libellé, position, total)`, `listEditorAnnounceAdded(libellé, position)`, `listEditorAnnounceActive(libellé)`, `listEditorAnnounceInactive(libellé)` ; « Annuler » est le libellé existant `cancel`.
 
 Stories : `Formulaires/Liste modifiable` (`Courte`, `LigneProtegee`, `ErreursDeLApplication`, `DernierElementActif`, `ListeLongue`, `Occupee`, `Desactivee`, `Vide`, `A360Pixels`, `DansUnChamp`, `Interactif` : l'état est tenu par la démo ; essayer un champ vide, un doublon, plus de 20 caractères et un libellé contenant « refus »).
+
+## Écarts constatés
+
+- **2026-11-20, CA-L2-15 (nom de fichier long)** : la seconde moitié du critère (« un nom coupé affiche "…" contre l'extension ») est remplacée par « le nom passe à la ligne, jamais coupé, sans `title` ». Raison : l'audit Modern Web Guidance (fiche `ui-atoms/single-line-overflow.md`) relève qu'un nom tronqué, dont le texte entier n'est donné que par `title`, est inaccessible au clavier et au toucher. Correction acceptée par l'utilisateur (« Oui pour les ocrrection »). Retiré du composant : la mesure des radicaux (`ResizeObserver`), la classe `lc-file-upload__name--cut`, le « … » et le découpage radical / extension.

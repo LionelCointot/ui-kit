@@ -1,6 +1,6 @@
 import { A11yModule } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, model, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
@@ -15,7 +15,7 @@ import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lion
   imports: [A11yModule, LcButtonComponent, LcIconComponent],
   template: `
     <a class="lc-shell__skip" href="#lc-main" (click)="focusMain($event)">{{ labels.skipToContent }}</a>
-    <header class="lc-shell__header">
+    <header class="lc-shell__header" [attr.inert]="modalNav() ? '' : null">
       @if (navMode() !== 'none') {
         @if (isDrawer()) {
           <button #menuButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral"
@@ -38,7 +38,7 @@ import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lion
         <nav class="lc-shell__nav" [id]="navId" [attr.aria-label]="navLabel() || null"
           [class.lc-shell__nav--drawer]="isDrawer()" [class.lc-shell__nav--open]="navOpen()"
           [class.lc-shell__nav--collapsed]="!isDrawer() && navCollapsed()"
-          [cdkTrapFocus]="isDrawer() && navOpen()" [cdkTrapFocusAutoCapture]="isDrawer() && navOpen()"
+          [cdkTrapFocus]="modalNav()" [cdkTrapFocusAutoCapture]="modalNav()"
           (keydown.escape)="closeDrawer()">
           <ng-content select="[lcShellNav]" />
         </nav>
@@ -46,7 +46,7 @@ import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lion
           <div class="lc-shell__backdrop" (click)="closeDrawer()"></div>
         }
       }
-      <main class="lc-shell__main" id="lc-main" tabindex="-1"><ng-content /></main>
+      <main class="lc-shell__main" id="lc-main" tabindex="-1" [attr.inert]="modalNav() ? '' : null"><ng-content /></main>
     </div>
   `,
   styleUrl: './app-shell.component.css',
@@ -57,6 +57,7 @@ export class LcAppShellComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly breakpoints = inject(BreakpointObserver);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   private readonly menuButton = viewChild('menuButton', { read: ElementRef<HTMLButtonElement> });
 
   /** `auto` : latéral ≥ 1024 px, tiroir en dessous. `none` : ni bouton de menu, ni `<nav>`, ni tiroir (pages sans navigation, comme la connexion). */
@@ -72,10 +73,14 @@ export class LcAppShellComponent {
   private readonly wide = toSignal(this.breakpoints.observe('(min-width: 1024px)').pipe(map((state) => state.matches)), { initialValue: true });
   protected readonly isDrawer = computed(() => this.navMode() === 'drawer' || (this.navMode() === 'auto' && !this.wide()));
 
+  /** Tiroir ouvert : le reste de la page est inerte (il l'est aussi pour le clavier et les lecteurs d'écran). */
+  protected readonly modalNav = computed(() => this.isDrawer() && this.navOpen());
+
   protected closeDrawer(): void {
     if (!this.navOpen()) return;
     this.navOpen.set(false);
-    this.menuButton()?.nativeElement.focus();
+    // Après le rendu : le bouton de menu est encore inerte tant que le tiroir n'est pas refermé dans le DOM.
+    afterNextRender(() => this.menuButton()?.nativeElement.focus(), { injector: this.injector });
   }
 
   protected focusMain(event: Event): void {

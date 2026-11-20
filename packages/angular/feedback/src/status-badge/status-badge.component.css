@@ -18,7 +18,6 @@
   font-size: var(--_font-size);
   font-weight: var(--lc-sys-font-weight-semibold);
   line-height: var(--lc-sys-font-line-height-normal);
-  white-space: nowrap;
   vertical-align: middle;
 }
 
@@ -63,8 +62,8 @@
 
 .lc-status-badge__label {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Passe à la ligne : le texte entier reste lisible au clavier et au toucher. */
+  overflow-wrap: anywhere;
 }
 
 @media (forced-colors: active) {
