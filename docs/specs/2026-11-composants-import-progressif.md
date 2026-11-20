@@ -1,4 +1,4 @@
-# Spec : sélection dans `lc-table`, info-bulle cliquable, texte tronqué qui défile (K1 à K3)
+# Spec : sélection et teinte de ligne dans `lc-table`, info-bulle cliquable, texte tronqué qui défile (K1 à K4)
 
 - **Statut** : En revue (demandé par l'utilisateur le 2026-11-20, pendant la conception de l'écran « Ouverture des copropriétés » de `copro-ticket`)
 - **Date** : 2026-11-20
@@ -33,6 +33,7 @@ La règle de copro-ticket interdit d'écrire ces éléments génériques chez lu
 | K1 | Sélection dans `lc-table` | `data` | Entrée booléenne `selectable` : première colonne de cases `lcCheckbox` ; `selection` en `model()` (clés `trackBy` des lignes cochées, sur tout le jeu de données) ; `isRowSelectable` (prédicat) : case désactivée et ignorée par l'en-tête ; case d'en-tête : coche ou décoche toutes les lignes cochables du jeu, état partiel (`indeterminate`, `aria-checked="mixed"`) |
 | K2 | Info-bulle cliquable `lc-toggletip` | `overlay` | Bulle ancrée à un bouton natif, ouverte au clic, au toucher, à Entrée ou Espace ; fermée par Échap (le focus reste sur le bouton), un clic ailleurs, un second clic ou la perte du focus ; une seule ouverte à la fois ; contenu riche projeté ; flèche ; repli de position si la place manque ; peut porter une information indispensable |
 | K3 | Texte tronqué qui défile `[lcTruncate]` | principal | Sur un élément de texte : une ligne, points de suspension s'il déborde ; au survol, le texte défile jusqu'à la fin puis revient ; rien ne bouge s'il ne déborde pas ; texte entier exposé aux technologies d'assistance |
+| K4 | Teinte de ligne dans `lc-table` | `data` | Une ligne peut prendre la teinte d'un rôle d'état (succès, information, erreur, avertissement) : fond `*-container` et liseré de la couleur du rôle, pour distinguer d'un coup d'œil les lignes qui changent (demandé par la maquette retenue : « vert : tout est nouveau, bleu : modification, rouge pour la suppression, orange pour dire conservation par contrainte ») |
 
 ## 3. Hors périmètre (non-objectifs)
 - Sélection par plage (Maj+clic), sélection dans `lc-data-table` et `lc-tree-table` : sans consommateur.
@@ -51,92 +52,105 @@ La règle de copro-ticket interdit d'écrire ces éléments génériques chez lu
 
 ## 5. Solution proposée
 ### 5.1 Vue d'ensemble de l'architecture
-Conventions du kit (`CLAUDE.md`) : signaux, OnPush, `host: {}`, tokens `--lc-<composant>-*` avec repli sur `--lc-sys-*`, libellés par `LC_LABELS` (français et anglais), comportement par le CDK seulement, styles `.css`, aucune fonctionnalité CSS hors Baseline 2024. K1 complète `lc-table` sans changer son contrat actuel (ajout seulement : version mineure). K2 est dans `overlay`, à côté de `lcTooltip`, et réutilise son positionnement (CDK Overlay, repli de D5). K3 est une directive du point d'entrée principal, sans dépendance.
+Conventions du kit (`CLAUDE.md`) : signaux, OnPush, `host: {}`, tokens `--lc-<composant>-*` avec repli sur `--lc-sys-*`, libellés par `LC_LABELS` (français et anglais), comportement par le CDK seulement, styles `.css`, aucune fonctionnalité CSS hors Baseline 2024. K1 et K4 complètent `lc-table` sans changer son contrat actuel (ajouts seulement : version mineure). La case de K1 est un `<input type="checkbox" class="lc-checkbox">` natif, stylé par la feuille globale : `data` n'importe pas `forms` (aucune nouvelle exception d'import). K2 est dans `overlay`, à côté de `lcTooltip` ; les positions et l'ordre de repli de `lcTooltip` passent dans un fichier interne partagé (`overlay/src/tooltip/tooltip-positions.ts`, hors `public-api`), sans changer le comportement de `lcTooltip`. K3 est une directive du point d'entrée principal, sans dépendance.
 
 ### 5.2 Modèle de données
 N/A.
 
 ### 5.3 API / interfaces
-**K1, `lc-table`** (ajouts) :
-- `selectable = input(false, { transform: booleanAttribute })`.
-- `selection = model<ReadonlySet<unknown>>(new Set())` : clés rendues par `trackBy`.
-- `isRowSelectable = input<(row: T) => boolean>(() => true)`.
-- `selectionLabel = input<string>()` : nom accessible de la case d'en-tête (par défaut `LC_LABELS`, « Tout sélectionner ») ; `rowSelectionLabel = input<(row: T) => string>()` : nom accessible de chaque case (par défaut « Sélectionner la ligne »).
-- `selectAllHint = input<string>()` : texte d'aide affiché sous le tableau et relié à la case d'en-tête par `aria-describedby`.
-- La case d'en-tête agit sur toutes les lignes cochables de `data` (pas seulement celles d'un groupe replié ni d'une page). Lignes non cochables : case désactivée, jamais modifiées par l'en-tête, leur clé n'entre ni ne sort de `selection` par l'en-tête.
-- Une région `aria-live="polite"` annonce le compte après chaque changement (« 45 sélectionnées sur 46 », par `LC_LABELS`).
-- Clavier : Tab atteint chaque case ; Espace la bascule. Aucun raccourci de plage.
+**K1, sélection dans `lc-table`** (ajouts) :
+- `selectable = input(false, { transform: booleanAttribute })` : première colonne de cases natives `.lc-checkbox`, en-tête compris ; lignes de groupe, pied et ligne vide reçoivent une cellule de plus (`colspan` ajusté).
+- `selection = model<ReadonlySet<unknown>>(new Set())` : clés rendues par `trackBy` ; chaque changement émet un nouveau `Set` (jamais muté).
+- `isRowSelectable = input<(row: T) => boolean>(() => true)` : case désactivée sinon.
+- `rowSelectionLabel = input<(row: T) => string>()` : nom accessible de chaque case (par défaut `LC_LABELS`, « Sélectionner la ligne ») ; `selectionLabel = input<string>()` : nom de la case d'en-tête (par défaut « Tout sélectionner »).
+- `selectAllHint = input<string>()` : texte d'aide affiché sous le tableau, relié à la case d'en-tête par `aria-describedby` (le consommateur ne peut pas relier lui-même une case interne au tableau ; consommateur : copro-ticket, « La case en haut du tableau agit sur toute la copropriété »).
+- Case d'en-tête : calculée sur `data()` entier (groupes repliés compris, ordre de tri indifférent), sur les seules lignes cochables ; cochée si toutes le sont, vide si aucune, partielle sinon (propriété DOM `indeterminate`, qui expose « mixte » ; pas d'`aria-checked`). Un clic coche toutes les lignes cochables si elle n'était pas cochée, les décoche toutes sinon. Désactivée si aucune ligne n'est cochable.
+- Les clés absentes de `data` ou de lignes devenues non cochables restent dans `selection` (le consommateur décide) ; elles ne comptent ni pour la case d'en-tête ni pour l'annonce ; une ligne non cochable déjà sélectionnée s'affiche cochée et désactivée.
+- Annonce : une région `aria-live="polite"` donne « {n} sélectionnées sur {m} » (lignes cochables de `data`, par `LC_LABELS`) après chaque changement fait dans le tableau ; rien au premier rendu ni quand le consommateur change `selection`.
+- Clavier : Tab atteint chaque case ; Espace la bascule (comportement natif).
 
 **K2, `lc-toggletip`** :
 - Utilisation : `<button type="button" [lcToggletip]="detail">…</button>` et `<lc-toggletip #detail>…contenu…</lc-toggletip>`. Le déclencheur est un `button` natif stylé librement par le consommateur (par exemple en pastille).
-- Entrées de la directive : `lcToggletip` (requis, le composant), `lcToggletipPosition` (`'below' | 'above' | 'start' | 'end'`, défaut `'below'`), `lcToggletipOpen = model(false)`.
-- Le bouton porte `aria-expanded` et `aria-controls`. La bulle n'est pas un dialogue : pas de piège à focus ; un contenu interactif est atteint par Tab depuis le bouton. Le contenu est annoncé à l'ouverture (région `role="status"` gardée dans le DOM, contenu inséré à l'ouverture).
-- Largeur au plus `min(20rem, calc(100vw - 2 * marge))` ; hauteur au plus la fenêtre, avec défilement interne.
-- Ouvrir une bulle ferme celle qui était ouverte. Fermeture aussi au défilement de la page et au redimensionnement.
+- Entrées : `lcToggletip` (requis, le composant), `lcToggletipPosition` (`'below' | 'above' | 'start' | 'end'`, défaut `'below'` : la bulle explique ce qui est sous les yeux, au-dessous du déclencheur, sans masquer la ligne précédente d'un tableau ; `lcTooltip` garde `above`).
+- Ouverture par l'événement `click` du bouton (souris, toucher, Entrée et Espace natifs) ; aucun écouteur de survol. Fermeture : second clic, Échap (focus rendu au bouton), clic hors du bouton et de la bulle, focus qui sort du bouton **et** de la bulle. Ouvrir une bulle ferme donc l'autre, sans état global.
+- Le bouton porte `aria-expanded` et `aria-controls` ; une région `role="status"`, présente et vide bulle fermée, reçoit le contenu à l'ouverture. Pas de piège à focus ; un contenu interactif est atteint par Tab depuis le bouton.
+- Largeur au plus `min(20rem, calc(100vw - 2 * marge))` ; hauteur au plus la fenêtre, défilement interne (qui ne ferme pas la bulle). Défilement de la page ou d'un parent : la bulle suit son bouton (stratégie `reposition` du CDK) ; bouton retiré du DOM : bulle fermée.
 
 **K3, `[lcTruncate]`** :
-- Sur un élément de texte (`<span lcTruncate>`, `<a lcTruncate>`…) : `white-space: nowrap`, `overflow: hidden`, `text-overflow: ellipsis`.
-- Au survol (`mouseenter`), si le texte déborde (`scrollWidth > clientWidth`), il défile horizontalement jusqu'à sa fin à vitesse constante (token de durée par caractère débordant), marque une pause, puis revient ; il revient au début à la sortie (`mouseleave`). Rien ne bouge s'il ne déborde pas.
-- `prefers-reduced-motion: reduce` : pas de défilement ; le texte entier est donné par l'attribut `title`, posé seulement s'il déborde.
-- Le texte entier reste dans le DOM : un lecteur d'écran le lit en entier, sans changement.
-- Mesure refaite au redimensionnement (`ResizeObserver`), sans boucle de rendu.
+- Sur un élément de texte (`<span lcTruncate>`, `<a lcTruncate>`…) : l'hôte passe en `display: block`, `min-width: 0`, `white-space: nowrap`, `overflow: hidden`, `text-overflow: ellipsis`.
+- Au survol (`mouseenter`), la directive mesure le débordement (`scrollWidth - clientWidth`) ; s'il est positif et que `matchMedia('(prefers-reduced-motion: reduce)')` est faux (relu à chaque survol), elle pose `--lc-truncate-overflow` (px) et une classe qui anime `text-indent` de 0 à `calc(-1 * var(--lc-truncate-overflow))` (`@keyframes`, `text-overflow: clip` pendant le défilement), à la vitesse `--lc-truncate-speed` (px par seconde, repli sur une valeur de `sys`), avec une pause en fin puis retour. `mouseleave` retire la classe : le texte revient au début.
+- Mouvement réduit : aucun défilement ; `title` = texte entier, posé seulement s'il déborde (un `title` permanent doublerait l'annonce du lecteur d'écran).
+- Le texte entier reste dans le DOM. Mesure refaite au redimensionnement (`ResizeObserver`) et au changement du texte.
+
+**K4, teinte de ligne dans `lc-table`** (ajout) :
+- `rowTone = input<(row: T) => 'success' | 'info' | 'error' | 'warning' | null>()` : la ligne prend le fond `--lc-sys-color-<rôle>-container`, le texte `on-<rôle>-container` et un liseré de début de ligne `--lc-sys-color-<rôle>` (tokens `--lc-table-row-*` avec repli sur `sys`). Couleur jamais seule porteuse de sens : le consommateur garde un libellé dans la ligne.
 
 ### 5.4 Interface utilisateur
-Référence visuelle : maquettes de copro-ticket citées en source. Rendu selon `DESIGN.md` du kit : tokens seulement, deux thèmes, focus visible, cibles de 44 px (la case dans sa cellule, le bouton déclencheur). Bulle : `surface-raised`, bordure, rayon et ombre du kit, flèche vers le déclencheur. Chaque élément a sa story (états, deux thèmes, 360 px), dont : tableau avec lignes non cochables et case d'en-tête partielle ; bulle près d'un bord ; nom tronqué au survol et en mouvement réduit.
+Référence visuelle : maquettes de copro-ticket citées en source. Rendu selon `DESIGN.md` du kit : tokens seulement, deux thèmes, focus visible, cibles de 44 px (la case dans sa cellule, le bouton déclencheur). Bulle : `surface-raised`, bordure, rayon et ombre du kit, flèche vers le déclencheur. Chaque élément a sa story (états, deux thèmes, 360 px), dont : tableau avec lignes non cochables, case d'en-tête partielle et lignes teintées ; bulle près d'un bord ; nom tronqué au survol.
 
 ## 6. Cas limites et gestion des erreurs
-- K1 : `data` vide : case d'en-tête désactivée ; aucune ligne cochable : idem ; `selection` contenant une clé absente de `data` : gardée telle quelle (le consommateur décide), la case d'en-tête ne la compte pas ; `trackBy` qui rend deux fois la même clé : avertissement console en développement.
-- K2 : déclencheur qui n'est pas un `button` : avertissement en développement ; déclencheur retiré du DOM bulle ouverte : bulle fermée ; place manquante de tous les côtés : la bulle reste dans la fenêtre.
-- K3 : texte changé pendant le défilement : défilement arrêté, mesure refaite ; élément sans largeur bornée : rien ne déborde, rien ne bouge.
+- K1 : `data` vide ou sans ligne cochable : case d'en-tête désactivée ; tri client ou externe : la sélection suit les clés, pas les positions ; groupes repliés : comptés par l'en-tête ; `trackBy` qui rend deux fois la même clé : avertissement console en développement.
+- K2 : déclencheur qui n'est pas un `button` : avertissement en développement ; déclencheur retiré (ligne triée ou supprimée) : bulle fermée ; place manquante de tous les côtés : la bulle est poussée dans la fenêtre.
+- K3 : texte changé pendant le défilement : défilement arrêté, mesure refaite ; parent sans largeur bornée : rien ne déborde, rien ne bouge ; texte de droite à gauche : défilement dans le sens de lecture (`text-indent` est relatif au sens).
+- K4 : rôle inconnu : aucune teinte, avertissement en développement.
 
 ## 7. Sécurité, performance, observabilité
 - Sécurité : aucun `innerHTML` ; contenu de la bulle par projection.
-- Performance : aucune dépendance ajoutée ; K3 n'anime qu'au survol, une seule animation CSS (`transform`) par élément.
+- Performance : aucune dépendance ajoutée ; K3 n'anime qu'au survol, une seule animation CSS par élément.
 - Observabilité : N/A (bibliothèque).
 
 ## 8. Alternatives envisagées
 | Option | Avantages | Inconvénients | Retenue ? |
 |---|---|---|---|
 | Élargir `lcTooltip` au clic et au contenu riche | Un seul élément | Change son contrat et sa règle « jamais d'information indispensable » ; mélange deux usages | Non |
+| `lcCheckbox` dans `lc-table` | Même composant que les formulaires | `data` importerait `forms`, interdit ; inutile hors formulaire | Non : case native `.lc-checkbox` |
+| Service racine pour « une seule bulle ouverte » | Explicite | État global ; les fermetures par clic ailleurs et perte de focus suffisent | Non |
+| `transform` pour faire défiler le texte | Accéléré | Déplacerait l'élément entier, pas son texte, sans enveloppe ajoutée | Non : `text-indent` |
 | Ligne dépliée sous la ligne du tableau | Aucun nouvel élément | Écartée par l'utilisateur (« info bulle ») | Non |
 | Boutons « Tout cocher » et « Tout décocher » chez le consommateur | Aucun changement du kit | Écartés par l'utilisateur (« afin que ce soit natif ») | Non |
-| Texte sur deux lignes au lieu de défiler | Pas d'animation | Hauteur variable, contraire à la demande | Non |
+| `rowClass` libre | Souple | Styles du consommateur à percer dans le composant ; couleurs hors tokens | Non : `rowTone` |
 
 ## 9. Plan de test
-- Unitaires (Vitest, à côté de chaque élément) : K1 : en-tête tout, rien, partiel ; lignes non cochables ignorées ; `selection` en double liaison ; annonce du compte ; Espace. K2 : ouverture au clic, à Entrée, à Espace ; fermeture par Échap (focus sur le bouton), clic dehors, second clic, perte de focus ; une seule ouverte ; `aria-expanded`, `aria-controls`. K3 : pas de défilement sans débordement ; défilement et retour avec débordement ; mouvement réduit ; `title` posé seulement en cas de débordement.
-- Stories : une par élément, avec ses états et les deux thèmes.
+Outillage : `npx ng test ui-angular` tourne sous jsdom (pas de mise en page, pas d'animation, pas de toucher). Faux à réutiliser : `FakeResizeObserver`, `scrollWidth` espionné, `matchMedia` surchargé (`tabs.component.spec.ts`), lecture de la stratégie de position du CDK (`tooltip-positions.spec.ts`). Événements clavier : tester le `click()` du bouton, jsdom ne transforme pas Entrée en clic.
+- Unitaires (Vitest, à côté de chaque élément) : tout le comportement des critères marqués « unitaire ».
+- Stories : une par élément ; `tools/qa/storybook-browser.mjs` (axe) en clair et en sombre.
+- Manuel (consigné à la livraison) : lecteur d'écran (annonce du compte, contenu de la bulle), toucher réel, cible de 44 px à 360 px, défilement réel du texte et bulle au bord à 360 px.
 - Catalogue : `npm run catalogue:build` puis `catalogue:check`.
 
 ## 10. Critères d'acceptation
-- [ ] CA-K1-1 : `selectable` affiche une première colonne de cases ; sans lui, le rendu de `lc-table` est identique à avant (tests existants inchangés et verts).
-- [ ] CA-K1-2 : la case d'en-tête coche toutes les lignes cochables de `data`, les décoche toutes, et passe à l'état partiel (`indeterminate`, `aria-checked="mixed"`) quand une partie seulement est cochée ; les lignes refusées par `isRowSelectable` ont une case désactivée et ne changent jamais.
-- [ ] CA-K1-3 : `selection` reflète les clés `trackBy` des lignes cochées, dans les deux sens (modifier `selection` coche les cases).
-- [ ] CA-K1-4 : chaque case a un nom accessible ; le compte est annoncé par une région polie ; `selectAllHint` est relié par `aria-describedby`.
-- [ ] CA-K2-1 : la bulle s'ouvre au clic, au toucher, à Entrée et à Espace sur le bouton, jamais au seul survol ; elle se ferme par Échap (focus resté sur le bouton), un clic ailleurs, un second clic et la perte du focus.
-- [ ] CA-K2-2 : ouvrir une bulle ferme l'autre ; le bouton porte `aria-expanded` et `aria-controls` ; le contenu est annoncé à l'ouverture.
-- [ ] CA-K2-3 : près d'un bord, la bulle prend une position de repli et reste entière dans la fenêtre, à 360 px compris.
-- [ ] CA-K3-1 : un texte qui tient n'a ni points de suspension, ni `title`, ni défilement.
-- [ ] CA-K3-2 : un texte qui déborde est coupé par des points de suspension sur une ligne ; au survol, il défile jusqu'à sa fin puis revient ; à la sortie, il revient au début.
-- [ ] CA-K3-3 : avec `prefers-reduced-motion: reduce`, aucun défilement ; `title` donne le texte entier.
-- [ ] CA-K-4 : libellés par `LC_LABELS` (français et anglais), tokens seulement, stories dans les deux thèmes, catalogue à jour.
+- [ ] CA-K1-1 (unitaire) : sans `selectable`, ni colonne de cases ni région d'annonce dans le DOM, et les tests existants de `lc-table` passent sans changement ; avec `selectable`, une première colonne de cases, en-tête compris.
+- [ ] CA-K1-2 (unitaire) : la case d'en-tête coche toutes les lignes cochables de `data` (groupes repliés compris), les décoche toutes, et a `indeterminate` vrai quand une partie seulement est cochée ; les lignes refusées par `isRowSelectable` ont une case désactivée et ne changent jamais ; elle est désactivée sans ligne cochable.
+- [ ] CA-K1-3 (unitaire) : `selection` reflète les clés `trackBy` des lignes cochées, dans les deux sens (`selection.set` depuis le parent coche les cases ; un clic émet un nouveau `Set`) ; après un tri, les mêmes lignes restent cochées.
+- [ ] CA-K1-4 (unitaire) : chaque case a un nom accessible ; après un clic, la région polie contient « {n} sélectionnées sur {m} » (français et anglais) ; rien n'est annoncé au premier rendu ni après `selection.set` du parent ; `selectAllHint` est affiché et relié par `aria-describedby`.
+- [ ] CA-K1-5 (unitaire) : quand `data` perd des lignes cochées, le compte et l'état de l'en-tête sont recalculés sans elles ; leurs clés restent dans `selection`.
+- [ ] CA-K2-1 (unitaire) : la bulle s'ouvre au `click` du bouton et jamais sur `mouseenter` seul ; elle se ferme au second clic, sur Échap (focus resté sur le bouton), au clic hors du bouton et de la bulle, et quand le focus sort des deux ; le focus qui passe du bouton à un lien de la bulle ne la ferme pas.
+- [ ] CA-K2-2 (unitaire) : avec deux bulles, ouvrir la seconde ferme la première ; le bouton porte `aria-expanded` et `aria-controls` vers un identifiant existant ; la région `role="status"` est présente et vide bulle fermée, remplie à l'ouverture ; retirer le bouton du DOM ferme la bulle.
+- [ ] CA-K2-3 (unitaire, puis manuel) : la stratégie de position a un repli dans les quatre directions et pousse la bulle dans la fenêtre ; à 360 px, la bulle d'une story placée au bord est entière (vérification manuelle).
+- [ ] CA-K2-4 (unitaire) : `lcTooltip` garde exactement son comportement (`tooltip-positions.spec.ts` et ses tests existants passent sans changement).
+- [ ] CA-K3-1 (unitaire) : sans débordement mesuré, ni `title`, ni classe de défilement au survol.
+- [ ] CA-K3-2 (unitaire, puis story) : avec débordement, au survol la directive pose `--lc-truncate-overflow` égal au débordement et la classe de défilement, et les retire à la sortie ; dans la story, le texte se termine par « … » au repos et défile au survol.
+- [ ] CA-K3-3 (unitaire) : avec `prefers-reduced-motion: reduce`, aucune classe de défilement ; `title` donne le texte entier, posé seulement s'il déborde ; le réglage est relu à chaque survol.
+- [ ] CA-K4-1 (unitaire) : `rowTone` pose sur la ligne la classe du rôle rendu, aucune pour `null` ; story : fond et liseré par tokens, contraste du texte vérifié dans les deux thèmes.
+- [ ] CA-K-5 : libellés par `LC_LABELS` en français et en anglais (unitaire) ; aucune couleur, taille ni durée en dur (revue) ; chaque story passe `storybook-browser.mjs` en clair et en sombre ; `catalogue:check` vert.
 
 ## 11. Découpage en tâches
 - [ ] K1 : sélection dans `lc-table`, tests, story (M).
-- [ ] K2 : `lc-toggletip`, tests, story (M).
-- [ ] K3 : `lcTruncate`, tests, story (S).
-- [ ] K4 : catalogue, `CLAUDE.md` du kit si besoin, publication locale pour copro-ticket (`deps:refresh`) (S).
+- [ ] K2 : positions partagées avec `lcTooltip`, `lc-toggletip`, tests, story (M).
+- [ ] K3 : `lcTruncate`, token `--lc-truncate-speed`, tests, story (S).
+- [ ] K4 : `rowTone` dans `lc-table`, tests, story (S).
+- [ ] K5 : catalogue, publication locale pour copro-ticket (`deps:refresh`) (S).
 
 ## 12. Risques et questions ouvertes
 - **Choix par défaut à confirmer** :
-  - Le nom d'entrée `selectable` plutôt que « showCheckbox » (convention des entrées booléennes du kit, comme `stickyHeader`) ; même rôle.
-  - Le défilement de K3 se déclenche au survol seulement, comme demandé ; au clavier, le texte entier reste lu par le lecteur d'écran, et `title` n'est posé qu'en mouvement réduit.
-- **Dettes** : pas de sélection par plage.
+  - L'entrée s'appelle `selectable` plutôt que « showCheckbox » (convention des entrées booléennes du kit, comme `stickyHeader`) ; même rôle.
+  - Le défilement de K3 se déclenche au survol seulement, comme demandé.
+- **Dettes** : pas de sélection par plage ; pas de test automatique du rendu réel (bulle au bord, défilement), vérifié à la main.
 - **Questions ouvertes** : aucune.
 
 ## 13. Relectures et écarts
 | Date | Relecteur | Phase | Statut | Retenu / écarté |
 |---|---|---|---|---|
-| | `architect` | conception | | |
-| | `qa-engineer` | plan de test | | |
+| 2026-11-20 | `architect` | conception | Changements requis (3 de fond) | Retenu : case native `.lc-checkbox` (pas d'import `data` → `forms`) ; positions partagées avec `lcTooltip` ; pas de service pour « une seule bulle » ; défilement par `text-indent` et vitesse en px par seconde ; `rowSelectionLabel` gardé ; `lcToggletipOpen` retiré ; en-tête calculé sur `data`. Écarté : retirer `selectAllHint` (le consommateur ne peut pas relier une case interne au tableau) ; position par défaut alignée sur `above` (justifiée en 5.3) |
+| 2026-11-20 | `qa-engineer` | plan de test | 7 critères à reformuler, 12 cas oubliés | Retenu : niveau de preuve par critère (unitaire, story, manuel), cas tri, groupes repliés, lignes retirées, ligne devenue non cochable, annonce seulement après un geste, défilement dans la bulle, focus vers un lien de la bulle, texte de droite à gauche |
 
 **Écarts constatés à l'implémentation** : aucun pour l'instant.
