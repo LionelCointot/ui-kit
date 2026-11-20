@@ -139,3 +139,19 @@ export const Empty: Story = {
     template: `<lc-table caption="Commandes par semaine" [data]="[]" [columns]="columns" [trackBy]="trackBy" />`,
   }),
 };
+
+/** Selection column (`selectable`, `[(selection)]`): Bob's row cannot be ticked (`isRowSelectable`), the header box is partial when only some rows are ticked, and `rowTone` tints rows by status role (colour is never the only cue: the status column says it too). Check it in both themes. */
+export const SelectionAndTones: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: {
+      data: orders.slice(0, 6), columns, trackBy,
+      selection: new Set<unknown>([1, 2]),
+      canSelect: (row: Order) => row.id !== 3,
+      tone: (row: Order) => (row.id === 1 ? 'success' : row.id === 2 ? 'info' : row.id === 3 ? 'error' : row.id === 4 ? 'warning' : null),
+    },
+    template: `<lc-table caption="Commandes à traiter" [data]="data" [columns]="columns" [trackBy]="trackBy" [selectable]="true" [(selection)]="selection"
+      [isRowSelectable]="canSelect" [rowTone]="tone" selectAllHint="La case en haut du tableau agit sur toutes les commandes." />
+      <p>{{ selection.size }} sélectionnée(s)</p>`,
+  }),
+};

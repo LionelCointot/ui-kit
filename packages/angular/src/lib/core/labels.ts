@@ -27,6 +27,10 @@ export interface LcLabels {
   readonly hidePassword: string;
   readonly unallocated: string;
   readonly truncatedRows: (count: number) => string;
+  /** Sélection dans `lc-table` : nom des cases et annonce. */
+  readonly selectRow: string;
+  readonly selectAll: string;
+  readonly selectionCount: (selected: number, total: number) => string;
   /** Jauge (`lc-meter`) : texte lu quand la valeur n'est pas mesurée. */
   readonly noValue: string;
   /** Pagination (`lc-paginator`). */
@@ -644,6 +648,9 @@ export const LC_LABELS_FR: LcLabels = {
   hidePassword: 'Masquer le mot de passe',
   unallocated: 'Non réparti',
   truncatedRows: (count) => `${count} premières lignes affichées`,
+  selectRow: 'Sélectionner la ligne',
+  selectAll: 'Tout sélectionner',
+  selectionCount: (selected, total) => `${selected} sélectionnées sur ${total}`,
   noValue: 'Non mesuré',
   pagination: 'Pagination',
   previousPage: 'Précédent',
@@ -882,6 +889,9 @@ export const LC_LABELS_EN: LcLabels = {
   hidePassword: 'Hide password',
   unallocated: 'Unallocated',
   truncatedRows: (count) => `First ${count} rows shown`,
+  selectRow: 'Select row',
+  selectAll: 'Select all',
+  selectionCount: (selected, total) => `${selected} selected of ${total}`,
   noValue: 'Not measured',
   pagination: 'Pagination',
   previousPage: 'Previous',
