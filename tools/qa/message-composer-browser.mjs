@@ -363,6 +363,18 @@ async function files() {
 
     });
 
+    await sec('CA-C17 autre input[type=file]', async () => {
+      await reset(page);
+      const o = await page.evaluate(() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'qa-other'; document.body.append(i); const dt = Q.dt([Q.file('p.png')]); return { over: Q.fire(i, 'dragover', dt), drop: Q.fire(i, 'drop', dt) }; });
+      check('CA-C17 un fichier lâché sur un autre input[type=file] de la page n\'est pas bloqué, rien n\'est ajouté', !o.over && !o.drop && (await ev(page, 'filesAdded')).length === 0, JSON.stringify(o));
+    });
+    await sec('CA-C3 pièces jointes seules', async () => {
+      await reset(page); await patch(page, { items: [item('a', 'a.png')] }); await clickSend(page); await clickSend(page);
+      const one = (await ev(page, 'send')).length;
+      await patch(page, { items: [item('a', 'a.png'), item('b', 'b.png')] }); await clickSend(page);
+      const sends = await ev(page, 'send');
+      check('CA-C3 pièces jointes seules : un envoi (texte vide), un deuxième clic refusé, nouvel envoi permis après changement des items', one === 1 && sends.length === 2 && sends.every((e) => e.detail.text === ''), JSON.stringify(await ev(page)));
+    });
     await sec('CA-C17', async () => {
     // CA-C17 : fichier lâché hors du rectangle.
     await reset(page);
@@ -387,6 +399,10 @@ async function files() {
     await page.evaluate(async (png) => { const b = await (await fetch(png)).blob(); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); }, PNG);
     await page.keyboard.press('Control+V'); await page.waitForTimeout(300);
     check('CA-C18 image collée : filesAdded (accept respecté), aucun texte inséré', (await ev(page, 'filesAdded')).length === 1 && (await ta.inputValue()) === '', JSON.stringify(await ev(page)));
+    await reset(page); await ta.click();
+    await page.evaluate(async (png) => { const b = await (await fetch(png)).blob(); await navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob(['texte mixte'], { type: 'text/plain' }), 'image/png': b })]); }, PNG);
+    await page.keyboard.press('Control+V'); await page.waitForTimeout(300);
+    check('CA-C18 collage mixte (texte et image) : texte natif inséré, aucune pièce jointe', (await ta.inputValue()) === 'texte mixte' && (await ev(page, 'filesAdded')).length === 0 && (await ev(page, 'rejected')).length === 0, `${await ta.inputValue()} ${JSON.stringify(await ev(page))}`);
     const paste = (files) => page.evaluate((fs) => { const dt = Q.dt(fs.map((f) => Q.file(f.name, f))); const e = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }); Q.ta().dispatchEvent(e); return e.defaultPrevented; }, files);
     await reset(page); await paste([{ name: 'x.txt', type: 'text/plain' }]); const shook = await page.evaluate(async () => { await Q.raf(); return Q.host().getAnimations({ subtree: true }).some((a) => /transform|shake/i.test(a.transitionProperty ?? a.animationName ?? '')); }); await page.waitForTimeout(200);
     check('CA-C18 fichier collé refusé : rejected, message en role=alert, secousse, aucun texte', (await ev(page, 'rejected')).length === 1 && (await page.evaluate(() => !!Q.alert()?.textContent.includes('x.txt'))) && (await ta.inputValue()) === '' && shook, JSON.stringify({ shook, ev: await ev(page) }));
