@@ -15,7 +15,7 @@ const CITIES = ['Amsterdam', 'Berlin', 'Bruxelles', 'Paris', 'Rome'];
 @Component({
   selector: 'lc-motion-panel',
   imports: [LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective, LcComboboxComponent, LcDateInputComponent, LcDateRangeInputComponent],
-  template: `<div [style]="place() === 'bottom' ? 'position:fixed;inset-inline:8px;inset-block-end:8px' : place() === 'middle' ? 'position:fixed;inset-inline:8px;inset-block-start:200px' : 'padding:8px'">
+  template: `<div [style]="place() === 'bottom' ? 'position:fixed;inset-inline:8px;inset-block-end:8px' : place() === 'middle' ? 'position:fixed;inset-inline:8px;inset-block-start:420px' : 'padding:8px'">
     @switch (control()) {
       @case ('menu') {
         <button id="trigger" type="button" [lcMenuTriggerFor]="menu">Actions</button>

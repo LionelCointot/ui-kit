@@ -497,10 +497,10 @@ const MOTION_INIT = () => {
 };
 
 const PANELS = {
-  menu: { pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'click' },
+  menu: { pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'Enter' },
   combobox: { pane: '.cdk-overlay-pane.lc-combobox-overlay', open: 'lc-combobox input', host: 'lc-combobox', reopen: 'ArrowDown' },
-  date: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-input button[aria-expanded]', host: 'lc-date-input', reopen: 'click' },
-  range: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-range-input button[aria-expanded]', host: 'lc-date-range-input', reopen: 'click' },
+  date: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-input button[aria-expanded]', host: 'lc-date-input', reopen: 'Enter' },
+  range: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-range-input button[aria-expanded]', host: 'lc-date-range-input', reopen: 'Enter' },
 };
 const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
 /** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
@@ -512,7 +512,7 @@ async function motionPage(context, base, id, args = '') {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story${args ? `&args=${args}` : ''}`);
-  await page.waitForSelector('#storybook-root > *', { timeout: 20000 });
+  await page.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
   return { page, errors };
 }
 
@@ -646,8 +646,8 @@ async function motion(browser, base) {
           await page.evaluate(() => { window.__qa.hold = true; });
           await page.keyboard.press('Escape');
           await page.waitForFunction(() => window.__qa.closing !== null);
-          if (spec.reopen === 'click') await page.click(spec.open);
-          else await page.keyboard.press(spec.reopen);
+          // Au clavier : pendant le fondu, le fond transparent du CDK intercepte encore la souris.
+          await page.keyboard.press(spec.reopen);
           const got = await page.evaluate(async () => {
             const pane = window.__qa.pane;
             await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
