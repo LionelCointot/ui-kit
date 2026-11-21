@@ -1,6 +1,6 @@
 // Acceptation navigateur de docs/specs/2026-11-mouvement-ios.md (Chromium, Storybook statique dist/storybook ; STORYBOOK_DIR pour une autre construction).
 //   node tools/qa/ios-motion-browser.mjs sheet|collapse|chips|overlays|misc|hover|all [...]
-//   sheet : CA-S0 S1 S2 S3 S4 S5 S6 S7 S8 F1 R1 · collapse : H1 H2 H3 H5 R1 · chips : H4 R1 · overlays : O1 O2 O3 R1 · misc : T1 C1 A1 R1 · hover : V1
+//   sheet : CA-S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 F1 R1 · collapse : H1 H2 H3 H5 R1 · chips : H4 R1 · overlays : O1 O2 O3 R1 · misc : T1 C1 A1 R1 · hover : V1
 // Stories : QA/Overlays/iOS motion (overlay), QA/Motion/Data table, Layout/Disclosure, Navigation/Nav group, etc. Code de sortie 1 au moindre échec.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -147,7 +147,7 @@ async function sheet() {
     const F = 'button[id$="-filters"]';
     const state = () => page.evaluate(async (s) => { const d = document.querySelector(s); await Q.until(() => d.hasAttribute('data-closing') || !d.open, 1000); await Q.raf(); return { closing: d.hasAttribute('data-closing'), open: d.open, y: Q.y(d), durs: Q.anims(d).filter((x) => x.prop === 'transform' && x.el === d && !x.pseudo).map((x) => x.t.duration) }; }, SD); // la feuille seule : le chevron d’une section dépliée (500 ms) n’est pas la sortie
     const t = await page.evaluate(() => ({ enter: Q.ms('--lc-slide-enter-duration'), exit: Q.ms('--lc-slide-exit-duration'), gap: Q.px('--lc-sheet-top-gap'), radius: Q.px('--lc-sheet-radius'), bd: Q.probe('background:var(--lc-sys-color-backdrop)', 'backgroundColor') }));
-    check('CA-S0 lc-data-table : plus de <dialog> propre, la croix s’appelle « Fermer sans appliquer »', await page.evaluate(() => !document.querySelector('dialog.lc-data-table__panel') && !!document.querySelector('lc-data-table lc-sheet dialog button[aria-label="Fermer sans appliquer"]') ));
+    check('CA-S0 lc-data-table : plus de <dialog> propre, la fermeture est le bouton texte « Annuler »', await page.evaluate(() => !document.querySelector('dialog.lc-data-table__panel') && document.querySelector('lc-data-table lc-sheet dialog button.lc-sheet__close')?.textContent.trim() === 'Annuler' ));
     await page.evaluate(async (f) => { document.querySelector(f).click(); await Q.raf(); }, F);
     const e = await page.evaluate((s) => { const d = document.querySelector(s); const r0 = d.getBoundingClientRect(); const a = Q.anims(d); Q.at(d, 0); const cs = getComputedStyle(d); const r = d.getBoundingClientRect(); const bd = a.filter((x) => x.pseudo === '::backdrop'); const hd = [...d.querySelectorAll('[aria-hidden="true"]')].find((x) => Math.abs(x.getBoundingClientRect().width - 36) < 1); const bg = getComputedStyle(d, '::backdrop').backgroundColor; return { y0: Q.y(d), h: r.height, tr: a.filter((x) => x.prop === 'transform' && !x.pseudo).map((x) => x.t.duration), bdAnim: bd.some((x) => x.prop === 'opacity'), bg, hd: !!hd, vh: innerHeight, r0 }; }, SD);
     await page.evaluate(() => document.getAnimations().forEach((a) => a.finish())); await page.waitForTimeout(100);
@@ -156,9 +156,13 @@ async function sheet() {
     check('CA-S1 poignée présente ; le tableau reste au-dessus de la feuille', e.hd && g.tableTop < g.top, JSON.stringify({ hd: e.hd, tableTop: g.tableTop, top: g.top }));
     check('CA-S1 entrée : translateY 100 % → 0 en --lc-slide-enter-duration', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)), JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
     check('CA-S1 fond ::backdrop = --lc-sys-color-backdrop, en fondu', e.bg === t.bd && e.bdAnim, JSON.stringify({ bg: e.bg, attendu: t.bd, fondu: e.bdAnim }));
+    // CA-S9 à 360 px : « Annuler » en tête de l’en-tête, avant le titre ; sans icône ni aria-label ; autofocus.
+    const s9 = await page.evaluate((s) => { const d = document.querySelector(s); const h = d.querySelector('.lc-sheet__header'); const b = h.firstElementChild; const title = h.querySelector('.lc-sheet__title'); return { first: b.matches('button.lc-sheet__close'), text: b.textContent.trim(), icon: !!b.querySelector('svg, lc-icon, img'), label: b.getAttribute('aria-label'), before: !!(b.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING), auto: b.hasAttribute('autofocus'), focused: document.activeElement === b, left: b.getBoundingClientRect().left < title.getBoundingClientRect().left }; }, SD);
+    check('CA-S9 360 px : premier élément de l’en-tête = bouton « Annuler », avant le titre, sans icône ni aria-label, autofocus', s9.first && s9.text === 'Annuler' && !s9.icon && s9.label === null && s9.before && s9.left && s9.auto && s9.focused, JSON.stringify(s9));
+    check('CA-S9 nom accessible « Annuler » (un seul bouton de ce nom dans la feuille)', (await page.locator(SD).getByRole('button', { name: 'Annuler', exact: true }).count()) === 1);
     // CA-S2 : trois fermetures.
     const pick = async () => { await page.locator(`${SD} .lc-data-table__section-toggle`).first().click(); await page.locator(`${SD} label.lc-column-filter__option input`).first().check(); };
-    const ways = { croix: () => page.click(`${SD} button[aria-label="Fermer sans appliquer"]`), echap: () => page.keyboard.press('Escape'), 'Afficher N': async () => { await pick(); await page.click('.lc-data-table__panel-apply'); } };
+    const ways = { croix: () => page.click(`${SD} button.lc-sheet__close`), echap: () => page.keyboard.press('Escape'), 'Afficher N': async () => { await pick(); await page.click('.lc-data-table__panel-apply'); } };
     for (const [name, fire] of Object.entries(ways)) {
       if (!(await page.evaluate((s) => document.querySelector(s).open, SD))) { await page.click(F); await page.waitForFunction((s) => document.querySelector(s).open, SD); await page.waitForTimeout(700); }
       const n0 = await page.evaluate(() => (window.__emitted ?? []).length);
@@ -168,6 +172,16 @@ async function sheet() {
       check(`CA-S2 ${name} : ${name === 'Afficher N' ? 'filtres émis' : 'rien d’émis'}, focus sur « Filtres »`, (name === 'Afficher N' ? n1 > n0 : n1 === n0) && (await page.evaluate(() => document.activeElement?.id.endsWith('-filters'))), `émis ${n0}→${n1}`);
     }
     await c.close();
+  });
+
+
+  // CA-S9 : la story Overlays/Sheet (sans closeText) garde le ✕ nommé par closeLabel.
+  await withCtx('phone', async (c) => {
+    const page = await c.newPage(); await page.goto(`${base}/iframe.html?id=overlays-sheet--playground&viewMode=story`);
+    await page.waitForSelector('lc-sheet', { state: 'attached', timeout: 20000 }); await page.click('button:has-text("Ouvrir la feuille")'); await page.waitForFunction(() => document.querySelector('lc-sheet dialog')?.open);
+    const x = await page.evaluate(() => { const b = document.querySelector('lc-sheet .lc-sheet__header .lc-sheet__close'); return { icon: !!b.querySelector('svg, lc-icon'), text: b.textContent.trim(), label: b.getAttribute('aria-label'), last: b === b.parentElement.lastElementChild }; });
+    check('CA-S9 sans closeText : le ✕ reste (icône, sans texte, aria-label, après le titre)', x.icon && x.text === '' && x.label === 'Fermer sans appliquer' && x.last, JSON.stringify(x));
+    await page.close();
   });
 
   // CA-S8 : carte centrée à 1280 px.

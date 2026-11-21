@@ -4,7 +4,7 @@ import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storyb
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcSheetComponent } from '@lionelcointot/ui-angular/overlay';
 
-type Args = Pick<LcSheetComponent, 'title'> & { closeLabel: string };
+type Args = Pick<LcSheetComponent, 'title'> & { closeLabel: string; closeText: string };
 
 /**
  * Bottom sheet on a native modal `<dialog>`: it rises from the bottom, can be pulled down by its handle or header, and never applies anything when closed
@@ -17,8 +17,11 @@ const meta: Meta<Args> = {
   title: 'Overlays/Sheet',
   component: LcSheetComponent,
   decorators: [moduleMetadata({ imports: [LcSheetComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
-  args: { title: 'Filtres', closeLabel: 'Fermer sans appliquer' },
-  argTypes: { closeLabel: { control: 'text', description: 'Accessible name of the close button.' } },
+  args: { title: 'Filtres', closeLabel: 'Fermer sans appliquer', closeText: '' },
+  argTypes: {
+    closeLabel: { control: 'text', description: 'Accessible name of the close icon button.' },
+    closeText: { control: 'text', description: 'Text close button before the title (iOS style, e.g. "Annuler"); replaces the icon. Empty: icon.' },
+  },
 };
 export default meta;
 type Story = StoryObj<Args>;
@@ -32,7 +35,7 @@ export const Playground: Story = {
     props: { ...args, shown: signal(false), lines: LINES },
     template: `
       <button lcButton type="button" (click)="shown.set(true)">Ouvrir la feuille</button>
-      <lc-sheet [(open)]="shown" [title]="title" [closeLabel]="closeLabel">
+      <lc-sheet [(open)]="shown" [title]="title" [closeLabel]="closeLabel" [closeText]="closeText || undefined">
         @for (line of lines; track line) {
           <p style="margin:var(--lc-sys-space-3) var(--lc-sys-space-4)">{{ line }}</p>
         }

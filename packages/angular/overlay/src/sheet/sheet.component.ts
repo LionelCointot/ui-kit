@@ -18,7 +18,7 @@ interface Drag {
 
 /**
  * Bottom sheet (iOS style) on a native modal `<dialog>`: it rises from the bottom, stops under the top of the screen (the page stays visible, dimmed),
- * and can be pulled down by its handle or header. Above the phone width it is a centred card (no handle, no gesture). Header with title and close button, scrolling body, optional footer projected with `lcSheetFooter`.
+ * and can be pulled down by its handle or header. Above the phone width it is a centred card (no handle, no gesture). Header with title and close button (icon, or text before the title with `closeText`), scrolling body, optional footer projected with `lcSheetFooter`.
  *
  * `open` becomes false as soon as a closing is intended (close button, gesture, Escape, or the parent writing it); the sheet plays its exit, closes the
  * `<dialog>`, then emits `closed` (never if it is reopened during the exit). The parent unmounts the projected content on `closed` only. Closing never
@@ -35,9 +35,14 @@ interface Drag {
         (pointercancel)="onPointerCancel()" (lostpointercapture)="onPointerCancel()">
         <div class="lc-sheet__grip"><span class="lc-sheet__handle" aria-hidden="true"></span></div>
         <header class="lc-sheet__header">
+          @if (closeText(); as text) {
+            <button lcButton type="button" fillMode="flat" themeColor="neutral" class="lc-sheet__close" autofocus (click)="open.set(false)">{{ text }}</button>
+          }
           <h2 class="lc-sheet__title" [id]="titleId">{{ title() }}</h2>
-          <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" class="lc-sheet__close" autofocus
-            [attr.aria-label]="closeLabel() ?? labels.close" (click)="open.set(false)"><lc-icon name="x" /></button>
+          @if (!closeText()) {
+            <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" class="lc-sheet__close" autofocus
+              [attr.aria-label]="closeLabel() ?? labels.close" (click)="open.set(false)"><lc-icon name="x" /></button>
+          }
         </header>
       </div>
       <div #body class="lc-sheet__body" [attr.tabindex]="scrolls() ? 0 : null" [attr.role]="scrolls() ? 'region' : null" [attr.aria-labelledby]="scrolls() ? titleId : null"><div class="lc-sheet__content"><ng-content /></div></div>
@@ -65,6 +70,8 @@ export class LcSheetComponent {
   readonly title = input.required<string>();
   /** Accessible name of the close button (defaults to `labels.close`). */
   readonly closeLabel = input<string>();
+  /** Text of the close button (iOS style, before the title, e.g. "Cancel"); replaces the close icon, whose name is then this text. */
+  readonly closeText = input<string>();
   /** Emitted once, at the end of the exit, after the `<dialog>` is closed. */
   readonly closed = output<void>();
 

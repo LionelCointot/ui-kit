@@ -105,6 +105,7 @@ lc-sheet {
 
 .lc-sheet__title {
   flex: 1;
+  min-inline-size: 0;
   margin: 0;
   font-size: var(--lc-sys-font-size-lg);
   font-weight: var(--lc-sys-font-weight-semibold);
