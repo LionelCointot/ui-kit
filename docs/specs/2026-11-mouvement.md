@@ -195,35 +195,35 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 
 ## 10. Critères d'acceptation
 - [x] CA-1 : Les tokens de 5.2 existent dans la CSS générée avec ces valeurs, `easing-standard` et `easing-emphasized` inchangés ; `npm test --workspace @lionelcointot/ui-tokens` passe.
-- [ ] CA-2 : `lc-tabs` : juste après le clic sur un autre onglet (même tâche), l'indicateur a une transition sur `transform` de durée `--lc-tabs-indicator-duration` résolue ; après `finish()`, son rectangle a la position et la largeur de l'onglet sélectionné (± 1 px). Aucune transition sur `left`.
-- [ ] CA-2b : deux clics rapprochés : la seconde transition part de la position courante (différente de l'arrivée de la première) et finit sous le dernier onglet cliqué.
-- [ ] CA-2c : aucun onglet sélectionné : indicateur masqué.
-- [ ] CA-3 : `lc-tabs` : au premier affichage, aucune transition sur l'indicateur et `lc-tabs--ready` absente avant la première mesure ; dès la deuxième sélection, transition présente.
-- [ ] CA-4 : `lc-tabs` à 360 px avec onglets qui défilent : après défilement de la liste (`scrollLeft`) puis après changement de largeur du viewport, le rectangle de l'indicateur reste sous l'onglet sélectionné (± 1 px).
-- [ ] CA-4b : ajout ou retrait d'un onglet, ou changement de libellé : après le rappel du `ResizeObserver`, indicateur sous l'onglet sélectionné.
-- [ ] CA-5 : `lc-nav-list` : (a) l'indicateur prend la position et la hauteur de l'élément actif (± 1 px) avec transition sur `transform` ; (b) élément actif dans un groupe replié : indicateur masqué ; (c) au dépliage, aucune transition sur `transform` à la première image ; (d) `lcNavItem` hors liste : fond actif sur l'élément.
+- [x] CA-2 : `lc-tabs` : juste après le clic sur un autre onglet (même tâche), l'indicateur a une transition sur `transform` de durée `--lc-tabs-indicator-duration` résolue ; après `finish()`, son rectangle a la position et la largeur de l'onglet sélectionné (± 1 px). Aucune transition sur `left`.
+- [x] CA-2b : deux clics rapprochés : la seconde transition part de la position courante (différente de l'arrivée de la première) et finit sous le dernier onglet cliqué.
+- [x] CA-2c : aucun onglet sélectionné : indicateur masqué.
+- [x] CA-3 : `lc-tabs` : au premier affichage, aucune transition sur l'indicateur et `lc-tabs--ready` absente avant la première mesure ; dès la deuxième sélection, transition présente.
+- [x] CA-4 : `lc-tabs` à 360 px avec onglets qui défilent : après défilement de la liste (`scrollLeft`) puis après changement de largeur du viewport, le rectangle de l'indicateur reste sous l'onglet sélectionné (± 1 px).
+- [x] CA-4b : ajout ou retrait d'un onglet, ou changement de libellé : après le rappel du `ResizeObserver`, indicateur sous l'onglet sélectionné.
+- [x] CA-5 : `lc-nav-list` : (a) l'indicateur prend la position et la hauteur de l'élément actif (± 1 px) avec transition sur `transform` ; (b) élément actif dans un groupe replié : indicateur masqué ; (c) au dépliage, aucune transition sur `transform` à la première image ; (d) `lcNavItem` hors liste : fond actif sur l'élément.
 - [x] CA-6 : `lcButton` (variantes pleine, contour, texte, icône) pendant l'appui (`mouse.down`) : `transform` calculé = échelle `--lc-button-press-scale` ; désactivé : `none`. Même chose pour le bouton « Filtres (N) ».
 - [x] CA-7 : Pour `lc-menu`, `lc-combobox`, le calendrier de `lc-date-input`, celui de `lc-date-range-input` et le menu de filtre de `lc-data-table`, à l'ouverture : transitions sur `opacity` (0 → 1) et `transform` (décalage `--lc-sys-motion-offset` vers le haut → 0) ; avec `lc-overlay--above`, décalage de signe inverse (vérifié sur au moins `lc-menu` et `lc-combobox`).
 - [x] CA-7b : changement de sens après ouverture : aucune nouvelle transition d'entrée.
 - [x] CA-8 : (a) fermeture : `lc-overlay--closing` présent, transition d'opacité de `--lc-overlay-exit-duration`, panneau retiré du DOM après ; (b) réouverture pendant le fondu : panneau présent, classe retirée ; (c) après fermeture au clavier, `document.activeElement` est le déclencheur.
 - [x] CA-9 : `lcReveal` : élément inséré avec transitions sur `opacity` et `transform` ; `transition-delay` calculé pour les index 0, 3, 7, 12 = 0, 3, 7, 7 × `--lc-reveal-stagger` ; index invalide → 0 et un avertissement en développement uniquement.
-- [ ] CA-10 : Panneau de filtres du téléphone : entrée en fondu-descente avec `::backdrop` en fondu ; pour chacune des trois sorties (croix, Échap, « Afficher N … ») : `data-closing` posé puis `dialog.open === false` après la fin du fondu.
-- [ ] CA-11 : (a) section dépliée : corps en fondu-descente ; (b) pastille ajoutée : transition d'opacité de `--lc-chip-enter-duration` ; (c) pastille retirée : absente du DOM immédiatement, aucune transition sur ses voisines.
-- [ ] CA-12 : Cartes du téléphone, au premier affichage : `transition-delay` croissant pour les cartes 1 à 8, aucun délai ni transition pour la 9e et suivantes. Ensuite (filtre, tri, retrait de pastille), aucune cascade rejouée : la différence de liste s'applique (CA-20 à CA-22, décision 26) ; rien au défilement.
-- [ ] CA-13 : Avec `reducedMotion: 'reduce'`, pour les indicateurs, le bouton, les cinq panneaux, le dialogue et les cartes : durée et délai calculés ≤ 0,01 ms ; panneaux et dialogue fermés sans attente.
-- [ ] CA-14 : En `forced-colors: active`, l'onglet sélectionné et l'élément de nav actif ont une bordure, un contour ou un fond calculé non transparent et différent de celui d'un élément inactif.
-- [ ] CA-15 : Contrôle automatique : aucun motif `\d+(ms|s|px)`, `cubic-bezier(` ni `scale(0.` hors `var(--lc-…)` dans les `.css` et `.ts` touchés (tabs, nav-list, nav-item, button, menu, combobox, date-input, date-range-input, data-table, reveal, `ui-angular.css`) ; fichiers de tokens exclus.
+- [x] CA-10 : Panneau de filtres du téléphone : entrée en fondu-descente avec `::backdrop` en fondu ; pour chacune des trois sorties (croix, Échap, « Afficher N … ») : `data-closing` posé puis `dialog.open === false` après la fin du fondu.
+- [x] CA-11 : (a) section dépliée : corps en fondu-descente ; (b) pastille ajoutée : transition d'opacité de `--lc-chip-enter-duration` ; (c) pastille retirée : absente du DOM immédiatement, aucune transition sur ses voisines.
+- [x] CA-12 : Cartes du téléphone, au premier affichage : `transition-delay` croissant pour les cartes 1 à 8, aucun délai ni transition pour la 9e et suivantes. Ensuite (filtre, tri, retrait de pastille), aucune cascade rejouée : la différence de liste s'applique (CA-20 à CA-22, décision 26) ; rien au défilement.
+- [x] CA-13 : Avec `reducedMotion: 'reduce'`, pour les indicateurs, le bouton, les cinq panneaux, le dialogue et les cartes : durée et délai calculés ≤ 0,01 ms ; panneaux et dialogue fermés sans attente.
+- [x] CA-14 : En `forced-colors: active`, l'onglet sélectionné et l'élément de nav actif ont une bordure, un contour ou un fond calculé non transparent et différent de celui d'un élément inactif.
+- [x] CA-15 : Contrôle automatique : aucun motif `\d+(ms|s|px)`, `cubic-bezier(` ni `scale(0.` hors `var(--lc-…)` dans les `.css` et `.ts` touchés (tabs, nav-list, nav-item, button, menu, combobox, date-input, date-range-input, data-table, reveal, `ui-angular.css`) ; fichiers de tokens exclus.
 - [ ] CA-16a : `Foundations/Motion` et les 8 stories `Animation` de 5.4 s'ouvrent sans erreur de page.
 - [ ] CA-16b : « Rejouer » relance l'animation (`getAnimations().length > 0` juste après le clic).
 - [ ] CA-16c : bandeau présent avec `reducedMotion: 'reduce'`, absent sinon.
 - [ ] CA-16d : `node tools/qa/storybook-controls.mjs` et le contrôle axe (clair et sombre) passent.
 - [ ] CA-16e : `CONVENTIONS.md` contient la règle de la story `Animation` ; `DESIGN.md` porte l'exception de durée.
 - [ ] CA-17 (manuel) : test `novice-user` sur `Foundations/Motion` : COMPRIS.
-- [ ] CA-20 : Après un changement de filtre ou de tri, une ligne ou carte conservée (même clé) garde son élément DOM et joue une animation de `transform` de sa position précédente à la nouvelle ; aucune cascade ne se rejoue.
-- [ ] CA-21 : Une ligne ou carte ajoutée apparaît en fondu à sa place ; ses voisines glissent (CA-20).
-- [ ] CA-22 : Une ligne ou carte retirée reste dans le DOM le temps d'un fondu (`--lc-overlay-exit-duration`), puis disparaît et les suivantes glissent pour combler.
-- [ ] CA-23 : Avec `prefers-reduced-motion: reduce`, aucun glissement ni fondu de liste ; premier affichage : cascade inchangée (CA-12).
-- [ ] CA-24 : `--lc-sys-easing-spring` (`linear(…)` d'un ressort sans rebond : valeurs croissantes de 0 à 1, aucune > 1) et `--lc-sys-duration-move` (500 ms) existent et servent aux déplacements des lignes, du trait des onglets et du fond de la nav latérale ; fondus et entrées gardent `easing-standard` et leurs durées.
+- [x] CA-20 : Après un changement de filtre ou de tri, une ligne ou carte conservée (même clé) garde son élément DOM et joue une animation de `transform` de sa position précédente à la nouvelle ; aucune cascade ne se rejoue.
+- [x] CA-21 : Une ligne ou carte ajoutée apparaît en fondu à sa place ; ses voisines glissent (CA-20).
+- [x] CA-22 : Une ligne ou carte retirée reste dans le DOM le temps d'un fondu (`--lc-overlay-exit-duration`), puis disparaît et les suivantes glissent pour combler.
+- [x] CA-23 : Avec `prefers-reduced-motion: reduce`, aucun glissement ni fondu de liste ; premier affichage : cascade inchangée (CA-12).
+- [x] CA-24 : `--lc-sys-easing-spring` (`linear(…)` d'un ressort sans rebond : valeurs croissantes de 0 à 1, aucune > 1) et `--lc-sys-duration-move` (500 ms) existent et servent aux déplacements des lignes, du trait des onglets et du fond de la nav latérale ; fondus et entrées gardent `easing-standard` et leurs durées.
 - [ ] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
 
 ## 11. Découpage en tâches
@@ -232,11 +232,11 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] T3 : entrée et sortie des panneaux CDK (`lc-menu`, `lc-combobox`, calendriers de `lc-date-input` et `lc-date-range-input`, remplacement de `lc-calendar-fade`), classes de sens et de fermeture (M, CA-7, CA-7b, CA-8, CA-15).
 - [x] T4 : indicateur de `lc-tabs` (M, CA-2 à CA-4b, CA-14, CA-15).
 - [x] T5 : indicateur de `lc-nav-list` (M, CA-5, CA-14, CA-15).
-- [ ] T6 : `lc-data-table` : menu de filtre, dialogue du téléphone, sections, pastilles, cartes (M, CA-7, CA-8, CA-10 à CA-12, CA-15).
-- [ ] T6b : différence de liste animée sur `lc-data-table` (cartes et lignes, décision 26) et retouches de relecture de T6 (jeton de fermeture du dialogue, tests du menu pendant le fondu, `pendingReveal` en erreur) (M, CA-20 à CA-23).
-- [ ] T6c : tokens `--lc-sys-easing-spring` (ressort sans rebond) et `--lc-sys-duration-move` (500 ms), tokens `--lc-list-move-*`, appliqués aux déplacements des lignes, du trait des onglets et du fond de la nav latérale (S, CA-24).
+- [x] T6 : `lc-data-table` : menu de filtre, dialogue du téléphone, sections, pastilles, cartes (M, CA-7, CA-8, CA-10 à CA-12, CA-15).
+- [x] T6b : différence de liste animée sur `lc-data-table` (cartes et lignes, décision 26) et retouches de relecture de T6 (jeton de fermeture du dialogue, tests du menu pendant le fondu, `pendingReveal` en erreur) (M, CA-20 à CA-23).
+- [x] T6c : tokens `--lc-sys-easing-spring` (ressort sans rebond) et `--lc-sys-duration-move` (500 ms), tokens `--lc-list-move-*`, appliqués aux déplacements des lignes, du trait des onglets et du fond de la nav latérale (S, CA-24).
 - [ ] T7 : Storybook (`Foundations/Motion`, `Foundations/Elevation`, stories `Animation`, bandeau), `CONVENTIONS.md`, `DESIGN.md`, catalogue (M, CA-16a à CA-16e, CA-17, CA-18).
-- [ ] T8 (QA) : commande `motion` de `storybook-browser.mjs`, stories d'acceptation, contrôles statiques (CA-13, CA-15, et preuves de tous les CA navigateur).
+- [x] T8 (QA) : commande `motion` de `storybook-browser.mjs`, stories d'acceptation, contrôles statiques (CA-13, CA-15, et preuves de tous les CA navigateur).
 
 ## 12. Risques et questions ouvertes
 - **Choix confirmés par l'utilisateur le 2026-11-21** : Q1 `Foundations/Motion` remplace la section Motion (page renommée `Foundations/Elevation`) ; Q2 le calendrier perd `lc-calendar-fade` au profit de l'entrée commune ; Q3 exception de `DESIGN.md` à 350 ms pour la cascade ; Q4 nouvelle durée `long` 350 ms (plutôt que `slow` 300 ms) ; Q5 `lcTooltip`, `lc-toggletip`, `lc-drawer` inchangés, calendrier de `lc-date-range-input` inclus.
@@ -261,3 +261,4 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - 2026-11-21, T3 livrée : `code-reviewer` APPROUVÉ sur le CSS final (entrée `@keyframes` sur le contenu, sens par variable héritée, sortie sur le conteneur) ; sélecteur `.lc-data-table__overlay` à confirmer en T6.
 - 2026-11-21, `code-reviewer` (T6b, T6c, correctifs de T6) : APPROUVÉ. CA-12 réécrit selon la décision 26 (la cascade ne se rejoue plus). Retouches demandées : paramètre unique d'`easing` dans `timing()`, commentaire de `spring-easing.mjs`. Nits notés : le `linear()` du ressort est typé `cubicBezier` dans les tokens DTCG (type inexact, toléré).
 - 2026-11-21, T7 codée : page `Foundations/Motion` (la section Motion de `Foundations/Elevation and motion` retirée, page renommée `Foundations/Elevation`), stories `Animation` (12, dont `Data/Data table` en téléphone et en ordinateur pour la différence de liste ; story de `lc-nav-list` dans `Navigation/Nav group`, où le composant est documenté), bandeau, `CONVENTIONS.md`, `DESIGN.md`. `code-reviewer` APPROUVÉ. Test `novice-user` sur `Foundations/Motion` : BLOQUÉ (courbes illisibles, comment tout couper, jargon) → corrections en cours, test à refaire avec un agent neuf.
+- 2026-11-21, T8 : `qa-engineer` GO (CA-1 à CA-15, CA-18 à CA-24) : `storybook-browser.mjs motion` 544/544 dans Chromium (normal, réduit, forced-colors, 1 280 et 360 px), `filter-date` 7/7, axe 50/50, 81 tests de tokens dont le contrôle statique CA-15 (`motion.static.test.mjs`, lignes ajoutées par la branche), 2 043 puis 2 045 tests Angular. Défauts trouvés et corrigés en route : indicateur de `lc-tabs` jamais animé (règle sous `:host`), double glissement des lignes lors d'un filtre (un seul glissement désormais), ligne ajoutée révélée trop tôt si la liste change pendant le cycle. Limites : Chromium seulement ; 3 tests de format monétaire échouent sous Node 22 (données ICU plus anciennes), le projet exige Node ≥ 24.15.
