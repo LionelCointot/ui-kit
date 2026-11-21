@@ -692,7 +692,7 @@ describe('LcDataTableComponent', () => {
       await click(boxes(dialog)[1]);
       dialog.dispatchEvent(new Event('close')); // Échap natif : le navigateur ferme le dialogue puis émet `close`
       await stable();
-      expect(dialog.querySelector('.lc-data-table__panel-apply')).toBeNull();
+      expect(dialog.querySelector('.lc-data-table__panel-body')).toBeNull();
       expect(host.emitted).toHaveLength(0);
       expect(document.activeElement).toBe(el.querySelector('[id$="-filters"]'));
     });
@@ -747,7 +747,7 @@ describe('LcDataTableComponent', () => {
       await stable();
       expect(dialog.close).toHaveBeenCalledOnce();
       expect(dialog.hasAttribute('data-closing')).toBe(false);
-      expect(el.querySelector('.lc-data-table__panel-apply')).toBeNull();
+      expect(el.querySelector('.lc-data-table__panel-body')).toBeNull();
     });
 
     it('panneau : Échap (cancel) est intercepté et ferme en fondu ; « Afficher N » aussi', async () => {
