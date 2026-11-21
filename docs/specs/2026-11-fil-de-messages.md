@@ -26,8 +26,10 @@
   10. Dépôt de fichiers sur tout le fil : option, désactivée par défaut.
   11. copro-ticket adopte le fil dans une PR séparée après celle du kit (demandeur et gestionnaire, notes internes comprises).
   Fixé par la session : ressort seulement pour un message qui arrive (jamais au premier affichage ni au chargement des anciens) ; messages précédents poussés dès la première image, sans trou ; fondu seul en réduction des animations ; aspect propre au kit, sans la forme des bulles d'Apple ; fil annoncé aux lecteurs d'écran.
+  12. Défilement (question du `cadreur` ; réponse : « Ben, ça dépend comment CopoTicket intègre le composant, non? Si il l'intègre dans un div ou dans un flex, il est contenu uniquement dans ce div et dans ce flex, et en fonction du style défini par ces derniers, non? ») : aucune option ; le composant remplit son conteneur (colonne flex, fil puis zone de saisie) ; si le parent limite la hauteur, le fil défile à l'intérieur et la saisie reste en bas ; sinon il s'allonge et la page défile. Le composant détecte s'il défile lui-même : ouverture sur le dernier message et pastille « Nouveau message ↓ » seulement dans ce cas.
+  Fixé par la session après le `cadreur` : l'application fournit un identifiant d'auteur par message (clé du regroupement) ; avatar en initiales du nom (`lc-avatar`) ; un changement de visibilité (note interne / public) rompt un groupe ; écart de regroupement 5 minutes ; jours selon la langue (`LC_LABELS`, locale) et le fuseau du navigateur ; ordre du plus ancien au plus récent ; « message qui arrive » = identifiant absent de la liste précédente.
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : nouveau composant, templates, projection de `lc-message-composer` (aucun import entre points d'entrée).
   - [x] Écran : nouveau composant visible ; directions maquettées, choix de l'utilisateur, test `novice-user`.
-  - [ ] Sécurité et données : à confirmer (affichage de contenus fournis par l'application, sans `innerHTML`).
+  - [x] Sécurité et données : liens cliquables (décision 9 : seulement `http(s)`, `rel=noopener noreferrer`, sans `innerHTML`), noms et contenus fournis par l'application.
