@@ -720,4 +720,111 @@ describe('LcDataTableComponent', () => {
       expect(toggle.getAttribute('aria-expanded')).toBe('true');
     });
   });
+  describe('mouvement (spec 2026-11-mouvement, T6)', () => {
+    /** Simule une animation finie en cours sur l'élément ; `finish()` la termine. */
+    const animate = (node: HTMLElement) => {
+      let finish!: () => void;
+      const finished = new Promise<void>((resolve) => (finish = resolve));
+      node.getAnimations = (() => [{ finished }]) as unknown as typeof node.getAnimations;
+      return finish;
+    };
+    const openPanel = async () => {
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      dialog.close = vi.fn();
+      return dialog;
+    };
+    const rowNodes = () => [...el.querySelectorAll('tbody tr:not(.lc-data-table__state)')];
+
+    it('panneau : la croix pose data-closing, puis close() seulement après la fin du fondu', async () => {
+      await setup({ narrow: true });
+      const dialog = await openPanel();
+      const finish = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      expect(dialog.close).not.toHaveBeenCalled();
+      finish();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+      expect(dialog.hasAttribute('data-closing')).toBe(false);
+      expect(el.querySelector('.lc-data-table__panel-apply')).toBeNull();
+    });
+
+    it('panneau : Échap (cancel) est intercepté et ferme en fondu ; « Afficher N » aussi', async () => {
+      await setup({ narrow: true });
+      let dialog = await openPanel();
+      let finish = animate(dialog);
+      const cancel = new Event('cancel', { cancelable: true });
+      dialog.dispatchEvent(cancel);
+      expect(cancel.defaultPrevented).toBe(true);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      finish();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+
+      dialog = await openPanel();
+      finish = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      expect(dialog.close).not.toHaveBeenCalled();
+      finish();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+    });
+
+    it('panneau : rouvrir pendant le fondu annule la fermeture', async () => {
+      await setup({ narrow: true });
+      const dialog = await openPanel();
+      const finish = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(false);
+      finish();
+      await stable();
+      expect(dialog.close).not.toHaveBeenCalled();
+    });
+
+    it('menu de filtre : fermeture en fondu (lc-overlay--closing), colonne gardée jusqu\'au retrait du panneau', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      await click(applyBtn());
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      expect(menu()).not.toBeNull();
+      finish();
+      await stable();
+      expect(menu()).toBeNull();
+    });
+
+    it('cartes : lcReveal sur les 8 premières seulement sur téléphone, aucune sur ordinateur', async () => {
+      await setup({ narrow: true });
+      expect(rowNodes()).toHaveLength(10);
+      const revealed = rowNodes().filter((row) => row.hasAttribute('lcReveal'));
+      expect(revealed).toHaveLength(8);
+      expect(revealed.map((row) => (row as HTMLElement).style.getPropertyValue('--lc-reveal-index'))).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
+    });
+
+    it('cartes : aucune lcReveal sur ordinateur', async () => {
+      await setup();
+      expect(rowNodes()).toHaveLength(10);
+      expect(rowNodes().filter((row) => row.hasAttribute('lcReveal'))).toHaveLength(0);
+    });
+
+    it('cartes : la cascade rejoue après l\'application des filtres (lignes recréées), pas à un simple rechargement', async () => {
+      await setup({ narrow: true });
+      const before = rowNodes();
+      host.source.set([...ROWS]); // nouvelle source, même requête : lignes conservées (suivies par id), pas de cascade
+      await stable();
+      expect(rowNodes()[0]).toBe(before[0]);
+      const dialog = await openPanel();
+      await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
+      await click(boxes(dialog)[0]); // Nouvelle : lignes 1, 4, 7, 10
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      const after = rowNodes();
+      expect(after).toHaveLength(4);
+      expect(after.every((row) => !before.includes(row) && row.hasAttribute('lcReveal'))).toBe(true);
+    });
+  });
 });
