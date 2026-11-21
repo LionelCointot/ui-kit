@@ -570,15 +570,13 @@ const MOTION_INIT = () => {
     };
   };
 
-  // Corps de section : entrée quand `hidden` est retiré. Pastilles : entrée à l'insertion, sortie à la suppression.
-  q.sections = [];
+  // Pastilles : entrée à l'insertion, sortie à la suppression.
   q.chipsIn = [];
   q.chipOut = null;
   // Voisines = les autres pastilles (le survol d'un bouton qui glisse sous le pointeur n'est pas une transition de pastille).
   const chipAnims = (box) => [...box.querySelectorAll('li.lc-data-table__chip')].flatMap((li) => li.getAnimations({ subtree: true }));
   new MutationObserver((records) => {
     for (const r of records) {
-      if (r.type === 'attributes' && r.target.matches?.('.lc-data-table__section-body') && !r.target.hidden) q.sections.push(measure(r.target));
       for (const n of r.addedNodes) if (n.nodeType === 1 && n.matches('li.lc-data-table__chip')) q.chipsIn.push(measure(n));
       for (const n of r.removedNodes) {
         if (n.nodeType !== 1 || !n.matches('li.lc-data-table__chip')) continue;
@@ -588,7 +586,7 @@ const MOTION_INIT = () => {
         requestAnimationFrame(() => requestAnimationFrame(() => { out.neighboursLater = chipAnims(box).length; out.laterWhich = box.getAnimations({ subtree: true }).map((a) => `${a.transitionProperty ?? a.animationName}@${a.effect.target.className}`); }));
       }
     }
-  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
+  }).observe(document, { subtree: true, childList: true });
 
   // --- Indicateurs (T4, T5) ---
   q.frames = (n = 2) => new Promise((resolve) => { const step = (left) => (left <= 0 ? resolve() : requestAnimationFrame(() => step(left - 1))); step(n); });
@@ -788,7 +786,7 @@ async function motionPhone(context, base, reduced, tag, check) {
   await entry(page, 'Afficher');
   await pick(page, 'Catégorie', 'Beta');
   await page.evaluate(() => window.__qa.startList());
-  // Section dépliée : fondu et décalage d'entrée (CA-11a) remplacés par la hauteur animée de la spec 2026-11-mouvement-ios (CA-H1 à H5, `ios-motion-browser.mjs collapse`).
+  // Section dépliée : hauteur animée de la spec 2026-11-mouvement-ios (CA-H1 à H5, `ios-motion-browser.mjs collapse`).
   await page.locator(`${DIALOG} .lc-data-table__panel-apply`, { hasText: /\d/ }).waitFor();
   const label = await page.locator(`${DIALOG} .lc-data-table__panel-apply`).innerText();
   await page.click(`${DIALOG} .lc-data-table__panel-apply`);

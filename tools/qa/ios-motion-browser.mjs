@@ -106,7 +106,8 @@ async function sheet() {
     check('CA-S3 vers le haut : jamais au-delà de 0', up === 0 || up > -0.5, String(up));
     const p = await H(); await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(300);
     check('CA-S3 toucher sans déplacement : rien ne ferme', (await isOpen(page)) && !(await page.evaluate((s) => document.querySelector(s).hasAttribute('data-closing'), SD)));
-    await drag(page, await H(), 60, 40, 4); await page.mouse.up(); await page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: 3000 }).catch(() => {});
+    // Sans attente entre les pas : la vitesse mesurée ne dépend plus de la charge de la machine.
+    await drag(page, await H(), 60, 0, 4); await page.mouse.up(); await page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: 3000 }).catch(() => {});
     check('CA-S3 < 25 % mais rapide (> 0,5 px/ms, ≥ 16 px) : ferme', !(await isOpen(page)), 'reste ouverte');
     await page.reload(); await page.waitForSelector('#storybook-root > *'); await page.evaluate(INIT); await page.waitForTimeout(400);
     await openSheet(page);
@@ -144,7 +145,7 @@ async function sheet() {
   await withCtx('phone', async (c) => {
     const page = await open(c, 'qa-motion-data-table--table');
     const F = 'button[id$="-filters"]';
-    const state = () => page.evaluate(async (s) => { const d = document.querySelector(s); await Q.until(() => d.hasAttribute('data-closing') || !d.open, 1000); await Q.raf(); return { closing: d.hasAttribute('data-closing'), open: d.open, y: Q.y(d), durs: Q.anims(d).filter((x) => x.prop === 'transform').map((x) => x.t.duration) }; }, SD);
+    const state = () => page.evaluate(async (s) => { const d = document.querySelector(s); await Q.until(() => d.hasAttribute('data-closing') || !d.open, 1000); await Q.raf(); return { closing: d.hasAttribute('data-closing'), open: d.open, y: Q.y(d), durs: Q.anims(d).filter((x) => x.prop === 'transform' && x.el === d && !x.pseudo).map((x) => x.t.duration) }; }, SD); // la feuille seule : le chevron d’une section dépliée (500 ms) n’est pas la sortie
     const t = await page.evaluate(() => ({ enter: Q.ms('--lc-slide-enter-duration'), exit: Q.ms('--lc-slide-exit-duration'), gap: Q.px('--lc-sheet-top-gap'), radius: Q.px('--lc-sheet-radius'), bd: Q.probe('background:var(--lc-sys-color-backdrop)', 'backgroundColor') }));
     check('CA-S0 lc-data-table : plus de <dialog> propre, la croix s’appelle « Fermer sans appliquer »', await page.evaluate(() => !document.querySelector('dialog.lc-data-table__panel') && !!document.querySelector('lc-data-table lc-sheet dialog button[aria-label="Fermer sans appliquer"]') ));
     await page.evaluate(async (f) => { document.querySelector(f).click(); await Q.raf(); }, F);
@@ -388,6 +389,8 @@ async function hover() {
     for (const [name, story, sel] of ITEMS) {
       const page = await open(c, story).catch((e) => { check(`CA-V1 ${name}`, false, `story ${story} : ${String(e.message).split('\n')[0]}`); });
       if (!page) continue;
+      // Le toucher ne doit pas activer l'élément (un onglet ou un lien actif change de couleur sans rapport avec le survol) : le clic est coupé en capture.
+      await page.evaluate(() => document.addEventListener('click', (e) => { e.preventDefault(); e.stopImmediatePropagation(); }, true));
       const n = await page.locator(sel).count();
       if (!n) { check(`CA-V1 toucher ${name}`, false, 'élément introuvable'); await page.close(); continue; }
       const count = Math.min(n, 6); let ok = true; let detail = '';
