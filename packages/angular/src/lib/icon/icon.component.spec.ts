@@ -94,6 +94,10 @@ describe('LcIconComponent', () => {
       expect(shapes(LC_DEFAULT_ICONS[name])).toBe(shapes(lucide(name)));
     });
 
+    it('« paperclip » est dans les icônes par défaut, formes de lucide-static', () => {
+      expect(shapes(LC_DEFAULT_ICONS['paperclip'])).toBe(shapes(lucide('paperclip')));
+    });
+
     it.each(OLD_ICONS)('CA-D1 : l\'icône existante « %s » est toujours là, inchangée par rapport à lucide-static', (name) => {
       expect(LC_DEFAULT_ICONS[name]).toBeDefined();
       expect(shapes(LC_DEFAULT_ICONS[name])).toBe(shapes(lucide(name)));

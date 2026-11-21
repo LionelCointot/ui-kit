@@ -1,0 +1,50 @@
+{
+  "message-composer": {
+    "border-style": {
+      "$description": "Style of the composer border (solid; dashed is set by the application, not animated).",
+      "$value": "solid",
+      "$type": "other"
+    },
+    "border-width": {
+      "$value": "{sys.border.width.thin}",
+      "$type": "dimension"
+    },
+    "border-color": {
+      "$description": "Same default as the fields (lcInput): sys.color.border-strong.",
+      "$value": "{sys.color.border-strong}",
+      "$type": "color"
+    },
+    "background": {
+      "$value": "{sys.color.surface-raised}",
+      "$type": "color"
+    },
+    "thumb-width": {
+      "$description": "Width of an attachment thumbnail.",
+      "$value": "7rem",
+      "$type": "dimension"
+    },
+    "thumb-preview-height": {
+      "$description": "Height of the preview area of an attachment thumbnail.",
+      "$value": "4.5rem",
+      "$type": "dimension"
+    },
+    "remove-size": {
+      "$description": "Visible diameter of the remove button of a thumbnail (the click area stays sys.control-height-md).",
+      "$value": "1.75rem",
+      "$type": "dimension"
+    },
+    "shake-distance": {
+      "$value": "{sys.space.1}",
+      "$type": "dimension"
+    },
+    "shake-duration": {
+      "$value": "{sys.duration.normal}",
+      "$type": "duration"
+    },
+    "enter-scale": {
+      "$description": "Scale an attachment thumbnail starts from when it fades in (unitless number).",
+      "$value": "{dialog.enter-scale}",
+      "$type": "number"
+    }
+  }
+}

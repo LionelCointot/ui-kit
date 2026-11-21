@@ -29,4 +29,5 @@ export * from './combobox/combobox-option.directive';
 export * from './combobox/combobox.component';
 export * from './slider/slider.component';
 export * from './file-upload/file-upload.component';
+export * from './message-composer/message-composer.component';
 export * from './list-editor/list-editor.component';

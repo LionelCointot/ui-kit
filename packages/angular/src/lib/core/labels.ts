@@ -86,6 +86,20 @@ export interface LcLabels {
   readonly fileUploadProgress: (name: string) => string;
   readonly fileUploadAnnounceDone: (name: string) => string;
   readonly fileUploadAnnounceRemoved: (name: string) => string;
+  readonly composerSend: string;
+  readonly composerAttach: string;
+  readonly composerDrop: string;
+  readonly composerAttachments: string;
+  readonly composerSending: string;
+  /** Refus d'un fichier déposé ou choisi : nom et raison (`type` : type non accepté, `count` : trop de fichiers). */
+  readonly composerRejected: (name: string, reason: 'type' | 'count') => string;
+  /** Refus par type quand `accept` est renseigné : nom du fichier et liste des types acceptés. */
+  readonly composerRejectedType: (name: string, accepted: string) => string;
+  /** Compteur de caractères : saisis sur maximum. */
+  readonly composerCount: (length: number, max: number) => string;
+  /** Annonces à l'approche et à l'atteinte de la limite de caractères. */
+  readonly composerLimitNear: string;
+  readonly composerLimitReached: string;
   /** Unités de taille de fichier, de l'octet au gigaoctet. */
   readonly fileSizeUnits: readonly [string, string, string, string];
   /** Liste modifiable (`lc-list-editor`) : champ d'ajout, commandes et état de chaque ligne, erreurs détectées, annonces. */
@@ -688,6 +702,16 @@ export const LC_LABELS_FR: LcLabels = {
   fileUploadProgress: (name) => `Envoi de ${name}`,
   fileUploadAnnounceDone: (name) => `${name} : envoi terminé`,
   fileUploadAnnounceRemoved: (name) => `${name} retiré`,
+  composerSend: 'Envoyer',
+  composerAttach: 'Joindre un fichier',
+  composerDrop: 'Déposez vos fichiers ici',
+  composerAttachments: 'Pièces jointes',
+  composerSending: 'Envoi en cours…',
+  composerRejected: (name, reason) => `${name} : ${reason === 'type' ? 'type de fichier non accepté.' : 'nombre maximal de fichiers atteint.'}`,
+  composerRejectedType: (name, accepted) => `${name} n'est pas accepté. Fichiers acceptés : ${accepted}.`,
+  composerCount: (length, max) => `${length} / ${max}`,
+  composerLimitNear: 'Vous approchez de la limite de caractères.',
+  composerLimitReached: 'Limite de caractères atteinte.',
   fileSizeUnits: ['o', 'Ko', 'Mo', 'Go'],
   listEditorList: 'Éléments',
   listEditorAddLabel: 'Nouvel élément',
@@ -930,6 +954,16 @@ export const LC_LABELS_EN: LcLabels = {
   fileUploadProgress: (name) => `Uploading ${name}`,
   fileUploadAnnounceDone: (name) => `${name}: upload complete`,
   fileUploadAnnounceRemoved: (name) => `${name} removed`,
+  composerSend: 'Send',
+  composerAttach: 'Attach a file',
+  composerDrop: 'Drop your files here',
+  composerAttachments: 'Attachments',
+  composerSending: 'Sending…',
+  composerRejected: (name, reason) => `${name}: ${reason === 'type' ? 'file type not accepted.' : 'maximum number of files reached.'}`,
+  composerRejectedType: (name, accepted) => `${name} is not accepted. Accepted files: ${accepted}.`,
+  composerCount: (length, max) => `${length} / ${max}`,
+  composerLimitNear: 'You are nearing the character limit.',
+  composerLimitReached: 'Character limit reached.',
   fileSizeUnits: ['B', 'KB', 'MB', 'GB'],
   listEditorList: 'Items',
   listEditorAddLabel: 'New item',
