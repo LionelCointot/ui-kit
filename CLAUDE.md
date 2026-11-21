@@ -48,7 +48,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 - Tous en sonnet, identiques dans tous les dépôts : les modifier dans `project-template`, puis `scripts/sync-skills.sh`.
 
 ## Conventions
-- Commits : Conventional Commits. SemVer : les tokens (noms et rôles), sélecteurs, entrées et sorties sont le **contrat public** (renommer = version majeure, alias déprécié pendant au moins une mineure).
+- Commits : Conventional Commits. Les tokens (noms et rôles), sélecteurs, entrées et sorties sont le **contrat public**. Phase de développement (décision du 2026-11-21) : aucune rétrocompatibilité, un changement de contrat casse franchement, sans alias déprécié, et les consommateurs (copro-ticket, finance-*) sont corrigés dans la même passe ; la règle SemVer (renommer = version majeure, alias déprécié pendant au moins une mineure) revient à la première mise en production d'un consommateur.
 - Code et identifiants en anglais ; libellés via `LC_LABELS` (français par défaut, anglais fourni), jamais en dur.
 - Préfixe `lc` : élément `lc-…`, attribut `lc…`, variable CSS `--lc-…`, type `Lc…`, classe `LcXxxComponent` / `LcXxxDirective` / `LcXxxService`.
 - Sélecteur d'attribut sur les éléments natifs (`button[lcButton]`, `input[lcInput]`…), élément hôte pour les composites.
