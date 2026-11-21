@@ -92,6 +92,7 @@ lc-data-table {
   min-block-size: var(--lc-sys-control-height-sm);
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border-strong);
   border-radius: var(--lc-sys-radius-full);
+  transition: opacity var(--lc-chip-enter-duration) var(--lc-overlay-easing);
   background: var(--lc-sys-color-secondary-container);
   color: var(--lc-sys-color-on-secondary-container);
   font-size: var(--lc-sys-font-size-sm);
@@ -505,6 +506,22 @@ lc-data-table {
 .lc-data-table__panel[open] {
   display: flex;
   flex-direction: column;
+  transition:
+    opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing),
+    transform var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+/* Entrée : fondu et descente (@starting-style joue à l'ouverture du dialogue). Sortie : `data-closing` (posé avant `close()`) fond le panneau. */
+@starting-style {
+  .lc-data-table__panel[open] {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--lc-overlay-offset)));
+  }
+}
+
+.lc-data-table__panel[open][data-closing] {
+  opacity: 0;
+  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
 }
 
 .lc-data-table__panel:focus {
@@ -513,6 +530,18 @@ lc-data-table {
 
 .lc-data-table__panel::backdrop {
   background: var(--lc-sys-color-background);
+  transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+@starting-style {
+  .lc-data-table__panel[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.lc-data-table__panel[data-closing]::backdrop {
+  opacity: 0;
+  transition-duration: var(--lc-overlay-exit-duration);
 }
 
 .lc-data-table__panel-head {
@@ -604,11 +633,32 @@ lc-data-table {
 
 .lc-data-table__section-body {
   padding-block-end: var(--lc-sys-space-4);
+  transition:
+    opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing),
+    transform var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+/* Le corps sort de `[hidden]` (display: none) : @starting-style joue à chaque dépliage ; pas d'animation de hauteur. */
+@starting-style {
+  .lc-data-table__section-body {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--lc-overlay-offset)));
+  }
+}
+
+@starting-style {
+  .lc-data-table__chip {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lc-data-table__funnel,
-  .lc-data-table__section-toggle > lc-icon {
+  .lc-data-table__section-toggle > lc-icon,
+  .lc-data-table__panel[open],
+  .lc-data-table__panel::backdrop,
+  .lc-data-table__section-body,
+  .lc-data-table__chip {
     transition: none;
   }
 }

@@ -638,8 +638,9 @@ async function motion(browser, base) {
             const sign = above ? 1 : -1;
             const placed = above ? got.rect.bottom <= got.hostRect.top + 1 : got.rect.top >= got.hostRect.bottom - 1;
             const dy = m42(e.startTransform);
-            const ok = e.count === 1 && near(e.durations[0], got.enterMs) && e.delays[0] === 0 && e.startOpacity === '0' && e.endOpacity === '1' && near(dy, sign * got.offset, 0.01) && m42(e.endTransform) === 0 && e.className.includes('lc-overlay--above') === above && placed;
-            check(ok, `CA-7 ${label} entrée`, `animations lc-overlay-enter=${e.count} durée=${e.durations} attendu ${got.enterMs}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${sign * got.offset}, fin=${e.endOpacity}/${e.endTransform}, classe à l'attache="${got.classAtAttach}", placé ${above ? 'au-dessus' : 'au-dessous'}=${placed}`);
+            const ok = e.count === 1 && near(e.durations[0], got.enterMs) && e.delays[0] === 0 && e.startOpacity === '0' && e.endOpacity === '1' && near(dy, sign * got.offset, 0.01) && m42(e.endTransform) === 0 && e.className.includes('lc-overlay--above') === above;
+            check(ok, `CA-7 ${label} entrée`, `animations lc-overlay-enter=${e.count} durée=${e.durations} attendu ${got.enterMs}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${sign * got.offset}, fin=${e.endOpacity}/${e.endTransform}, classe à l'attache="${got.classAtAttach}"`);
+            check(placed, `placement ${label} (précondition de CA-7, hors critère)`, `panneau ${above ? 'au-dessus' : 'au-dessous'} du champ=${placed} (haut ${Math.round(got.rect.top)}, bas ${Math.round(got.rect.bottom)} ; champ haut ${Math.round(got.hostRect.top)}, bas ${Math.round(got.hostRect.bottom)})`);
           }
           // CA-8a et 8c : fermeture au clavier.
           await page.keyboard.press('Escape');
@@ -701,6 +702,7 @@ async function motion(browser, base) {
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
           await page.click(spec.open);
           await page.waitForFunction(() => window.__qa.enter !== null);
+          await page.evaluate(async () => { await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); window.__qa.startsAtEnter = window.__qa.starts; });
           await page.setViewportSize({ width, height: 480 });
           const flipped = await page.waitForFunction(() => window.__qa.flip, undefined, { timeout: 3000 }).then((h) => h.jsonValue()).catch(() => null);
           const restarts = flipped === null ? -1 : await page.evaluate(async () => { await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); return window.__qa.starts - window.__qa.startsAtEnter; });

@@ -9,7 +9,8 @@ import {
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
-  LC_LABELS, LC_LOCALE, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate, lcUniqueId,
+  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, isoToLocalDate,
+  lcAnimationsEnd, lcDetachAnimated, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
 import { LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
@@ -21,6 +22,9 @@ import {
   cleanFilterValue, isDateRangeInverted, isFilterActive, lcLocalSource, withFilter,
 } from './data-table-model';
 
+/** Cartes du téléphone qui entrent en cascade (`lcReveal`) ; les suivantes apparaissent sans animation. */
+const REVEAL_CARDS = 8;
+
 /** Sous cette largeur (768 px), le tableau passe en cartes : mêmes ruptures que le CSS. */
 const NARROW = '(max-width: 47.99em)';
 
@@ -28,8 +32,8 @@ const NARROW = '(max-width: 47.99em)';
 const MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
   { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
-  { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
+  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
+  { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
 ];
 
 interface HeaderView<T> {
@@ -65,7 +69,7 @@ interface ChipView<T> {
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
     LcEmptyStateComponent, LcTooltipDirective, LcColumnFilterComponent,
-    LcNativeDatePickerDirective,
+    LcNativeDatePickerDirective, LcRevealDirective,
   ],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
@@ -103,9 +107,10 @@ export class LcDataTableComponent<T> {
 
   protected readonly uid = lcUniqueId('data-table');
   protected readonly menuPositions = MENU_POSITIONS;
+  protected readonly revealCards = REVEAL_CARDS;
   protected readonly cellTemplates = computed(() => new Map(this.cells().map((cell) => [cell.lcCell(), cell.template])));
   private readonly cells = contentChildren(LcCellDirective);
-  private readonly narrow = toSignal(inject(BreakpointObserver).observe(NARROW).pipe(map((state) => state.matches)), { initialValue: false });
+  protected readonly narrow = toSignal(inject(BreakpointObserver).observe(NARROW).pipe(map((state) => state.matches)), { initialValue: false });
 
   protected readonly dataSource = computed<LcDataSource<T>>(() => {
     const source = this.source();
@@ -181,6 +186,7 @@ export class LcDataTableComponent<T> {
   protected readonly menuOrigin = signal<HTMLElement>(this.host);
   protected readonly menuDraft = signal<LcFilterValue | undefined>(undefined);
   private readonly menuFilter = viewChild<LcColumnFilterComponent<T>>('menuFilter');
+  private readonly menuOverlay = viewChild(CdkConnectedOverlay);
   protected readonly menuCanClear = computed(() => {
     const column = this.menuColumn();
     return !!column && (isFilterActive(this.query().filters[column.key]) || isFilterActive(this.menuDraft()));
@@ -213,11 +219,19 @@ export class LcDataTableComponent<T> {
 
   /** Début de l'annonce faite quand la page demandée arrive (« Filtre État appliqué. ») ; le nombre de lignes la complète. */
   private pendingAnnouncement: string | null = null;
+  /** Une nouvelle requête vient d'être posée sur téléphone : la cascade des cartes rejoue à l'arrivée de la page. */
+  private pendingReveal = false;
+  /** Clé de rendu des lignes : incrémentée, elle recrée les cartes et rejoue la cascade (`lcReveal`). */
+  protected readonly renderKey = signal(0);
 
   constructor() {
     effect(() => {
       if (!this.result.hasValue()) return;
       const count = this.result.value().rows.length;
+      if (this.pendingReveal) {
+        this.pendingReveal = false;
+        untracked(() => this.renderKey.update((key) => key + 1));
+      }
       if (this.pendingAnnouncement === null) return;
       const rows = this.text.rows(count);
       this.announcer.announce(`${this.pendingAnnouncement} ${rows.charAt(0).toUpperCase()}${rows.slice(1)}.`, 'polite');
@@ -254,8 +268,10 @@ export class LcDataTableComponent<T> {
 
   // ---------- Menu ----------
   protected toggleMenu(column: LcDataColumn<T>, button: HTMLElement): void {
+    const closing = this.menuElement()?.classList.contains(LC_OVERLAY_CLOSING_CLASS);
+    this.menuElement()?.classList.remove(LC_OVERLAY_CLOSING_CLASS);
     if (this.menuColumn()?.key === column.key) {
-      this.closeMenu(true);
+      if (!closing) this.closeMenu(true);
       return;
     }
     this.menuOrigin.set(button);
@@ -270,9 +286,16 @@ export class LcDataTableComponent<T> {
 
   protected closeMenu(returnFocus: boolean): void {
     const column = this.menuColumn();
-    if (!column) return;
-    this.menuColumn.set(null);
+    if (!column || this.menuElement()?.classList.contains(LC_OVERLAY_CLOSING_CLASS)) return;
     if (returnFocus) this.focusLater(`${this.uid}-funnel-${column.key}`);
+    // Fondu de sortie : la colonne reste affichée jusqu'à l'événement `detach` du panneau, qui la vide.
+    const overlay = this.menuOverlay()?.overlayRef;
+    if (overlay?.hasAttached()) void lcDetachAnimated(overlay);
+    else this.menuColumn.set(null);
+  }
+
+  private menuElement(): HTMLElement | undefined {
+    return this.menuOverlay()?.overlayRef?.overlayElement;
   }
 
   protected onMenuOutsideClick(event: MouseEvent): void {
@@ -337,6 +360,7 @@ export class LcDataTableComponent<T> {
     this.panelDraft.set({ ...this.query().filters });
     this.panelSection.set(section);
     this.panelOpen.set(true);
+    this.panel().nativeElement.removeAttribute('data-closing'); // réouverture pendant le fondu de sortie : annule la fermeture
     // Une fois le contenu rendu : `showModal()` donne le focus au contrôle `autofocus`.
     afterNextRender(() => {
       const dialog = this.panel().nativeElement;
@@ -344,9 +368,22 @@ export class LcDataTableComponent<T> {
     }, { injector: this.injector });
   }
 
-  protected closePanel(): void {
-    this.panel().nativeElement.close?.();
+  /** Fermeture en fondu : `data-closing`, attente de la fin des animations, puis `close()`. Rouvrir pendant le fondu annule la fermeture. */
+  protected async closePanel(): Promise<void> {
+    const dialog = this.panel().nativeElement;
+    if (dialog.hasAttribute('data-closing')) return;
+    dialog.setAttribute('data-closing', '');
+    await lcAnimationsEnd(dialog);
+    if (!dialog.hasAttribute('data-closing')) return;
+    dialog.removeAttribute('data-closing');
+    dialog.close?.();
     this.onPanelClosed();
+  }
+
+  /** Échap : la fermeture native est remplacée par la fermeture en fondu. */
+  protected onPanelCancel(event: Event): void {
+    event.preventDefault();
+    void this.closePanel();
   }
 
   /** Fermeture par Échap (événement `close` du dialogue natif) ou par la croix : rien n'est appliqué. */
@@ -384,7 +421,7 @@ export class LcDataTableComponent<T> {
       return;
     }
     this.setQuery({ ...this.query(), filters: this.panelQuery().filters }, this.text.announceFiltersApplied);
-    this.closePanel();
+    void this.closePanel();
   }
 
   // ---------- Outils ----------
@@ -415,6 +452,7 @@ export class LcDataTableComponent<T> {
 
   private setQuery(query: LcTableQuery, announcement: string | null = null): void {
     this.pendingAnnouncement = announcement;
+    this.pendingReveal = this.narrow();
     this.query.set(query);
   }
 

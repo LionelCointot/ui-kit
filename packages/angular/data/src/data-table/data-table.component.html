@@ -104,19 +104,18 @@
           </tr>
         }
       } @else {
-        @for (row of rows(); track trackBy()(row)) {
-          <tr>
-            @for (column of columns(); track column.key; let first = $first) {
-              <td [class]="'lc-data-table__cell lc-data-table__cell--' + align(column)" [class.lc-data-table__card-only]="column.cardOnly"
-                [class.lc-data-table__title]="first" [attr.data-label]="first || column.cardOnly ? null : column.label">
-                @if (cellTemplates().get(column.key); as template) {
-                  <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: row, column: $any(column) }" />
-                } @else {
-                  {{ cellText(column, row) }}
-                }
-              </td>
+        @for (generation of [renderKey()]; track generation) {
+          @for (row of rows(); track trackBy()(row); let index = $index) {
+            <!-- Cascade des 8 premières cartes du téléphone ; elle rejoue quand la clé de rendu change. -->
+            @if (narrow() && index < revealCards) {
+              <tr lcReveal [lcRevealIndex]="index">
+                <ng-container [ngTemplateOutlet]="rowCells" [ngTemplateOutletContext]="{ $implicit: row }" />
+              </tr>
+            } @else {
+              <tr>
+                <ng-container [ngTemplateOutlet]="rowCells" [ngTemplateOutletContext]="{ $implicit: row }" />
+              </tr>
             }
-          </tr>
         } @empty {
           <tr class="lc-data-table__state">
             <td [attr.colspan]="span()">
@@ -132,6 +131,7 @@
             </td>
           </tr>
         }
+        }
       }
     </tbody>
   </table>
@@ -140,10 +140,24 @@
   <p class="lc-data-table__notice" role="status">{{ labels.truncatedRows(rows().length) }}</p>
 }
 
+<!-- Cellules d'une ligne : partagées par la carte animée (lcReveal) et la ligne simple -->
+<ng-template #rowCells let-row>
+  @for (column of columns(); track column.key; let first = $first) {
+    <td [class]="'lc-data-table__cell lc-data-table__cell--' + align(column)" [class.lc-data-table__card-only]="column.cardOnly"
+      [class.lc-data-table__title]="first" [attr.data-label]="first || column.cardOnly ? null : column.label">
+      @if (cellTemplates().get(column.key); as template) {
+        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: row, column: $any(column) }" />
+      } @else {
+        {{ cellText(column, row) }}
+      }
+    </td>
+  }
+</ng-template>
+
 <!-- Menu de filtre (ordinateur) : boîte de dialogue non modale ancrée sous l'entonnoir -->
 <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="menuOrigin()" [cdkConnectedOverlayOpen]="!!menuColumn()"
   [cdkConnectedOverlayPositions]="menuPositions" [cdkConnectedOverlayPush]="true" cdkConnectedOverlayPanelClass="lc-data-table__overlay"
-  (overlayOutsideClick)="onMenuOutsideClick($event)" (overlayKeydown)="onMenuKeydown($event)" (detach)="closeMenu(false)">
+  (overlayOutsideClick)="onMenuOutsideClick($event)" (overlayKeydown)="onMenuKeydown($event)" (detach)="menuColumn.set(null)">
   @if (menuColumn(); as column) {
     <div class="lc-data-table__menu" role="dialog" aria-modal="false" tabindex="-1" cdkTrapFocus [id]="uid + '-menu'"
       [attr.aria-labelledby]="uid + '-menu-title'" [attr.aria-busy]="menuFilter.loading() || null">
@@ -165,7 +179,7 @@
 </ng-template>
 
 <!-- Panneau des filtres (téléphone) : dialogue modal plein écran, rien n'est appliqué avant « Afficher » -->
-<dialog #panel class="lc-data-table__panel" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()">
+<dialog #panel class="lc-data-table__panel" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()" (cancel)="onPanelCancel($event)">
   @if (panelOpen()) {
     <div class="lc-data-table__panel-head">
       <h2 class="lc-data-table__panel-title" [id]="uid + '-panel-title'">{{ text.filters(0) }}</h2>
