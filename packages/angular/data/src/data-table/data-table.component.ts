@@ -403,7 +403,6 @@ export class LcDataTableComponent<T> {
         return filter.options.find((option) => option.value === value)?.label ?? String(value);
       case 'dateRange': {
         const range = value as LcDateRange;
-        if (range.preset) return this.text.lastDays(range.preset);
         const day = new Intl.DateTimeFormat(this.locale, { day: 'numeric', month: 'short' });
         const from = range.from ? isoToLocalDate(range.from) : null;
         const to = range.to ? isoToLocalDate(range.to) : null;

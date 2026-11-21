@@ -231,7 +231,6 @@ export interface LcDataTableLabels {
   /** Texte cherché, dans le résumé d'un filtre texte. */
   readonly quoted: (text: string) => string;
   readonly lastDays: (days: number) => string;
-  readonly chosenPeriod: string;
   readonly from: string;
   readonly to: string;
   readonly since: (date: string) => string;
@@ -297,12 +296,11 @@ const DATA_TABLE_FR: LcDataTableLabels = {
   emptyValue: '(vide)',
   quoted: (text) => `« ${text} »`,
   lastDays: (days) => `${days} derniers jours`,
-  chosenPeriod: 'Période choisie',
   from: 'Du',
   to: 'Au',
   since: (date) => `depuis le ${date}`,
   until: (date) => `jusqu'au ${date}`,
-  datesNote: 'Dates incluses. Une date vide ne borne pas la période.',
+  datesNote: 'Dates incluses.',
   dateOrderError: 'La date de fin est avant la date de début.',
   filters: (active) => (active ? `Filtres (${active})` : 'Filtres'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filtres' : `Filtres, ${active} ${active > 1 ? 'actifs' : 'actif'}`),
@@ -363,12 +361,11 @@ const DATA_TABLE_EN: LcDataTableLabels = {
   emptyValue: '(empty)',
   quoted: (text) => `“${text}”`,
   lastDays: (days) => `Last ${days} days`,
-  chosenPeriod: 'Custom period',
   from: 'From',
   to: 'To',
   since: (date) => `since ${date}`,
   until: (date) => `until ${date}`,
-  datesNote: 'Dates included. An empty date leaves the period open.',
+  datesNote: 'Dates included.',
   dateOrderError: 'The end date is before the start date.',
   filters: (active) => (active ? `Filters (${active})` : 'Filters'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filters' : `Filters, ${active} active`),

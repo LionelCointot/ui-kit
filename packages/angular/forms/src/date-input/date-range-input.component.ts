@@ -225,6 +225,9 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   private readonly orderError = computed(() =>
     this.states().start === 'order' || this.states().end === 'order' ? this.labels.dataTable.dateOrderError : null);
 
+  /** Vrai tant qu'une fin saisie avant le début est refusée (la borne fautive n'est pas dans la valeur). */
+  readonly orderInvalid = computed(() => this.orderError() !== null);
+
   /** Une seule borne remplie : la phrase le dit en clair (pas pendant une erreur d'ordre : la borne refusée n'est pas « sans date »). */
   protected readonly openLine = computed(() => {
     const { from, to } = this.valid();
