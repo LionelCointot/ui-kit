@@ -274,8 +274,7 @@ const MOTION_VALUES = [
 ].map(({ key, use }) => ({ key, cssVar: cssVarOf(key), value: light[key], use }));
 
 const MOTION_CURVES = [
-  { name: 'standard', use: 'A fixed curve that eases in and out: for fades and things appearing.' },
-  { name: 'spring', use: 'A physical spring that settles without going past its target; with its longer duration it reads as a glide: for things that move to a new place.' },
+  { name: 'standard', use: 'A fixed curve that eases in and out: for fades, things appearing and things moving to a new place (over the longer move duration).' },
 ].map(({ name, use }) => ({ name, cssVar: cssVarOf(`easing.${name}`), value: light[`easing.${name}`], use }));
 
 const MOTION_OFF_CSS = `:root {
@@ -312,23 +311,8 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     </div>
 
     <h2>Curves</h2>
-    <p class="lead">A curve says how fast something goes at each moment. Both curves below go from 0 to 1 in the same time; the dot marks half of the time. They are close: what makes a move feel different from a fade is mostly its longer duration (500ms instead of 200ms).</p>
+    <p class="lead">A curve says how fast something goes at each moment. The curve below goes from 0 to 1 over the duration of the animation; the dot marks half of the time. Moves (list rows, tab and nav indicators) use the same curve as fades, over a longer duration (500ms instead of 200ms).</p>
     <div class="curves">
-      <figure class="both">
-        <span class="axis">progress ↑</span>
-        <svg viewBox="-4 -4 108 108" role="img" aria-label="Both curves on the same graph: standard and spring">
-          <path class="axes" d="M0 0 V100 H100" />
-          <path class="halfway" d="M50 0 V100" />
-          @for (curve of curves; track curve.name) {
-            <path [class]="'trace ' + curve.name" [attr.d]="traces()[curve.name]?.path" />
-            <circle [class]="'dot ' + curve.name" cx="50" [attr.cy]="traces()[curve.name]?.mid" r="3" />
-          }
-        </svg>
-        <span class="axis end">time →</span>
-        <figcaption>
-          @for (curve of curves; track curve.name) { <span><i [class]="'key ' + curve.name"></i>{{ curve.name }}</span> }
-        </figcaption>
-      </figure>
       @for (curve of curves; track curve.name) {
         <figure>
           <span class="axis">progress ↑</span>
@@ -395,9 +379,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     pre { margin: 0; padding: var(--lc-sys-space-3) var(--lc-sys-space-4); overflow-x: auto; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
     .curves { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-6); }
     figure { margin: 0; width: 14rem; max-width: 100%; }
-    figure.both { width: 18rem; }
     figcaption { display: grid; gap: var(--lc-sys-space-1); margin-top: var(--lc-sys-space-2); font-size: var(--lc-sys-font-size-sm); }
-    figure.both figcaption { display: flex; gap: var(--lc-sys-space-4); }
     .axis { display: block; font-size: var(--lc-sys-font-size-xs); color: var(--lc-sys-color-on-surface-muted); }
     .axis.end { text-align: end; }
     svg { display: block; width: 100%; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
@@ -406,10 +388,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     .halfway { stroke: var(--lc-sys-color-border); stroke-width: 1; stroke-dasharray: 4 4; }
     .trace { stroke-width: 2; }
     .trace.standard { stroke: var(--lc-sys-color-primary); }
-    .trace.spring { stroke: var(--lc-sys-color-highlight); }
-    .dot.standard, .key.standard { fill: var(--lc-sys-color-primary); background: var(--lc-sys-color-primary); }
-    .dot.spring, .key.spring { fill: var(--lc-sys-color-highlight); background: var(--lc-sys-color-highlight); }
-    .key { display: inline-block; width: var(--lc-sys-space-3); height: var(--lc-sys-space-3); border-radius: var(--lc-sys-radius-full); margin-inline-end: var(--lc-sys-space-1); }
+    .dot.standard { fill: var(--lc-sys-color-primary); }
     .probe { position: absolute; visibility: hidden; }
     .demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: var(--lc-sys-space-6); align-items: start; }
     ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--lc-sys-space-2); }
@@ -459,7 +438,7 @@ export class DocMotionComponent {
     pressButton(this.press().nativeElement);
   }
 
-  /** FLIP: rows are measured, the order is reversed, then each row travels from its old place with the move duration and the spring. */
+  /** FLIP: rows are measured, the order is reversed, then each row travels from its old place with the list move duration and curve. */
   protected reverseList(): void {
     const before = new Map(this.rows().map(({ nativeElement: row }) => [row.dataset['id'], row.getBoundingClientRect().top]));
     this.items.update((list) => [...list].reverse());
@@ -470,8 +449,8 @@ export class DocMotionComponent {
           const shift = (before.get(row.dataset['id']) ?? 0) - row.getBoundingClientRect().top;
           if (!shift) continue;
           row.animate([{ transform: `translateY(${shift}px)` }, { transform: 'none' }], {
-            duration: tokenMs(row, '--lc-sys-duration-move'),
-            easing: getComputedStyle(row).getPropertyValue('--lc-sys-easing-spring').trim(),
+            duration: tokenMs(row, '--lc-list-move-duration'),
+            easing: getComputedStyle(row).getPropertyValue('--lc-list-move-easing').trim(),
           });
         }
       },

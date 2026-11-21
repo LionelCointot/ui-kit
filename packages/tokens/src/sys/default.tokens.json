@@ -394,10 +394,6 @@
       "emphasized": {
         "$value": "{ref.easing.emphasized}",
         "$type": "cubicBezier"
-      },
-      "spring": {
-        "$value": "{ref.easing.spring}",
-        "$type": "cubicBezier"
       }
     },
     "z": {

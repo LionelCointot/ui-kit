@@ -845,8 +845,8 @@ async function motionPhone(context, base, reduced, tag, check) {
 }
 
 const easeNums = (e) => e.match(/-?[\d.]+/g)?.map(Number) ?? [];
-/** Deux courbes `linear()` identiques à la sérialisation près (pourcentages arrondis différemment). */
-const sameEase = (a, b) => a.startsWith('linear(') && b.startsWith('linear(') && easeNums(a).length === easeNums(b).length && easeNums(a).every((n, i) => Math.abs(n - easeNums(b)[i]) < 1e-3);
+/** Deux courbes identiques à la sérialisation près (nombres arrondis différemment) ; `linear` seul est refusé : la courbe attendue est `cubic-bezier` (easing-standard). */
+const sameEase = (a, b) => a.startsWith('cubic-bezier(') && b.startsWith('cubic-bezier(') && easeNums(a).length === easeNums(b).length && easeNums(a).every((n, i) => Math.abs(n - easeNums(b)[i]) < 1e-3);
 const reducedMs = (list) => msList(list).every((ms) => ms <= 0.01);
 const ink = (el) => { const cs = getComputedStyle(el); const solid = (c) => c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent'; const b = parseFloat(cs.borderBlockEndWidth) > 0 && cs.borderBlockEndStyle !== 'none' ? cs.borderBlockEndColor : 'none'; const o = parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none' ? cs.outlineColor : 'none'; return { border: b, outline: o, background: cs.backgroundColor, visible: solid(b === 'none' ? 'transparent' : b) || solid(o === 'none' ? 'transparent' : o) || solid(cs.backgroundColor) }; };
 
@@ -888,7 +888,7 @@ async function motionIndicators(context, base, name, tag, width, check) {
     } else if (!forced) {
       const props = got.info.map((i) => i.p);
       check(props.includes('transform') && !props.includes('left') && got.info.every((i) => near(i.d, got.ms) && i.delay === 0), `CA-2 ${tag} transition de transform à la durée du token`, `transitions=${JSON.stringify(got.info)} attendu ${got.ms}ms`);
-      check(got.info.length > 0 && got.info.every((i) => sameEase(i.e, got.ease)) && near(got.ms, 500) && near(got.move, 500), `CA-24 ${tag} onglets : ressort linear() 500 ms`, `durée token=${got.ms} duration-move=${got.move} courbe des transitions=${got.info[0]?.e?.slice(0, 40)}… courbe du token=${got.ease.slice(0, 40)}…`);
+      check(got.info.length > 0 && got.info.every((i) => sameEase(i.e, got.ease)) && near(got.ms, 500) && near(got.move, 500), `CA-24 ${tag} onglets : easing-standard, 500 ms`, `durée token=${got.ms} duration-move=${got.move} courbe des transitions=${got.info[0]?.e?.slice(0, 40)}… courbe du token=${got.ease.slice(0, 40)}…`);
     }
     check(fits({ ind: got.rect, tab: got.tab }), `CA-2 ${tag} après finish : position et largeur de l'onglet (± 1 px)`, fmt({ ind: got.rect, tab: got.tab }));
     check(errors.length === 0, `erreurs page ${tag} tabs`, errors.join(' ; '));
@@ -1005,7 +1005,7 @@ async function motionIndicators(context, base, name, tag, width, check) {
       check(navFits(await navRect(page, '#item-b')), `CA-5a/13 ${tag} indicateur sur l'élément actif après le clic`, navFmt(await navRect(page, '#item-b')));
     } else {
       check(got.info.some((i) => i.p === 'transform' && near(i.d, got.ms)), `CA-5a ${tag} transition de transform à la durée du token`, `transitions=${JSON.stringify(got.info.map((i) => [i.p, i.d]))} attendu ${got.ms}ms`);
-      check(got.info.filter((i) => i.p === 'transform' || i.p === 'height').every((i) => sameEase(i.e, got.ease)) && near(got.ms, 500) && near(got.move, 500), `CA-24 ${tag} nav : ressort linear() 500 ms`, `durée token=${got.ms} duration-move=${got.move} courbe=${got.info[0]?.e?.slice(0, 40)}… token=${got.ease.slice(0, 40)}…`);
+      check(got.info.filter((i) => i.p === 'transform' || i.p === 'height').every((i) => sameEase(i.e, got.ease)) && near(got.ms, 500) && near(got.move, 500), `CA-24 ${tag} nav : easing-standard, 500 ms`, `durée token=${got.ms} duration-move=${got.move} courbe=${got.info[0]?.e?.slice(0, 40)}… token=${got.ease.slice(0, 40)}…`);
       check(navFits(await navRect(page, '#item-b')), `CA-5a ${tag} après finish : indicateur sur l'élément (± 1 px)`, navFmt(await navRect(page, '#item-b')));
     }
     check(errors.length === 0, `erreurs page ${tag} nav`, errors.join(' ; '));
@@ -1096,7 +1096,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
     const still = r.kept.filter((k) => Math.abs(k.from - k.to) < 0.5);
     if (strict) check(still.every((k) => !last(k.key)), `CA-20 ${tag} ${label} pas de glissement pour une ligne qui n'a pas bougé`, `lignes immobiles animées=${still.filter((k) => last(k.key)).map((k) => k.key)}`);
     const moveEase = waapi.find((a) => a.props.includes('transform'));
-    check(!!moveEase && sameEase(moveEase.easing, r.moveEase) && near(moveEase.duration, 500), `CA-24 ${tag} ${label} lignes : ressort linear() 500 ms`, `durée=${moveEase?.duration} courbe=${moveEase?.easing?.slice(0, 40)}…`);
+    check(!!moveEase && sameEase(moveEase.easing, r.moveEase) && near(moveEase.duration, 500), `CA-24 ${tag} ${label} lignes : easing-standard, 500 ms`, `durée=${moveEase?.duration} courbe=${moveEase?.easing?.slice(0, 40)}…`);
     // Ajoutées : fondu à leur place.
     if (expectAdded > 0) {
       const fades = r.added.map((key) => waapi.find((a) => a.key === key && a.props.includes('opacity')));

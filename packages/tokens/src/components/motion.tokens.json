@@ -5,7 +5,7 @@
       "$type": "duration"
     },
     "indicator-easing": {
-      "$value": "{sys.easing.spring}",
+      "$value": "{sys.easing.standard}",
       "$type": "cubicBezier"
     }
   },
@@ -15,7 +15,7 @@
       "$type": "duration"
     },
     "indicator-easing": {
-      "$value": "{sys.easing.spring}",
+      "$value": "{sys.easing.standard}",
       "$type": "cubicBezier"
     }
   },
@@ -67,7 +67,7 @@
       "$type": "duration"
     },
     "move-easing": {
-      "$value": "{sys.easing.spring}",
+      "$value": "{sys.easing.standard}",
       "$type": "cubicBezier"
     }
   }
