@@ -18,6 +18,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { fileSizeText } from '../shared/file-display';
 import { dragHasFiles, dragLeftZone, filterFiles, type LcFileRejectionReason } from '../shared/file-filter';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
@@ -357,17 +358,7 @@ export class LcFileUploadComponent implements LcFormFieldControl {
     if (refused.length > 0) this.rejected.emit(refused);
   }
 
-  /** Taille lisible, unités du kit (1 Ko = 1 000 octets) : « 2,3 Mo ». */
   private sizeText(bytes: number): string {
-    let value = Number.isFinite(bytes) ? Math.max(0, bytes) : 0;
-    let unit = 0;
-    let shown = Math.round(value);
-    // On passe à l'unité supérieure quand la valeur arrondie atteint 1 000 (999 999 o : « 1 Mo », pas « 1 000 Ko »).
-    while (shown >= 1000 && unit < 3) {
-      value /= 1000;
-      unit += 1;
-      shown = Number(value.toFixed(value >= 100 ? 0 : 1)); // décimale nulle omise : « 2 Mo », pas « 2,0 Mo »
-    }
-    return `${this.format.number(shown)} ${this.labels.fileSizeUnits[unit]}`;
+    return fileSizeText(bytes, this.labels.fileSizeUnits, (value) => this.format.number(value));
   }
 }

@@ -25,6 +25,11 @@
     "shake-duration": {
       "$value": "{sys.duration.normal}",
       "$type": "duration"
+    },
+    "enter-scale": {
+      "$description": "Scale an attachment thumbnail starts from when it fades in (unitless number).",
+      "$value": "{dialog.enter-scale}",
+      "$type": "number"
     }
   }
 }

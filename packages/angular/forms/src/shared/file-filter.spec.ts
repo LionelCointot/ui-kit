@@ -11,6 +11,8 @@ describe('matchesAccept', () => {
     expect(matchesAccept(file('a', 'image/webp'), 'image/*')).toBe(true);
     expect(matchesAccept(file('A.PDF'), '.pdf')).toBe(true);
     expect(matchesAccept(file('a.txt', 'text/plain'), 'image/*,.pdf')).toBe(false);
+    // Le type déclaré fait foi autant que le nom : `accept` n'est pas un contrôle de sécurité.
+    expect(matchesAccept(file('virus.exe', 'application/pdf'), '.pdf')).toBe(true);
   });
 });
 

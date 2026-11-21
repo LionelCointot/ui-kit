@@ -17,14 +17,18 @@ export interface LcFileFilterOptions {
   readonly skipEmpty?: boolean;
 }
 
-/** Vrai si le fichier correspond à `accept` (types MIME, `type/*` ou extensions, comme l'attribut natif). */
+/**
+ * Vrai si le fichier correspond à `accept` (types MIME, `type/*` ou extensions, comme l'attribut natif).
+ * Une extension (`.pdf`) accepte aussi le type déclaré du même nom (`application/pdf`). Aide à la saisie, pas un contrôle de sécurité :
+ * le nom et le type viennent du client.
+ */
 export function matchesAccept(file: File, accept: string): boolean {
   const tokens = accept.split(',').map((token) => token.trim().toLowerCase()).filter(Boolean);
   if (tokens.length === 0) return true;
   const name = file.name.toLowerCase();
   const type = file.type.toLowerCase();
   return tokens.some((token) =>
-    token.startsWith('.') ? name.endsWith(token) : token.endsWith('/*') ? type.startsWith(token.slice(0, -1)) : type === token);
+    token.startsWith('.') ? name.endsWith(token) || type.endsWith(`/${token.slice(1)}`) : token.endsWith('/*') ? type.startsWith(token.slice(0, -1)) : type === token);
 }
 
 /** Trie les fichiers reçus, dans l'ordre : type d'abord, puis place restante (et un seul fichier sans `multiple`). */

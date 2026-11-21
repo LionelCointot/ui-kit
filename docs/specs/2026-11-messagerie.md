@@ -186,7 +186,7 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 - [ ] CA-S3 : Caractères de contrôle et marqueurs bidi retirés de l'affichage et du nom accessible, nom isolé : `facture‮fdp.exe` ne s'affiche pas comme `facture` suivi de `exe.pdf`.
 - [ ] CA-S4 : `previewUrl` `javascript:…`, `data:text/html…`, ou `http(s)` d'une autre origine : non chargé, icône de repli, aucun script exécuté ; `blob:`, `data:image/` et même origine affichés par `<img>`.
 - [ ] CA-S5 : Sous la CSP `default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self'`, aucune violation en Chromium pour dépôt, vignette, secousse et agrandissement.
-- [ ] CA-S6 : Un fichier `.exe` déclaré `application/pdf` avec `accept=".pdf"` est accepté (test de documentation) ; le README dit qu'`accept` n'est pas un contrôle de sécurité ; aucun nom de fichier ni texte saisi dans la console en production.
+- [ ] CA-S6 : Un exécutable renommé `facture.pdf` (type déclaré vide ou `application/x-msdownload`) avec `accept=".pdf"` est accepté, puisque le filtrage lit le nom et le type déclarés, jamais le contenu (test de documentation ; le filtrage partagé avec `lc-file-upload` n'est pas élargi) ; le README dit qu'`accept` n'est pas un contrôle de sécurité ; aucun nom de fichier ni texte saisi dans la console en production.
 
 ## 11. Découpage en tâches
 - [ ] M0 (QA) : tests d'acceptation (`message-composer-browser.mjs`, story QA, tests statiques) avant le code (tous les CA sauf C14).

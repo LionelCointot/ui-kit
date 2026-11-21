@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,15 +19,35 @@ import {
   signal,
   untracked,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { LC_LABELS, LcButtonComponent, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import type { LcFileUploadItem } from '../file-upload/file-upload.component';
-import { filterFiles, type LcFileRefusal } from '../shared/file-filter';
+import { announcedName, cleanFileName, fileSizeText, isSafePreviewUrl } from '../shared/file-display';
+import { dragHasFiles, dragLeftZone, droppedFiles, filterFiles, type LcFileRefusal, type LcFileRejectionReason } from '../shared/file-filter';
 
 /** Pourquoi un envoi n'a pas été émis : rien à envoyer, envoi en cours (ou déjà parti), pièce jointe en cours d'envoi. */
 export type LcMessageSendBlockedReason = 'empty' | 'sending' | 'uploading';
+
+/** Classe posée un instant sur le rectangle pour la secousse d'un refus. */
+const SHAKE_CLASS = 'lc-message-composer__box--shake';
+
+/** Une vignette, prête à afficher : nom nettoyé, adresse d'aperçu admise, textes issus des libellés partagés avec `lc-file-upload`. */
+interface ThumbView {
+  readonly item: LcFileUploadItem;
+  readonly name: string;
+  readonly preview: string | null;
+  readonly icon: string;
+  readonly meta: string;
+  readonly progress: number | null;
+  readonly progressLabel: string;
+  readonly removeLabel: string;
+  readonly retryLabel: string;
+  readonly retryable: boolean;
+  readonly errorHint: string | null;
+}
 
 /** Part du `maxLength` à partir de laquelle le compteur apparaît. */
 const COUNTER_THRESHOLD = 0.9;
@@ -49,14 +70,53 @@ const COUNTER_THRESHOLD = 0.9;
   imports: [LcButtonComponent, LcIconComponent],
   template: `
     <div class="lc-message-composer__header"><ng-content select="[lcComposerHeader]" /></div>
-    <div #box class="lc-message-composer__box" [class.lc-message-composer__box--invalid]="showInvalid()">
-      <!-- M3 : vignettes (role="list"), calque de dépôt et message de refus -->
+    <div #box class="lc-message-composer__box" [class.lc-message-composer__box--invalid]="showInvalid()"
+      [class.lc-message-composer__box--dragging]="dragging()"
+      (dragenter)="onDrag($event)" (dragover)="onDrag($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+      (animationend)="onBoxAnimationEnd($event)">
+      @if (thumbs().length > 0) {
+        <ul class="lc-message-composer__thumbs" role="list" [attr.aria-label]="labels.composerAttachments">
+          @for (thumb of thumbs(); track thumb.item.id; let index = $index) {
+            <li class="lc-message-composer__thumb" [class.lc-message-composer__thumb--error]="thumb.item.status === 'error'">
+              <div class="lc-message-composer__preview">
+                @if (thumb.preview) {
+                  <img [src]="thumb.preview" alt="" (error)="onPreviewError(thumb.preview)" />
+                } @else {
+                  <lc-icon [name]="thumb.icon" />
+                }
+              </div>
+              <span class="lc-message-composer__name" [attr.title]="thumb.name"><bdi>{{ thumb.name }}</bdi></span>
+              @if (thumb.meta) { <span class="lc-message-composer__meta">{{ thumb.meta }}</span> }
+              @if (thumb.item.status === 'uploading') {
+                <div class="lc-message-composer__progress" [class.lc-message-composer__progress--indeterminate]="thumb.progress === null"
+                  role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                  [attr.aria-valuenow]="thumb.progress" [attr.aria-label]="thumb.progressLabel">
+                  <span class="lc-message-composer__progress-fill" [style.width.%]="thumb.progress"></span>
+                </div>
+              }
+              <button #removeButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral" class="lc-message-composer__remove"
+                [disabled]="disabled()" [attr.aria-label]="thumb.removeLabel" (click)="onRemove(thumb.item.id, index)">
+                <lc-icon name="x" />
+              </button>
+              @if (thumb.item.status === 'error') {
+                <span class="lc-message-composer__failed" [attr.title]="thumb.errorHint"><lc-icon name="circle-alert" />{{ labels.fileUploadFailed }}</span>
+                @if (thumb.retryable) {
+                  <button lcButton type="button" fillMode="outline" themeColor="neutral" size="small" class="lc-message-composer__retry"
+                    [disabled]="disabled()" [attr.aria-label]="thumb.retryLabel" (click)="retry.emit(thumb.item.id)">
+                    <lc-icon name="rotate-ccw" />{{ labels.retry }}
+                  </button>
+                }
+              }
+            </li>
+          }
+        </ul>
+      }
       <textarea #textarea class="lc-message-composer__text" [id]="inputId()" [rows]="minRows()"
         [value]="value()" [disabled]="disabled()" [readOnly]="readonly() || sending()"
         [attr.maxlength]="maxLength() ?? null" [attr.placeholder]="placeholder() || null"
         [attr.aria-label]="ariaLabel() || null" [attr.aria-invalid]="showInvalid() ? 'true' : null"
         [attr.aria-required]="isRequired() ? 'true' : null" [attr.aria-describedby]="describedBy()"
-        (input)="onInput($event)" (keydown)="onKeydown($event)" (blur)="onBlur()"></textarea>
+        (input)="onInput($event)" (keydown)="onKeydown($event)" (paste)="onPaste($event)" (blur)="onBlur()"></textarea>
       <div #bar class="lc-message-composer__bar">
         @if (attachments()) {
           <button lcButton type="button" iconOnly fillMode="flat" themeColor="primary" class="lc-message-composer__attach"
@@ -77,7 +137,14 @@ const COUNTER_THRESHOLD = 0.9;
           @else { <lc-icon [name]="sendIcon()" /> }
         </button>
       </div>
+      <div class="lc-message-composer__drop" aria-hidden="true">{{ labels.composerDrop }}</div>
     </div>
+    @if (refusalMessages().length > 0) {
+      <div class="lc-message-composer__refusal" role="alert">
+        <lc-icon name="circle-alert" />
+        <div>@for (message of refusalMessages(); track message) { <p>{{ message }}</p> }</div>
+      </div>
+    }
     <span class="lc-visually-hidden" role="status">{{ statusText() }}</span>
   `,
   styleUrl: './message-composer.component.css',
@@ -92,6 +159,8 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   private readonly field = inject(LC_FORM_FIELD, { optional: true });
   private readonly renderer = inject(Renderer2);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly format = inject(LcFormatService);
   protected readonly labels = inject(LC_LABELS);
 
   readonly value = model('');
@@ -139,6 +208,12 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   private readonly textarea = viewChild.required<ElementRef<HTMLTextAreaElement>>('textarea');
   private readonly box = viewChild.required<ElementRef<HTMLElement>>('box');
   private readonly bar = viewChild.required<ElementRef<HTMLElement>>('bar');
+  private readonly removeButtons = viewChildren('removeButton', { read: ElementRef<HTMLButtonElement> });
+  protected readonly dragging = signal(false);
+  private readonly refusals = signal<readonly LcFileRefusal[]>([]);
+  /** Adresses d'aperçu qui n'ont pas pu se charger : la vignette passe à l'icône. */
+  private readonly brokenPreviews = signal<ReadonlySet<string>>(new Set());
+  private removal: { id: string; index: number } | null = null;
   private readonly blurred = signal(false);
   private readonly width = signal(0);
   /** Verrou anti-double envoi : levé quand `sending` retombe ou que le texte change. */
@@ -160,7 +235,47 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   protected readonly statusText = computed(() =>
     this.sending() ? this.labels.composerSending
       : this.counterState() === 'full' ? this.labels.composerLimitReached
-        : this.counterState() === 'near' ? this.labels.composerLimitNear : '');
+        : this.counterState() === 'near' ? this.labels.composerLimitNear
+          : this.filesFull() ? this.labels.fileUploadLimitReached(this.maxFiles() ?? 0) : '');
+  private readonly canAttach = computed(() => this.attachments() && !this.disabled());
+  private readonly filesFull = computed(() => {
+    const max = this.maxFiles();
+    return this.attachments() && max !== null && this.items().length >= max;
+  });
+  protected readonly thumbs = computed<readonly ThumbView[]>(() => {
+    const broken = this.brokenPreviews();
+    const units = this.labels.fileSizeUnits;
+    return this.items().map((item) => {
+      const name = cleanFileName(item.name);
+      const shown = announcedName(item.name);
+      const progress = Number.isFinite(item.progress) ? Math.round(Math.min(100, Math.max(0, item.progress as number))) : null;
+      const size = this.showSize() ? fileSizeText(item.size, units, (value) => this.format.number(value)) : '';
+      const state = item.status === 'uploading' ? this.labels.fileUploadUploading(progress) : (item.statusLabel ?? '');
+      const preview = item.previewUrl && !broken.has(item.previewUrl) && isSafePreviewUrl(item.previewUrl, this.document.baseURI)
+        ? item.previewUrl : null;
+      return {
+        item,
+        name,
+        preview,
+        icon: item.previewUrl && broken.has(item.previewUrl) ? 'image-off' : 'file-text',
+        meta: item.status === 'error' ? size : [size, state].filter(Boolean).join(' · '),
+        progress,
+        progressLabel: this.labels.fileUploadProgress(shown),
+        removeLabel: this.labels.fileUploadRemove(shown),
+        retryLabel: this.labels.fileUploadRetry(shown),
+        retryable: item.retryable !== false,
+        errorHint: item.errorMessage ? cleanFileName(item.errorMessage) : null,
+      };
+    });
+  });
+  /** Un message par raison de refus, avec les noms des fichiers concernés. */
+  protected readonly refusalMessages = computed(() => {
+    const refused = this.refusals();
+    return (['type', 'count'] as const satisfies readonly LcFileRejectionReason[]).flatMap((reason) => {
+      const names = refused.filter((r) => r.reason === reason).map((r) => announcedName(r.file.name));
+      return names.length > 0 ? [this.labels.composerRejected(names.join(', '), reason)] : [];
+    });
+  });
   protected readonly counterText = computed(() => this.labels.composerCount(this.value().length, this.maxLength() ?? 0));
 
   constructor() {
@@ -181,6 +296,14 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       const onBarClick = (event: Event) => {
         if (this.sending() && (event.target as Element).closest('.lc-message-composer__send')) this.sendBlocked.emit('sending');
       };
+      // Un fichier lâché hors du rectangle ne doit pas être ouvert par le navigateur ; un texte ou un lien glissé reste libre.
+      const keepPage = (event: DragEvent) => { if (dragHasFiles(event)) event.preventDefault(); };
+      this.document.addEventListener('dragover', keepPage);
+      this.document.addEventListener('drop', keepPage);
+      this.destroyRef.onDestroy(() => {
+        this.document.removeEventListener('dragover', keepPage);
+        this.document.removeEventListener('drop', keepPage);
+      });
       const bar = this.bar().nativeElement;
       bar.addEventListener('click', onBarClick, true);
       this.destroyRef.onDestroy(() => bar.removeEventListener('click', onBarClick, true));
@@ -188,6 +311,15 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       const observer = new ResizeObserver((entries) => this.width.set(Math.round(entries[0]?.contentRect.width ?? 0)));
       observer.observe(this.box().nativeElement);
       this.destroyRef.onDestroy(() => observer.disconnect());
+    });
+
+    // Après un retrait par la croix, le focus va à la vignette suivante, sinon au champ (Safari ne focalise pas un bouton cliqué, les autres le perdent à sa disparition).
+    afterRenderEffect(() => {
+      const items = this.items();
+      const removal = this.removal;
+      if (!removal || items.some((item) => item.id === removal.id)) return;
+      this.removal = null;
+      (this.removeButtons()[removal.index]?.nativeElement ?? this.textarea().nativeElement).focus();
     });
 
     // Hauteur du champ : remise à auto, mesure, puis bornée entre minRows et maxRows lignes (`field-sizing` est hors Baseline 2024).
@@ -213,6 +345,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
 
   protected onInput(event: Event): void {
     this.lockedValue = null; // une saisie lève le verrou sans attendre le prochain rendu
+    this.clearRefusals();
     this.value.set((event.target as HTMLTextAreaElement).value);
   }
 
@@ -238,14 +371,71 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
     input.value = '';
   }
 
-  /** Point d'accroche M3 : le dépôt et le collage appelleront aussi cette méthode. */
-  protected addFiles(files: File[]): void {
+  protected onPaste(event: ClipboardEvent): void {
+    const files = Array.from(event.clipboardData?.files ?? []);
+    if (files.length === 0) return; // texte : le collage natif d'un champ n'insère que du texte brut
+    event.preventDefault();
+    if (this.canAttach()) this.addFiles(files);
+  }
+
+  protected onDrag(event: DragEvent): void {
+    if (!dragHasFiles(event)) return;
+    event.preventDefault(); // sans cela, le navigateur ouvrirait le fichier déposé
+    event.dataTransfer.dropEffect = this.canAttach() ? 'copy' : 'none';
+    this.dragging.set(this.canAttach());
+  }
+
+  protected onDragLeave(event: DragEvent): void {
+    if (dragLeftZone(event)) this.dragging.set(false);
+  }
+
+  protected onDrop(event: DragEvent): void {
+    if (!dragHasFiles(event)) return;
+    event.preventDefault();
+    this.dragging.set(false);
+    if (this.canAttach()) this.addFiles(droppedFiles(event.dataTransfer));
+  }
+
+  protected onBoxAnimationEnd(event: AnimationEvent): void {
+    const box = this.box().nativeElement;
+    if (event.target === box) this.renderer.removeClass(box, SHAKE_CLASS);
+  }
+
+  protected onRemove(id: string, index: number): void {
+    this.removal = { id, index };
+    this.clearRefusals();
+    this.remove.emit(id);
+  }
+
+  protected onPreviewError(url: string): void {
+    this.brokenPreviews.update((broken) => new Set(broken).add(url));
+  }
+
+  /** Trie les fichiers (choix, dépôt, collage) : type d'abord, puis place restante. Un refus s'affiche et secoue le rectangle. */
+  private addFiles(files: File[]): void {
+    if (files.length === 0) return;
     const max = this.maxFiles();
     const { accepted, refused } = filterFiles(files, {
       accept: this.accept(), room: max === null ? Infinity : max - this.items().length, multiple: true, skipEmpty: true,
     });
+    this.refusals.set(refused);
     if (accepted.length) this.filesAdded.emit(accepted);
-    if (refused.length) this.rejected.emit(refused);
+    if (refused.length) {
+      this.rejected.emit(refused);
+      this.shake();
+    }
+  }
+
+  private clearRefusals(): void {
+    if (this.refusals().length > 0) this.refusals.set([]);
+  }
+
+  /** Relance la secousse même si la précédente n'est pas finie (la classe est retirée, le style recalculé, puis reposée). */
+  private shake(): void {
+    const box = this.box().nativeElement;
+    this.renderer.removeClass(box, SHAKE_CLASS);
+    void box.offsetWidth;
+    this.renderer.addClass(box, SHAKE_CLASS);
   }
 
   /** « Entrée envoie » : lu à chaque appui, jamais figé (le pointeur peut changer avec un clavier branché). */
