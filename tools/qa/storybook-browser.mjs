@@ -612,7 +612,7 @@ async function motionPage(context, base, id, args = '') {
 /** lc-data-table à 360 px (spec mouvement, T6) : CA-6 (« Filtres (N) »), CA-10, CA-11, CA-12 et la part de CA-13 (dialogue, cartes, sections, pastilles). */
 async function motionPhone(context, base, reduced, tag, check) {
   const ID = 'qa-motion-data-table--table';
-  const FILTERS = '[id$="-filters"]';
+  const FILTERS = 'button[id$="-filters"]';
   const DIALOG = 'dialog.lc-data-table__panel';
   const quick = (list) => msList(list).every((ms) => ms <= 0.01);
   const start = async () => {
