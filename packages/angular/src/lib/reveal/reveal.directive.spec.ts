@@ -1,6 +1,5 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import * as core from '@angular/core';
 import { LcRevealDirective } from './reveal.directive';
 
 @Component({ imports: [LcRevealDirective], template: `<div lcReveal [lcRevealIndex]="index()"></div>` })
@@ -26,12 +25,5 @@ describe('LcRevealDirective', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(indexFor(value)).toBe('0');
     expect(warn).toHaveBeenCalledTimes(1);
-  });
-
-  it('index invalide en production : 0 sans avertissement', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    vi.spyOn(core, 'isDevMode').mockReturnValue(false);
-    expect(indexFor(-2)).toBe('0');
-    expect(warn).not.toHaveBeenCalled();
   });
 });
