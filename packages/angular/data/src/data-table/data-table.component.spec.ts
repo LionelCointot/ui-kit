@@ -849,9 +849,9 @@ describe('LcDataTableComponent', () => {
         });
         if (reduced) vi.stubGlobal('matchMedia', () => ({ matches: true }));
       };
-      const tokens = (easings: Record<string, string> = { '--lc-sys-easing-standard': 'ease-in' }) => {
+      const tokens = (easings: Record<string, string> = { '--lc-list-move-easing': 'ease-in-out' }) => {
         const table = el.querySelector<HTMLElement>('lc-data-table') ?? el;
-        for (const [name, value] of Object.entries({ '--lc-sys-duration-normal': '200ms', '--lc-overlay-enter-duration': '0.3s', '--lc-overlay-exit-duration': '100ms', '--lc-overlay-easing': 'ease-out', ...easings })) {
+        for (const [name, value] of Object.entries({ '--lc-list-move-duration': '200ms', '--lc-overlay-enter-duration': '0.3s', '--lc-overlay-exit-duration': '100ms', '--lc-overlay-easing': 'ease-out', ...easings })) {
           table.style.setProperty(name, value);
         }
       };
@@ -871,21 +871,13 @@ describe('LcDataTableComponent', () => {
         await setup();
         const before = rowNodes();
         stubLayout();
-        tokens({ '--lc-sys-easing-standard': 'ease-in', '--lc-list-move-easing': 'ease-in-out' });
+        tokens();
         await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
         const kept = [before[1], before[4], before[7]];
         expect(rowNodes()).toEqual(kept);
         expect(calls.map((call) => call.row)).toEqual(kept);
         expect(calls.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
         expect(calls[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
-      });
-
-      it('courbe : repli sur --lc-sys-easing-standard sans --lc-list-move-easing', async () => {
-        await setup();
-        stubLayout();
-        tokens();
-        await filterTo(['Close']);
-        expect(calls[0].options.easing).toBe('ease-in');
       });
 
       it('lignes ajoutées : fondu d\'entrée (--lc-overlay-enter-duration) ; conservées : glissement', async () => {

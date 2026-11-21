@@ -380,6 +380,10 @@
       "long": {
         "$value": "{ref.duration.long}",
         "$type": "duration"
+      },
+      "move": {
+        "$value": "{ref.duration.move}",
+        "$type": "duration"
       }
     },
     "easing": {
@@ -389,6 +393,10 @@
       },
       "emphasized": {
         "$value": "{ref.easing.emphasized}",
+        "$type": "cubicBezier"
+      },
+      "spring": {
+        "$value": "{ref.easing.spring}",
         "$type": "cubicBezier"
       }
     },

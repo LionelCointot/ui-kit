@@ -294,7 +294,7 @@ export class LcDataTableComponent<T> {
 
   /** FLIP : lignes conservées glissent de leur ancienne place à la nouvelle ; lignes ajoutées apparaissent en fondu. */
   private animateDiff(before: ReadonlyMap<Element, number>): void {
-    const move = this.timing('--lc-sys-duration-normal', '--lc-list-move-easing', '--lc-sys-easing-standard');
+    const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
     const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
     for (const [row, top] of this.rowTops()) {
       const from = before.get(row);

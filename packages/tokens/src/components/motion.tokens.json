@@ -1,21 +1,21 @@
 {
   "tabs": {
     "indicator-duration": {
-      "$value": "{sys.duration.normal}",
+      "$value": "{sys.duration.move}",
       "$type": "duration"
     },
     "indicator-easing": {
-      "$value": "{sys.easing.standard}",
+      "$value": "{sys.easing.spring}",
       "$type": "cubicBezier"
     }
   },
   "nav-item": {
     "indicator-duration": {
-      "$value": "{sys.duration.normal}",
+      "$value": "{sys.duration.move}",
       "$type": "duration"
     },
     "indicator-easing": {
-      "$value": "{sys.easing.standard}",
+      "$value": "{sys.easing.spring}",
       "$type": "cubicBezier"
     }
   },
@@ -59,6 +59,16 @@
     "stagger": {
       "$value": "{sys.motion.stagger}",
       "$type": "duration"
+    }
+  },
+  "list": {
+    "move-duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    },
+    "move-easing": {
+      "$value": "{sys.easing.spring}",
+      "$type": "cubicBezier"
     }
   }
 }
