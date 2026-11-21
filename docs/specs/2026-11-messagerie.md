@@ -23,8 +23,15 @@
   4. Zone de dépôt : le rectangle seul ; il s'éclaire au survol d'un fichier (« Déposez vos fichiers ici ») ; refus signalé sous le rectangle avec sa raison, petite secousse sauf réduction des animations. Le fil de la PR 2 pourra étendre le dépôt à toute la conversation, en option.
   5. Zones libres : un en-tête au-dessus du rectangle (copro-ticket y garde le choix « Note interne / Visible par le demandeur ») et une zone d'actions à côté du trombone.
   6. Apparence personnalisable par l'application : tokens CSS du composant qu'une classe de l'application redéfinit, avec transition ; le kit ne fournit aucune variante métier. Retenu après relecture du `cadreur` (consommateur : la note interne de copro-ticket) : style, couleur et épaisseur de bordure, fond ; d'autres tokens viendront avec un besoin.
+  7. Décidé par la session (technique, 2026-11-21) : le composant ne valide pas ; il reçoit de l'application `label` (masqué visuellement si demandé), `hint`, `error`, `sending`, et émet l'envoi ; il réutilise les types et la logique de filtrage de `lc-file-upload` (`accept`, taille, nombre, raisons de refus) sans composer ce composant. Le fil (PR 2) est cadré après la PR 1.
   8. Direction **B** (barre d'outils basse, maquette `docs/design/explorations/2026-11-messagerie/`), avec une modification : « Je prefere la B par contre ca serait le l'icone actuelle pour envoyer en bouton sans contour un oeu a la maniere de whatapp » : l'envoi est l'icône `send` (celle de copro-ticket aujourd'hui), bouton sans contour ni fond, en couleur principale ; icône remplaçable par l'application (copro-ticket met `lock` pour une note interne).
-  7. Décidé par la session (technique, 2026-11-21) : le composant ne valide pas ; il reçoit de l'application `label` (masqué visuellement si demandé), `hint`, `error`, `sending`, et émet l'envoi ; il réutilise les types et la logique de filtrage de `lc-file-upload` (`accept`, taille, nombre, raisons de refus) sans composer ce composant. Le fil (PR 2) est ca## 1. Contexte et problème
+- **Taille** : Fonctionnalité
+- **Angles ouverts** :
+  - [x] Architecture : deux nouveaux composants, réutilisation de la logique de `lc-file-upload`, points d'entrée à choisir.
+  - [x] Écran : nouveau composant visible ; directions maquettées, choix de l'utilisateur, test `novice-user`.
+  - [x] Sécurité et données : fichiers déposés par l'utilisateur (types, taille, nom affiché, aperçu d'image local) ; aucun envoi réseau par le kit.
+
+## 1. Contexte et problème
 copro-ticket assemble sa réponse à une demande avec `lc-form-field` + `textarea`, `app-photos-field` (qui enveloppe `lc-file-upload`), un état des photos et un bouton « Envoyer » séparé (`reply-form.component.ts`, `staff-reply.component.ts`). Trois blocs empilés pour écrire une phrase et joindre une photo : c'est lourd sur téléphone, et rien n'est réutilisable par un autre projet. Le kit n'a pas de zone de saisie de message.
 
 ## 2. Objectifs
@@ -148,16 +155,6 @@ Direction **B** choisie (maquette `docs/design/explorations/2026-11-messagerie/i
 - **Choix par défaut à confirmer** : utilisateur principal (§4) ; `maxRows` 7 ; bouton d'envoi jamais grisé (`frontend-guidelines`).
 - **Dettes** : agrandissement par script tant que `field-sizing` n'est pas dans la cible.
 - **Questions ouvertes** : aucune pour la PR 1.
-
-deux nouveaux composants, réutilisation de la logique de `lc-file-upload`, points d'entrée à choisir.
-  - [x] Écran : nouveau composant visible ; directions maquettées, choix de l'utilisateur, test `novice-user`.
-  - [x] Sécurité et données : fichiers déposés par l'utilisateur (types, taille, nom affiché, aperçu d'image local) ; aucun envoi réseau par le kit.
-
-## 1. Contexte et problème
-À rédiger après le choix de direction.
-
-## 2. Objectifs
-À rédiger.
 
 ## 13. Relectures et écarts
 | Date | Relecteur | Phase | Statut | Retenu / écarté |
