@@ -1,7 +1,7 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Directive, ElementRef, OnDestroy, ViewContainerRef, inject, input, signal } from '@angular/core';
-import { lcUniqueId } from '@lionelcointot/ui-angular';
+import { lcDetachAnimated, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcMenuComponent } from './menu.component';
 
 /** Ouvre un `lc-menu` sous l'élément (ou au-dessus s'il manque de place) : `<button [lcMenuTriggerFor]="menu">`. */
@@ -47,35 +47,45 @@ export class LcMenuTriggerDirective implements OnDestroy {
     if (this.expanded()) return;
     const menu = this.lcMenuTriggerFor();
     const trigger = this.element.nativeElement;
-    this.overlayRef = this.overlay.create({
-      positionStrategy: this.overlay.position().flexibleConnectedTo(trigger).withPositions([
-        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
-        { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
-        { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
-      ]).withPush(true),
-      scrollStrategy: this.overlay.scrollStrategies.reposition(),
-      hasBackdrop: true,
-      backdropClass: 'cdk-overlay-transparent-backdrop',
-      minWidth: trigger.getBoundingClientRect().width,
-      panelClass: 'lc-menu-overlay',
-    });
-    this.overlayRef.backdropClick().subscribe(() => this.close(false));
-    this.overlayRef.detachments().subscribe(() => {
-      this.expanded.set(false);
-      menu.onClosed();
-    });
+    this.overlayRef ??= this.createOverlay();
+    this.overlayRef.updateSize({ minWidth: trigger.getBoundingClientRect().width });
     menu.closeRequest = (restoreFocus) => this.close(restoreFocus);
+    // Réouverture pendant le fondu de fermeture : le rattachement annule le retrait (lcDetachAnimated).
+    if (this.overlayRef.hasAttached()) this.overlayRef.detach();
     this.overlayRef.attach(new TemplatePortal(menu.panel(), this.viewContainer));
     this.overlayRef.overlayElement.querySelector('.lc-menu-panel')?.setAttribute('id', this.panelId);
     this.expanded.set(true);
     menu.onOpened(focus);
   }
 
+  private createOverlay(): OverlayRef {
+    const trigger = this.element.nativeElement;
+    const overlayRef = this.overlay.create({
+      positionStrategy: this.overlay.position().flexibleConnectedTo(trigger).withPositions([
+        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
+        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
+        { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
+        { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
+      ]).withPush(true),
+      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      hasBackdrop: true,
+      backdropClass: 'cdk-overlay-transparent-backdrop',
+      panelClass: 'lc-menu-overlay',
+    });
+    overlayRef.backdropClick().subscribe(() => this.close(false));
+    overlayRef.detachments().subscribe(() => {
+      if (!this.expanded()) return;
+      this.expanded.set(false);
+      this.lcMenuTriggerFor().onClosed();
+    });
+    return overlayRef;
+  }
+
   close(restoreFocus: boolean): void {
-    if (!this.overlayRef) return;
-    this.overlayRef.dispose();
-    this.overlayRef = undefined;
+    if (!this.overlayRef || !this.expanded()) return;
+    this.expanded.set(false);
+    this.lcMenuTriggerFor().onClosed();
+    void lcDetachAnimated(this.overlayRef);
     if (restoreFocus) this.element.nativeElement.focus();
   }
 

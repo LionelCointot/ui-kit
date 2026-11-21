@@ -373,6 +373,37 @@ lc-form-field [lcSuffix] {
   }
 }
 
+/* Panneaux CDK (menu, liste du combobox, calendriers) : entrée et sortie sur le conteneur `.cdk-overlay-pane`.
+   `lc-overlay--above` (position « au-dessus » du CDK) inverse le sens de l'entrée ; `lc-overlay--closing` (posée par lcDetachAnimated) fond le panneau avant son retrait. */
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay) {
+  transition:
+    opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing),
+    transform var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+@starting-style {
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay) {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--lc-overlay-offset)));
+  }
+
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay).lc-overlay--above {
+    transform: translateY(var(--lc-overlay-offset));
+  }
+}
+
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay).lc-overlay--closing {
+  opacity: 0;
+  transition-duration: var(--lc-overlay-exit-duration);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay) {
+    transition: none;
+  }
+}
+
 /* Menu : le panneau vit dans la surcouche CDK, hors des composants. */
 .lc-menu-panel {
   display: flex;
@@ -418,18 +449,11 @@ lc-form-field [lcSuffix] {
   box-shadow: var(--lc-calendar-shadow, var(--lc-sys-shadow-3));
   color: var(--lc-calendar-text, var(--lc-sys-color-on-surface));
   font-size: var(--lc-sys-font-size-md);
-  animation: lc-calendar-fade var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
 }
 
 /* Focalisé par un clic dans une zone morte : aucun anneau, le panneau n'est pas un contrôle. */
 .lc-calendar:focus {
   outline: none;
-}
-
-@keyframes lc-calendar-fade {
-  from {
-    opacity: 0;
-  }
 }
 
 .lc-calendar__months {
@@ -883,10 +907,6 @@ lc-form-field [lcSuffix] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-calendar {
-    animation: none;
-  }
-
   .lc-calendar__nav,
   .lc-calendar__title,
   .lc-calendar__day::before {

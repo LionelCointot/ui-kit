@@ -19,11 +19,12 @@ export function createCalendarOverlay(
     positionStrategy: overlay.position().flexibleConnectedTo(origin).withFlexibleDimensions(false).withPush(true).withViewportMargin(8)
       .withPositions([
         { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
+        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
         { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
-        { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
+        { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
       ]),
     scrollStrategy: overlay.scrollStrategies.reposition(),
+    panelClass: 'lc-calendar-overlay',
   });
   ref.outsidePointerEvents().subscribe((event) => {
     if (isButton(event.target as Node)) return;
