@@ -121,8 +121,8 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - [x] CA-P5 (Chromium) : calendrier ouvert depuis le menu, clic sur une date : menu ouvert ; Échap : calendrier fermé, menu ouvert ; second Échap : menu fermé, focus sur l'entonnoir, rien émis ; clic hors des deux : les deux fermés, rien émis, le focus n'est pas ramené sur l'entonnoir.
 - [x] CA-P6 : Fin saisie avant le début : message du composant affiché une seule fois (aucun message ni `aria-describedby` propre au filtre), « Appliquer » désactivé, rien émis.
 - [x] CA-P7 : Le test d'imports passe avec l'exception `data` → `forms` inscrite dans `CLAUDE.md` ; aucun autre import nouveau entre points d'entrée secondaires.
-- [ ] CA-P8 : Tests existants de `lc-data-table` verts, inchangés sauf les trois CA-8 (l. 288-336) remplacés ; axe sans erreur sur les stories du tableau, clair et sombre.
-- [ ] CA-P9 (manuel) : test `novice-user` sur captures 360 et 1 280 px du filtre de date : COMPRIS.
+- [x] CA-P8 : Tests existants de `lc-data-table` verts, inchangés sauf les trois CA-8 (l. 288-336) remplacés ; axe sans erreur sur les stories du tableau, clair et sombre.
+- [x] CA-P9 (manuel) : test `novice-user` sur captures 360 et 1 280 px du filtre de date : COMPRIS.
 - [x] CA-P10 : Panneau du téléphone (largeur étroite) : le champ est en mode natif ; rien n'est émis avant « Afficher N … » ; à l'ouverture suivante, la période appliquée est préremplie.
 - [x] CA-P10b (Chromium) : fenêtre de 360 px au pointeur fin : le champ du panneau est en mode natif, aucun calendrier du kit ne s'ouvre.
 - [x] CA-P11 : Menu rouvert avec un filtre `{ from, to }` actif : le champ affiche cette période ; « Effacer » vide le champ et retire le filtre.
@@ -130,7 +130,8 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 ## 11. Découpage en tâches
 - [x] P1 : adaptateur, remplacement des champs et des radios, retraits de l'option B, retrait du message propre, « Appliquer » désactivé en erreur, libellés, exception dans `CLAUDE.md`, test d'imports (M, CA-P1 à CA-P4b, CA-P6, CA-P7, CA-P11).
 - [x] P2 : calendrier dans le menu de filtre (story de preuve) et mode natif dans le panneau du téléphone (M, CA-P5, CA-P10, CA-P10b).
-- [ ] P3 : stories, catalogue, axe, captures (S, CA-P8, CA-P9).
+- [x] P3 : stories, catalogue, axe, captures (S, CA-P8, CA-P9).
+- [ ] P5 : raccourci « La semaine dernière » (lundi à dimanche précédents) ajouté aux raccourcis par défaut de `lc-date-range-input` (`kitDatePresets`, libellé via `LC_LABELS`), avec test (S).
 - [ ] P4 : consommateurs : retirer `preset` / `presets` dans copro-ticket (et tout autre consommateur trouvé), dans la même passe (S, CA-P3c ; accès au dépôt à ajouter à la session).
 
 ## 12. Risques et questions ouvertes
@@ -147,3 +148,4 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - 2026-11-21, P1 livrée (commit `0766c05`) : `qa-engineer` GO (1 990 tests verts, test d'imports vert ; deux erreurs de ses propres tests corrigées sans les affaiblir), `code-reviewer` APPROUVÉ. **Écarts** : ajout public `LcDateRangeInputComponent.orderInvalid` (contrairement à « aucun changement dans `forms` » : sans lui « Appliquer » ne peut pas se désactiver en erreur d'ordre, Q2) ; paramètre `today` retiré de `matchesFilter`, `filterRows`, `localDistinct`, `lcLocalSource` (ne servait qu'aux raccourcis glissants) ; `from` et `to` de `LC_LABELS.dataTable` conservés (lus par `lc-date-range-input`). Suites pour P2 : test unitaire de `orderInvalid`, `dateRangeBounds` à intégrer à son seul appelant, coquille dans la doc de `cleanFilterValue`.
 - 2026-11-21, utilisateur (« Oui c'est logique modifie la spec ») : CA-P5 corrigé. Le clic extérieur ne ramène pas le focus sur l'entonnoir, comme le prévoyait CA-11 du tableau filtrable ; ma rédaction initiale était fausse.
 - 2026-11-21, P2 livrée : `qa-engineer` GO (1 991 tests verts ; `storybook-browser.mjs filter-date` 7/7), `code-reviewer` APPROUVÉ. Limite d'environnement : Playwright 1.65 attend Chromium 1254, seul le 1243 est installé ici ; contourné par `PLAYWRIGHT_BROWSERS_PATH` vers des liens, sans changer le dépôt.
+- 2026-11-21, P3 livrée : stories sans `preset`, catalogue à jour, axe 14/14 (stories du tableau, clair et sombre), contrôles des Playground OK ; `snippets:check` : 450/454, les 4 échecs sont dans `qa-calendar-panel-internal` (antérieurs, hors périmètre). Test `novice-user` (captures `docs/design/captures/2026-11-filtre-periode/`) : HÉSITANT. Accepté par l'utilisateur (« Oui vas y ») avec ces écarts : `mm/dd/yyyy` dû à la langue du navigateur de capture (le sélecteur du système suit la langue du téléphone) ; calendrier qui recouvre « Appliquer » jusqu'au second clic, icône sur « Au » seulement, nombre « Afficher N » avant choix : comportements existants et validés. Suite retenue : raccourci « La semaine dernière » (P5).
