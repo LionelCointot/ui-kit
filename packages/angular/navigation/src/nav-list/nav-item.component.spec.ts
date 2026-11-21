@@ -175,6 +175,18 @@ describe('LcNavListComponent : placement de l\'indicateur', () => {
     expect(indicator.classList).toContain('lc-nav-list__indicator--instant');
   });
 
+  it('élément dans un groupe replié (ancêtre inert, taille encore non nulle pendant le repli) : indicateur masqué ; déplié : visible', async () => {
+    const { links, indicator, go } = await setup();
+    await go('/credit');
+    expect(indicator.classList).not.toContain('lc-nav-list__indicator--hidden');
+    links[1].parentElement!.setAttribute('inert', '');
+    FakeResizeObserver.instances[0].trigger();
+    expect(indicator.classList).toContain('lc-nav-list__indicator--hidden');
+    links[1].parentElement!.removeAttribute('inert');
+    FakeResizeObserver.instances[0].trigger();
+    expect(indicator.classList).not.toContain('lc-nav-list__indicator--hidden');
+  });
+
   it('ResizeObserver : observe la liste, remesure sans glissement, se déconnecte à la destruction', async () => {
     const { fixture, indicator, go } = await setup();
     await go('/parametres');

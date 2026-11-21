@@ -50,7 +50,8 @@ export class LcNavListComponent {
   private place(item: HTMLElement | null, instant: boolean): void {
     const indicator = this.indicator().nativeElement;
     const box = item?.getBoundingClientRect();
-    const visible = !!box && (box.width > 0 || box.height > 0);
+    // Un groupe replié est `inert` dès le début du repli animé, alors que ses éléments gardent une taille tant qu'il se referme.
+    const visible = !!box && (box.width > 0 || box.height > 0) && !item?.closest('[inert]');
     const wasHidden = indicator.classList.contains('lc-nav-list__indicator--hidden');
     indicator.classList.toggle('lc-nav-list__indicator--hidden', !visible);
     if (visible) {

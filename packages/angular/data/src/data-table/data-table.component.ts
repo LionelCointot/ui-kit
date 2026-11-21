@@ -235,6 +235,8 @@ export class LcDataTableComponent<T> {
   private diff: ReadonlyMap<Element, number> | undefined;
   /** Lignes retirées encore en fondu de sortie : le glissement attend leur retrait, les lignes conservées restent à leur place d'avant. */
   private leaving = 0;
+  /** Distance dont le bloc de la liste vient de glisser (`slideList`) : les lignes la portent déjà, leur glissement propre l'en déduit. */
+  private slideDelta = 0;
   /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
   private readonly hidden = new WeakSet<Element>();
 
@@ -304,6 +306,7 @@ export class LcDataTableComponent<T> {
     afterNextRender(() => {
       const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
       const delta = from - scroll.getBoundingClientRect().top;
+      this.slideDelta = delta;
       if (move && Math.abs(delta) >= MOVE_THRESHOLD_PX) scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move);
     }, { injector: this.injector });
   }
@@ -328,9 +331,7 @@ export class LcDataTableComponent<T> {
         if (!this.hidden.has(row)) row.style.opacity = '';
       });
     }
-    // Relatif au bloc de la liste : son propre glissement (`slideList`) ne compte pas comme un déplacement des lignes.
-    const origin = this.host.querySelector('.lc-data-table__scroll')?.getBoundingClientRect().top ?? 0;
-    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top - origin]));
+    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
   }
 
   /** Des lignes sortent encore : les conservées restent à leur place d'avant (transform inverse) et les ajoutées sont masquées, jusqu'au glissement. */
@@ -341,7 +342,7 @@ export class LcDataTableComponent<T> {
       if (from === undefined || this.hidden.has(row)) {
         this.hidden.add(row);
         style.opacity = '0';
-      } else if (Math.abs(from - top) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top}px)`;
+      } else if (Math.abs(from - top - this.slideDelta) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top - this.slideDelta}px)`;
     }
   }
 
@@ -355,14 +356,16 @@ export class LcDataTableComponent<T> {
   private animateDiff(before: ReadonlyMap<Element, number>): void {
     const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
     const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
+    const slid = this.slideDelta;
+    this.slideDelta = 0;
     for (const [row, top] of this.rowTops(true)) {
       const from = before.get(row);
       if (from === undefined || this.hidden.has(row)) {
         if (enter) row.animate({ opacity: [0, 1] }, enter);
         this.hidden.delete(row);
         (row as HTMLElement).style.opacity = '';
-      } else if (move && Math.abs(from - top) >= MOVE_THRESHOLD_PX) {
-        row.animate({ transform: [`translateY(${from - top}px)`, 'none'] }, move);
+      } else if (move && Math.abs(from - top - slid) >= MOVE_THRESHOLD_PX) {
+        row.animate({ transform: [`translateY(${from - top - slid}px)`, 'none'] }, move);
       }
     }
   }
