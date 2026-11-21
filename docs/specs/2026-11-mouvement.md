@@ -1,6 +1,6 @@
 # Spec : mouvement sobre (indicateurs qui glissent, appui du bouton, apparition du haut vers le bas)
 
-- **Statut** : Validée le 2026-11-21 par l'utilisateur (« Oui pour tout »)
+- **Statut** : Implémentée le 2026-11-21 (T1 à T8, T6b, T6c ; branche `claude/gracious-cori-mk7dyj`). Validée le 2026-11-21 par l'utilisateur
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (inchangé : Baseline 2024 conservée)
@@ -225,7 +225,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] CA-21 : Une ligne ou carte ajoutée apparaît en fondu à sa place ; ses voisines glissent (CA-20).
 - [x] CA-22 : Une ligne ou carte retirée reste dans le DOM le temps d'un fondu (`--lc-overlay-exit-duration`), puis disparaît et les suivantes glissent pour combler.
 - [x] CA-23 : Avec `prefers-reduced-motion: reduce`, aucun glissement ni fondu de liste ; premier affichage : cascade inchangée (CA-12).
-- [ ] CA-24 : `--lc-sys-duration-move` (500 ms) existe et sert aux déplacements des lignes, du trait des onglets et du fond de la nav latérale, avec `--lc-sys-easing-standard` ; aucun token `easing-spring` (décision 27 révisée).
+- [x] CA-24 : `--lc-sys-duration-move` (500 ms) existe et sert aux déplacements des lignes, du trait des onglets et du fond de la nav latérale, avec `--lc-sys-easing-standard` ; aucun token `easing-spring` (décision 27 révisée).
 - [x] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
 
 ## 11. Découpage en tâches
@@ -268,3 +268,4 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - 2026-11-21, utilisateur : test `novice-user` accepté avec ses écarts (vocabulaire de base du front-end, langues selon la convention des pages Foundations) ; ressort retiré (décision 27 révisée).
 - 2026-11-21, `cadreur` (livraison) : ÉCARTS de rédaction seulement ; demande et décisions 1 à 27 couvertes. Corrigé : durée des indicateurs (500 ms, décision 27) en 4 et 5.2, tokens `duration-move` et `list-move-*` ajoutés à 5.2. **Écarts acceptés** : 11 stories `Animation` au lieu de 8 (en plus : `data-data-table--animation-desktop` pour la différence de liste, décision 26 ; et la page Motion compte comme 12e) ; story de `lc-nav-list` dans `Navigation/Nav group` (pas de page `Nav list`) ; 5.4 garde le plan initial. L'exception d'import `data` → `forms` de `CLAUDE.md` vient de la spec `2026-11-filtre-periode-tableau.md` (même branche).
 - 2026-11-21, `code-reviewer` (audit de simplification) : rien d'autre à retirer (tokens de composant gardés par la convention à 3 couches ; `lcReveal` gardée : contrat public décidé, le tableau pose seulement l'attribut `[attr.lcReveal]` lu par la feuille globale, sans instancier la directive). Retenu : la page `Foundations/Motion` n'a plus qu'une courbe, sa boucle sur les courbes est à simplifier (proposé à l'utilisateur).
+- 2026-11-21, vérification finale après retrait du ressort : `qa-engineer` GO (CA-1, CA-2, CA-5, CA-24, non-régression) : `motion` 544/544, `stories-motion` 57/57, `filter-date`, 80 tests de tokens, 2 045 tests Angular, `catalogue:check` (Node 24.22.2, Chromium). Tous les critères sont cochés.
