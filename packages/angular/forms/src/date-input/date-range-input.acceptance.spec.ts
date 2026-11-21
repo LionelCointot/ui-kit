@@ -568,6 +568,15 @@ describe('CA-36 mode natif', () => {
     await settle();
     expect(host.value()).toEqual({ from: '2026-11-13', to: '2026-11-19' });
   });
+
+  it('CA-36 : « La semaine dernière » = lundi au dimanche précédents (jeudi 19/11/2026 → 09 au 15/11)', async () => {
+    const { root, host, settle } = await mount({ mode: 'native' });
+    const last = [...root.querySelectorAll('[role="group"][aria-label="Raccourcis"] button')].find((b) => /La semaine dernière/.test(b.textContent!)) as HTMLButtonElement;
+    expect(last).toBeDefined();
+    last.click();
+    await settle();
+    expect(host.value()).toEqual({ from: '2026-11-09', to: '2026-11-15' });
+  });
 });
 
 describe('CA-37 focus() et groupe', () => {
