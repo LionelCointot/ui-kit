@@ -18,7 +18,7 @@ export const THEME_GROUPS = [
   { id: 'shadows', label: 'Ombres' },
 ];
 
-/** Tokens `sys` hors du builder (spec § 5.2) : z-index, durées, courbes d'animation. */
+/** Tokens `sys` hors du builder (socle des tokens § 5.2 ; mouvement : spec 2026-11-mouvement) : z-index, durées, courbes, cascade et décalage. */
 const EXCLUDED_ROOTS = new Set(['z', 'duration', 'easing', 'motion']);
 const EDITABLE_TYPES = new Set(['color', 'dimension', 'fontFamily', 'number', 'shadow']);
 const SIMPLE_PATHS = new Set(['color.primary', 'color.secondary', 'color.neutral', 'color.surface', 'color.background', 'radius.md', 'font.family.base']);

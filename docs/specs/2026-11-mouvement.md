@@ -191,7 +191,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - Un test instable est un constat, pas une relance.
 
 ## 10. Critères d'acceptation
-- [ ] CA-1 : Les tokens de 5.2 existent dans la CSS générée avec ces valeurs, `easing-standard` et `easing-emphasized` inchangés ; `npm test --workspace @lionelcointot/ui-tokens` passe.
+- [x] CA-1 : Les tokens de 5.2 existent dans la CSS générée avec ces valeurs, `easing-standard` et `easing-emphasized` inchangés ; `npm test --workspace @lionelcointot/ui-tokens` passe.
 - [ ] CA-2 : `lc-tabs` : juste après le clic sur un autre onglet (même tâche), l'indicateur a une transition sur `transform` de durée `--lc-tabs-indicator-duration` résolue ; après `finish()`, son rectangle a la position et la largeur de l'onglet sélectionné (± 1 px). Aucune transition sur `left`.
 - [ ] CA-2b : deux clics rapprochés : la seconde transition part de la position courante (différente de l'arrivée de la première) et finit sous le dernier onglet cliqué.
 - [ ] CA-2c : aucun onglet sélectionné : indicateur masqué.
@@ -219,7 +219,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [ ] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
 
 ## 11. Découpage en tâches
-- [ ] T1 : tokens `ref`, `sys` et de composant ; délais dans la règle de réduction de `base.css` ; tests des tokens (S, CA-1, CA-13).
+- [x] T1 : tokens `ref`, `sys` et de composant ; délais dans la règle de réduction de `base.css` ; tests des tokens (S, CA-1, CA-13).
 - [ ] T2 : `LcRevealDirective`, `lcDetachAnimated`, styles globaux de `[lcReveal]` et de l'appui du bouton (S, CA-6, CA-9, CA-15).
 - [ ] T3 : entrée et sortie des panneaux CDK (`lc-menu`, `lc-combobox`, calendriers de `lc-date-input` et `lc-date-range-input`, remplacement de `lc-calendar-fade`), classes de sens et de fermeture (M, CA-7, CA-7b, CA-8, CA-15).
 - [ ] T4 : indicateur de `lc-tabs` (M, CA-2 à CA-4b, CA-14, CA-15).
@@ -239,3 +239,4 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - 2026-11-21, `qa-engineer` (plan de test) : À PRÉCISER. Retenu : méthode de mesure (section 9), CA-2, 7, 8, 13, 14, 16 réécrits ou éclatés, CA-2b, 2c, 4b, 7b ajoutés, délais coupés en réduction (T1), CA-17 manuel, rendu serveur sans critère.
 - 2026-11-21, `ui-ux-designer` (brief) : FAIT. Retenu : tableau 5.4, Storybook, bandeau, `Layout/Reveal`, tokens des sections et pastilles. Questions Q1, Q2, Q3 posées à l'utilisateur. Écarté : `scaleX` (avis `architect`).
 - 2026-11-21, `architect` : RÉSERVES. Retenu : `easing-emphasized` non créé (la courbe choisie est `standard`), `lcDetachAnimated` au lieu d'une logique copiée cinq fois, `lc-nav-list` (élément hors liste, enregistrement par `isActiveChange`, mesure par rectangle, remesures), indicateur d'onglet `aria-hidden` et largeur par `width`, `@starting-style` plutôt que `animate.*`, `overlay` non utilisé, `allSettled`. Question Q4 posée à l'utilisateur.
+- 2026-11-21, T1 livrée : tokens `ref`/`sys`/composant de 5.2 (composants regroupés dans `motion.tokens.json`, bouton dans `button.tokens.json`), délais coupés en réduction dans `base.css`, `motion` exclu du thème builder comme `duration` et `easing`. `qa-engineer` : CA-1 (21 tests) vert, 73/73 tests des tokens ; `code-reviewer` APPROUVÉ.
