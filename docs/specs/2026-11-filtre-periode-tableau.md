@@ -84,7 +84,7 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - Fin tapée avant le début : borne écartée par le composant, message du composant, « Appliquer » désactivé (Q2).
 - Raccourci choisi puis date modifiée : les dates saisies l'emportent.
 - Calendrier ouvert puis Échap : ferme le calendrier seul ; second Échap ferme le menu sans appliquer, focus sur l'entonnoir.
-- Clic hors des deux superpositions : les deux se ferment, rien n'est appliqué, focus sur l'entonnoir.
+- Clic hors des deux superpositions : les deux se ferment, rien n'est appliqué ; le focus reste là où l'on a cliqué (CA-11 de `2026-11-tableau-filtrable.md`, décision du 2026-11-21).
 - Fenêtre étroite au pointeur fin (panneau `<dialog>`) : champ en mode natif.
 - Réouverture du menu avec un filtre actif : le champ affiche la période appliquée ; « Effacer » vide le champ et retire le filtre.
 - `min` / `max` : non utilisés.
@@ -118,7 +118,7 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - [x] CA-P3c : Le contrat ne contient plus `LcDateRange.preset`, `presets` du filtre `dateRange` ni `LC_DEFAULT_DATE_PRESETS` (compilation) ; la pastille d'une période affiche ses dates (`since`, `until` ou les deux).
 - [x] CA-P4 : Aucune émission de `queryChange` avant « Appliquer » (ordinateur) ou « Afficher N … » (téléphone), après choix d'une date, d'un raccourci, ou ouverture et fermeture du calendrier ; fermer le menu sans appliquer n'émet rien.
 - [x] CA-P4b : Date tapée incomplète ou impossible : aucune émission, aucun message du filtre.
-- [ ] CA-P5 (Chromium) : calendrier ouvert depuis le menu, clic sur une date : menu ouvert ; Échap : calendrier fermé, menu ouvert ; second Échap : menu fermé, focus sur l'entonnoir, rien émis ; clic hors des deux : les deux fermés, rien émis, focus sur l'entonnoir.
+- [ ] CA-P5 (Chromium) : calendrier ouvert depuis le menu, clic sur une date : menu ouvert ; Échap : calendrier fermé, menu ouvert ; second Échap : menu fermé, focus sur l'entonnoir, rien émis ; clic hors des deux : les deux fermés, rien émis, le focus n'est pas ramené sur l'entonnoir.
 - [x] CA-P6 : Fin saisie avant le début : message du composant affiché une seule fois (aucun message ni `aria-describedby` propre au filtre), « Appliquer » désactivé, rien émis.
 - [x] CA-P7 : Le test d'imports passe avec l'exception `data` → `forms` inscrite dans `CLAUDE.md` ; aucun autre import nouveau entre points d'entrée secondaires.
 - [ ] CA-P8 : Tests existants de `lc-data-table` verts, inchangés sauf les trois CA-8 (l. 288-336) remplacés ; axe sans erreur sur les stories du tableau, clair et sombre.
@@ -145,3 +145,4 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - 2026-11-21, `architect` : RÉSERVES. Retenu : `dateOrderError` et `isDateRangeInverted` conservés (encore utilisés), mode natif forcé dans le panneau `<dialog>` (bloquant levé), précédent de superposition corrigé et story de preuve, test d'imports, coût en poids accepté, pas d'ADR.
 - 2026-11-21, utilisateur : doublon signalé entre les radios et les raccourcis du composant ; ma lecture « raccourcis absents sur téléphone » était fausse (affichés en mode natif) ; option B retenue.
 - 2026-11-21, P1 livrée (commit `0766c05`) : `qa-engineer` GO (1 990 tests verts, test d'imports vert ; deux erreurs de ses propres tests corrigées sans les affaiblir), `code-reviewer` APPROUVÉ. **Écarts** : ajout public `LcDateRangeInputComponent.orderInvalid` (contrairement à « aucun changement dans `forms` » : sans lui « Appliquer » ne peut pas se désactiver en erreur d'ordre, Q2) ; paramètre `today` retiré de `matchesFilter`, `filterRows`, `localDistinct`, `lcLocalSource` (ne servait qu'aux raccourcis glissants) ; `from` et `to` de `LC_LABELS.dataTable` conservés (lus par `lc-date-range-input`). Suites pour P2 : test unitaire de `orderInvalid`, `dateRangeBounds` à intégrer à son seul appelant, coquille dans la doc de `cleanFilterValue`.
+- 2026-11-21, utilisateur (« Oui c'est logique modifie la spec ») : CA-P5 corrigé. Le clic extérieur ne ramène pas le focus sur l'entonnoir, comme le prévoyait CA-11 du tableau filtrable ; ma rédaction initiale était fausse.
