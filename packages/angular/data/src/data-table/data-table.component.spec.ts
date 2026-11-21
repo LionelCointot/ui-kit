@@ -745,6 +745,7 @@ describe('LcDataTableComponent', () => {
       expect(dialog.close).not.toHaveBeenCalled();
       finish();
       await stable();
+      await stable();
       expect(dialog.close).toHaveBeenCalledOnce();
       expect(dialog.hasAttribute('data-closing')).toBe(false);
       expect(el.querySelector('.lc-data-table__panel-apply')).toBeNull();
@@ -820,10 +821,11 @@ describe('LcDataTableComponent', () => {
       expect(rowNodes()[0]).toBe(before[0]);
       const dialog = await openPanel();
       await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
-      await click(boxes(dialog)[0]); // Nouvelle : lignes 1, 4, 7, 10
+      await click(boxes(dialog)[1]); // Close : lignes 2, 5, 8
       await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      await stable();
       const after = rowNodes();
-      expect(after).toHaveLength(4);
+      expect(after).toHaveLength(3);
       expect(after.every((row) => !before.includes(row) && row.hasAttribute('lcReveal'))).toBe(true);
     });
   });
