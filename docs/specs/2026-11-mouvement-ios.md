@@ -1,6 +1,6 @@
 # Spec : ressenti iOS (feuille de filtres du téléphone, hauteurs et sorties animées)
 
-- **Statut** : Implémentée (2026-11-21), complément S9 en cours
+- **Statut** : Implémentée (2026-11-21)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (Baseline 2024, inchangée)
@@ -138,7 +138,7 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 
 ## 10. Critères d'acceptation
 - [x] CA-S0 : `lc-sheet` est exporté par `@lionelcointot/ui-angular/overlay`, documenté (story `Overlays/Sheet` avec `Playground` et `Animation`, catalogue) et utilisable hors du tableau, avec un test en navigateur réel (ADR 0009 : ouverture, Échap animé, réouverture pendant la descente, focus rendu, fond attendu par la fermeture) et la limite de la *top layer* écrite ; `closed` est émis une seule fois, à la fin de la sortie ; `lc-data-table` n'a plus de `<dialog>` propre, la fermeture est le bouton texte « Annuler » (décision 23) et utilise `lc-sheet` ; aucun import nouveau entre points d'entrée hors exceptions de `CLAUDE.md`.
-- [ ] CA-S9 : Avec `closeText`, l'en-tête de `lc-sheet` commence par un bouton texte de ce libellé (sans icône, nom accessible = texte visible, `autofocus`), suivi du titre ; un clic ferme par le chemin unique (rien n'est appliqué dans le tableau, focus rendu à « Filtres ») ; sans `closeText`, le ✕ est inchangé. Dans `lc-data-table` à 360 px, le bouton lit « Annuler » (anglais : « Cancel »).
+- [x] CA-S9 : Avec `closeText`, l'en-tête de `lc-sheet` commence par un bouton texte de ce libellé (sans icône, nom accessible = texte visible, `autofocus`), suivi du titre ; un clic ferme par le chemin unique (rien n'est appliqué dans le tableau, focus rendu à « Filtres ») ; sans `closeText`, le ✕ est inchangé. Dans `lc-data-table` à 360 px, le bouton lit « Annuler » (anglais : « Cancel »).
 - [x] CA-S8 : À 1 280 px, `lc-sheet` s'affiche en carte centrée (largeur `--lc-sheet-card-width` ± 1 px, centre horizontal et vertical ± 1 px pour un contenu court, quatre coins arrondis), sans poignée ; un contenu plus haut que `--lc-sheet-card-max-height` fait défiler le corps ; entrée et sortie en translation et fondu aux durées `--lc-slide-*` ; un clic sur le fond ferme (même chemin, `closed` émis), alors qu'à 360 px il ne ferme pas.
 - [x] CA-S1 : À 360 px, « Filtres (N) » ouvre une feuille ancrée en bas, coins supérieurs arrondis, poignée, haut à `--lc-sheet-top-gap` (± 1 px) ; entrée `translateY` de 100 % à 0 en `--lc-slide-enter-duration` ; fond `--lc-sys-color-backdrop` en fondu ; le tableau reste visible au-dessus.
 - [x] CA-S2 : Les trois fermetures (croix, Échap, « Afficher N … ») posent `data-closing`, font descendre la feuille en `--lc-slide-exit-duration` puis `dialog.open === false` ; filtres émis comme aujourd'hui ; focus sur le bouton « Filtres ».
@@ -172,7 +172,7 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 - [x] S3 : retrait des pastilles (S ; CA-H4).
 - [x] S4 : `LcDialogRef.close` asynchrone, tiroir, dialogue, fonds (M ; CA-O1 à O3).
 - [x] S5 : onglets, calendrier, app-shell (S ; CA-T1, C1, A1).
-- [ ] S9 : entrée `closeText` de `lc-sheet`, « Annuler » dans `lc-data-table`, story, catalogue (S ; CA-S0, CA-S9).
+- [x] S9 : entrée `closeText` de `lc-sheet`, « Annuler » dans `lc-data-table`, story, catalogue (S ; CA-S0, CA-S9).
 - [x] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles (S ; CA-V1, CA-V2).
 - [x] S6 (QA) : contrôles navigateur, réduction, `forced-colors`, axe, stories, contrôle statique corrigé (CA-R1, R2, F1, V1, V2) ; S7 : test novice (CA-R3) ; mise à jour des décisions révisées dans `2026-11-mouvement.md` et `catalogue:build`.
 
@@ -209,3 +209,4 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 11. Boutons du pied du tableau projetés par `ngProjectAs`, montés seulement feuille ouverte.
 12. 9 tokens au lieu de 7 (`sheet-card-width`, `sheet-card-max-height`, décision 22).
 13. Limites confirmées : geste et survol prouvés en Chromium seulement, Safari iOS non essayé.
+14. Décision 23 : « Annuler » est placé avant le titre, aligné à gauche (le titre n'est pas centré comme dans iOS) ; `closeWithoutApplying` retiré de `LC_LABELS`. QA S9 : GO (`ios-motion-browser.mjs all` 105 OK, `motion` 544 OK, `filter-date`, axe 10 cas).
