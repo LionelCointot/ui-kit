@@ -258,12 +258,11 @@ async function files() {
     check('CA-C5 acceptés par filesAdded', JSON.stringify((await ev(page, 'filesAdded')).at(-1)?.detail?.map((f) => f.name)) === '["a.png","b.pdf"]', JSON.stringify(await ev(page)));
     const rej = JSON.stringify(await ev(page, 'rejected'));
     check('CA-C5 refusés par rejected (raison type, x.txt)', /x\.txt/.test(rej) && /"type"/.test(rej), rej);
-    await page.waitForTimeout(400); // le sélecteur précédent doit être refermé
     for (const key of ['Enter', 'Space']) {
-      await page.evaluate(() => Q.attach().focus());
-      const [f2] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }).catch(() => null), page.keyboard.press(key === 'Space' ? ' ' : key)]);
+      await page.evaluate(() => Q.attach().focus()); await page.waitForFunction(() => document.activeElement === Q.attach()); // attendre l'état, pas un délai
+      const [f2] = await Promise.all([page.waitForEvent('filechooser', { timeout: 8000 }).catch(() => null), page.keyboard.press(key === 'Space' ? ' ' : key)]);
       check(`CA-C5 trombone au clavier (${key}) : ouvre le sélecteur`, !!f2);
-      if (f2) await f2.setFiles([]);
+      if (f2) await f2.setFiles([]); // résout le sélecteur avant la suite
     }
     await reset(page);
     const pick = async (list) => { const [x] = await Promise.all([page.waitForEvent('filechooser'), clip.click()]); await x.setFiles(list); await page.waitForTimeout(150); };
@@ -443,8 +442,8 @@ async function files() {
     });
 
     // S6 : documentation (le type déclaré n'est pas un contrôle) et silence console.
-    await reset(page); await patch(page, { accept: '.pdf' }); await dropFiles(page, [{ name: 'virus.exe', type: 'application/pdf' }]);
-    check('CA-S6 (documentation) : .exe déclaré application/pdf avec accept=".pdf" est accepté', (await ev(page, 'filesAdded'))[0]?.detail[0].name === 'virus.exe' && (await ev(page, 'rejected')).length === 0, JSON.stringify(await ev(page)));
+    await reset(page); await patch(page, { accept: '.pdf' }); await dropFiles(page, [{ name: 'facture.pdf', type: '' }, { name: 'facture.pdf', type: 'application/x-msdownload' }]);
+    check('CA-S6 (documentation) : un exécutable renommé facture.pdf (type vide ou application/x-msdownload) avec accept=".pdf" est accepté', (await ev(page, 'filesAdded'))[0]?.detail.length === 2 && (await ev(page, 'rejected')).length === 0, JSON.stringify(await ev(page)));
     await reset(page); await page.locator(TA).fill('SECRET-TEXTE-QA'); await dropFiles(page, [{ name: 'SECRET-NOM-QA.png' }, { name: 'SECRET-REFUS-QA.txt', type: 'text/plain' }]); await clickSend(page); await page.waitForTimeout(300);
     check('CA-S6 aucun nom de fichier ni texte saisi dans la console', !page.logs.some((l) => /SECRET-(TEXTE|NOM|REFUS)-QA/.test(l)), page.logs.filter((l) => /SECRET/.test(l)).join(' | '));
     await page.close();
