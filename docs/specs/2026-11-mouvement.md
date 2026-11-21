@@ -83,7 +83,7 @@ Le kit change d'état d'un coup : l'onglet ou l'élément de navigation actif sa
 
 | Acteur | Cas d'usage | Résultat attendu |
 |---|---|---|
-| Personne sur le simulateur | Change d'onglet ou de rubrique de la nav latérale | L'indicateur glisse en 200 ms vers le nouvel élément |
+| Personne sur le simulateur | Change d'onglet ou de rubrique de la nav latérale | L'indicateur glisse en 500 ms vers le nouvel élément (décision 27) |
 | Personne sur le simulateur | Appuie sur un bouton | Le bouton s'enfonce (0,97) puis revient |
 | Personne sur le simulateur | Ouvre un menu, une liste, un calendrier, un filtre | Le panneau descend de 8 px en fondu ; il se referme en fondu |
 | Personne sur téléphone | Ouvre « Filtres (N) », déplie une colonne, applique | Panneau et section en fondu-descente ; cartes en cascade |
@@ -112,8 +112,10 @@ Le kit change d'état d'un coup : l'onglet ou l'élément de navigation actif sa
 | `--lc-ref-motion-stagger` / `--lc-sys-motion-stagger` | 80ms | ref + sys (nouveau) |
 | `--lc-sys-motion-offset` | `{sys.space.2}` (8 px) | sys (nouveau) |
 | Courbe | `--lc-sys-easing-standard` existant (`cubic-bezier(0.2, 0, 0, 1)`) ; `easing-emphasized` existant non utilisé ni modifié | — |
-| `--lc-tabs-indicator-duration` / `-easing` | `duration-normal` / `easing-standard` | composant |
+| `--lc-tabs-indicator-duration` / `-easing` | `duration-move` (500 ms, décision 27) / `easing-standard` | composant |
 | `--lc-nav-item-indicator-duration` / `-easing` | idem | composant |
+| `--lc-ref-duration-move` / `--lc-sys-duration-move` | 500ms | ref + sys (décision 27) |
+| `--lc-list-move-duration` / `-easing` | `duration-move` / `easing-standard` | composant (lignes de `lc-data-table`, décision 26) |
 | `--lc-button-press-scale` / `-duration` | 0.97 / `duration-fast` | composant |
 | `--lc-overlay-enter-duration` / `-exit-duration` / `-easing` / `-offset` | `normal` / `fast` / `standard` / `motion-offset` | composant (panneaux CDK, dialogue de filtres, corps des sections) |
 | `--lc-chip-enter-duration` | `duration-fast` | composant (pastilles du tableau) |
@@ -133,8 +135,8 @@ Direction choisie par l'utilisateur sur la maquette : **Standard** (200 ms, 8 px
 
 | Composant | Ce qui bouge, depuis où | Durée, courbe | État final | Forced-colors |
 |---|---|---|---|---|
-| `lc-tabs` | Le trait glisse en `translateX` et prend la largeur du nouvel onglet. Rien au premier affichage ni au redimensionnement. Interrompu : repart de la position courante. | `--lc-tabs-indicator-*` (normal, standard) | Sous l'onglet sélectionné (± 1 px), défile avec la liste | Trait en `Highlight` ; saute sans glisser en réduction |
-| `lc-nav-list` | Le fond actif glisse en `translateY` (et `height`) vers le nouvel élément, dans une même liste. Groupe replié : masqué ; au dépliage, fondu sans glissement. | `--lc-nav-item-indicator-*` (normal, standard) ; réapparition `duration-fast` | Sous l'élément actif (± 1 px) | Indicateur masqué, style actif actuel sur l'élément |
+| `lc-tabs` | Le trait glisse en `translateX` et prend la largeur du nouvel onglet. Rien au premier affichage ni au redimensionnement. Interrompu : repart de la position courante. | `--lc-tabs-indicator-*` (move 500 ms, standard) | Sous l'onglet sélectionné (± 1 px), défile avec la liste | Trait en `Highlight` ; saute sans glisser en réduction |
+| `lc-nav-list` | Le fond actif glisse en `translateY` (et `height`) vers le nouvel élément, dans une même liste. Groupe replié : masqué ; au dépliage, fondu sans glissement. | `--lc-nav-item-indicator-*` (move 500 ms, standard) ; réapparition `duration-fast` | Sous l'élément actif (± 1 px) | Indicateur masqué, style actif actuel sur l'élément |
 | `button[lcButton]` | `scale(0.97)` au centre à l'appui, retour au relâchement ; toutes variantes, icône comprise ; rien si désactivé. | `--lc-button-press-*` (fast, standard) | Taille normale | Inchangé |
 | Panneaux : `lc-menu`, liste de `lc-combobox`, calendriers de `lc-date-input` et `lc-date-range-input`, menu de filtre de `lc-data-table` | Naît à opacité 0, 8 px au-dessus de sa place, et descend depuis son déclencheur ; `lc-overlay--above` : monte de 8 px depuis le champ. Fermeture : fondu seul ; réouverture pendant le fondu : reste ouvert. | Entrée `--lc-overlay-enter-*` (normal, standard) ; sortie `--lc-overlay-exit-duration` (fast) | Opacité 1, décalage 0 | Contour conservé |
 | `lc-data-table` téléphone : panneau de filtres | Fondu et descente de 8 px ; `::backdrop` en fondu. Fermeture (croix, Échap, « Afficher N … ») : fondu (`data-closing`), puis `close()`. | `--lc-overlay-*` | Panneau net | Fond et contour système |
@@ -213,7 +215,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] CA-13 : Avec `reducedMotion: 'reduce'`, pour les indicateurs, le bouton, les cinq panneaux, le dialogue et les cartes : durée et délai calculés ≤ 0,01 ms ; panneaux et dialogue fermés sans attente.
 - [x] CA-14 : En `forced-colors: active`, l'onglet sélectionné et l'élément de nav actif ont une bordure, un contour ou un fond calculé non transparent et différent de celui d'un élément inactif.
 - [x] CA-15 : Contrôle automatique : aucun motif `\d+(ms|s|px)`, `cubic-bezier(` ni `scale(0.` hors `var(--lc-…)` dans les `.css` et `.ts` touchés (tabs, nav-list, nav-item, button, menu, combobox, date-input, date-range-input, data-table, reveal, `ui-angular.css`) ; fichiers de tokens exclus.
-- [x] CA-16a : `Foundations/Motion` et les 8 stories `Animation` de 5.4 s'ouvrent sans erreur de page.
+- [x] CA-16a : `Foundations/Motion` et les stories `Animation` (8 prévues en 5.4, 11 livrées : voir section 13) s'ouvrent sans erreur de page.
 - [x] CA-16b : « Rejouer » relance l'animation (`getAnimations().length > 0` juste après le clic).
 - [x] CA-16c : bandeau présent avec `reducedMotion: 'reduce'`, absent sinon.
 - [x] CA-16d : `node tools/qa/storybook-controls.mjs` et le contrôle axe (clair et sombre) passent.
@@ -264,3 +266,4 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - 2026-11-21, T8 : `qa-engineer` GO (CA-1 à CA-15, CA-18 à CA-24) : `storybook-browser.mjs motion` 544/544 dans Chromium (normal, réduit, forced-colors, 1 280 et 360 px), `filter-date` 7/7, axe 50/50, 81 tests de tokens dont le contrôle statique CA-15 (`motion.static.test.mjs`, lignes ajoutées par la branche), 2 043 puis 2 045 tests Angular. Défauts trouvés et corrigés en route : indicateur de `lc-tabs` jamais animé (règle sous `:host`), double glissement des lignes lors d'un filtre (un seul glissement désormais), ligne ajoutée révélée trop tôt si la liste change pendant le cycle. Limites : Chromium seulement ; 3 tests de format monétaire échouent sous Node 22 (données ICU plus anciennes), le projet exige Node ≥ 24.15.
 - 2026-11-21, T7 vérifiée : `qa-engineer` GO (CA-16a à CA-16e, CA-18) : `stories-motion` 57/57 (12 stories, avec et sans réduction), `storybook-controls` 63/63, axe 24/24, 2 045 tests Angular, `catalogue:check`, `motion` 544/544, `filter-date`, 81 tests de tokens, imports 1/1 (Node 24.22.2). Test `novice-user` sur `Foundations/Motion` : BLOQUÉ, puis HÉSITANT deux fois (agents neufs) après corrections (section « Turning motion off », réglage système localisé, courbes légendées, tableau en une colonne sur téléphone) ; les trois réponses de la mission sont justes ; restent le vocabulaire de base du front-end, le mélange anglais/français des conventions, et deux courbes presque superposées. Décision soumise à l'utilisateur.
 - 2026-11-21, utilisateur : test `novice-user` accepté avec ses écarts (vocabulaire de base du front-end, langues selon la convention des pages Foundations) ; ressort retiré (décision 27 révisée).
+- 2026-11-21, `cadreur` (livraison) : ÉCARTS de rédaction seulement ; demande et décisions 1 à 27 couvertes. Corrigé : durée des indicateurs (500 ms, décision 27) en 4 et 5.2, tokens `duration-move` et `list-move-*` ajoutés à 5.2. **Écarts acceptés** : 11 stories `Animation` au lieu de 8 (en plus : `data-data-table--animation-desktop` pour la différence de liste, décision 26 ; et la page Motion compte comme 12e) ; story de `lc-nav-list` dans `Navigation/Nav group` (pas de page `Nav list`) ; 5.4 garde le plan initial. L'exception d'import `data` → `forms` de `CLAUDE.md` vient de la spec `2026-11-filtre-periode-tableau.md` (même branche).
