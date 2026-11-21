@@ -1,3 +1,4 @@
+import { ConnectedPosition, FlexibleConnectedPositionStrategy } from '@angular/cdk/overlay';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LC_LABELS_EN, LC_LABELS, LC_LOCALE } from '@lionelcointot/ui-angular';
@@ -110,6 +111,32 @@ describe('lc-date-input, bouton calendrier et panneau (mode calendrier)', () => 
     expect(document.activeElement).toBe(button());
     expect(button()!.getAttribute('aria-expanded')).toBe('false');
     expect(button()!.getAttribute('aria-label')).toBe('Changer la date, 20 novembre 2026');
+  });
+
+  it('ferme en fondu (lc-overlay--closing puis retrait) ; rouvrir pendant le fondu garde le panneau', async () => {
+    const { button, open, settle } = await setup('2026-11-12');
+    await open();
+    const pane = document.querySelector<HTMLElement>('.lc-calendar-overlay')!;
+    button()!.click();
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+    expect(panelOf()).not.toBeNull();
+    button()!.click();
+    await settle();
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+    expect(panelOf()).not.toBeNull();
+    button()!.click();
+    await settle();
+    expect(panelOf()).toBeNull();
+  });
+
+  it('les positions au-dessus portent lc-overlay--above, celles en dessous non', async () => {
+    const withPositions = vi.spyOn(FlexibleConnectedPositionStrategy.prototype, 'withPositions');
+    const { open } = await setup();
+    await open();
+    const positions = withPositions.mock.calls[0][0] as ConnectedPosition[];
+    withPositions.mockRestore();
+    expect(positions.length).toBeGreaterThan(0);
+    for (const position of positions) expect(position.panelClass).toBe(position.overlayY === 'bottom' ? 'lc-overlay--above' : undefined);
   });
 
   it('choisir un jour remet en forme un champ à moitié tapé', async () => {
