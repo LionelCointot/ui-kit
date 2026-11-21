@@ -924,3 +924,18 @@ lc-form-field [lcSuffix] {
     text-indent: 0;
   }
 }
+
+/* lcReveal : entrée en fondu et descente à l'insertion (@starting-style), retardée par rang (--lc-reveal-index posée par la directive). */
+[lcReveal] {
+  transition:
+    opacity var(--lc-reveal-duration) var(--lc-reveal-easing),
+    transform var(--lc-reveal-duration) var(--lc-reveal-easing);
+  transition-delay: calc(var(--lc-reveal-index, 0) * var(--lc-reveal-stagger));
+}
+
+@starting-style {
+  [lcReveal] {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--lc-reveal-offset)));
+  }
+}
