@@ -30,6 +30,9 @@ const NARROW = '(max-width: 47.99em)';
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
+/** Écart minimal (px) à partir duquel une ligne est considérée déplacée. */
+const MOVE_THRESHOLD_PX = 0.5;
+
 /** Menu : sous l'entonnoir, calé à droite puis à gauche ; au-dessus s'il manque de place. */
 const MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
@@ -227,6 +230,8 @@ export class LcDataTableComponent<T> {
   private diff: ReadonlyMap<Element, number> | undefined;
   /** Lignes retirées encore en fondu de sortie : le glissement attend leur retrait, les lignes conservées restent à leur place d'avant. */
   private leaving = 0;
+  /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
+  private readonly hidden = new WeakSet<Element>();
   private closeToken = 0;
 
   constructor() {
@@ -291,7 +296,8 @@ export class LcDataTableComponent<T> {
     if (layout) {
       rows.forEach((row) => {
         row.getAnimations?.().forEach((animation) => animation.cancel());
-        row.style.transform = row.style.opacity = '';
+        row.style.transform = '';
+        if (!this.hidden.has(row)) row.style.opacity = '';
       });
     }
     return new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
@@ -302,8 +308,10 @@ export class LcDataTableComponent<T> {
     for (const [row, top] of this.rowTops(true)) {
       const from = before.get(row);
       const style = (row as HTMLElement).style;
-      if (from === undefined) style.opacity = '0';
-      else if (Math.abs(from - top) >= 0.5) style.transform = `translateY(${from - top}px)`;
+      if (from === undefined || this.hidden.has(row)) {
+        this.hidden.add(row);
+        style.opacity = '0';
+      } else if (Math.abs(from - top) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top}px)`;
     }
   }
 
@@ -319,9 +327,11 @@ export class LcDataTableComponent<T> {
     const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
     for (const [row, top] of this.rowTops(true)) {
       const from = before.get(row);
-      if (from === undefined) {
+      if (from === undefined || this.hidden.has(row)) {
         if (enter) row.animate({ opacity: [0, 1] }, enter);
-      } else if (move && Math.abs(from - top) >= 0.5) {
+        this.hidden.delete(row);
+        (row as HTMLElement).style.opacity = '';
+      } else if (move && Math.abs(from - top) >= MOVE_THRESHOLD_PX) {
         row.animate({ transform: [`translateY(${from - top}px)`, 'none'] }, move);
       }
     }

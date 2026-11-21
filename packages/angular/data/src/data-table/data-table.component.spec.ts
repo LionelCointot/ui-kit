@@ -940,6 +940,45 @@ describe('LcDataTableComponent', () => {
         expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['', '', '']);
       });
 
+      /** Part de « Close » (2, 5, 8) ; la ligne 8 est déclarée sortante, puis le filtre passe à « Nouvelle » (1, 4, 7, 10 ajoutées). */
+      const leavingScenario = async () => {
+        await setup({ query: q({ state: ['Close'] }) });
+        const initial = rowNodes();
+        stubLayout();
+        tokens();
+        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
+        component.fadeOut({ target: initial[2], animationComplete: vi.fn() });
+        await filterTo(['Nouvelle']);
+        return rowNodes() as HTMLElement[];
+      };
+      const settleFade = async () => {
+        calls[0].finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+      };
+
+      it('lignes ajoutées : masquées pendant le fondu des sortantes, puis révélées en fondu par le glissement unique', async () => {
+        const added = await leavingScenario();
+        expect(added.map((row) => row.style.opacity)).toEqual(['0', '0', '0', '0']);
+        expect(calls).toHaveLength(1);
+        await settleFade();
+        const fades = calls.slice(1);
+        expect(fades.map((call) => call.row)).toEqual(added);
+        expect(fades.every((call) => JSON.stringify(call.keyframes['opacity']) === '[0,1]')).toBe(true);
+        expect(added.map((row) => row.style.opacity)).toEqual(['', '', '', '']);
+      });
+
+      it('second filtre pendant le fondu : une ligne ajoutée au premier changement et conservée reste masquée, puis reçoit son fondu', async () => {
+        const added = await leavingScenario();
+        await filterTo(['Nouvelle', 'Qualifiée']); // 1, 4, 7, 10 conservées ; 3, 6, 9 ajoutées
+        expect(rowNodes().filter((row) => added.includes(row as HTMLElement))).toHaveLength(4);
+        expect(added.map((row) => row.style.opacity)).toEqual(['0', '0', '0', '0']);
+        expect(calls).toHaveLength(1);
+        await settleFade();
+        expect(calls.slice(1).filter((call) => 'opacity' in call.keyframes).map((call) => call.row)).toEqual(expect.arrayContaining(added));
+        expect(calls.slice(1).filter((call) => 'transform' in call.keyframes && added.includes(call.row))).toHaveLength(0);
+      });
+
       it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {
         await setup();
         stubLayout(true);
