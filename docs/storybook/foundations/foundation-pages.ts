@@ -273,9 +273,12 @@ const MOTION_VALUES = [
   { key: 'motion.offset', use: 'How far an element travels when it appears' },
 ].map(({ key, use }) => ({ key, cssVar: cssVarOf(key), value: light[key], use }));
 
-const MOTION_CURVES = [
-  { name: 'standard', use: 'A fixed curve that eases in and out: for fades, things appearing and things moving to a new place (over the longer move duration).' },
-].map(({ name, use }) => ({ name, cssVar: cssVarOf(`easing.${name}`), value: light[`easing.${name}`], use }));
+const MOTION_CURVE = {
+  name: 'standard',
+  cssVar: cssVarOf('easing.standard'),
+  value: light['easing.standard'],
+  use: 'A fixed curve that eases in and out: for fades, things appearing and things moving to a new place (over the longer move duration).',
+};
 
 const MOTION_OFF_CSS = `:root {
   --lc-sys-duration-fast: 0ms;
@@ -313,19 +316,17 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     <h2>Curves</h2>
     <p class="lead">A curve says how fast something goes at each moment. The curve below goes from 0 to 1 over the duration of the animation; the dot marks half of the time. Moves (list rows, tab and nav indicators) use the same curve as fades, over a longer duration (500ms instead of 200ms).</p>
     <div class="curves">
-      @for (curve of curves; track curve.name) {
-        <figure>
-          <span class="axis">progress ↑</span>
-          <svg viewBox="-4 -4 108 108" role="img" [attr.aria-label]="'Curve ' + curve.name + ': progress over time'">
-            <path class="axes" d="M0 0 V100 H100" />
-            <path class="halfway" d="M50 0 V100" />
-            <path [class]="'trace ' + curve.name" [attr.d]="traces()[curve.name]?.path" />
-            <circle [class]="'dot ' + curve.name" cx="50" [attr.cy]="traces()[curve.name]?.mid" r="3" />
-          </svg>
-          <span class="axis end">time →</span>
-          <figcaption><strong>{{ curve.name }}</strong><span>{{ curve.use }}</span><code>{{ curve.cssVar }}</code></figcaption>
-        </figure>
-      }
+      <figure>
+        <span class="axis">progress ↑</span>
+        <svg viewBox="-4 -4 108 108" role="img" [attr.aria-label]="'Curve ' + curve.name + ': progress over time'">
+          <path class="axes" d="M0 0 V100 H100" />
+          <path class="halfway" d="M50 0 V100" />
+          <path class="trace" [attr.d]="trace()?.path" />
+          <circle class="dot" cx="50" [attr.cy]="trace()?.mid" r="3" />
+        </svg>
+        <span class="axis end">time →</span>
+        <figcaption><strong>{{ curve.name }}</strong><span>{{ curve.use }}</span><code>{{ curve.cssVar }}</code></figcaption>
+      </figure>
     </div>
     <span #probe class="probe"></span>
 
@@ -386,9 +387,8 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     svg path { fill: none; vector-effect: non-scaling-stroke; }
     .axes { stroke: var(--lc-sys-color-border-strong); stroke-width: 1; }
     .halfway { stroke: var(--lc-sys-color-border); stroke-width: 1; stroke-dasharray: 4 4; }
-    .trace { stroke-width: 2; }
-    .trace.standard { stroke: var(--lc-sys-color-primary); }
-    .dot.standard { fill: var(--lc-sys-color-primary); }
+    .trace { stroke-width: 2; stroke: var(--lc-sys-color-primary); }
+    .dot { fill: var(--lc-sys-color-primary); }
     .probe { position: absolute; visibility: hidden; }
     .demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: var(--lc-sys-space-6); align-items: start; }
     ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--lc-sys-space-2); }
@@ -407,30 +407,26 @@ export class DocMotionComponent {
   private readonly press = viewChild.required('press', { read: ElementRef });
   private readonly rows = viewChildren<ElementRef<HTMLElement>>('row');
   protected readonly values = MOTION_VALUES;
-  protected readonly curves = MOTION_CURVES;
+  protected readonly curve = MOTION_CURVE;
   protected readonly offCss = MOTION_OFF_CSS;
   protected readonly cascade = [0, 1, 2, 3];
   protected readonly items = signal(LIST_ITEMS);
-  protected readonly traces = signal<Record<string, CurveTrace>>({});
+  protected readonly trace = signal<CurveTrace | undefined>(undefined);
   protected readonly panel = replayable({ destroyRef: inject(DestroyRef) });
   protected readonly cascadeDemo = replayable({ destroyRef: inject(DestroyRef) });
 
   constructor() {
-    // Each curve is sampled from the browser itself (a paused animation of opacity), so any `cubic-bezier()` or `linear()` value is drawn as it runs.
+    // The curve is sampled from the browser itself (a paused animation of opacity), so any `cubic-bezier()` or `linear()` value is drawn as it runs.
     afterNextRender(() => {
       const probe = this.probe().nativeElement;
-      const traces: Record<string, CurveTrace> = {};
-      for (const { name, value } of MOTION_CURVES) {
-        const animation = probe.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1000, easing: value, fill: 'both' });
-        animation.pause();
-        const ys = Array.from({ length: CURVE_SAMPLES + 1 }, (_, i) => {
-          animation.currentTime = (i / CURVE_SAMPLES) * 1000;
-          return 100 - Number(getComputedStyle(probe).opacity) * 100;
-        });
-        animation.cancel();
-        traces[name] = { path: `M${ys.map((y, i) => `${((i / CURVE_SAMPLES) * 100).toFixed(1)} ${y.toFixed(1)}`).join(' L')}`, mid: ys[CURVE_SAMPLES / 2] };
-      }
-      this.traces.set(traces);
+      const animation = probe.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1000, easing: MOTION_CURVE.value, fill: 'both' });
+      animation.pause();
+      const ys = Array.from({ length: CURVE_SAMPLES + 1 }, (_, i) => {
+        animation.currentTime = (i / CURVE_SAMPLES) * 1000;
+        return 100 - Number(getComputedStyle(probe).opacity) * 100;
+      });
+      animation.cancel();
+      this.trace.set({ path: `M${ys.map((y, i) => `${((i / CURVE_SAMPLES) * 100).toFixed(1)} ${y.toFixed(1)}`).join(' L')}`, mid: ys[CURVE_SAMPLES / 2] });
     });
   }
 
