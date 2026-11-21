@@ -476,10 +476,12 @@ const MOTION_INIT = () => {
   // Entrée des panneaux CDK : CSSAnimation `lc-overlay-enter` sur le contenu du panneau (premier enfant) ; fondu de sortie : CSSTransition d'opacité sur le conteneur.
   q.starts = 0;
   document.addEventListener('animationstart', (e) => { if (e.animationName === 'lc-overlay-enter') q.starts += 1; }, true);
-  const enterAnims = (pane) => (pane.firstElementChild?.getAnimations() ?? []).filter((a) => a instanceof CSSAnimation && a.animationName === 'lc-overlay-enter');
+  // Contenu du panneau : premier enfant, hors ancres du piège à focus du CDK (le menu de filtre en pose).
+  const contentOf = (pane) => pane.querySelector(':scope > :not(.cdk-focus-trap-anchor)');
+  const enterAnims = (pane) => (contentOf(pane)?.getAnimations() ?? []).filter((a) => a instanceof CSSAnimation && a.animationName === 'lc-overlay-enter');
   q.enterAnims = enterAnims;
   const measureEnter = (pane, keepPaused) => {
-    const content = pane.firstElementChild;
+    const content = contentOf(pane);
     const list = enterAnims(pane);
     list.forEach((a) => a.pause());
     list.forEach((a) => { a.currentTime = 0; });
@@ -505,7 +507,7 @@ const MOTION_INIT = () => {
         });
       } else if (pane.classList.contains('lc-overlay--closing') && !q.closing) {
         const list = transitions(pane);
-        q.closing = { connected: pane.isConnected, enterStillRunning: enterAnims(pane).length > 0, props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
+        q.closing = { connected: pane.isConnected, children: pane.childElementCount, enterStillRunning: enterAnims(pane).length > 0, props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
         if (q.hold) list.forEach((a) => a.pause());
         if (keepEnterPaused) enterAnims(pane).forEach((a) => a.play());
       } else if (q.enter && !q.closing && !q.flip && pane.classList.contains('lc-overlay--above') !== q.aboveAtEnter) {
@@ -652,6 +654,7 @@ async function motionPhone(context, base, reduced, tag, check) {
       list.forEach((a) => a.finish());
       return { durations, scale: parseFloat(getComputedStyle(el).getPropertyValue('--lc-button-press-scale')), a: new DOMMatrix(getComputedStyle(el).transform).a, text: el.textContent.trim(), active: el.matches(':active'), cssDuration: getComputedStyle(el).transitionDuration, pressMs: window.__qa.tokenMs('--lc-sys-duration-fast') };
     }, FILTERS);
+    await page.mouse.move(0, 0); // relâché hors du bouton : pas de clic, le panneau ne s'ouvre pas
     await page.mouse.up();
     if (reduced) check(got.active && quick(got.cssDuration) && got.durations.every((ms) => ms <= 0.01), `CA-6/13 ${tag} ${label} « ${got.text} »`, `durées=${got.cssDuration}`);
     else check(got.active && got.durations.length > 0 && got.durations.every((ms) => near(ms, got.pressMs)) && near(got.a, got.scale, 0.001), `CA-6 ${tag} ${label} « ${got.text} »`, `échelle=${got.a.toFixed(3)} attendu ${got.scale}, durées=${got.durations} attendu ${got.pressMs}, actif=${got.active}`);
@@ -885,7 +888,7 @@ async function motion(browser, base) {
           const closed = await page.evaluate((s) => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMs('--lc-overlay-exit-duration'), focused: document.activeElement?.matches(s) ?? false, active: document.activeElement?.outerHTML.slice(0, 80) }), spec.open);
           const c = closed.closing;
           if (reduced) check(c.connected && msList(c.transitionDuration).every((ms) => ms <= 0.01) && closed.focused, `CA-8/13 ${label} fermeture`, `durée=${c.transitionDuration} focus déclencheur=${closed.focused}`);
-          else check(c.connected && c.props.some(([prop, ms]) => prop === 'opacity' && near(ms, closed.exitMs)) && closed.focused, `CA-8a/8c ${label} fermeture`, `classe posée, présent=${c.connected}, transitions=${JSON.stringify(c.props)} attendu opacity ${closed.exitMs}, retiré du DOM=oui, focus déclencheur=${closed.focused} (${closed.active})`);
+          else check(c.connected && c.children > 0 && c.props.some(([prop, ms]) => prop === 'opacity' && near(ms, closed.exitMs)) && closed.focused, `CA-8a/8c ${label} fermeture`, `classe posée, présent=${c.connected}, contenu présent pendant le fondu=${c.children > 0}, transitions=${JSON.stringify(c.props)} attendu opacity ${closed.exitMs}, retiré du DOM=oui, focus déclencheur=${closed.focused} (${closed.active})`);
           check(errors.length === 0, `erreurs page ${label}`, errors.join(' ; '));
           await page.close();
         }
@@ -917,6 +920,7 @@ async function motion(browser, base) {
           await page.keyboard.press('Escape');
           await page.waitForFunction(() => window.__qa.closing !== null);
           // Au clavier : pendant le fondu, le fond transparent du CDK intercepte encore la souris.
+          await page.waitForFunction((open) => document.activeElement?.matches(open), spec.open); // le focus revient au déclencheur après le prochain rendu
           await page.keyboard.press(spec.reopen);
           const got = await page.evaluate(async () => {
             const pane = window.__qa.pane;
