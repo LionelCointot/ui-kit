@@ -41,8 +41,6 @@ function dragEvent(type: string, files: File[], init: { relatedTarget?: EventTar
 const textDrag = (type: string) => dragEvent(type, [], { types: ['text/plain'] });
 
 describe('LcMessageComposerComponent : pièces jointes', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   async function setup() {
     const fixture = TestBed.createComponent(HostComponent);
     document.body.append(fixture.nativeElement);
@@ -179,12 +177,23 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
       document.body.dispatchEvent(after);
       expect(after.defaultPrevented).toBe(false);
     });
+
+    it('un fichier lâché sur un autre champ de fichier de la page n\'est pas annulé', async () => {
+      await setup();
+      const other = document.createElement('input');
+      other.type = 'file';
+      document.body.append(other);
+      const event = dragEvent('drop', [png()]);
+      other.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+      other.remove();
+    });
   });
 
   describe('collage', () => {
-    const paste = (target: HTMLElement, files: File[]) => {
+    const paste = (target: HTMLElement, files: File[], types: string[] = ['Files']) => {
       const event = new Event('paste', { bubbles: true, cancelable: true });
-      Object.defineProperty(event, 'clipboardData', { value: { files } });
+      Object.defineProperty(event, 'clipboardData', { value: { files, types } });
       target.dispatchEvent(event);
       return event;
     };
@@ -194,6 +203,13 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
       expect(paste(textarea, [png('p.png')]).defaultPrevented).toBe(true);
       expect(host.added.map((l) => l.map((f) => f.name))).toEqual([['p.png']]);
       expect(paste(textarea, []).defaultPrevented).toBe(false);
+    });
+
+    it('collage mixte (texte et image, cas Excel ou Word) : le texte prime, le collage natif reste et aucun fichier n\'est joint', async () => {
+      const { host, textarea } = await setup();
+      const event = paste(textarea, [png('cellules.png')], ['text/plain', 'text/html', 'Files']);
+      expect(event.defaultPrevented).toBe(false);
+      expect(host.added).toEqual([]);
     });
 
     it.each([['disabled'], ['attachments']] as const)('%s : aucun fichier ajouté', async (what) => {
@@ -282,11 +298,14 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
   it('n\'écrit ni nom de fichier ni texte dans la console', async () => {
     const { host, box, settle } = await setup();
     const spies = (['log', 'warn', 'error', 'info', 'debug'] as const).map((m) => vi.spyOn(console, m));
-    host.items.set([item('1', 'SECRET-NOM.png')]);
-    await settle();
-    box.dispatchEvent(dragEvent('drop', [new File(['x'], 'SECRET-REFUS.txt', { type: 'text/plain' })]));
-    await settle();
-    expect(spies.flatMap((s) => s.mock.calls).join('|')).not.toContain('SECRET');
-    spies.forEach((s) => s.mockRestore());
+    try {
+      host.items.set([item('1', 'SECRET-NOM.png')]);
+      await settle();
+      box.dispatchEvent(dragEvent('drop', [new File(['x'], 'SECRET-REFUS.txt', { type: 'text/plain' })]));
+      await settle();
+      expect(spies.flatMap((s) => s.mock.calls).join('|')).not.toContain('SECRET');
+    } finally {
+      spies.forEach((s) => s.mockRestore());
+    }
   });
 });

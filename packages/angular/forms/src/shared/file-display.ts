@@ -1,8 +1,8 @@
 /** Plafond d'un nom de fichier dans un nom accessible ou une annonce. */
 export const MAX_ANNOUNCED_NAME = 80;
 
-// Caractères de contrôle (C0, DEL, C1) et marqueurs bidirectionnels (ALM, LRM, RLM, LRE à RLO, LRI à PDI).
-const UNSAFE_CHARS = /[\u0000-\u001F\u007F-\u009F؜‎‏‪-‮⁦-⁩]/g;
+// Caractères de contrôle (C0, DEL, C1), marqueurs bidirectionnels (ALM, LRM, RLM, LRE à RLO, LRI à PDI) et invisibles (ZWSP à ZWJ, WJ, BOM, LS, PS).
+const UNSAFE_CHARS = /[\u0000-\u001F\u007F-\u009F\u061C\u200B-\u200F\u2028-\u202E\u2060\u2066-\u2069\uFEFF]/g;
 
 /** Nom à afficher : sans caractères de contrôle ni marqueurs bidi (le `File.name` d'origine n'est jamais modifié). */
 export function cleanFileName(name: string): string {
@@ -20,7 +20,10 @@ export function isSafePreviewUrl(url: string, base: string): boolean {
   const lower = url.trim().toLowerCase();
   if (lower.startsWith('blob:') || lower.startsWith('data:image/')) return true;
   try {
-    return new URL(url, base).origin === new URL(base).origin;
+    const target = new URL(url, base);
+    const root = new URL(base);
+    // Base `file:`, `about:srcdoc`… : l'origine est opaque ; `javascript:` et `data:text/html` ne sont jamais « de même origine ».
+    return /^https?:$/.test(root.protocol) && /^https?:$/.test(target.protocol) && target.origin === root.origin;
   } catch {
     return false;
   }

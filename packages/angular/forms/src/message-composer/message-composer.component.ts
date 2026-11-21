@@ -117,7 +117,7 @@ const COUNTER_THRESHOLD = 0.9;
         [attr.maxlength]="maxLength() ?? null" [attr.placeholder]="placeholder() || null"
         [attr.aria-label]="ariaLabel() || null" [attr.aria-invalid]="showInvalid() ? 'true' : null"
         [attr.aria-required]="isRequired() ? 'true' : null" [attr.aria-describedby]="describedBy()"
-        (input)="onInput($event)" (keydown)="onKeydown($event)" (paste)="onPaste($event)" (blur)="onBlur()"></textarea>
+        (input)="onInput($event)" (keydown)="onKeydown($event)" (paste)="onPaste($event)" (blur)="onBlur($event)"></textarea>
       <div #bar class="lc-message-composer__bar">
         @if (attachments()) {
           <button lcButton type="button" iconOnly fillMode="flat" themeColor="primary" class="lc-message-composer__attach"
@@ -155,10 +155,12 @@ const COUNTER_THRESHOLD = 0.9;
   host: {
     class: 'lc-message-composer',
     '[class.lc-message-composer--disabled]': 'disabled()',
+    '(focusout)': 'onFocusOut($event)',
   },
 })
 export class LcMessageComposerComponent implements FormValueControl<string>, LcFormFieldControl {
   private readonly field = inject(LC_FORM_FIELD, { optional: true });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly renderer = inject(Renderer2);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -218,8 +220,10 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   private removal: { id: string; index: number } | null = null;
   private readonly blurred = signal(false);
   private readonly width = signal(0);
-  /** Verrou anti-double envoi : levé quand `sending` retombe ou que le texte change. */
+  /** Verrou anti-double envoi : levé quand `sending` retombe, que le texte change ou que l'ensemble des pièces jointes change. */
   private lockedValue: string | null = null;
+  private lockedItems = '';
+  private readonly itemIds = computed(() => this.items().map((item) => item.id).join('\n'));
   private wasSending = false;
 
   protected readonly sendName = computed(() => this.sendLabel() ?? this.labels.composerSend);
@@ -301,8 +305,9 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
     effect(() => {
       const value = this.value();
       const sending = this.sending();
+      const itemIds = this.itemIds();
       untracked(() => {
-        if (value !== this.lockedValue || (this.wasSending && !sending)) this.lockedValue = null;
+        if (value !== this.lockedValue || itemIds !== this.lockedItems || (this.wasSending && !sending)) this.lockedValue = null;
         this.wasSending = sending;
       });
     });
@@ -316,7 +321,10 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
         if (this.sending() && (event.target as Element).closest('.lc-message-composer__send')) this.sendBlocked.emit('sending');
       };
       // Un fichier lâché hors du rectangle ne doit pas être ouvert par le navigateur ; un texte ou un lien glissé reste libre.
-      const keepPage = (event: DragEvent) => { if (dragHasFiles(event)) event.preventDefault(); };
+      // Sauf sur un autre champ de fichier de la page, qui traite le dépôt lui-même.
+      const keepPage = (event: DragEvent) => {
+        if (dragHasFiles(event) && !(event.target as Element | null)?.closest?.('input[type="file"]')) event.preventDefault();
+      };
       this.document.addEventListener('dragover', keepPage);
       this.document.addEventListener('drop', keepPage);
       this.destroyRef.onDestroy(() => {
@@ -349,7 +357,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       const element = this.textarea().nativeElement;
       this.renderer.setStyle(element, 'height', 'auto');
       const style = getComputedStyle(element);
-      const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5 || 0;
+      const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) || 0;
       const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) || 0;
       const min = lineHeight * rows.min + padding;
       const max = lineHeight * rows.max + padding;
@@ -368,7 +376,18 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
     this.value.set((event.target as HTMLTextAreaElement).value);
   }
 
-  protected onBlur(): void {
+  /** Le champ perd le focus : « touché » seulement si le focus sort du composant (pas vers le trombone ou l'envoi). */
+  protected onBlur(event: FocusEvent): void {
+    this.leave(event.relatedTarget);
+  }
+
+  /** Le focus quitte un autre élément du composant (trombone, envoi, vignette) ; la sortie du champ est vue par `onBlur`. */
+  protected onFocusOut(event: FocusEvent): void {
+    if (event.target !== this.textarea().nativeElement) this.leave(event.relatedTarget);
+  }
+
+  private leave(next: EventTarget | null): void {
+    if (next instanceof Node && this.host.nativeElement.contains(next)) return;
     this.blurred.set(true);
     this.touch.emit();
   }
@@ -392,7 +411,8 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
 
   protected onPaste(event: ClipboardEvent): void {
     const files = Array.from(event.clipboardData?.files ?? []);
-    if (files.length === 0) return; // texte : le collage natif d'un champ n'insère que du texte brut
+    // Texte seul, ou texte et image (cellules Excel ou Word, qui portent aussi une image) : le collage natif insère le texte brut, rien n'est joint.
+    if (files.length === 0 || event.clipboardData?.types?.includes('text/plain')) return;
     event.preventDefault();
     if (this.canAttach()) this.addFiles(files);
   }
@@ -476,6 +496,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       return false;
     }
     this.lockedValue = this.value();
+    this.lockedItems = this.itemIds();
     this.send.emit({ text });
     return true;
   }

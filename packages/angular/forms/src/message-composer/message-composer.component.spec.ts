@@ -11,7 +11,7 @@ import { LcMessageComposerComponent, type LcMessageSendBlockedReason } from './m
   template: `
     <lc-message-composer [(value)]="text" ariaLabel="Message" [sending]="sending()" [enterSends]="enterSends()"
       [items]="items()" [maxLength]="maxLength()" [attachments]="attachments()" [minRows]="1" [maxRows]="3"
-      (send)="sent.push($event)" (sendBlocked)="blocked.push($event)">
+      (send)="sent.push($event)" (sendBlocked)="blocked.push($event)" (touch)="touched.push(true)">
       <div lcComposerHeader id="head">En-tête</div>
       @if (action()) { <button lcComposerAction type="button" id="act">Action</button> }
     </lc-message-composer>
@@ -27,6 +27,7 @@ class HostComponent {
   readonly action = signal(true);
   readonly sent: { text: string }[] = [];
   readonly blocked: LcMessageSendBlockedReason[] = [];
+  readonly touched: true[] = [];
 }
 
 @Component({
@@ -155,6 +156,33 @@ describe('LcMessageComposerComponent', () => {
       expect(host.sent).toEqual([{ text: '' }]);
     });
 
+    it('envoi pièces jointes seules : l\'application vide items sans toucher value ni sending, l\'envoi suivant est accepté', async () => {
+      const { fixture, host, sendButton } = await setup();
+      host.items.set([{ id: '1', name: 'a.png', size: 1, status: 'done' }]);
+      await fixture.whenStable();
+      sendButton.click();
+      sendButton.click();
+      expect(host.sent).toEqual([{ text: '' }]);
+      host.items.set([]);
+      await fixture.whenStable();
+      host.items.set([{ id: '2', name: 'b.png', size: 1, status: 'done' }]);
+      await fixture.whenStable();
+      sendButton.click();
+      expect(host.sent).toEqual([{ text: '' }, { text: '' }]);
+    });
+
+    it('un changement d\'état d\'un item (mêmes ids) ne lève pas le verrou', async () => {
+      const { fixture, host, sendButton } = await setup();
+      host.items.set([{ id: '1', name: 'a.png', size: 1, status: 'done' }]);
+      await fixture.whenStable();
+      sendButton.click();
+      host.items.set([{ id: '1', name: 'a.png', size: 1, status: 'done', statusLabel: 'Envoyé' }]);
+      await fixture.whenStable();
+      sendButton.click();
+      expect(host.sent).toEqual([{ text: '' }]);
+      expect(host.blocked).toEqual(['sending']);
+    });
+
     it('un item uploading bloque, puis se débloque quand il passe à done', async () => {
       const { fixture, host, type, sendButton } = await setup();
       await type('Salut');
@@ -276,6 +304,21 @@ describe('LcMessageComposerComponent', () => {
       expect(element.textContent).toContain('Le message est obligatoire.');
       fixture.nativeElement.remove();
     });
+  });
+
+  it('touch : émis à la sortie du composant entier, pas du champ vers le trombone ou l\'envoi', async () => {
+    const { fixture, host, textarea, query } = await setup();
+    document.body.append(fixture.nativeElement);
+    const attach = query<HTMLButtonElement>('.lc-message-composer__attach');
+    const outside = document.body;
+    textarea.dispatchEvent(new FocusEvent('blur', { relatedTarget: attach }));
+    attach.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: query('.lc-message-composer__send') }));
+    expect(host.touched).toEqual([]);
+    attach.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+    expect(host.touched).toEqual([true]);
+    textarea.dispatchEvent(new FocusEvent('blur', { relatedTarget: null }));
+    expect(host.touched).toEqual([true, true]);
+    fixture.nativeElement.remove();
   });
 
   it('déclare les libellés dans les deux langues', () => {

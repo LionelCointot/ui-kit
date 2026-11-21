@@ -81,7 +81,9 @@ Aucune donnée persistée. Pièces jointes : `LcFileUploadItem` existant (`id`, 
 |---|---|
 | `--lc-message-composer-border-style` | `solid` |
 | `--lc-message-composer-border-width` | `sys.border-width.thin` |
-| `--lc-message-composer-border-color` | `--lc-input-border`, sinon `sys.color.border-strong` (comme les champs) |
+| `--lc-message-composer-border-color` | `sys.color.border-strong` (comme `lcInput`) |
+| `--lc-message-composer-thumb-width` / `-thumb-preview-height` / `-remove-size` | 7 rem / 4,5 rem / 1,75 rem (aucune valeur `sys` ne convient) |
+| `--lc-message-composer-enter-scale` | `dialog.enter-scale` (0,96) |
 | `--lc-message-composer-background` | `sys.color.surface-raised` |
 | `--lc-message-composer-shake-distance` | `sys.space.1` |
 | `--lc-message-composer-shake-duration` | `sys.duration.normal` |
@@ -113,6 +115,8 @@ Transitions du rectangle sur `border-color`, `border-width` et `background` (`bo
 ```
 - Méthode publique `focus()` (via `LcFormFieldControl`).
 - `send` n'est jamais émis si le texte rogné est vide et qu'aucun item n'est présent (`sendBlocked('empty')`), ni pendant `sending` (`'sending'`), ni si un item est `uploading` (`'uploading'`) ; les items `error` ne bloquent pas. Après un `send`, le composant refuse un nouvel envoi jusqu'à ce que `sending` ait été vrai puis faux, ou que `value` ait changé. Le composant ne modifie jamais `value` : l'application le vide.
+- Le verrou d'envoi se lève aussi quand l'ensemble des `id` de `items` change (envoi de pièces jointes seules : l'application vide `items` sans toucher `value` ni `sending`). Un simple changement d'état d'un item (mêmes `id`) ne le lève pas.
+- Collage : si le presse-papiers contient `text/plain`, le collage natif du texte a lieu et aucun fichier n'est joint (cellules Excel ou Word, qui portent aussi une image) ; une image seule (capture d'écran) est une pièce jointe.
 - Refus : le composant affiche lui-même le message sous le rectangle (nom et raison) et fait la secousse ; il émet aussi `rejected` (l'application n'affiche pas le même message). Le message disparaît au prochain ajout, retrait ou à la prochaine saisie.
 - `previewUrl` n'est rendu que par `<img>` et seulement s'il commence par `blob:`, `data:image/` ou s'il est de même origine ; sinon l'icône de repli.
 - Libellés `LC_LABELS` (fr, en) : nouveaux `composerSend` (« Envoyer »), `composerAttach` (« Joindre un fichier »), `composerDrop` (« Déposez vos fichiers ici »), `composerAttachments` (« Pièces jointes »), `composerSending` (« Envoi en cours… »), `composerRejected(name, reason)` ; repris de `lc-file-upload` pour que la même surcharge d'application s'applique : `fileUploadRemove`, `fileUploadRetry`, `fileUploadUploading`, `fileUploadFailed`, `fileUploadProgress`, `fileUploadLimitReached`.
@@ -133,6 +137,7 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 ## 6. Cas limites et gestion des erreurs
 - Texte vide et aucune pièce jointe : rien n'est émis (`sendBlocked('empty')`), le focus reste dans le champ.
 - Double appui ou double Entrée : un seul `send` (verrou décrit en 5.3).
+- Fichier lâché sur un autre `input[type=file]` de la page : les écouteurs `dragover` et `drop` du document n'annulent pas l'événement (le champ natif le traite).
 - Pièce jointe `uploading` : `sendBlocked('uploading')` ; elle passe à `done` ou `error` : l'envoi se débloque sans autre action.
 - Dossier, élément non fichier, fichier de 0 octet : ignorés, sans erreur ni éclairage coincé.
 - Lot en partie refusé : acceptés par `filesAdded`, refusés par `rejected`, un message par raison.

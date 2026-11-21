@@ -10,13 +10,28 @@
       "$type": "dimension"
     },
     "border-color": {
-      "$description": "Same default as the fields; the component falls back on --lc-input-border first.",
+      "$description": "Same default as the fields (lcInput): sys.color.border-strong.",
       "$value": "{sys.color.border-strong}",
       "$type": "color"
     },
     "background": {
       "$value": "{sys.color.surface-raised}",
       "$type": "color"
+    },
+    "thumb-width": {
+      "$description": "Width of an attachment thumbnail.",
+      "$value": "7rem",
+      "$type": "dimension"
+    },
+    "thumb-preview-height": {
+      "$description": "Height of the preview area of an attachment thumbnail.",
+      "$value": "4.5rem",
+      "$type": "dimension"
+    },
+    "remove-size": {
+      "$description": "Visible diameter of the remove button of a thumbnail (the click area stays sys.control-height-md).",
+      "$value": "1.75rem",
+      "$type": "dimension"
     },
     "shake-distance": {
       "$value": "{sys.space.1}",

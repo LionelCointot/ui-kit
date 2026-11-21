@@ -3,9 +3,15 @@ import { announcedName, cleanFileName, fileSizeText, isSafePreviewUrl } from './
 const BASE = 'https://app.example/page';
 
 describe('file-display', () => {
+  it.each(['file:///home/a.html', 'about:srcdoc'])('isSafePreviewUrl : base %s, jamais de schéma exécutable ni de même origine opaque', (base) => {
+    for (const url of ['javascript:alert(1)', 'data:text/html,<b>x</b>', 'x.png', 'file:///etc/passwd']) expect(isSafePreviewUrl(url, base)).toBe(false);
+    expect(isSafePreviewUrl('data:image/png;base64,AAAA', base)).toBe(true);
+  });
+
   it('cleanFileName retire contrôles et marqueurs bidi, garde le reste', () => {
     expect(cleanFileName('facture‮fdp.exe')).toBe('facturefdp.exe');
     expect(cleanFileName('a\u0007b‏c.pdf')).toBe('abc.pdf');
+    expect(cleanFileName('a\u200Bb\u200C\u200D\u2060\uFEFFc\u2028\u2029.pdf')).toBe('abc.pdf');
     expect(cleanFileName('<b>é.png</b>')).toBe('<b>é.png</b>');
   });
 
