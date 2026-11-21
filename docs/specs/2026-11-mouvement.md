@@ -48,6 +48,8 @@
   24. Bouton « Filtres (N) » : effet d'appui de la décision 8 (c'est un `lcButton`).
   25. Storybook : story `Animation` de `Data/Data table` à 360 px.
 - **Réglages choisis sur la démo** (2026-11-21, utilisateur) : **Standard** pour les indicateurs, le bouton et les panneaux (200 ms, 8 px, fermeture 100 ms) ; **cascade C** pour `lcReveal` (350 ms par élément, 80 ms d'écart). Les valeurs provisoires de la décision 9 sont remplacées par celles-ci (écart de cascade 80 ms au lieu de 50 ; durée de cascade 350 ms, nouveau token `duration-long`).
+- **Choix validés après relecture** (2026-11-21, utilisateur, « oui » à Q1–Q5) : `Foundations/Motion` remplace la section Motion (`Foundations/Elevation`) ; `lc-calendar-fade` remplacé par l'entrée commune ; exception de `DESIGN.md` à 350 ms pour la cascade ; nouvelle durée `duration-long` 350 ms ; `lcTooltip`, `lc-toggletip`, `lc-drawer` inchangés, calendrier de `lc-date-range-input` inclus.
+- **Ordre de livraison** : après [`2026-11-filtre-periode-tableau.md`](2026-11-filtre-periode-tableau.md) (mêmes fichiers que T6).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : nouveaux tokens `sys`, nouvelle directive publique `lcReveal`, mesure de position dans `lc-tabs` et `lc-nav-list`, règle de stories modifiée.
@@ -68,7 +70,7 @@ Le kit change d'état d'un coup : l'onglet ou l'élément de navigation actif sa
 ## 3. Hors périmètre (non-objectifs)
 - Dévoilement au défilement, View Transitions (document ou élément), transitions de page, ripple (décisions 2, 8, 11, 17).
 - Animation des dialogues (`lc-dialog`), sauf le panneau de filtres du téléphone (décisions 17 et 19).
-- Superpositions autres que les panneaux déroulants : `lcTooltip`, `lc-toggletip`, `lc-drawer` (qui garde son entrée actuelle) restent inchangés (proposé, question Q5).
+- Superpositions autres que les panneaux déroulants : `lcTooltip`, `lc-toggletip`, `lc-drawer` (qui garde son entrée actuelle) restent inchangés (validé, Q5).
 - Animation de hauteur (sections dépliables, `lc-disclosure`) : `interpolate-size` hors cible (décision 20).
 - Glissement des pastilles voisines au retrait, animation au chargement de résultats supplémentaires (décisions 22, 23).
 - Changement de la cible navigateurs (reste Baseline 2024, ADR 0009) et `animate.enter` / `animate.leave` d'Angular (section 8).
@@ -92,7 +94,7 @@ Le kit change d'état d'un coup : l'onglet ou l'élément de navigation actif sa
 - **Principal** (`packages/angular/src`, autorisé depuis tous les secondaires, aucune nouvelle exception d'import) :
   - `lib/reveal/reveal.directive.ts` : `LcRevealDirective` (5.3).
   - `lib/core/detach-animated.ts` : `lcDetachAnimated(overlayRef)` (5.3), seul point de fermeture animée des panneaux CDK ; contient en interne l'attente des animations (`Promise.allSettled(el.getAnimations({ subtree: true }).map(a => a.finished))`, immédiate sans animation). Type `OverlayRef` importé de `@angular/cdk/overlay` (dépendance déjà présente).
-- **Feuille globale** `styles/ui-angular.css` : appui du bouton, entrée et sortie des panneaux CDK (`.lc-menu-panel`, `.lc-combobox-panel`, panneau du calendrier, menu de `lc-data-table`), `[lcReveal]`. Entrée par `@starting-style` (Baseline 2024-08-06). Le fondu `lc-calendar-fade` est remplacé par l'entrée commune (proposé, question Q2).
+- **Feuille globale** `styles/ui-angular.css` : appui du bouton, entrée et sortie des panneaux CDK (`.lc-menu-panel`, `.lc-combobox-panel`, panneau du calendrier, menu de `lc-data-table`), `[lcReveal]`. Entrée par `@starting-style` (Baseline 2024-08-06). Le fondu `lc-calendar-fade` est remplacé par l'entrée commune (validé, Q2).
 - **Sens du panneau** : chaque position « au-dessus » des stratégies CDK porte `panelClass: 'lc-overlay--above'` ; la descente devient une montée ; un retournement après ouverture change le sens sans rejouer l'entrée.
 - **Fermeture des panneaux CDK** (`menu-trigger.directive.ts`, `combobox.component.ts`, `date-input.component.ts`, `date-range-input.component.ts`, menu de `lc-data-table`) : appel de `lcDetachAnimated`, qui pose `lc-overlay--closing` sur `overlayElement`, attend la fin du fondu, puis `detach()`. Une réouverture pendant le fondu annule le retrait (jeton) ; la destruction du composant détache immédiatement.
 - **`lc-tabs`** : un élément `lc-tabs__indicator` (`aria-hidden="true"`, `role="presentation"`) dans `lc-tabs__list` (conteneur qui défile, `position: relative`). Position (`offsetLeft`) et largeur (`offsetWidth`) de l'onglet sélectionné mesurées dans l'`afterRenderEffect` existant ; le `ResizeObserver` existant observe aussi les onglets. Transition sur `transform: translateX` (position) et `width` (largeur ; élément en `position: absolute`, sans effet sur la mise en page ; trait sans rayon). Classe `lc-tabs--ready` posée après la première mesure. La bordure par onglet sélectionné disparaît. La méthode privée `reveal()` devient `scrollTabIntoView()`.
@@ -103,7 +105,7 @@ Le kit change d'état d'un coup : l'onglet ou l'élément de navigation actif sa
 ### 5.2 Modèle de données (tokens)
 | Token | Valeur | Couche |
 |---|---|---|
-| `--lc-ref-duration-long` / `--lc-sys-duration-long` | 350ms | ref + sys (nouveau ; question Q4) |
+| `--lc-ref-duration-long` / `--lc-sys-duration-long` | 350ms | ref + sys (nouveau ; validé, Q4) |
 | `--lc-ref-motion-stagger` / `--lc-sys-motion-stagger` | 80ms | ref + sys (nouveau) |
 | `--lc-sys-motion-offset` | `{sys.space.2}` (8 px) | sys (nouveau) |
 | Courbe | `--lc-sys-easing-standard` existant (`cubic-bezier(0.2, 0, 0, 1)`) ; `easing-emphasized` existant non utilisé ni modifié | — |
@@ -140,12 +142,12 @@ Direction choisie par l'utilisateur sur la maquette : **Standard** (200 ms, 8 px
 | `lcReveal` | À l'insertion : fondu et descente de 8 px ; délai min(index, 7) × 80 ms. Rejoue à chaque réinsertion (`@if`, clé changée) : à ne pas poser sur un contenu réinséré à chaque rendu. | `--lc-reveal-*` | Opacité 1, décalage 0 | Inchangé |
 
 **Storybook** (T7) :
-- `Foundations/Motion` : remplace la section Motion de `Foundations/Elevation and motion`, renommée `Foundations/Elevation` (proposé, question Q1). Durées et écart résolus, courbe `standard` tracée, distance, trois mini-démos (panneau, cascade de 4 lignes, appui), un « Rejouer », le bandeau de réduction, renvoi aux `--lc-sys-*`.
+- `Foundations/Motion` : remplace la section Motion de `Foundations/Elevation and motion`, renommée `Foundations/Elevation` (validé, Q1). Durées et écart résolus, courbe `standard` tracée, distance, trois mini-démos (panneau, cascade de 4 lignes, appui), un « Rejouer », le bandeau de réduction, renvoi aux `--lc-sys-*`.
 - `lcReveal` dans `Layout/Reveal` (`packages/angular/src/lib/reveal/reveal.stories.ts`, comme `Layout/Truncate`) : `Playground` (contrôle `lcRevealIndex`) puis `Animation`.
 - Story `Animation` dans `Navigation/Tabs`, `Navigation/Nav list`, `Buttons/Button`, `Navigation/Menu`, `Forms/Combobox`, `Forms/Date input`, `Layout/Reveal`, `Data/Data table` (360 px) : bouton « Rejouer » (réinsertion par clé de rendu ; onglets et nav : retour sans transition au premier élément puis sélection du dernier) ; extrait de code écrit à la main, limité à l'usage du composant ; JSDoc en anglais d'une phrase.
 - Bandeau (`role="status"`, au-dessus de la démo, si `matchMedia('(prefers-reduced-motion: reduce)')`, suit les changements) : « Les animations sont réduites par votre système : rien ne bouge dans cette démo. »
 - `CONVENTIONS.md`, « Page d'un composant » : un composant qui bouge a une story `Animation` après les exemples figés (Rejouer, bandeau, extrait limité au composant) ; les stories d'acceptation du mouvement vont dans `*.qa.stories.ts`.
-- `DESIGN.md` : la règle « Don't animer plus de 200 ms » devient « 200 ms au plus, sauf la cascade `lcReveal` (350 ms par élément) » (question Q3).
+- `DESIGN.md` : la règle « Don't animer plus de 200 ms » devient « 200 ms au plus, sauf la cascade `lcReveal` (350 ms par élément) » (validé, Q3).
 
 Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) ; jalon manuel sur la page `Foundations/Motion` une fois construite (CA-17).
 
@@ -227,7 +229,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [ ] T8 (QA) : commande `motion` de `storybook-browser.mjs`, stories d'acceptation, contrôles statiques (CA-13, CA-15, et preuves de tous les CA navigateur).
 
 ## 12. Risques et questions ouvertes
-- **Choix par défaut à confirmer par l'utilisateur** : Q1 `Foundations/Motion` remplace la section Motion (page renommée `Foundations/Elevation`) ; Q2 le calendrier perd `lc-calendar-fade` au profit de l'entrée commune ; Q3 exception de `DESIGN.md` à 350 ms pour la cascade ; Q4 nouvelle durée `long` 350 ms (plutôt que `slow` 300 ms) ; Q5 `lcTooltip`, `lc-toggletip`, `lc-drawer` inchangés, calendrier de `lc-date-range-input` inclus.
+- **Choix confirmés par l'utilisateur le 2026-11-21** : Q1 `Foundations/Motion` remplace la section Motion (page renommée `Foundations/Elevation`) ; Q2 le calendrier perd `lc-calendar-fade` au profit de l'entrée commune ; Q3 exception de `DESIGN.md` à 350 ms pour la cascade ; Q4 nouvelle durée `long` 350 ms (plutôt que `slow` 300 ms) ; Q5 `lcTooltip`, `lc-toggletip`, `lc-drawer` inchangés, calendrier de `lc-date-range-input` inclus.
 - **Dettes** : fermeture différée à appeler pour chaque nouveau panneau CDK (centralisée dans `lcDetachAnimated`) ; à revoir si `overlay` et `display` en `allow-discrete` deviennent Baseline (revue annuelle, ADR 0009) ; preuves en Chromium seulement.
 - **Questions ouvertes** : aucune autre.
 
