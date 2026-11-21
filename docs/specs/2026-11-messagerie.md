@@ -24,7 +24,7 @@
   5. Zones libres : un en-tête au-dessus du rectangle (copro-ticket y garde le choix « Note interne / Visible par le demandeur ») et une zone d'actions à côté du trombone.
   6. Apparence personnalisable par l'application : tokens CSS du composant qu'une classe de l'application redéfinit, avec transition ; le kit ne fournit aucune variante métier. Retenu après relecture du `cadreur` (consommateur : la note interne de copro-ticket) : style, couleur et épaisseur de bordure, fond ; d'autres tokens viendront avec un besoin.
   7. Décidé par la session (technique, 2026-11-21, révisé après relectures) : le composant ne valide pas ; libellé, aide et erreurs viennent de `lc-form-field` ; il réutilise les types et le filtrage de `lc-file-upload` (`accept`, nombre, raisons de refus) par un utilitaire partagé, sans composer ce composant. Le fil (PR 2) est cadré après la PR 1.
-  8. Direction **B** (barre d'outils basse, maquette `docs/design/explorations/2026-11-messagerie/`), avec une modification : « Je prefere la B par contre ca serait le l'icone actuelle pour envoyer en bouton sans contour un oeu a la maniere de whatapp » : l'envoi est l'icône `send` (celle de copro-ticket aujourd'hui), bouton sans contour ni fond, en couleur principale ; icône remplaçable par l'application (copro-ticket met `lock` pour une note interne).
+  8. Direction **B** (barre d'outils basse, maquette `docs/design/explorations/2026-11-messagerie/`), avec une modification : « Je prefere la B par contre ca serait le l'icone actuelle pour envoyer en bouton sans contour un oeu a la maniere de whatapp » : l'envoi est l'icône `send` (celle de copro-ticket aujourd'hui), bouton sans contour ni fond, en couleur principale ; icône remplaçable par l'application. Révisé le 2026-11-21 : « Pourquoi c'est un cadena quand on est en note interne? Ca reste le bouton encoye et les icones oont la oculeur primary? » ; à la proposition de garder `send` en couleur principale en note interne : « Oui » : seuls la bordure et le fond changent ; copro-ticket retire le cadenas de son bouton d'envoi (il reste dans le sélecteur).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : deux nouveaux composants, réutilisation de la logique de `lc-file-upload`, points d'entrée à choisir.
@@ -50,13 +50,13 @@ copro-ticket assemble sa réponse à une demande avec `lc-form-field` + `textare
 - `lc-message-thread` : cadré après la PR 1.
 
 ## 4. Utilisateurs et cas d'usage
-**Utilisateur principal** : à confirmer par l'utilisateur (hypothèse : un copropriétaire débutant qui écrit une phrase sur téléphone ; en second, le gestionnaire sur ordinateur qui répond souvent et joint des documents).
+**Utilisateur principal** (confirmé par l'utilisateur le 2026-11-21, « oui ») : un copropriétaire débutant qui écrit une phrase sur téléphone ; en second, le gestionnaire sur ordinateur qui répond souvent et joint des documents.
 
 | Acteur | Cas d'usage | Résultat attendu |
 |---|---|---|
 | Copropriétaire (téléphone) | Écrit, joint une photo par le trombone, touche l'icône d'envoi | Le message part ; la vignette montre l'avancement |
 | Gestionnaire (ordinateur) | Glisse un PDF sur le rectangle, écrit, Entrée | Le rectangle s'éclaire, la vignette apparaît, Entrée envoie |
-| Gestionnaire | Bascule « Note interne » au-dessus | Rectangle en pointillés et couleur (classe de l'application), icône `lock`, nom « Ajouter la note » |
+| Gestionnaire | Bascule « Note interne » au-dessus | Rectangle en pointillés et fond coloré (classe de l'application) ; envoi inchangé (`send`, couleur principale), nom « Ajouter la note » |
 | Tous | Dépose un type refusé | Message sous le rectangle avec la raison, secousse |
 | Tous | Appuie sur Envoyer pendant qu'une photo part | Rien n'est émis ; l'application reçoit `sendBlocked` et affiche son message |
 
@@ -120,7 +120,7 @@ Transitions du rectangle sur `border-color`, `border-width` et `background` (`bo
 Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (décision 8). Maquette `docs/design/explorations/2026-11-messagerie/index.html` (section « B retenue »), captures `capture-b-1280.png` et `capture-b-360.png`. Brief de `ui-ux-designer` (2026-11-21) :
 - **Structure** : `lcComposerHeader` au-dessus ; dans le rectangle, de haut en bas : vignettes (`role="list"`, « Pièces jointes »), champ pleine largeur, barre basse (trombone, filet vertical puis actions s'il y en a, envoi à droite) ; sous le rectangle : message de refus. Calque de dépôt sur le rectangle (`inset: 0`, `pointer-events: none`).
 - **Dimensions** : rayon `radius-lg` ; champ ≥ 16 px de police, `space-3` de marge ; trombone et envoi 44 × 44 px (`control-height-md`), icônes `icon-size-md` ; vignette de 7 rem, aperçu 4,5 rem, nom coupé par points de suspension (nom complet en `title`) ; ✕ visible 28 px, zone de clic 44 px ; « Réessayer » avec 44 px de zone de clic.
-- **Envoi** : icône `primary`, sans fond ni bordure, jamais grisé hors `disabled` ; survol et appui en teinte `state-hover/pressed-opacity`, appui `--lc-button-press-scale` ; focus `focus-ring` 2 px ; `sending` : anneau de chargement de même taille, `aria-busy`, `aria-disabled`, zone `role="status"` « Envoi en cours… ». Contraste mesuré 6,6:1 (clair), 6,3:1 (sombre), 5,9:1 (note interne).
+- **Envoi** : icône `primary`, sans fond ni bordure, jamais grisé hors `disabled` ; survol et appui en teinte `state-hover/pressed-opacity`, appui `--lc-button-press-scale` ; focus `focus-ring` 2 px ; `sending` : anneau de chargement de même taille, `aria-busy`, `aria-disabled`, zone `role="status"` « Envoi en cours… ». Contraste mesuré 6,6:1 (clair), 6,3:1 (sombre), 5,9:1 (sur le fond de la note interne).
 - **États** : vignette en cours (« Envoi… 62 % », barre de 3 px `role="progressbar"`), en erreur (bordure `error`, icône et mot « Échec », « Réessayer ») ; survol de dépôt : calque `primary-container`, contour `primary` 2 px, « Déposez vos fichiers ici » ; refus : icône `circle-alert` et texte `error` ; désactivé : `state-disabled-opacity`, seul cas où l'envoi est grisé.
 - **Animations** : vignette : fondu, 0,96 → 1 et décalage `motion-offset` en `duration-normal` ; calque de dépôt : opacité en `duration-fast` ; rectangle (couleurs, fond, épaisseur) en `duration-normal` ; secousse : `transform`, tokens `shake-*` ; aucune animation de hauteur du champ. Réduction : secousse supprimée, vignette en fondu seul, calque immédiat, anneau fixe, transitions supprimées.
 - **forced-colors** : bordure `CanvasText`, envoi `ButtonText` avec contour `Highlight` au survol et au focus, calque `Canvas` contour `Highlight`, avancement `Highlight`.
@@ -170,9 +170,9 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 - [ ] CA-C7 : Chaque item est une vignette : aperçu ou icône et nom, avancement (`progressbar`), erreur (« Échec », « Réessayer » → `retry`), ✕ (`remove`, nom « Retirer <nom> ») ; un nouvel item apparaît en fondu, 0,96 → 1, en `duration-normal` ; après un retrait, le focus va à la vignette suivante ou au champ.
 - [ ] CA-C8 : Refus : un message par raison sous le rectangle (nom et raison) en `role="alert"`, secousse en `transform` aux tokens `shake-*` ; le message disparaît au prochain ajout, retrait ou à la saisie ; sous réduction des animations, durée nulle (`getAnimations`) et message affiché.
 - [ ] CA-C9 : `sending` : anneau d'attente, envoi `aria-disabled="true"` sans perte du focus, champ en `readonly` (pas `disabled`) : texte sélectionnable, contraste inchangé, « Envoi en cours… » en `role="status"`.
-- [ ] CA-C10 : Une classe de l'application sur l'hôte redéfinissant les quatre tokens de bordure et de fond change le rendu sans autre CSS ; couleur, épaisseur et fond passent en `duration-normal` ; aucun `--lc-message-composer-*` n'est déclaré sur `:host`.
+- [ ] CA-C10 : Une classe de l'application sur l'hôte redéfinissant les quatre tokens de bordure et de fond change le rendu sans autre CSS, et ne change ni l'icône ni la couleur du trombone et de l'envoi (couleur principale) ; couleur, épaisseur et fond passent en `duration-normal` ; aucun `--lc-message-composer-*` n'est déclaré sur `:host`.
 - [ ] CA-C11 : `lcComposerHeader` est au-dessus du rectangle, `lcComposerAction` après le trombone ; Tab suit : en-tête, vignettes, champ, trombone, actions, envoi.
-- [ ] CA-C12 : axe sans violation (WCAG 2 A/AA) sur 4 états (vide ; items dont un en erreur ; refus affiché ; en-tête et icône `lock`) à 360 et 1 280 px, thèmes clair et sombre ; test statique : aucun libellé ni valeur en dur, clés fr et en présentes.
+- [ ] CA-C12 : axe sans violation (WCAG 2 A/AA) sur 4 états (vide ; items dont un en erreur ; refus affiché ; en-tête et classe « note interne ») à 360 et 1 280 px, thèmes clair et sombre ; test statique : aucun libellé ni valeur en dur, clés fr et en présentes.
 - [ ] CA-C13 : Dans `lc-form-field`, libellé, aide et erreurs du champ s'appliquent (`aria-describedby`, `aria-invalid`, `touched` à la sortie) ; hors champ sans `ariaLabel`, avertissement en développement seulement ; `[(value)]` et Signal Forms mettent à jour le champ ; `focus()` place le focus dans le champ.
 - [ ] CA-C14 (manuel) : test `novice-user` sur captures à 360 px (vide, photo en cours, refus, note interne).
 - [ ] CA-C15 : Dossier, élément non fichier ou fichier de 0 octet : ignorés, sans exception ni éclairage coincé ; `maxFiles` atteint : refus `count`.
@@ -191,10 +191,9 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 - [ ] M3 : pièces jointes, dépôt, refus, animations, sécurité des noms et aperçus (M ; CA-C5 à C8, C15, CA-S1 à S6).
 - [ ] M4 : stories (`Playground`, `Animation`), catalogue, README (S ; CA-C12).
 - [ ] M5 (QA) : verdict GO / NO-GO, axe, test novice (CA-C12, C14).
-- [ ] M6 (PR séparée, copro-ticket) : la réponse du demandeur et celle du gestionnaire utilisent le composant ; `reply-form` s'amincit (alertes et compteur restent) ; `photos-status` remplacé par `sendBlocked` ; parcours e2e réécrits par la QA, dont la note interne.
+- [ ] M6 (PR séparée, copro-ticket) : la réponse du demandeur et celle du gestionnaire utilisent le composant ; `reply-form` s'amincit (alertes et compteur restent) ; `photos-status` remplacé par `sendBlocked` ; bouton d'envoi en `send` en note interne aussi (le cadenas reste dans le sélecteur) ; parcours e2e réécrits par la QA, dont la note interne.
 
 ## 12. Risques et questions ouvertes
-- **Choix par défaut à confirmer** : utilisateur principal (§4).
 - **Questions pour l'utilisateur** : dépôt d'un fichier à côté du rectangle (le navigateur l'ouvre et la saisie est perdue, ou le composant l'empêche sur toute la page tant qu'il est affiché) ; collage d'une image (Ctrl+V) comme pièce jointe.
 - **Dettes** : agrandissement par script tant que `field-sizing` n'est pas dans la cible ; iPad avec clavier : `'auto'` le traite en tactile (Entrée va à la ligne).
 - **Limites** : glisser-déposer absent sur iOS (le trombone sert) ; geste tactile non essayé sur vrai téléphone.
