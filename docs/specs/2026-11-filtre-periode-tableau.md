@@ -1,6 +1,6 @@
 # Spec : filtre de période de `lc-data-table` avec le champ de date du kit
 
-- **Statut** : Validée le 2026-11-21 par l'utilisateur (« Oui pour tout », puis « B » sur les raccourcis)
+- **Statut** : Implémentée le 2026-11-21 (P1 à P5 ; ui-kit et copro-ticket, branche `claude/gracious-cori-mk7dyj`). Validée le 2026-11-21 par l'utilisateur (« Oui pour tout », puis « B »)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0008 Sélecteur de date](../adr/0008-selecteur-de-date-kit-ou-systeme.md) · [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md)
@@ -156,3 +156,4 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - 2026-11-21, P5 livrée : « La semaine dernière » (lundi à dimanche précédents, ISO) ajouté aux raccourcis par défaut de `lc-date-range-input`, en deuxième position ; `qa-engineer` GO (1 993 tests ; CA-36 du sélecteur de date passe de 4 à 5 raccourcis, ajustement jugé légitime, et assertion ajoutée sur l'intervalle), `code-reviewer` approuvé après correction de la JSDoc (« cinq »).
 - 2026-11-21, P4 livrée dans copro-ticket (branche `claude/gracious-cori-mk7dyj`, commit `e831583`) : `dateRangeBounds` et `presets` retirés, paramètre `today` retiré de `apiFiltersOf`. **Écart** : le test « 7 derniers jours » de `queue-filters.spec.ts` est supprimé, sans remplacement : il testait la conversion d'un raccourci glissant (`preset: 7`), qui n'existe plus dans le contrat ; la conversion des bornes fixes reste couverte. Front : 1 768 + 196 tests, build et format OK, `check-tests-not-weakened.sh` OK ; backend non concerné et SDK .NET absent ici (non lancé). Suite proposée (non bloquante) : un test avec la seule borne `to`.
 - 2026-11-21, `cadreur` (livraison) : ÉCARTS. Retenu : citation de la décision de l'utilisateur pour P5 (section 0, décision 33, O3, CA-P12), mentions « quatre raccourcis » corrigées ici, dans `2026-11-selecteur-de-date.md` et dans le titre de CA-33 ; contrat cassé annoncé `feat!` (commit `0766c05`), à reprendre dans la PR. Rien d'autre à retirer.
+- 2026-11-21, `code-reviewer` (audit de simplification) : le code devenu inutile a déjà été retiré par la fonctionnalité ; rien d'autre à supprimer. `isDateRangeInverted` reste utile (requête inversée fournie par le code) mais n'a pas de test de composant ; libellés `from`, `to`, `dateOrderError`, `lastDays` lus par `forms` sous `LC_LABELS.dataTable` : déplacement possible, changement de contrat, proposé à l'utilisateur.
