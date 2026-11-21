@@ -24,6 +24,7 @@ lc-button-group.lc-button-group--attached > .lc-button:not(:last-child) {
 lc-button-group.lc-button-group--attached > .lc-button:focus-visible {
   z-index: 1;
 }
+
 @media (hover: hover) {
   lc-button-group.lc-button-group--attached > .lc-button:hover {
     z-index: 1;

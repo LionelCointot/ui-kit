@@ -27,7 +27,7 @@ lc-sheet {
 .lc-sheet__dialog[open] {
   display: flex;
   flex-direction: column;
-  transition: transform var(--lc-slide-enter-duration) var(--lc-overlay-easing);
+  transition: transform var(--lc-slide-enter-duration, var(--lc-sys-duration-move)) var(--lc-overlay-easing);
 }
 
 /* Entrée : la feuille monte du bas (@starting-style joue à l'ouverture du dialogue). */
@@ -40,11 +40,11 @@ lc-sheet {
 /* Sortie : `data-closing` (posé avant `close()`) la fait descendre ; retour d'un tirage trop court : même durée. */
 .lc-sheet__dialog[open][data-closing] {
   transform: translateY(100%);
-  transition-duration: var(--lc-slide-exit-duration);
+  transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
 }
 
 .lc-sheet__dialog[open][data-returning] {
-  transition-duration: var(--lc-slide-exit-duration);
+  transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
 }
 
 /* Pendant le tirage, la feuille suit le doigt (transform écrit en ligne) sans transition. */
@@ -66,7 +66,7 @@ lc-sheet {
 
 .lc-sheet__dialog[data-closing]::backdrop {
   opacity: 0;
-  transition-duration: var(--lc-slide-exit-duration);
+  transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
 }
 
 .lc-sheet__dialog[data-dragging]::backdrop {
@@ -134,9 +134,9 @@ lc-sheet {
 /* Grand écran : carte centrée (fiche d'iPad), sans poignée ni geste ; entrée et sortie en translation et fondu. */
 @media (min-width: 48em) {
   .lc-sheet__dialog {
-    inline-size: min(var(--lc-sheet-card-width, 35rem), 100% - 2 * var(--lc-sys-space-6));
+    inline-size: min(var(--lc-sheet-card-width), 100% - 2 * var(--lc-sys-space-6));
     block-size: auto;
-    max-block-size: var(--lc-sheet-card-max-height, 80dvh);
+    max-block-size: var(--lc-sheet-card-max-height);
     margin: auto;
     border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
     border-radius: var(--lc-sheet-radius, var(--lc-sys-radius-lg));

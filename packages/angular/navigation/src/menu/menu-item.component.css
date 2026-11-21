@@ -18,6 +18,7 @@
 :host(:focus-visible) {
   background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
 }
+
 @media (hover: hover) {
   :host(:hover) {
     background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);

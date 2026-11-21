@@ -243,8 +243,8 @@ lc-data-table {
 
 @media (hover: hover) {
   .lc-data-table__th-head--sortable:hover,
-.lc-data-table__th-head--sortable:hover + .lc-data-table__sort,
-.lc-data-table__sort:hover {
+  .lc-data-table__th-head--sortable:hover + .lc-data-table__sort,
+  .lc-data-table__sort:hover {
     text-decoration: underline;
   }
 }

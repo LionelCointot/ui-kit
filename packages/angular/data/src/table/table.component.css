@@ -219,7 +219,7 @@ tfoot td {
 
 @media (hover: hover) {
   .lc-table__sort:hover,
-.lc-table__toggle:hover {
+  .lc-table__toggle:hover {
     background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
   }
 }

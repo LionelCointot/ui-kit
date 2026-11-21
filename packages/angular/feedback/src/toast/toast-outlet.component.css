@@ -90,7 +90,7 @@
 
 @media (hover: hover) {
   .lc-toast__action:hover,
-.lc-toast__close:hover {
+  .lc-toast__close:hover {
     background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
   }
 }

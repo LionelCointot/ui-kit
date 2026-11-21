@@ -111,6 +111,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .lc-tabs__panel {
+    transition: none;
+  }
+}
+
 @media (forced-colors: active) {
   .lc-tabs__indicator {
     background: Highlight;
