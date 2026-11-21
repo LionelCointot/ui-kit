@@ -43,7 +43,7 @@ describe('LcSheetComponent', () => {
     await stable();
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
   const openSheet = async () => {
     host.open.set(true);
