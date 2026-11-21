@@ -14,3 +14,4 @@ export * from './progress-bar/progress-bar.component';
 export * from './meter/meter.component';
 export * from './message/message.component';
 export * from './message-thread/message-thread.model';
+export * from './message-thread/message-thread.component';

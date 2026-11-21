@@ -23,6 +23,6 @@ export interface LcThreadMessage {
   kind?: 'message' | 'system';
   /** Classe posée par l'application (note interne) : redéfinit les jetons de bulle. */
   cssClass?: string;
-  /** Texte court sous l'en-tête du groupe (« Note interne »). */
+  /** Texte court sous l'en-tête du groupe (« Restreint »). */
   mention?: string;
 }

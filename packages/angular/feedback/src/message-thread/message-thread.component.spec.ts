@@ -1,0 +1,184 @@
+import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
+import { LcMessageThreadComponent, type LcThreadAttachmentOpenEvent } from './message-thread.component';
+import type { LcThreadMessage } from './message-thread.model';
+
+const at = (h: number, m: number) => new Date(2026, 10, 18, h, m).toISOString();
+const msg = (id: string, over: Partial<LcThreadMessage> = {}): LcThreadMessage => ({
+  id, authorId: 'a', authorName: 'Alice', mine: false, sentAt: at(9, 0), text: `texte ${id}`, ...over,
+});
+
+@Component({
+  imports: [LcMessageThreadComponent],
+  template: `<lc-message-thread [messages]="messages()" [showAvatars]="showAvatars()" (attachmentOpen)="opened.push($event)"><p lcThreadComposer id="composer">saisie</p></lc-message-thread>`,
+})
+class HostComponent {
+  readonly messages = signal<LcThreadMessage[]>([]);
+  readonly showAvatars = signal(true);
+  readonly opened: LcThreadAttachmentOpenEvent[] = [];
+}
+
+@Component({ imports: [LcMessageThreadComponent], template: `<lc-message-thread [messages]="messages" />` })
+class MinimalHostComponent {
+  readonly messages = [msg('1')];
+}
+
+function render(messages: LcThreadMessage[], setup?: (host: HostComponent) => void) {
+  const fixture = TestBed.createComponent(HostComponent);
+  fixture.componentInstance.messages.set(messages);
+  setup?.(fixture.componentInstance);
+  fixture.detectChanges();
+  const root: HTMLElement = fixture.nativeElement;
+  return { fixture, host: fixture.componentInstance, root, q: (s: string) => root.querySelector<HTMLElement>(s), qa: (s: string) => Array.from(root.querySelectorAll<HTMLElement>(s)) };
+}
+
+describe('lc-message-thread', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('CA-T19 : <lc-message-thread [messages] /> seul suffit', () => {
+    const fixture = TestBed.createComponent(MinimalHostComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[role="log"]')?.getAttribute('aria-label')).toBe('Échanges');
+    expect(root.querySelectorAll('.lc-message-thread__bubble').length).toBe(1);
+  });
+
+  it('role="log" nommé, libellé anglais et ariaLabel fournis', () => {
+    expect(render([]).q('[role="log"]')?.getAttribute('aria-label')).toBe('Échanges');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: LC_LABELS_EN }] });
+    expect(render([]).q('[role="log"]')?.getAttribute('aria-label')).toBe('Messages');
+    const fixture = TestBed.createComponent(LcMessageThreadComponent);
+    fixture.componentRef.setInput('messages', []);
+    fixture.componentRef.setInput('ariaLabel', 'Suivi');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="log"]').getAttribute('aria-label')).toBe('Suivi');
+  });
+
+  it('CA-T17 : liste vide, aucune bulle ; saisie projetée sous le fil', () => {
+    const { q, qa } = render([]);
+    expect(qa('.lc-message-thread__bubble').length).toBe(0);
+    expect(q('#composer')).not.toBeNull();
+    expect(q('#composer')?.previousElementSibling?.getAttribute('role')).toBe('log');
+  });
+
+  it('CA-T1 : mes messages dans un groupe « mine », en-tête une fois, heure intermédiaire après 5 min', () => {
+    const { qa } = render([msg('1', { mine: true }), msg('2', { mine: true, sentAt: at(9, 1) }), msg('3', { mine: true, sentAt: at(9, 4) }), msg('4', { sentAt: at(9, 5), authorId: 'b', authorName: 'Bob' })]);
+    const groups = qa('.lc-message-thread__group');
+    expect(groups.map((g) => g.classList.contains('lc-message-thread__group--mine'))).toEqual([true, false]);
+    expect(groups[0].querySelectorAll('.lc-message-thread__header').length).toBe(1);
+    expect(groups[0].querySelectorAll('.lc-message-thread__bubble').length).toBe(3);
+    expect(groups[0].querySelectorAll('.lc-message-thread__time').length).toBe(0);
+  });
+
+  it('séparateur de jour', () => {
+    const { qa } = render([msg('1')]);
+    expect(qa('.lc-message-thread__day').map((e) => e.textContent?.trim())).toEqual(['18 nov.']);
+  });
+
+  it('CA-T2 : avatar une fois par groupe des autres, jamais pour moi ni système, masquable', () => {
+    const items = [msg('1'), msg('2'), msg('3', { mine: true, authorId: 'me' }), msg('4', { kind: 'system', text: 'Résolu' })];
+    const { qa, fixture, host } = render(items);
+    expect(qa('lc-avatar').length).toBe(1);
+    expect(qa('.lc-message-thread__group').filter((g) => g.querySelector('lc-avatar')).length).toBe(1);
+    expect(qa('lc-avatar')[0].getAttribute('aria-hidden')).toBe('true');
+    host.showAvatars.set(false);
+    fixture.detectChanges();
+    expect(qa('lc-avatar').length).toBe(0);
+  });
+
+  it('CA-T5 : cssClass posée sur le groupe, mention sous l\'en-tête avant le texte', () => {
+    const { q } = render([msg('1', { cssClass: 'note-interne', mention: 'Restreint' })]);
+    const group = q('.lc-message-thread__group')!;
+    expect(group.classList.contains('note-interne')).toBe(true);
+    const mention = q('.lc-message-thread__mention')!;
+    expect(mention.textContent).toContain('Restreint');
+    expect(mention.compareDocumentPosition(q('.lc-message-thread__bubble')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('CA-T7 : ligne système sans nom ni avatar, heure dans <time>, rompt le groupe', () => {
+    const { qa } = render([msg('1'), msg('2', { kind: 'system', text: 'Demande résolue', sentAt: at(9, 1) }), msg('3', { sentAt: at(9, 2) })]);
+    expect(qa('.lc-message-thread__group').length).toBe(2);
+    const sys = qa('.lc-message-thread__system');
+    expect(sys.length).toBe(1);
+    expect(sys[0].textContent).toContain('Demande résolue');
+    expect(sys[0].querySelector('time')?.getAttribute('datetime')).toBeTruthy();
+    expect(sys[0].querySelector('lc-avatar, bdi')).toBeNull();
+  });
+
+  it('CA-T8 : adresse http(s) en lien sûr ; javascript: et HTML en texte', () => {
+    const { qa } = render([msg('1', { text: 'Suivi https://exemple.fr/suivi/1234. javascript:alert(1) <img src=x onerror=alert(1)>\nligne 2' })]);
+    const links = qa('.lc-message-thread__text a');
+    expect(links.length).toBe(1);
+    expect(links[0].textContent).toBe('https://exemple.fr/suivi/1234');
+    expect(links[0].getAttribute('href')).toBe('https://exemple.fr/suivi/1234');
+    expect(links[0].getAttribute('target')).toBe('_blank');
+    expect(links[0].getAttribute('rel')).toBe('noopener noreferrer');
+    const text = qa('.lc-message-thread__text')[0];
+    expect(text.querySelector('img')).toBeNull();
+    expect(text.textContent).toContain('javascript:alert(1) <img src=x onerror=alert(1)>\nligne 2');
+  });
+
+  it('CA-T16 : caractères de contrôle et bidi retirés du nom, du texte et des noms de pièces jointes ; nom dans <bdi>', () => {
+    const { q } = render([msg('1', { authorName: 'Al‮ice\u0000', text: 'a‏b\u0007c', attachments: [{ id: 'f', name: 'x‮y.pdf' }] })]);
+    expect(q('bdi')?.textContent).toBe('Alice');
+    expect(q('.lc-message-thread__text')?.textContent).toBe('abc');
+    expect(q('.lc-message-thread__thumb')?.getAttribute('aria-label')).toBe('Ouvrir la pièce jointe : xy.pdf');
+    expect(q('.lc-message-thread__thumb')?.getAttribute('title')).toBe('xy.pdf');
+  });
+
+  describe('CA-T6 : pièces jointes', () => {
+    const attachments = [
+      { id: 'a', name: 'ok.png', previewUrl: 'data:image/png;base64,AAAA' },
+      { id: 'b', name: 'blob.png', previewUrl: 'blob:http://localhost/1' },
+      { id: 'c', name: 'js', previewUrl: 'javascript:alert(1)' },
+      { id: 'd', name: 'html', previewUrl: 'data:text/html,<b>x</b>' },
+      { id: 'e', name: 'tiers', previewUrl: 'https://evil.test/p.png' },
+      { id: 'f', name: 'sans-aperçu' },
+    ];
+
+    it('<img> seulement pour un aperçu admis, sinon icône', () => {
+      const { qa } = render([msg('1', { text: undefined, attachments })]);
+      const thumbs = qa('button.lc-message-thread__thumb');
+      expect(thumbs.map((t) => !!t.querySelector('img'))).toEqual([true, true, false, false, false, false]);
+      expect(qa('img').map((i) => i.getAttribute('src'))).toEqual(['data:image/png;base64,AAAA', 'blob:http://localhost/1']);
+      expect(thumbs[5].querySelector('lc-icon')).not.toBeNull();
+    });
+
+    it('message sans texte : pas de zone de texte ; nom accessible', () => {
+      const { q } = render([msg('1', { text: undefined, attachments })]);
+      expect(q('.lc-message-thread__text')).toBeNull();
+      expect(q('.lc-message-thread__thumb')?.getAttribute('aria-label')).toBe('Ouvrir la pièce jointe : ok.png');
+    });
+
+    it('un clic émet attachmentOpen une fois avec le message et la pièce jointe', () => {
+      const message = msg('1', { attachments: [attachments[5]] });
+      const { q, host } = render([message]);
+      q('.lc-message-thread__thumb')!.click();
+      expect(host.opened).toEqual([{ message, attachment: attachments[5] }]);
+    });
+  });
+
+  it('message sans texte ni pièce jointe : aucune bulle ; sentAt invalide : bulle sans <time> et avertissement sans le texte', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { qa } = render([msg('1', { text: '  ' }), msg('2', { sentAt: 'pas une date', text: 'secret' })]);
+    expect(qa('.lc-message-thread__bubble').length).toBe(1);
+    expect(qa('time').length).toBe(0);
+    expect(warn).toHaveBeenCalled();
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('secret');
+  });
+
+  it('CA-T17 : id en double, le premier rendu', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { qa } = render([msg('1', { text: 'premier' }), msg('1', { text: 'second' })]);
+    expect(qa('.lc-message-thread__text').map((t) => t.textContent)).toEqual(['premier']);
+  });
+
+  it('le message ajouté apparaît à la mise à jour de la liste', () => {
+    const { fixture, host, qa } = render([msg('1')]);
+    host.messages.update((m) => [...m, msg('2', { sentAt: at(9, 1) })]);
+    fixture.detectChanges();
+    expect(qa('.lc-message-thread__bubble').length).toBe(2);
+  });
+});
