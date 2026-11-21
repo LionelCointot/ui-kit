@@ -6,7 +6,7 @@ import { LcSheetComponent } from './sheet.component';
 @Component({
   imports: [LcSheetComponent],
   template: `
-    <lc-sheet [(open)]="open" title="Filtres" [closeLabel]="label" (closed)="closed()">
+    <lc-sheet [(open)]="open" title="Filtres" [closeLabel]="label" [closeText]="text" (closed)="closed()">
       <p id="content">contenu</p>
       <button lcSheetFooter id="footer">Appliquer</button>
     </lc-sheet>
@@ -15,6 +15,7 @@ import { LcSheetComponent } from './sheet.component';
 class HostComponent {
   readonly open = signal(false);
   label: string | undefined;
+  text: string | undefined;
   readonly closed = vi.fn();
 }
 
@@ -59,6 +60,21 @@ describe('LcSheetComponent', () => {
     expect(dialog.querySelector('.lc-sheet__close')!.getAttribute('aria-label')).toBe('Fermer sans appliquer');
     expect(dialog.querySelector('.lc-sheet__footer #footer')).not.toBeNull();
     expect(dialog.querySelector('.lc-sheet__handle')!.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('closeText : bouton texte en tête de l\'en-tête, avant le titre, nommé par son texte, autofocus, ferme ; sans closeText la croix reste', async () => {
+    host.text = 'Annuler';
+    host.label = 'Fermer sans appliquer';
+    await openSheet();
+    const header = dialog.querySelector('.lc-sheet__header')!;
+    const close = header.querySelector<HTMLButtonElement>('.lc-sheet__close')!;
+    expect(header.firstElementChild).toBe(close);
+    expect(close.textContent!.trim()).toBe('Annuler');
+    expect(close.querySelector('lc-icon')).toBeNull();
+    expect(close.hasAttribute('aria-label')).toBe(false);
+    expect(close.hasAttribute('autofocus')).toBe(true);
+    close.click();
+    expect(host.open()).toBe(false);
   });
 
   it('croix : open passe à false, data-closing, puis close() et closed une seule fois à la fin de la sortie', async () => {

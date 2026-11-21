@@ -698,13 +698,13 @@ describe('LcDataTableComponent', () => {
       expect(body().querySelector('lc-column-filter')).not.toBeNull();
     });
 
-    it('panneau : le premier contrôle (croix) porte autofocus, le dialogue n\'est pas focalisé à la main ; la croix s\'appelle « Fermer sans appliquer »', async () => {
+    it('panneau : le premier contrôle (croix) porte autofocus, le dialogue n\'est pas focalisé à la main ; le bouton s\'appelle « Annuler »', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
       const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       expect(dialog.querySelector('button')!.hasAttribute('autofocus')).toBe(true);
       expect(dialog.hasAttribute('tabindex')).toBe(false);
-      expect(dialog.querySelector('.lc-sheet__close')!.getAttribute('aria-label')).toBe('Fermer sans appliquer');
+      expect(dialog.querySelector('.lc-sheet__close')!.textContent!.trim()).toBe('Annuler');
       expect(el.querySelector('dialog.lc-data-table__panel')).toBeNull();
     });
 
