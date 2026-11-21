@@ -1,6 +1,6 @@
 # Spec : ressenti iOS (feuille de filtres du téléphone, hauteurs et sorties animées)
 
-- **Statut** : Validée par l'utilisateur (2026-11-21), en réalisation
+- **Statut** : Implémentée (2026-11-21)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (Baseline 2024, inchangée)
@@ -136,42 +136,42 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 - Non-régression : suites existantes, `motion`, `stories-motion`, `filter-date`.
 
 ## 10. Critères d'acceptation
-- [ ] CA-S0 : `lc-sheet` est exporté par `@lionelcointot/ui-angular/overlay`, documenté (story `Overlays/Sheet` avec `Playground` et `Animation`, catalogue) et utilisable hors du tableau, avec un test en navigateur réel (ADR 0009 : ouverture, Échap animé, réouverture pendant la descente, focus rendu, fond attendu par la fermeture) et la limite de la *top layer* écrite ; `closed` est émis une seule fois, à la fin de la sortie ; `lc-data-table` n'a plus de `<dialog>` propre, la croix garde son nom « Fermer sans appliquer » et utilise `lc-sheet` ; aucun import nouveau entre points d'entrée hors exceptions de `CLAUDE.md`.
-- [ ] CA-S8 : À 1 280 px, `lc-sheet` s'affiche en carte centrée (largeur `--lc-sheet-card-width` ± 1 px, centre horizontal et vertical ± 1 px pour un contenu court, quatre coins arrondis), sans poignée ; un contenu plus haut que `--lc-sheet-card-max-height` fait défiler le corps ; entrée et sortie en translation et fondu aux durées `--lc-slide-*` ; un clic sur le fond ferme (même chemin, `closed` émis), alors qu'à 360 px il ne ferme pas.
-- [ ] CA-S1 : À 360 px, « Filtres (N) » ouvre une feuille ancrée en bas, coins supérieurs arrondis, poignée, haut à `--lc-sheet-top-gap` (± 1 px) ; entrée `translateY` de 100 % à 0 en `--lc-slide-enter-duration` ; fond `--lc-sys-color-backdrop` en fondu ; le tableau reste visible au-dessus.
-- [ ] CA-S2 : Les trois fermetures (croix, Échap, « Afficher N … ») posent `data-closing`, font descendre la feuille en `--lc-slide-exit-duration` puis `dialog.open === false` ; filtres émis comme aujourd'hui ; focus sur le bouton « Filtres ».
-- [ ] CA-S3 : Poignée tirée de plus de 25 % de la hauteur : fermeture, rien d'émis, focus sur « Filtres ». Moins de 25 % à moins de 0,5 px/ms : retour à `translateY(0)` en 200 ms. Moins de 25 % à plus de 0,5 px/ms avec au moins 16 px : fermeture. Un toucher sans déplacement ne ferme rien. Vers le haut : jamais au-delà de 0. Pendant le tirage, le `transform` suit le doigt sans transition.
-- [ ] CA-S4 : Liste plus haute que sa zone : un glissement tactile commencé dans la liste augmente son `scrollTop` et laisse la feuille à `translateY(0)` ; `touch-action: none` seulement sur la poignée et l'en-tête.
-- [ ] CA-S5 : En réduction des animations : aucune transition à l'ouverture ni à la fermeture ; le geste suit le doigt.
-- [ ] CA-S6 : `pointercancel` (ou perte de capture) pendant un tirage : retour à `translateY(0)`, la feuille reste ouverte, rien n'est émis.
-- [ ] CA-S7 : Rouvrir pendant la descente : la feuille repart de sa position courante, `data-closing` est retiré, `dialog.open === true` à la fin ; une double fermeture n'appelle `close()` qu'une fois.
-- [ ] CA-H1 : Pour une section du panneau, un `lc-disclosure` et un groupe de `lc-nav-group` (trois tests) : à l'ouverture, une transition sur `grid-template-rows` de durée `--lc-collapse-duration` et de courbe `easing-standard` démarre ; la hauteur rendue va de 0 à sa hauteur finale (± 1 px) ; en positionnant l'animation à t = 0, 16,7, 33,3 … ms, le haut de l'élément suivant évolue de façon monotone et d'au plus 25 % de la hauteur finale entre deux pas ; le repli suit la même règle.
-- [ ] CA-H2 : Dès le repli, la région est `inert` ; une fois la transition finie, `visibility: hidden`, Tab ne place jamais le focus dedans et elle est absente de l'instantané d'accessibilité ; à l'ouverture, `visibility: visible` dès la première image ; `aria-expanded` à jour.
-- [ ] CA-H3 : Chevrons : rotation de même durée que la région (180° pour les sections du panneau, 90° pour `lc-disclosure` et `lc-nav-group`) ; `lc-nav-group` n'affiche qu'une icône.
-- [ ] CA-H4 : Retrait d'une pastille : fondu `duration-fast`, pastille non cliquable pendant le fondu ; la rangée se resserre ; le bloc de la liste porte une seule animation de glissement dont le premier pas le place à sa position d'avant (± 1 px).
-- [ ] CA-H5 : Repli commencé à mi-ouverture : la hauteur repart de sa valeur courante (± 5 %), sans saut vers 0 ni vers la hauteur finale.
-- [ ] CA-O1 : `lc-drawer` : entrée par glissement de toute sa largeur en 500 ms, sortie par glissement en 200 ms ; le panneau quitte le DOM et `closed` est émis (avec la valeur passée à `close`) à la fin de la sortie.
-- [ ] CA-O2 : `lc-dialog` : entrée en fondu et échelle 0,96 → 1 en 200 ms, sortie en fondu de 100 ms ; Échap et clic sur le fond passent par la sortie animée ; `closed` émis à la fin avec la valeur passée à `close`.
-- [ ] CA-O3 : Fond du dialogue et du tiroir : `--lc-overlay-enter-duration` et `easing-standard`, en même temps que le panneau à la sortie.
-- [ ] CA-T1 : `lc-tabs` : le panneau nouvellement affiché apparaît en fondu de 200 ms.
-- [ ] CA-C1 : Calendrier : la grille apparaît en fondu de 200 ms au changement de mois.
-- [ ] CA-A1 : `lc-app-shell` : largeur de la nav en 350 ms (1 280 px), tiroir mobile en 500 ms (360 px).
-- [ ] CA-V1 : Contexte tactile (360 px, `hasTouch`, `(hover: hover)` faux) : après un toucher puis retrait du focus, la couleur de fond d'un élément de `lc-nav-list`, de `lc-menu`, d'un onglet, d'un `button[lcButton]` (trois `fillMode`) et d'une ligne de `lc-data-table` est égale à celle d'un élément identique non touché. Contexte souris (1 280 px) : le survol change la propriété visée par la règle.
-- [ ] CA-V2 : Contrôle statique (`node --test`) sur `packages/angular/**/*.css` (hors `dist`, `node_modules`) : toute règle dont le sélecteur contient `:hover` (y compris dans `:is()`, `:not()`, `:has()`) est dans un `@media` dont la condition contient `hover: hover` (imbrication admise) ; le nombre de règles `:hover` ne baisse pas (46 au départ, hors commentaires) ; au moins 23 fichiers lus.
-- [ ] CA-F1 : `forced-colors: active` : poignée visible (couleur système), bordure de la feuille, coins arrondis conservés.
-- [ ] CA-R1 : Sous `prefers-reduced-motion: reduce`, pour la feuille, la section, `lc-disclosure`, `lc-nav-group`, les chevrons, la pastille, le tiroir, le dialogue, leurs fonds, l'onglet, la grille du calendrier et la nav de l'app-shell : aucune animation de plus de 0,01 ms pendant ni après l'action ; l'état final est atteint tout de suite.
-- [ ] CA-R2 : `packages/tokens/lib/motion.static.test.mjs` corrigé (chemin réel `packages/angular/styles/ui-angular.css`) et étendu aux fichiers touchés : aucune valeur en dur ; suite Vitest verte ; modes `motion`, `stories-motion`, `filter-date` verts ; axe sans erreur (feuille ouverte, section dépliée, tiroir, dialogue, à 360 px) ; stories `Animation` mises à jour et sans erreur.
-- [ ] CA-R3 (manuel) : test `novice-user` sur captures de la feuille à 360 px.
+- [x] CA-S0 : `lc-sheet` est exporté par `@lionelcointot/ui-angular/overlay`, documenté (story `Overlays/Sheet` avec `Playground` et `Animation`, catalogue) et utilisable hors du tableau, avec un test en navigateur réel (ADR 0009 : ouverture, Échap animé, réouverture pendant la descente, focus rendu, fond attendu par la fermeture) et la limite de la *top layer* écrite ; `closed` est émis une seule fois, à la fin de la sortie ; `lc-data-table` n'a plus de `<dialog>` propre, la croix garde son nom « Fermer sans appliquer » et utilise `lc-sheet` ; aucun import nouveau entre points d'entrée hors exceptions de `CLAUDE.md`.
+- [x] CA-S8 : À 1 280 px, `lc-sheet` s'affiche en carte centrée (largeur `--lc-sheet-card-width` ± 1 px, centre horizontal et vertical ± 1 px pour un contenu court, quatre coins arrondis), sans poignée ; un contenu plus haut que `--lc-sheet-card-max-height` fait défiler le corps ; entrée et sortie en translation et fondu aux durées `--lc-slide-*` ; un clic sur le fond ferme (même chemin, `closed` émis), alors qu'à 360 px il ne ferme pas.
+- [x] CA-S1 : À 360 px, « Filtres (N) » ouvre une feuille ancrée en bas, coins supérieurs arrondis, poignée, haut à `--lc-sheet-top-gap` (± 1 px) ; entrée `translateY` de 100 % à 0 en `--lc-slide-enter-duration` ; fond `--lc-sys-color-backdrop` en fondu ; le tableau reste visible au-dessus.
+- [x] CA-S2 : Les trois fermetures (croix, Échap, « Afficher N … ») posent `data-closing`, font descendre la feuille en `--lc-slide-exit-duration` puis `dialog.open === false` ; filtres émis comme aujourd'hui ; focus sur le bouton « Filtres ».
+- [x] CA-S3 : Poignée tirée de plus de 25 % de la hauteur : fermeture, rien d'émis, focus sur « Filtres ». Moins de 25 % à moins de 0,5 px/ms : retour à `translateY(0)` en 200 ms. Moins de 25 % à plus de 0,5 px/ms avec au moins 16 px : fermeture. Un toucher sans déplacement ne ferme rien. Vers le haut : jamais au-delà de 0. Pendant le tirage, le `transform` suit le doigt sans transition.
+- [x] CA-S4 : Liste plus haute que sa zone : un glissement tactile commencé dans la liste augmente son `scrollTop` et laisse la feuille à `translateY(0)` ; `touch-action: none` seulement sur la poignée et l'en-tête.
+- [x] CA-S5 : En réduction des animations : aucune transition à l'ouverture ni à la fermeture ; le geste suit le doigt.
+- [x] CA-S6 : `pointercancel` (ou perte de capture) pendant un tirage : retour à `translateY(0)`, la feuille reste ouverte, rien n'est émis.
+- [x] CA-S7 : Rouvrir pendant la descente : la feuille repart de sa position courante, `data-closing` est retiré, `dialog.open === true` à la fin ; une double fermeture n'appelle `close()` qu'une fois.
+- [x] CA-H1 : Pour une section du panneau, un `lc-disclosure` et un groupe de `lc-nav-group` (trois tests) : à l'ouverture, une transition sur `grid-template-rows` de durée `--lc-collapse-duration` et de courbe `easing-standard` démarre ; la hauteur rendue va de 0 à sa hauteur finale (± 1 px) ; en positionnant l'animation à t = 0, 16,7, 33,3 … ms, le haut de l'élément suivant évolue de façon monotone et d'au plus 25 % de la hauteur finale entre deux pas ; le repli suit la même règle.
+- [x] CA-H2 : Dès le repli, la région est `inert` ; une fois la transition finie, `visibility: hidden`, Tab ne place jamais le focus dedans et elle est absente de l'instantané d'accessibilité ; à l'ouverture, `visibility: visible` dès la première image ; `aria-expanded` à jour.
+- [x] CA-H3 : Chevrons : rotation de même durée que la région (180° pour les sections du panneau, 90° pour `lc-disclosure` et `lc-nav-group`) ; `lc-nav-group` n'affiche qu'une icône.
+- [x] CA-H4 : Retrait d'une pastille : fondu `duration-fast`, pastille non cliquable pendant le fondu ; la rangée se resserre ; le bloc de la liste porte une seule animation de glissement dont le premier pas le place à sa position d'avant (± 1 px).
+- [x] CA-H5 : Repli commencé à mi-ouverture : la hauteur repart de sa valeur courante (± 5 %), sans saut vers 0 ni vers la hauteur finale.
+- [x] CA-O1 : `lc-drawer` : entrée par glissement de toute sa largeur en 500 ms, sortie par glissement en 200 ms ; le panneau quitte le DOM et `closed` est émis (avec la valeur passée à `close`) à la fin de la sortie.
+- [x] CA-O2 : `lc-dialog` : entrée en fondu et échelle 0,96 → 1 en 200 ms, sortie en fondu de 100 ms ; Échap et clic sur le fond passent par la sortie animée ; `closed` émis à la fin avec la valeur passée à `close`.
+- [x] CA-O3 : Fond du dialogue et du tiroir : `--lc-overlay-enter-duration` et `easing-standard`, en même temps que le panneau à la sortie.
+- [x] CA-T1 : `lc-tabs` : le panneau nouvellement affiché apparaît en fondu de 200 ms.
+- [x] CA-C1 : Calendrier : la grille apparaît en fondu de 200 ms au changement de mois.
+- [x] CA-A1 : `lc-app-shell` : largeur de la nav en 350 ms (1 280 px), tiroir mobile en 500 ms (360 px).
+- [x] CA-V1 : Contexte tactile (360 px, `hasTouch`, `(hover: hover)` faux) : après un toucher puis retrait du focus, la couleur de fond d'un élément de `lc-nav-list`, de `lc-menu`, d'un onglet, d'un `button[lcButton]` (trois `fillMode`) et d'une ligne de `lc-data-table` est égale à celle d'un élément identique non touché. Contexte souris (1 280 px) : le survol change la propriété visée par la règle.
+- [x] CA-V2 : Contrôle statique (`node --test`) sur `packages/angular/**/*.css` (hors `dist`, `node_modules`) : toute règle dont le sélecteur contient `:hover` (y compris dans `:is()`, `:not()`, `:has()`) est dans un `@media` dont la condition contient `hover: hover` (imbrication admise) ; le nombre de règles `:hover` ne baisse pas (46 au départ, hors commentaires) ; au moins 23 fichiers lus.
+- [x] CA-F1 : `forced-colors: active` : poignée visible (couleur système), bordure de la feuille, coins arrondis conservés.
+- [x] CA-R1 : Sous `prefers-reduced-motion: reduce`, pour la feuille, la section, `lc-disclosure`, `lc-nav-group`, les chevrons, la pastille, le tiroir, le dialogue, leurs fonds, l'onglet, la grille du calendrier et la nav de l'app-shell : aucune animation de plus de 0,01 ms pendant ni après l'action ; l'état final est atteint tout de suite.
+- [x] CA-R2 : `packages/tokens/lib/motion.static.test.mjs` corrigé (chemin réel `packages/angular/styles/ui-angular.css`) et étendu aux fichiers touchés : aucune valeur en dur ; suite Vitest verte ; modes `motion`, `stories-motion`, `filter-date` verts ; axe sans erreur (feuille ouverte, section dépliée, tiroir, dialogue, à 360 px) ; stories `Animation` mises à jour et sans erreur.
+- [x] CA-R3 (manuel) : test `novice-user` sur captures de la feuille à 360 px. Résultat HÉSITANT : le ✕ ferme-t-il en gardant ou en annulant, poignée non comprise, capture grand écran tirée de la démo technique ; décision de l'utilisateur (2026-11-21) : le ✕ est gardé, aucun changement.
 
 ## 11. Tâches
-- [ ] S1 : hauteur animée dans `lc-disclosure`, `lc-nav-group` et les sections du panneau, chevrons (M ; CA-H1 à H3, H5).
-- [ ] S2 : composant `lc-sheet` (forme, fond, entrée, sortie, geste, tokens, `lcAnimationsEnd({ subtree: false })`), stories et catalogue et présentation grand écran (décision 22) (M ; CA-S0, CA-S1 à S8, CA-F1).
-- [ ] S2b (même PR que S2) : `lc-data-table` remplace son `<dialog>` par `lc-sheet` : `.html` (retrait du `<dialog>` et de l'en-tête), `.ts` (retrait de `closeToken`, `onPanelCancel` ; `panelOpen` faux sur `closed`), `.css` (retrait des règles `.lc-data-table__panel*` d'ouverture, de fermeture, de fond et `forced-colors`). Tests à réécrire : sélecteurs `dialog.lc-data-table__panel` (≈ 12 dans `data-table.component.spec.ts`, `storybook-browser.mjs`) vers `lc-sheet dialog` ; « Échap n'est pas doublé » et l'événement `close` deviennent des tests de `cancel` avec sortie animée ; test de mouvement du panneau remplacé par `translateY(100%)` (voulu, CA-S1) (S ; CA-S0, non-régression du filtrage sur téléphone).
-- [ ] S3 : retrait des pastilles (S ; CA-H4).
-- [ ] S4 : `LcDialogRef.close` asynchrone, tiroir, dialogue, fonds (M ; CA-O1 à O3).
-- [ ] S5 : onglets, calendrier, app-shell (S ; CA-T1, C1, A1).
-- [ ] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles (S ; CA-V1, CA-V2).
-- [ ] S6 (QA) : contrôles navigateur, réduction, `forced-colors`, axe, stories, contrôle statique corrigé (CA-R1, R2, F1, V1, V2) ; S7 : test novice (CA-R3) ; mise à jour des décisions révisées dans `2026-11-mouvement.md` et `catalogue:build`.
+- [x] S1 : hauteur animée dans `lc-disclosure`, `lc-nav-group` et les sections du panneau, chevrons (M ; CA-H1 à H3, H5).
+- [x] S2 : composant `lc-sheet` (forme, fond, entrée, sortie, geste, tokens, `lcAnimationsEnd({ subtree: false })`), stories et catalogue et présentation grand écran (décision 22) (M ; CA-S0, CA-S1 à S8, CA-F1).
+- [x] S2b (même PR que S2) : `lc-data-table` remplace son `<dialog>` par `lc-sheet` : `.html` (retrait du `<dialog>` et de l'en-tête), `.ts` (retrait de `closeToken`, `onPanelCancel` ; `panelOpen` faux sur `closed`), `.css` (retrait des règles `.lc-data-table__panel*` d'ouverture, de fermeture, de fond et `forced-colors`). Tests à réécrire : sélecteurs `dialog.lc-data-table__panel` (≈ 12 dans `data-table.component.spec.ts`, `storybook-browser.mjs`) vers `lc-sheet dialog` ; « Échap n'est pas doublé » et l'événement `close` deviennent des tests de `cancel` avec sortie animée ; test de mouvement du panneau remplacé par `translateY(100%)` (voulu, CA-S1) (S ; CA-S0, non-régression du filtrage sur téléphone).
+- [x] S3 : retrait des pastilles (S ; CA-H4).
+- [x] S4 : `LcDialogRef.close` asynchrone, tiroir, dialogue, fonds (M ; CA-O1 à O3).
+- [x] S5 : onglets, calendrier, app-shell (S ; CA-T1, C1, A1).
+- [x] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles (S ; CA-V1, CA-V2).
+- [x] S6 (QA) : contrôles navigateur, réduction, `forced-colors`, axe, stories, contrôle statique corrigé (CA-R1, R2, F1, V1, V2) ; S7 : test novice (CA-R3) ; mise à jour des décisions révisées dans `2026-11-mouvement.md` et `catalogue:build`.
 
 ## 12. Risques et questions ouvertes
 - **Questions tranchées** (2026-11-21, décision 21) : Q1 500 ms, Q2 fond qui s'éclaircit, Q3 40 px, Q4 contrôle statique gardé.
@@ -187,3 +187,22 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 - 2026-11-21, utilisateur : Q1 à Q4 tranchées (décision 21) ; composant générique `lc-sheet` demandé (décision 20), relu par l'`architect`.
 - 2026-11-21, `architect` (`lc-sheet`) : RÉSERVES, sans bloquant. Retenu : sémantique de `open` et `closed` (contenu démonté sur `closed`), chemin unique de fermeture sans application, pas de fermeture au clic sur le fond, `closeLabel`, option `subtree` de `lcAnimationsEnd`, classe `lc-sheet__dialog`, limite de la *top layer*, test en navigateur réel, tests à réécrire nommés, S2 et S2b dans la même PR.
 - 2026-11-21, utilisateur : présentation grand écran de `lc-sheet` en carte centrée (choix A, décision 22, CA-S8).
+- 2026-11-21, `qa-engineer` (vérification) : NO-GO sur axe (`scrollable-region-focusable` du corps de `lc-sheet`), corrigé ; tout le reste vert et stable (Vitest 2081, `ios-motion-browser.mjs all` quatre fois, `motion`, `stories-motion`, `filter-date`, contrôles des Playground, axe 10 cas).
+- 2026-11-21, `code-reviewer` : CHANGEMENTS REQUIS légers (clic sur le fond après une sélection, test de la bascule carte, tests unitaires du mode carte), corrigés avec les suggestions (destruction pendant la sortie, replis de tokens, réduction locale des onglets et du calendrier, mise en forme).
+- 2026-11-21, tests de copro-ticket : un bouton « Appliquer » de la feuille fermée restait dans le DOM (pied projeté hors du `@if`) ; corrigé par `ngProjectAs`, test ajouté ; copro-ticket vert (1 776 + 196) sans modification.
+- 2026-11-21, `code-reviewer` (audit de simplification) : rien de mort ; une fusion possible des règles de survol des jours de plage du calendrier (≈ 45 lignes), non retenue ici faute de test du survol en plage (risque moyen).
+
+### Écarts constatés à l'implémentation (`cadreur`, livraison)
+1. Ombre de la carte : `--lc-sys-shadow-3` (celle du menu et du tiroir) ; `elevation-overlay` n'existe pas.
+2. Poignée 36 × 5 px construite avec des tokens d'espace (pas de token dédié).
+3. Bascule carte à `48em` (rupture du tableau) ; la constante `CARD` du TypeScript est contrôlée contre le `@media` (`sheet.static.test.mjs`).
+4. Survol : 49 règles dans 23 fichiers ; le contrôle exige au moins 46 occurrences (46 mesurées au départ hors commentaires).
+5. Story `Animation` du tableau inchangée ; les contrôles navigateur couvrent la feuille.
+6. Chrome rend un second Échap non annulable : un double Échap rapide ferme sans animation.
+7. Corps défilant : `role="region"`, `tabindex="0"` et `aria-labelledby` seulement quand il déborde (axe), mesuré par `ResizeObserver` sur le corps et `.lc-sheet__content`.
+8. `data-returning` (retour d'un tirage trop court) et retrait de `data-closing` à la réouverture : détails de CA-S3 et CA-S7.
+9. `lcCloseOnDismiss` (interne) factorise Échap et fond pour le dialogue et le tiroir ; le dialogue passe en `disableClose: true`, `dismissible` inchangé.
+10. Sections du panneau : enveloppes `section-clip` et `section-content` ; `[hidden]` remplacé par `inert` et `visibility` ; même structure à trois niveaux dans `lc-disclosure` et `lc-nav-group` (le padding sur l'enfant direct empêchait de descendre à 0).
+11. Boutons du pied du tableau projetés par `ngProjectAs`, montés seulement feuille ouverte.
+12. 9 tokens au lieu de 7 (`sheet-card-width`, `sheet-card-max-height`, décision 22).
+13. Limites confirmées : geste et survol prouvés en Chromium seulement, Safari iOS non essayé.

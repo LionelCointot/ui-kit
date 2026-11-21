@@ -203,9 +203,13 @@
     </div>
     <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
   }
-  <!-- Hors du `@if` : une projection ciblée (`lcSheetFooter`) ne traverse pas un bloc de flux de contrôle. -->
-  <button lcSheetFooter lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
-  <button lcSheetFooter lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
-    {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
-  </button>
+  <!-- `ngProjectAs` : la projection ciblée ne traverse pas un `@if` ; les boutons n'existent que feuille montée. -->
+  <ng-container ngProjectAs="[lcSheetFooter]">
+    @if (panelOpen()) {
+      <button lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
+      <button lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
+        {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
+      </button>
+    }
+  </ng-container>
 </lc-sheet>

@@ -655,6 +655,14 @@ describe('LcDataTableComponent', () => {
       expect(cells[5].classList).toContain('lc-data-table__card-only');
     });
 
+    it('boutons du pied absents tant que la feuille n\'est pas ouverte (aucun « Appliquer » caché à cliquer)', async () => {
+      await setup({ narrow: true });
+      expect(el.querySelector('.lc-data-table__panel-apply')).toBeNull();
+      expect(el.querySelector('lc-sheet .lc-sheet__footer')!.querySelectorAll('button')).toHaveLength(0);
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      expect(el.querySelector('lc-sheet .lc-sheet__footer .lc-data-table__panel-apply')).not.toBeNull();
+    });
+
     it('CA-15 : rien n\'est appliqué avant « Afficher N » ; le nombre suit les choix', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
