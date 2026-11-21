@@ -3,8 +3,10 @@ import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
 import { LcDataTableComponent } from './data-table.component';
-import { LcDataColumn, LcDataSource, LcDistinctValue, LcTableQuery, lcLocalSource } from './data-table-model';
+import * as model from './data-table-model';
+import { LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcTableQuery, lcLocalSource } from './data-table-model';
 
 interface Row { id: number; name: string; state: string; city: string; date: string; urgent: boolean }
 
@@ -61,11 +63,11 @@ describe('LcDataTableComponent', () => {
   let host: HostComponent;
   let el: HTMLElement;
 
-  async function setup(options: { source?: LcDataSource<Row> | readonly Row[]; query?: LcTableQuery; narrow?: boolean; chips?: 'auto' | 'always' | 'never' } = {}) {
+  async function setup(options: { source?: LcDataSource<Row> | readonly Row[]; query?: LcTableQuery; narrow?: boolean; chips?: 'auto' | 'always' | 'never'; picker?: 'calendar' | 'native' } = {}) {
     announce = vi.fn().mockResolvedValue(undefined);
     narrow$ = new BehaviorSubject<BreakpointState>({ matches: !!options.narrow, breakpoints: {} });
     TestBed.configureTestingModule({
-      providers: [{ provide: LiveAnnouncer, useValue: { announce } }, { provide: BreakpointObserver, useValue: { observe: () => narrow$ } }],
+      providers: [{ provide: LiveAnnouncer, useValue: { announce } }, { provide: BreakpointObserver, useValue: { observe: () => narrow$ } }, ...(options.picker ? [{ provide: LC_DATE_PICKER, useValue: options.picker }] : [])],
     });
     if (options.narrow) {
       // jsdom ignore la largeur : on reproduit la règle CSS « sous 768 px » pour rendre pastilles et bouton Filtres focalisables.
@@ -285,54 +287,183 @@ describe('LcDataTableComponent', () => {
   });
 
   describe('autres types (CA-8, CA-9, CA-10)', () => {
-    it('CA-8 : un raccourci remplit Du et Au ; modifier une date repasse sur « Période choisie »', async () => {
-      await setup();
-      await open('date');
-      const radios = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=radio]')];
-      expect(radios).toHaveLength(3); // 7 jours, 30 jours, Période choisie
-      await click(radios[0]);
-      const [from, to] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      expect(from.value).not.toBe('');
-      expect(to.value).not.toBe('');
-      const span = (Date.parse(to.value) - Date.parse(from.value)) / 86_400_000;
-      expect(span).toBe(6);
-      from.value = '2026-11-02';
-      from.dispatchEvent(new Event('change'));
-      await stable();
-      expect(radios[2].checked).toBe(true);
-    });
+    describe('filtre de période : champ de date du kit (CA-P1 à CA-P11)', () => {
+      // Aujourd'hui figé au 19 novembre 2026 ; lignes du jeu de test : 2026-11-01 à 2026-11-10 (Demande 1 à 10).
+      beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(2026, 10, 19, 12));
+      });
+      afterEach(() => vi.useRealTimers());
 
-    it('CA-8 : fin avant début : aria-invalid, message relié, Appliquer désactivé', async () => {
-      await setup();
-      await open('date');
-      const [from, to] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      from.value = '2026-11-10';
-      from.dispatchEvent(new Event('change'));
-      await stable();
-      to.value = '2026-11-02';
-      to.dispatchEvent(new Event('change'));
-      await stable();
-      const [from2, to2] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      expect(from2.getAttribute('aria-invalid')).toBe('true');
-      const error = document.getElementById(to2.getAttribute('aria-describedby')!)!;
-      expect(error.textContent).toContain('La date de fin est avant la date de début.');
-      expect(applyBtn().disabled).toBe(true);
-      expect(host.emitted).toHaveLength(0);
-    });
+      const rangeInputs = () => [...menu()!.querySelectorAll<HTMLInputElement>('lc-date-range-input input')];
+      const typeInto = async (input: HTMLInputElement, digits: string) => {
+        input.focus();
+        for (const char of digits) input.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true, cancelable: true }));
+        await stable();
+      };
+      const blur = async (input: HTMLInputElement) => {
+        input.blur();
+        await stable();
+      };
+      const calendarButton = () => menu()!.querySelector<HTMLButtonElement>('lc-date-range-input .lc-date-range-input__button')!;
+      const presetButtons = () => [...document.querySelectorAll<HTMLButtonElement>('lc-date-range-input .lc-date-range-input__shortcuts button, lc-calendar-panel .lc-calendar__preset')];
+      const presetLabel = (re: RegExp) => presetButtons().find((b) => re.test(b.textContent!))!;
+      const ORDER_ERROR = 'La date de fin est avant la date de début.';
 
-    it('CA-8 : une période valide est appliquée et filtre (bornes incluses)', async () => {
-      await setup();
-      await open('date');
-      const [from, to] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      from.value = '2026-11-03';
-      from.dispatchEvent(new Event('change'));
-      await stable();
-      to.value = '2026-11-04';
-      to.dispatchEvent(new Event('change'));
-      await stable();
-      await click(applyBtn());
-      expect(lastEmitted().filters).toEqual({ date: { from: '2026-11-03', to: '2026-11-04' } });
-      expect(bodyIds()).toEqual(['Demande 3', 'Demande 4']);
+      it('CA-P1 : ordinateur : un lc-date-range-input dans le filtre, aucun input[type=date]', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        expect(menu()!.querySelectorAll('lc-date-range-input')).toHaveLength(1);
+        expect(menu()!.querySelector('input[type=date]')).toBeNull();
+      });
+
+      it('CA-P2 : période saisie 03 → 04 novembre puis Appliquer : { from, to }, bornes incluses', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '03112026');
+        await typeInto(rangeInputs()[1], '04112026');
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({ date: { from: '2026-11-03', to: '2026-11-04' } });
+        expect(bodyIds()).toEqual(['Demande 3', 'Demande 4']);
+      });
+
+      it('CA-P2 : début seul → { from } ; fin seule → { to } ; aucune clé null', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '03112026');
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({ date: { from: '2026-11-03' } });
+        expect(Object.keys(lastEmitted().filters['date'] as object)).toEqual(['from']);
+        expect(bodyIds()).toHaveLength(8);
+      });
+
+      it('CA-P2 : fin seule → { to } sans clé null', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[1], '04112026');
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({ date: { to: '2026-11-04' } });
+        expect(Object.keys(lastEmitted().filters['date'] as object)).toEqual(['to']);
+        expect(bodyIds()).toEqual(['Demande 1', 'Demande 2', 'Demande 3', 'Demande 4']);
+      });
+
+      it('CA-P3a : aucun bouton radio ; quatre raccourcis du kit, dans le calendrier (ordinateur)', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        expect(menu()!.querySelector('input[type=radio]')).toBeNull();
+        await click(calendarButton());
+        expect(presetButtons().map((b) => b.textContent!)).toEqual([
+          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
+        ]);
+      });
+
+      it('CA-P3a : aucun bouton radio ; quatre raccourcis du kit, sous le champ (mode natif)', async () => {
+        await setup({ picker: 'native' });
+        await open('date');
+        expect(menu()!.querySelector('input[type=radio]')).toBeNull();
+        expect(presetButtons().map((b) => b.textContent!)).toEqual([
+          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
+        ]);
+      });
+
+      it('CA-P3b : « 7 derniers jours » puis Appliquer : { from: 13/11, to: 19/11 } fixes, sans clé preset', async () => {
+        await setup({ picker: 'native' });
+        await open('date');
+        await click(presetLabel(/7 derniers jours/));
+        await click(applyBtn());
+        const value = lastEmitted().filters['date'] as Record<string, unknown>;
+        expect(value).toEqual({ from: '2026-11-13', to: '2026-11-19' });
+        expect(Object.keys(value)).not.toContain('preset');
+      });
+
+      it('CA-P3c : contrat : LC_DEFAULT_DATE_PRESETS n\'existe plus ; preset et presets ne compilent plus', () => {
+        expect(model).not.toHaveProperty('LC_DEFAULT_DATE_PRESETS');
+        // @ts-expect-error `preset` est retiré de LcDateRange
+        const range: LcDateRange = { preset: 7 };
+        // @ts-expect-error `presets` est retiré du filtre `dateRange`
+        const filter: LcDataColumn<Row>['filter'] = { type: 'dateRange', presets: [7] };
+        expect([range, filter]).toHaveLength(2);
+      });
+
+      it('CA-P3c : pastille : « depuis le … », « jusqu\'au … » ou les deux dates ; requête avec preset ignorée', async () => {
+        await setup({ query: q({ date: { from: '2026-11-03' } }), chips: 'always' });
+        expect(el.querySelector('.lc-data-table__chip')!.textContent).toContain('depuis le 3 nov.');
+        host.query.set(q({ date: { to: '2026-11-04' } }));
+        await stable();
+        expect(el.querySelector('.lc-data-table__chip')!.textContent).toContain('jusqu\'au 4 nov.');
+        host.query.set(q({ date: { from: '2026-11-03', to: '2026-11-04' } }));
+        await stable();
+        expect(el.querySelector('.lc-data-table__chip')!.textContent).toMatch(/3\s*[–-]\s*4 nov\./);
+        host.query.set(q({ date: { preset: 7 } as unknown as LcDateRange }));
+        await stable();
+        expect(el.querySelector('.lc-data-table__chip')).toBeNull();
+        expect(bodyIds()).toHaveLength(10);
+      });
+
+      it('CA-P4 : ordinateur : date, raccourci, calendrier ouvert puis fermé, fermeture du menu : rien n\'est émis avant Appliquer', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '03112026');
+        expect(host.emitted).toHaveLength(0);
+        await click(calendarButton());
+        expect(document.querySelector('lc-calendar-panel')).not.toBeNull();
+        await click(presetLabel(/7 derniers jours/));
+        expect(host.emitted).toHaveLength(0);
+        if (document.querySelector('lc-calendar-panel')) await click(calendarButton());
+        expect(host.emitted).toHaveLength(0);
+        await key(document.activeElement ?? menu()!, 'Escape');
+        expect(host.emitted).toHaveLength(0);
+        expect(host.query()).toEqual(q({}));
+      });
+
+      it('CA-P4 : téléphone : rien n\'est émis avant « Afficher N » ; puis { from, to } fixes', async () => {
+        await setup({ narrow: true, picker: 'native' });
+        await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+        const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+        const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
+        await click(toggle);
+        await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-date-range-input__shortcuts button')].find((b) => /7 derniers jours/.test(b.textContent!))!);
+        expect(host.emitted).toHaveLength(0);
+        expect(host.query()).toEqual(q({}));
+        await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+        expect(host.emitted).toEqual([q({ date: { from: '2026-11-13', to: '2026-11-19' } })]);
+      });
+
+      it('CA-P4b : date tapée incomplète ou impossible : aucune émission, aucun message du filtre', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '0311');
+        await blur(rangeInputs()[0]);
+        await typeInto(rangeInputs()[1], '31022026');
+        await blur(rangeInputs()[1]);
+        expect(host.emitted).toHaveLength(0);
+        expect(menu()!.querySelector('.lc-column-filter__error')).toBeNull();
+        expect(menu()!.textContent).not.toContain(ORDER_ERROR);
+      });
+
+      it('CA-P6 : fin avant début : message du composant, une seule fois, sans message ni aria-describedby du filtre ; Appliquer désactivé ; rien émis', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '10112026');
+        await typeInto(rangeInputs()[1], '02112026');
+        expect(menu()!.textContent!.split(ORDER_ERROR)).toHaveLength(2);
+        expect(menu()!.querySelector('lc-date-range-input')!.textContent).toContain(ORDER_ERROR);
+        expect(menu()!.querySelector('.lc-column-filter__error')).toBeNull();
+        const outside = [...menu()!.querySelectorAll('[aria-describedby]')].filter((node) => !node.closest('lc-date-range-input'));
+        expect(outside).toHaveLength(0);
+        expect(applyBtn().disabled).toBe(true);
+        expect(host.emitted).toHaveLength(0);
+      });
+
+      it('CA-P11 : menu rouvert avec { from, to } actif : le champ l\'affiche ; Effacer le vide et retire le filtre', async () => {
+        await setup({ picker: 'calendar', query: q({ date: { from: '2026-11-03', to: '2026-11-04' } }) });
+        await open('date');
+        expect(rangeInputs().map((i) => i.value)).toEqual(['03/11/2026', '04/11/2026']);
+        await click(clearBtn());
+        expect(lastEmitted().filters).toEqual({});
+        await open('date');
+        expect(rangeInputs().map((i) => i.value)).toEqual(['', '']);
+      });
     });
 
     it('CA-9 : focus sur le champ à l\'ouverture ; Entrée applique', async () => {
