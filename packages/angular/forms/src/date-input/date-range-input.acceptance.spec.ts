@@ -423,7 +423,7 @@ describe('CA-33 raccourcis', () => {
   const dates = (button: HTMLButtonElement) => [...button.querySelectorAll('span')].map((s) => flat(s.textContent));
   const labelOf = { seven: /7 derniers jours/, thirty: /30 derniers jours/, month: /Ce mois-ci/, last: /Le mois dernier/ };
 
-  it('CA-33 : au 19 novembre 2026, quatre raccourcis avec leurs dates visibles sous le libellé', async () => {
+  it('CA-33 : au 19 novembre 2026, cinq raccourcis avec leurs dates visibles sous le libellé', async () => {
     const { open, buttonByText } = await mount();
     await open();
     expect(dates(buttonByText(labelOf.seven)!)).toEqual(['7 derniers jours', 'du 13 au 19 novembre 2026']);

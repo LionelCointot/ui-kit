@@ -13,6 +13,7 @@
   - Sur les recommandations 26 à 31 : « vas y »
   - Sur Q1 à Q4 et la validation : « Oui pour tout mais le raccourcis, du composant dateterange, il a deja les 7 derniers jours etc... non ? Donc ca ferai doublon si on garde les boutons non? »
   - Sur les options A, B, C des raccourcis : « B »
+  - À la question « 1. On accepte le test novice avec ces écarts ? 2. On ajoute "La semaine dernière" (lundi à dimanche précédents) aux raccourcis par défaut du champ de période ? » : « Oui vas y »
 - **Besoin en trois phrases** : Le filtre de période de `lc-data-table` pose deux `<input type="date">` natifs (`column-filter.component.ts:110-114`) : sur ordinateur, le calendrier du navigateur ignore le thème, ce que la spec du sélecteur de date a corrigé partout ailleurs. L'utilisateur veut que ce filtre utilise le champ de date du kit. Le reste du filtre (application à « Appliquer », pastille, requête) ne change pas.
 - **Décisions prises pendant le cadrage** (2026-11-21, utilisateur) :
   26. Spec séparée, livrée avant celle du mouvement (mêmes fichiers que sa tâche T6).
@@ -21,6 +22,7 @@
   29. Nouvelle exception d'import `data` → `forms`, inscrite dans `CLAUDE.md`.
   30. Le calendrier ouvert depuis le menu de filtre ne ferme pas le menu ; sur téléphone, sélecteur du système depuis le panneau plein écran.
   31. Inchangés : rien n'est appliqué avant « Appliquer » / « Afficher N … ». Le contrat change seulement par l'option B (décision 28).
+  33. **Raccourci « La semaine dernière »** (2026-11-21, utilisateur, après le test novice) : ajouté aux raccourcis par défaut de `lc-date-range-input`, donc pour tous les consommateurs (objectif O3, CA-P12, tâche P5).
   32. Q2 à Q4 (2026-11-21) : « Appliquer » désactivé tant que le message d'ordre est affiché ; ligne d'aide « Dates incluses. » ; utilisateur : gestionnaire de demandes sans connaissance particulière.
 - **Taille** : Fonctionnalité (petite)
 - **Angles ouverts** :
@@ -34,6 +36,7 @@
 ## 2. Objectifs
 - O1 : la saisie de la période dans le filtre passe par `lc-date-range-input` (thème, calendrier du kit sur ordinateur, sélecteur du système sur téléphone).
 - O2 : un seul système de raccourcis (celui du composant) ; application différée inchangée.
+- O3 : un raccourci « La semaine dernière » parmi les raccourcis par défaut du kit (décision 33).
 
 ## 3. Hors périmètre (non-objectifs)
 - Changer la forme `{ from?, to? }` de la requête ou `LcFilterValue` au-delà du retrait de `preset`.
@@ -113,7 +116,7 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 ## 10. Critères d'acceptation
 - [x] CA-P1 : Sur ordinateur (`LC_DATE_PICKER = 'calendar'`), le corps du filtre `dateRange` contient un `lc-date-range-input` et aucun `input[type="date"]`.
 - [x] CA-P2 : Période `2026-11-03` → `2026-11-04` puis « Appliquer » : `filters.date` vaut `{ from: '2026-11-03', to: '2026-11-04' }`, lignes filtrées bornes incluses ; début seul : `{ from: '2026-11-03' }` ; fin seule : `{ to: '2026-11-04' }` (aucune clé `null`).
-- [x] CA-P3a : Le filtre ne contient plus de bouton radio ; le champ propose les raccourcis par défaut du kit (7 et 30 derniers jours, ce mois-ci, le mois dernier), sur ordinateur comme en mode natif.
+- [x] CA-P3a : Le filtre ne contient plus de bouton radio ; le champ propose les raccourcis par défaut du kit (7 derniers jours, la semaine dernière, 30 derniers jours, ce mois-ci, le mois dernier ; « la semaine dernière » ajouté par P5), sur ordinateur comme en mode natif.
 - [x] CA-P3b : Raccourci « 7 derniers jours » puis « Appliquer » (date du jour figée) : émet `{ from, to }` fixes (6 jours d'écart), sans clé `preset`.
 - [x] CA-P3c : Le contrat ne contient plus `LcDateRange.preset`, `presets` du filtre `dateRange` ni `LC_DEFAULT_DATE_PRESETS` (compilation) ; la pastille d'une période affiche ses dates (`since`, `until` ou les deux).
 - [x] CA-P4 : Aucune émission de `queryChange` avant « Appliquer » (ordinateur) ou « Afficher N … » (téléphone), après choix d'une date, d'un raccourci, ou ouverture et fermeture du calendrier ; fermer le menu sans appliquer n'émet rien.
@@ -122,6 +125,7 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - [x] CA-P6 : Fin saisie avant le début : message du composant affiché une seule fois (aucun message ni `aria-describedby` propre au filtre), « Appliquer » désactivé, rien émis.
 - [x] CA-P7 : Le test d'imports passe avec l'exception `data` → `forms` inscrite dans `CLAUDE.md` ; aucun autre import nouveau entre points d'entrée secondaires.
 - [x] CA-P8 : Tests existants de `lc-data-table` verts, inchangés sauf les trois CA-8 (l. 288-336) remplacés ; axe sans erreur sur les stories du tableau, clair et sombre.
+- [x] CA-P12 : « La semaine dernière » est le deuxième raccourci par défaut ; un jeudi 19/11/2026, il donne `{ from: '2026-11-09', to: '2026-11-15' }` (lundi à dimanche précédents) ; tests de `lastWeekInterval` un dimanche, un lundi, en début de mois et d'année.
 - [x] CA-P9 (manuel) : test `novice-user` sur captures 360 et 1 280 px du filtre de date : COMPRIS.
 - [x] CA-P10 : Panneau du téléphone (largeur étroite) : le champ est en mode natif ; rien n'est émis avant « Afficher N … » ; à l'ouverture suivante, la période appliquée est préremplie.
 - [x] CA-P10b (Chromium) : fenêtre de 360 px au pointeur fin : le champ du panneau est en mode natif, aucun calendrier du kit ne s'ouvre.
@@ -131,7 +135,7 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - [x] P1 : adaptateur, remplacement des champs et des radios, retraits de l'option B, retrait du message propre, « Appliquer » désactivé en erreur, libellés, exception dans `CLAUDE.md`, test d'imports (M, CA-P1 à CA-P4b, CA-P6, CA-P7, CA-P11).
 - [x] P2 : calendrier dans le menu de filtre (story de preuve) et mode natif dans le panneau du téléphone (M, CA-P5, CA-P10, CA-P10b).
 - [x] P3 : stories, catalogue, axe, captures (S, CA-P8, CA-P9).
-- [x] P5 : raccourci « La semaine dernière » (lundi à dimanche précédents) ajouté aux raccourcis par défaut de `lc-date-range-input` (`kitDatePresets`, libellé via `LC_LABELS`), avec test (S).
+- [x] P5 : raccourci « La semaine dernière » (lundi à dimanche précédents) ajouté aux raccourcis par défaut de `lc-date-range-input` (`kitDatePresets`, libellé via `LC_LABELS`), avec test (S, CA-P12). Exception assumée à « ne pas changer `lc-date-range-input` » (section 3) : décision 33.
 - [x] P4 : consommateurs : retirer `preset` / `presets` dans copro-ticket (et tout autre consommateur trouvé), dans la même passe (S, CA-P3c ; accès au dépôt à ajouter à la session).
 
 ## 12. Risques et questions ouvertes
@@ -151,3 +155,4 @@ Retouche d'écran, sans exploration. Brief de `ui-ux-designer` (2026-11-21).
 - 2026-11-21, P3 livrée : stories sans `preset`, catalogue à jour, axe 14/14 (stories du tableau, clair et sombre), contrôles des Playground OK ; `snippets:check` : 450/454, les 4 échecs sont dans `qa-calendar-panel-internal` (antérieurs, hors périmètre). Test `novice-user` (captures `docs/design/captures/2026-11-filtre-periode/`) : HÉSITANT. Accepté par l'utilisateur (« Oui vas y ») avec ces écarts : `mm/dd/yyyy` dû à la langue du navigateur de capture (le sélecteur du système suit la langue du téléphone) ; calendrier qui recouvre « Appliquer » jusqu'au second clic, icône sur « Au » seulement, nombre « Afficher N » avant choix : comportements existants et validés. Suite retenue : raccourci « La semaine dernière » (P5).
 - 2026-11-21, P5 livrée : « La semaine dernière » (lundi à dimanche précédents, ISO) ajouté aux raccourcis par défaut de `lc-date-range-input`, en deuxième position ; `qa-engineer` GO (1 993 tests ; CA-36 du sélecteur de date passe de 4 à 5 raccourcis, ajustement jugé légitime, et assertion ajoutée sur l'intervalle), `code-reviewer` approuvé après correction de la JSDoc (« cinq »).
 - 2026-11-21, P4 livrée dans copro-ticket (branche `claude/gracious-cori-mk7dyj`, commit `e831583`) : `dateRangeBounds` et `presets` retirés, paramètre `today` retiré de `apiFiltersOf`. **Écart** : le test « 7 derniers jours » de `queue-filters.spec.ts` est supprimé, sans remplacement : il testait la conversion d'un raccourci glissant (`preset: 7`), qui n'existe plus dans le contrat ; la conversion des bornes fixes reste couverte. Front : 1 768 + 196 tests, build et format OK, `check-tests-not-weakened.sh` OK ; backend non concerné et SDK .NET absent ici (non lancé). Suite proposée (non bloquante) : un test avec la seule borne `to`.
+- 2026-11-21, `cadreur` (livraison) : ÉCARTS. Retenu : citation de la décision de l'utilisateur pour P5 (section 0, décision 33, O3, CA-P12), mentions « quatre raccourcis » corrigées ici, dans `2026-11-selecteur-de-date.md` et dans le titre de CA-33 ; contrat cassé annoncé `feat!` (commit `0766c05`), à reprendre dans la PR. Rien d'autre à retirer.
