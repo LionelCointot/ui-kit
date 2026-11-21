@@ -44,6 +44,10 @@ export interface LcLabels {
   readonly stepOf: (current: number, total: number) => string;
   /** @deprecated Remplacé par `stepGoTo` (nom accessible d'une étape cliquable du fil d'étapes v2). */
   readonly stepBack: (name: string) => string;
+  readonly threadLabel: string;
+  readonly threadToday: string;
+  readonly threadYesterday: string;
+  readonly threadAttachmentOpen: (name: string) => string;
   readonly stepGoTo: (position: number, name: string) => string;
   /** Texte masqué ajouté au nom d'une étape en erreur. */
   readonly stepInvalid: string;
@@ -669,6 +673,10 @@ export const LC_LABELS_FR: LcLabels = {
   pageStatus: (page, pageCount) => `Page ${frNumber.format(page)} sur ${frNumber.format(pageCount)}`,
   stepOf: (current, total) => `Étape ${current} sur ${total}`,
   stepBack: (name) => `Revenir à : ${name}`,
+  threadLabel: 'Échanges',
+  threadToday: 'Aujourd\'hui',
+  threadYesterday: 'Hier',
+  threadAttachmentOpen: (name) => `Ouvrir la pièce jointe : ${name}`,
   stepGoTo: (position, name) => `Aller à l'étape ${position} : ${name}`,
   stepInvalid: '(à corriger)',
   stepOptionalHidden: '(facultative)',
@@ -921,6 +929,10 @@ export const LC_LABELS_EN: LcLabels = {
   pageStatus: (page, pageCount) => `Page ${enNumber.format(page)} of ${enNumber.format(pageCount)}`,
   stepOf: (current, total) => `Step ${current} of ${total}`,
   stepBack: (name) => `Back to: ${name}`,
+  threadLabel: 'Messages',
+  threadToday: 'Today',
+  threadYesterday: 'Yesterday',
+  threadAttachmentOpen: (name) => `Open attachment: ${name}`,
   stepGoTo: (position, name) => `Go to step ${position}: ${name}`,
   stepInvalid: '(to fix)',
   stepOptionalHidden: '(optional)',

@@ -1,4 +1,5 @@
-import { acceptedFilesText, announcedName, cleanFileName, fileSizeText, isSafePreviewUrl } from './file-display';
+import { isSafePreviewUrl } from '@lionelcointot/ui-angular';
+import { acceptedFilesText, announcedName, cleanFileName, fileSizeText } from './file-display';
 
 const BASE = 'https://app.example/page';
 
@@ -13,6 +14,7 @@ describe('file-display', () => {
     expect(cleanFileName('a\u0007b‏c.pdf')).toBe('abc.pdf');
     expect(cleanFileName('a\u200Bb\u200C\u200D\u2060\uFEFFc\u2028\u2029.pdf')).toBe('abc.pdf');
     expect(cleanFileName('<b>é.png</b>')).toBe('<b>é.png</b>');
+    expect(cleanFileName('a\nb\tc.png')).toBe('abc.png'); // contrairement à lcStripUnsafeChars, retours et tabulations retirés
   });
 
   it('announcedName plafonne à 80 caractères, « … » compris', () => {

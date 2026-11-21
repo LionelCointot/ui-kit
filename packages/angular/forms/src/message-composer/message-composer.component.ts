@@ -23,10 +23,10 @@ import {
   viewChildren,
 } from '@angular/core';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, isSafePreviewUrl, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import type { LcFileUploadItem } from '../file-upload/file-upload.component';
-import { acceptedFilesText, announcedName, cleanFileName, fileSizeText, isSafePreviewUrl } from '../shared/file-display';
+import { acceptedFilesText, announcedName, cleanFileName, fileSizeText } from '../shared/file-display';
 import { dragHasFiles, dragLeftZone, droppedFiles, filterFiles, type LcFileRefusal, type LcFileRejectionReason } from '../shared/file-filter';
 
 /** Pourquoi un envoi n'a pas été émis : rien à envoyer, envoi en cours (ou déjà parti), pièce jointe en cours d'envoi. */

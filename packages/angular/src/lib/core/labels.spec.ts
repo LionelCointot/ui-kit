@@ -69,3 +69,12 @@ describe('libellés de pagination : grands nombres', () => {
   });
 });
 
+
+describe('libellés du fil de messages', () => {
+  it('français et anglais', () => {
+    expect([LC_LABELS_FR.threadLabel, LC_LABELS_FR.threadToday, LC_LABELS_FR.threadYesterday]).toEqual(['Échanges', 'Aujourd\'hui', 'Hier']);
+    expect(LC_LABELS_FR.threadAttachmentOpen('a.png')).toBe('Ouvrir la pièce jointe : a.png');
+    expect([LC_LABELS_EN.threadLabel, LC_LABELS_EN.threadToday, LC_LABELS_EN.threadYesterday]).toEqual(['Messages', 'Today', 'Yesterday']);
+    expect(LC_LABELS_EN.threadAttachmentOpen('a.png')).toBe('Open attachment: a.png');
+  });
+});
