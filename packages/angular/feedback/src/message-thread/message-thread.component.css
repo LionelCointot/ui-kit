@@ -139,8 +139,11 @@
   align-items: flex-end;
 }
 
-/* Coin extérieur de la bulle : l'entrée en `scale` en part (bas gauche pour les autres, bas droite pour moi). */
+/* Coin extérieur de la bulle : l'entrée en `scale` en part (bas gauche pour les autres, bas droite pour moi) ; ressort et échelle lus par le code. */
 .lc-message-thread__message {
+  --_enter-easing: var(--lc-message-thread-enter-easing, ease-out);
+  --_enter-scale: var(--lc-message-thread-enter-scale, 0.6);
+
   transform-origin: 0 100%;
 }
 
@@ -232,8 +235,10 @@
   cursor: pointer;
 }
 
-.lc-message-thread__thumb:hover {
-  border-color: var(--lc-sys-color-on-surface-muted);
+@media (hover: hover) {
+  .lc-message-thread__thumb:hover {
+    border-color: var(--lc-sys-color-on-surface-muted);
+  }
 }
 
 .lc-message-thread__thumb:focus-visible {
@@ -254,6 +259,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Fondu seul : le code ne joue ni ressort ni glissement (animations Web, hors de la règle globale de base.css). */
 }
 
 @media (forced-colors: active) {

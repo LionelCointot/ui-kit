@@ -184,7 +184,7 @@ describe('lc-message-thread', () => {
   });
 
   it('séparateur de jour : <time datetime="AAAA-MM-JJ">', () => {
-    expect(render([msg('1')]).q('.lc-message-thread__day time')?.getAttribute('datetime')).toBe('2026-11-18');
+    expect(render([msg('1')]).q('time.lc-message-thread__day')?.getAttribute('datetime')).toBe('2026-11-18');
   });
 
   describe('affichage progressif', () => {

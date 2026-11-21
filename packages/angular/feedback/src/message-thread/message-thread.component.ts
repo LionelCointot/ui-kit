@@ -73,7 +73,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
         @for (item of view(); track item.key) {
           @switch (item.type) {
             @case ('day') {
-              <p class="lc-message-thread__day" [attr.data-key]="item.key"><span><time [attr.datetime]="item.date">{{ item.label }}</time></span></p>
+              <time class="lc-message-thread__day" [attr.data-key]="item.key" [attr.datetime]="item.date"><span>{{ item.label }}</span></time>
             }
             @case ('system') {
               <p class="lc-message-thread__system" [attr.data-key]="item.key">{{ item.text }}@if (item.time; as t) { · <time [attr.datetime]="t.iso">{{ t.text }}</time>}</p>
@@ -102,7 +102,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
                               <button type="button" class="lc-message-thread__thumb" [attr.aria-label]="labels.threadAttachmentOpen(thumb.name)" [attr.title]="thumb.name"
                                 (click)="attachmentOpen.emit({ message: bubble.message, attachment: thumb.attachment })">
                                 @if (thumb.previewUrl; as src) {
-                                  <img [src]="src" alt="" />
+                                  <img [src]="src" width="96" height="72" alt="" />
                                 } @else {
                                   <lc-icon name="file-text" /><span class="lc-message-thread__thumb-name">{{ thumb.name }}</span>
                                 }
@@ -215,6 +215,7 @@ export class LcMessageThreadComponent {
     const arrived = this.arrivals.next(ids);
     const scrolls = log.scrollHeight > log.clientHeight + 1;
     this.loading.set(false);
+    if (!ids.length) this.pages.set(1); // fil vidé : l'affichage progressif repart de zéro
     if (opening) {
       if (scrolls) log.scrollTop = log.scrollHeight;
       return;
@@ -252,13 +253,14 @@ export class LcMessageThreadComponent {
     }
     const fade = cssMs(style, '--lc-message-thread-enter-fade-duration');
     const grow = cssMs(style, '--lc-message-thread-enter-duration');
-    const scale = parseFloat(style.getPropertyValue('--lc-message-thread-enter-scale'));
     const stagger = cssMs(style, '--lc-message-thread-enter-stagger') || 0;
     const entering = Array.from(log.querySelectorAll<HTMLElement>(ENTERING)).filter((el) => arrived.has(el.dataset['messageId'] ?? el.dataset['key'] ?? ''));
     entering.forEach((el, i) => {
       const timing = { delay: staggerDelay(i, stagger), fill: 'backwards' } as const;
       if (fade > 0) el.animate({ opacity: [0, 1] }, { ...timing, duration: fade });
-      if (!reduced && grow > 0 && scale >= 0) el.animate({ scale: [scale, 1] }, { ...timing, duration: grow, easing: style.getPropertyValue('--lc-message-thread-enter-easing').trim() || 'ease-out' });
+      const own = getComputedStyle(el);
+      const scale = parseFloat(own.getPropertyValue('--_enter-scale'));
+      if (!reduced && grow > 0 && scale >= 0) el.animate({ scale: [scale, 1] }, { ...timing, duration: grow, easing: own.getPropertyValue('--_enter-easing').trim() });
     });
   }
 }
