@@ -48,3 +48,44 @@ describe('LcNavItemComponent', () => {
     expect(label.overflowWrap).toBe('anywhere');
   });
 });
+
+describe('LcNavItemComponent : indicateur de la liste', () => {
+  @Component({
+    imports: [LcNavItemComponent, RouterLink],
+    template: `<a lcNavItem routerLink="/credit">Crédit</a>`,
+  })
+  class StandaloneItemComponent {}
+
+  const routes = [{ path: 'credit', component: BlankComponent }, { path: 'parametres', component: BlankComponent }];
+
+  it('dans une liste : l\'élément actif est enregistré, porte lc-nav-item--indicated et l\'indicateur est visible puis prêt', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    const fixture = TestBed.createComponent(NavHostComponent);
+    const root = fixture.nativeElement as HTMLElement;
+    const indicator = root.querySelector('.lc-nav-list__indicator')!;
+    await fixture.whenStable();
+    expect(root.querySelector('lc-nav-list')!.classList).toContain('lc-nav-list--ready');
+    expect(indicator.classList).toContain('lc-nav-list__indicator--hidden');
+    root.querySelectorAll('a').forEach((link) => expect(link.classList).toContain('lc-nav-item--indicated'));
+    const link = root.querySelector('a')!;
+    link.getBoundingClientRect = () => ({ top: 0, left: 0, right: 10, bottom: 40, width: 10, height: 40 }) as DOMRect;
+    await TestBed.inject(Router).navigateByUrl('/credit');
+    await fixture.whenStable();
+    expect(indicator.classList).not.toContain('lc-nav-list__indicator--hidden');
+    expect((indicator as HTMLElement).style.height).toBe('40px');
+    await TestBed.inject(Router).navigateByUrl('/parametres');
+    await fixture.whenStable();
+    expect(indicator.classList).toContain('lc-nav-list__indicator--hidden');
+  });
+
+  it('hors liste : pas de lc-nav-item--indicated, le fond actif reste sur l\'élément', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    const fixture = TestBed.createComponent(StandaloneItemComponent);
+    await TestBed.inject(Router).navigateByUrl('/credit');
+    await fixture.whenStable();
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a')!;
+    expect(link.classList).toContain('lc-nav-item--active');
+    expect(link.classList).not.toContain('lc-nav-item--indicated');
+    expect(getComputedStyle(link).backgroundColor).not.toBe('');
+  });
+});

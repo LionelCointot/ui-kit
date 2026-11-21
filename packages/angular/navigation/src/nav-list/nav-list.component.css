@@ -3,3 +3,39 @@
   flex-direction: column;
   gap: var(--lc-sys-space-1);
 }
+
+:host {
+  position: relative;
+}
+
+/* Fond actif glissant : position (`translateY`) et hauteur posées par le composant ; rayon de l'élément. */
+.lc-nav-list__indicator {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  border-radius: var(--lc-nav-item-radius, var(--lc-sys-radius-md));
+  background: var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container));
+  pointer-events: none;
+}
+
+.lc-nav-list__indicator--hidden {
+  opacity: 0;
+}
+
+:host(.lc-nav-list--ready) .lc-nav-list__indicator {
+  transition:
+    transform var(--lc-nav-item-indicator-duration) var(--lc-nav-item-indicator-easing),
+    height var(--lc-nav-item-indicator-duration) var(--lc-nav-item-indicator-easing),
+    opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-easing);
+}
+
+/* Remesure non liée à une sélection, ou réapparition : fondu seul, sans glissement. */
+:host(.lc-nav-list--ready) .lc-nav-list__indicator--instant {
+  transition: opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-easing);
+}
+
+@media (forced-colors: active) {
+  .lc-nav-list__indicator {
+    display: none;
+  }
+}
