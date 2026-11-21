@@ -420,8 +420,8 @@ async function filterDate(browser, base) {
     await openCalendar(page);
     await page.mouse.click(1270, 400); // sur le corps de la page (un clic sur <html>, sous le corps, n'atteint pas le CDK)
     await page.waitForTimeout(300);
-    check('CA-P5 clic hors des deux : les deux fermés, focus sur l\'entonnoir, rien émis',
-      await count(page, 'lc-calendar-panel') === 0 && await count(page, '.lc-data-table__menu') === 0 && await onFunnel(page) && await emitted(page) === 0,
+    check('CA-P5 clic hors des deux : les deux fermés, focus non ramené sur l\'entonnoir, rien émis',
+      await count(page, 'lc-calendar-panel') === 0 && await count(page, '.lc-data-table__menu') === 0 && !(await onFunnel(page)) && await emitted(page) === 0,
       `calendrier ${await count(page, 'lc-calendar-panel')}, menu ${await count(page, '.lc-data-table__menu')}, entonnoir ${await onFunnel(page)}, émissions ${await emitted(page)}`);
     await context.close();
   }
