@@ -220,7 +220,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 
 ## 11. Découpage en tâches
 - [x] T1 : tokens `ref`, `sys` et de composant ; délais dans la règle de réduction de `base.css` ; tests des tokens (S, CA-1, CA-13).
-- [ ] T2 : `LcRevealDirective`, `lcDetachAnimated`, styles globaux de `[lcReveal]` et de l'appui du bouton (S, CA-6, CA-9, CA-15).
+- [x] T2 : `LcRevealDirective`, `lcDetachAnimated`, styles globaux de `[lcReveal]` et de l'appui du bouton (S, CA-6, CA-9, CA-15).
 - [ ] T3 : entrée et sortie des panneaux CDK (`lc-menu`, `lc-combobox`, calendriers de `lc-date-input` et `lc-date-range-input`, remplacement de `lc-calendar-fade`), classes de sens et de fermeture (M, CA-7, CA-7b, CA-8, CA-15).
 - [ ] T4 : indicateur de `lc-tabs` (M, CA-2 à CA-4b, CA-14, CA-15).
 - [ ] T5 : indicateur de `lc-nav-list` (M, CA-5, CA-14, CA-15).
@@ -241,3 +241,4 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - 2026-11-21, `architect` : RÉSERVES. Retenu : `easing-emphasized` non créé (la courbe choisie est `standard`), `lcDetachAnimated` au lieu d'une logique copiée cinq fois, `lc-nav-list` (élément hors liste, enregistrement par `isActiveChange`, mesure par rectangle, remesures), indicateur d'onglet `aria-hidden` et largeur par `width`, `@starting-style` plutôt que `animate.*`, `overlay` non utilisé, `allSettled`. Question Q4 posée à l'utilisateur.
 - 2026-11-21, T1 livrée : tokens `ref`/`sys`/composant de 5.2 (composants regroupés dans `motion.tokens.json`, bouton dans `button.tokens.json`), délais coupés en réduction dans `base.css`, `motion` exclu du thème builder comme `duration` et `easing`. `qa-engineer` : CA-1 (21 tests) vert, 73/73 tests des tokens ; `code-reviewer` APPROUVÉ.
 - 2026-11-21, `code-reviewer` (T2) : CHANGEMENTS REQUIS. Bloquant : `lcDetachAnimated` attendait aussi les animations infinies (spinner, squelette…) et ne détachait jamais un panneau qui en contient ; corrigé (filtre sur les animations finies, 5.1 mise à jour). Retenu aussi : avertissement dans la JSDoc de `lcReveal` (transition et délai restent posés sur l'hôte).
+- 2026-11-21, T2 livrée : `LcRevealDirective`, `lcDetachAnimated` (animations infinies ignorées), entrée de `[lcReveal]` dans `ui-angular.css`, appui dans `button.component.css` (là où les boutons sont stylés). 2 005 tests verts ; `code-reviewer` APPROUVÉ après correctif. CA-6 et CA-9 restent à prouver en navigateur (T8) ; pas de test « aucun avertissement en production » (`isDevMode` non simulable).
