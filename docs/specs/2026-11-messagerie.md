@@ -204,7 +204,7 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 - [x] M3 : pièces jointes, dépôt, refus, animations, sécurité des noms et aperçus (M ; CA-C5 à C8, C15, C17, C18, CA-S1 à S6).
 - [x] M4 : stories (`Playground`, `Animation`), catalogue, README (S ; CA-C12).
 - [x] M5 (QA) : verdict GO / NO-GO, axe, test novice (CA-C12, C14).
-- [ ] M6 (PR séparée, copro-ticket) : la réponse du demandeur et celle du gestionnaire utilisent le composant ; `reply-form` s'amincit (alertes et compteur restent) ; `photos-status` remplacé par `sendBlocked` ; bouton d'envoi en `send` en note interne aussi (le cadenas reste dans le sélecteur) ; parcours e2e réécrits par la QA, dont la note interne.
+- [ ] M6 (PR séparée, copro-ticket) : la réponse du demandeur et celle du gestionnaire utilisent le composant ; `reply-form` s'amincit (alertes et compteur restent) ; `sendBlocked('uploading')` déclenche le rappel de `photos-status`, qui reste (état des photos en cours et en erreur, aussi utilisé par la nouvelle demande) ; le bouton d'envoi reste actif pendant un envoi de photo (plus d'`aria-disabled` ni d'`aria-describedby`, conforme à `frontend-guidelines`), le blocage est annoncé au clic ; bouton d'envoi en `send` en note interne aussi (le cadenas reste dans le sélecteur) ; parcours e2e réécrits par la QA, dont la note interne.
 
 ## 12. Risques et questions ouvertes
 - **Dettes** : agrandissement par script tant que `field-sizing` n'est pas dans la cible ; iPad avec clavier : `'auto'` le traite en tactile (Entrée va à la ligne).
