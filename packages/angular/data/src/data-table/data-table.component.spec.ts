@@ -430,6 +430,38 @@ describe('LcDataTableComponent', () => {
         expect(host.emitted).toEqual([q({ date: { from: '2026-11-04', to: '2026-11-10' } })]);
       });
 
+      it('CA-P10 : panneau du téléphone sans LC_DATE_PICKER (pointeur fin simulé) : champ natif ; rien émis avant « Afficher N » ; période préremplie à la réouverture', async () => {
+        const original = window.matchMedia;
+        window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia; // pointeur fin et survol : en `auto`, le kit choisirait son calendrier
+        try {
+          await setup({ narrow: true }); // pas de LC_DATE_PICKER fourni
+          const dialog = () => el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+          const openSection = async () => {
+            await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+            const toggle = [...dialog().querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
+            if (toggle.getAttribute('aria-expanded') !== 'true') await click(toggle);
+          };
+          const dates = () => [...dialog().querySelectorAll<HTMLInputElement>('lc-date-range-input input')];
+          await openSection();
+          expect(dates().map((i) => i.type)).toEqual(['date', 'date']);
+          expect(dialog().querySelector('lc-date-range-input .lc-date-range-input__button')).toBeNull();
+          dates()[0].value = '2026-11-03';
+          dates()[0].dispatchEvent(new Event('input', { bubbles: true }));
+          dates()[0].dispatchEvent(new Event('change', { bubbles: true }));
+          dates()[1].value = '2026-11-04';
+          dates()[1].dispatchEvent(new Event('input', { bubbles: true }));
+          dates()[1].dispatchEvent(new Event('change', { bubbles: true }));
+          await stable();
+          expect(host.emitted).toHaveLength(0);
+          await click(dialog().querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+          expect(host.emitted).toEqual([q({ date: { from: '2026-11-03', to: '2026-11-04' } })]);
+          await openSection();
+          expect(dates().map((i) => i.value)).toEqual(['2026-11-03', '2026-11-04']);
+        } finally {
+          window.matchMedia = original;
+        }
+      });
+
       it('CA-P4b : date tapée incomplète ou impossible : aucune émission, aucun message du filtre', async () => {
         await setup({ picker: 'calendar' });
         await open('date');

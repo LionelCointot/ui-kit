@@ -2,6 +2,7 @@
 //   node tools/qa/storybook-browser.mjs axe [fragment-d-id ...]   axe-core sur chaque story, thèmes clair et sombre
 //   node tools/qa/storybook-browser.mjs perf                      temps de rendu des 2 000 lignes de lc-tree-table (CA-K3.5)
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
+//   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
 import { createServer } from 'node:http';
@@ -375,6 +376,70 @@ async function treegrid(browser, base) {
   return results.every(Boolean) ? 0 : 1;
 }
 
+/** Filtre de période du tableau : superpositions du menu (1280 px) et mode natif du panneau (360 px), pointeur fin. */
+async function filterDate(browser, base) {
+  const id = 'qa-data-date-filter-of-the-table--filtre-de-periode';
+  let failures = 0;
+  const check = (name, ok, detail = '') => {
+    if (!ok) failures += 1;
+    console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`);
+  };
+  const open = async (width) => {
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
+    await page.waitForSelector('lc-data-table', { timeout: 20000 });
+    await page.waitForTimeout(400);
+    return { page, context };
+  };
+  const count = (page, selector) => page.locator(selector).count();
+  const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
+  const onFunnel = (page) => page.evaluate(() => document.activeElement?.id?.endsWith('-funnel-date') === true);
+  const openCalendar = async (page) => {
+    await page.click('[id$="-funnel-date"]');
+    await page.waitForSelector('.lc-data-table__menu');
+    await page.click('.lc-data-table__menu .lc-date-range-input__button');
+    await page.waitForSelector('lc-calendar-panel');
+  };
+
+  {
+    const { page, context } = await open(1280);
+    await openCalendar(page);
+    check('CA-P5 calendrier ouvert depuis le menu', await count(page, 'lc-calendar-panel') === 1);
+    await page.click('lc-calendar-panel td.lc-calendar__day:not([aria-disabled="true"])');
+    await page.waitForTimeout(300);
+    check('CA-P5 clic sur une date : menu ouvert', await count(page, '.lc-data-table__menu') === 1);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    check('CA-P5 Échap : calendrier fermé, menu ouvert', await count(page, 'lc-calendar-panel') === 0 && await count(page, '.lc-data-table__menu') === 1,
+      `calendrier ${await count(page, 'lc-calendar-panel')}, menu ${await count(page, '.lc-data-table__menu')}`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    check('CA-P5 second Échap : menu fermé, focus sur l\'entonnoir, rien émis', await count(page, '.lc-data-table__menu') === 0 && await onFunnel(page) && await emitted(page) === 0,
+      `menu ${await count(page, '.lc-data-table__menu')}, entonnoir ${await onFunnel(page)}, émissions ${await emitted(page)}`);
+    await openCalendar(page);
+    await page.mouse.click(1270, 400); // sur le corps de la page (un clic sur <html>, sous le corps, n'atteint pas le CDK)
+    await page.waitForTimeout(300);
+    check('CA-P5 clic hors des deux : les deux fermés, focus sur l\'entonnoir, rien émis',
+      await count(page, 'lc-calendar-panel') === 0 && await count(page, '.lc-data-table__menu') === 0 && await onFunnel(page) && await emitted(page) === 0,
+      `calendrier ${await count(page, 'lc-calendar-panel')}, menu ${await count(page, '.lc-data-table__menu')}, entonnoir ${await onFunnel(page)}, émissions ${await emitted(page)}`);
+    await context.close();
+  }
+
+  {
+    const { page, context } = await open(360);
+    await page.click('[id$="-filters"]');
+    await page.waitForSelector('dialog.lc-data-table__panel[open]');
+    await page.locator('dialog.lc-data-table__panel .lc-data-table__section-toggle', { hasText: 'Reçue le' }).click();
+    await page.waitForSelector('dialog lc-date-range-input input');
+    const types = await page.locator('dialog lc-date-range-input input').evaluateAll((nodes) => nodes.map((n) => n.type));
+    check('CA-P10b 360 px, pointeur fin : champs natifs', types.length === 2 && types.every((t) => t === 'date'), JSON.stringify(types));
+    check('CA-P10b aucun bouton ni calendrier du kit', await count(page, '.lc-date-range-input__button') === 0 && await count(page, 'lc-calendar-panel') === 0);
+    await context.close();
+  }
+  return failures;
+}
+
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -389,12 +454,14 @@ try {
     failures = await axeRun(browser, base, entries);
   } else if (mode === 'dom') {
     failures = await dom(browser, base);
+  } else if (mode === 'filter-date') {
+    failures = await filterDate(browser, base);
   } else if (mode === 'treegrid') {
     failures = await treegrid(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | dom | treegrid');
+    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {
