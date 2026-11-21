@@ -14,6 +14,7 @@
   - À « peut-on fermer la feuille en la tirant vers le bas ? A. non (poignée retirée) ; B. oui » : « b »
   - Sur les 10 recommandations de la feuille : « Oui tres bien , par contre quand on deplie les differents filtre, je trouve que ca fait encore abrupte tu peux faire un point sur tout les animatiosn afin d'avoir un ressentie ios et smooth »
   - Sur les 11 corrections de l'audit : « Fait tout les points »
+  - « Et egalement, je remarque par clic au touch, on a le rendu du hover qui s'applique j'ai l'impression et ca fait un rendu bizarre, est-ce qu'on peut avoir l'animation du hover h' uniquement lorsqu'in survol ( souris) je pense au nav bar ou menu qu'il y a ce probleme »
 - **Besoin en trois phrases** : Sur téléphone, le panneau des filtres du tableau doit se comporter comme une feuille iOS : il monte du bas, se referme vers le bas, et se tire au doigt. Plus largement, tout ce qui change de taille dans le kit (sections, accordéons, pastilles, groupes de nav) saute aujourd'hui d'un coup, et plusieurs sorties sont sèches ; l'utilisateur veut un ressenti iOS doux et cohérent. On garde la courbe et les durées existantes, on les applique aux hauteurs et aux sorties.
 - **Audit** (2026-11-21, `ui-ux-designer`, mesures Chromium) : entrées conformes ; hauteurs et sorties abruptes ; `cubic-bezier(0.2, 0, 0, 1)` équivaut au ressort iOS sans rebond, pas de nouvelle courbe ; seule incohérence de courbe : fond du dialogue et du tiroir (valeur CDK 400 ms).
 - **Décisions prises pendant le cadrage** (2026-11-21, utilisateur) :
@@ -35,6 +36,7 @@
   16. **Contenu des onglets** (audit 9) : le panneau affiché apparaît en fondu (`duration-normal`) pendant que le trait glisse.
   17. **Calendrier** (audit 10) : fondu de la grille au changement de mois (`duration-normal`).
   18. **Nav latérale de `lc-app-shell`** (audit 11) : changement de largeur en `duration-long` (350 ms), tiroir mobile en `duration-move`.
+  19. **Survol réservé aux appareils qui survolent** : tous les styles `:hover` du kit (49 règles dans 23 fichiers, dont nav latérale, menu, onglets, boutons, tableau ; seuls `lc-disclosure` et `choice-card` le font déjà) passent sous `@media (hover: hover)` ; au toucher, le retour visuel reste `:active` (appui) et `:focus-visible` ; un test statique interdit tout `:hover` hors de cette requête.
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : nouvelle technique partagée d'animation de hauteur (feuille globale), geste au pointeur dans `lc-data-table`, `lcDetachAnimated` étendu au tiroir et au dialogue.
@@ -50,6 +52,7 @@ La spec du mouvement a livré entrées, indicateurs et différence de liste. L'a
 - O3 : sorties animées et fonds cohérents : tiroir, dialogue (13 à 15).
 - O4 : contenus qui changent en douceur : onglets, calendrier, nav de l'app-shell (16 à 18).
 - O5 : mêmes tokens partout, réduction des animations respectée.
+- O6 : aucun état de survol « collé » après un toucher (décision 19).
 
 ## 3. Hors périmètre
 - Nouvelle courbe ou nouvelle durée système (l'audit conclut qu'il n'en faut pas ; seuls des tokens de composant sont ajoutés).
@@ -143,6 +146,8 @@ Brief à rédiger par `ui-ux-designer` (marge haute, poignée, rayon, seuil, sen
 - [ ] CA-T1 : `lc-tabs` : le panneau nouvellement affiché apparaît en fondu de 200 ms.
 - [ ] CA-C1 : Calendrier : la grille apparaît en fondu de 200 ms au changement de mois.
 - [ ] CA-A1 : `lc-app-shell` : largeur de la nav en 350 ms, tiroir mobile en 500 ms.
+- [ ] CA-V1 : Dans un contexte tactile (360 px, `hasTouch`, `hover: none`), un toucher sur un élément de `lc-nav-list`, `lc-menu`, `lc-tabs`, un bouton et une ligne de tableau ne laisse aucun style de survol (couleur de fond calculée identique à l'état de repos après le toucher) ; avec une souris, le survol s'affiche comme aujourd'hui.
+- [ ] CA-V2 : Contrôle statique : aucune règle contenant `:hover` hors d'un bloc `@media (hover: hover)` dans `packages/angular/**/*.css`.
 - [ ] CA-R1 : Avec `prefers-reduced-motion: reduce`, aucune des animations ci-dessus ne joue.
 - [ ] CA-R2 : Aucune valeur en dur (contrôle `motion.static.test.mjs` étendu aux fichiers touchés) ; tests existants verts ; axe sans erreur ; stories `Animation` mises à jour.
 - [ ] CA-R3 (manuel) : test `novice-user` sur captures de la feuille à 360 px.
@@ -153,6 +158,7 @@ Brief à rédiger par `ui-ux-designer` (marge haute, poignée, rayon, seuil, sen
 - [ ] S3 : retrait des pastilles (S ; CA-H4).
 - [ ] S4 : tiroir, dialogue, fonds (M ; CA-O1 à O3).
 - [ ] S5 : onglets, calendrier, app-shell (S ; CA-T1, C1, A1).
+- [ ] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles eux-mêmes (S ; CA-V1, CA-V2).
 - [ ] S6 (QA) : contrôles navigateur, réduction, axe, stories (CA-R1, R2) ; S7 : test novice (CA-R3).
 
 ## 12. Risques et questions ouvertes
