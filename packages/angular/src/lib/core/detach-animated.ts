@@ -3,7 +3,7 @@ import type { OverlayRef } from '@angular/cdk/overlay';
 const CLOSING_CLASS = 'lc-overlay--closing';
 
 /**
- * Ferme un panneau CDK en fondu : pose `lc-overlay--closing`, attend la fin des animations du panneau (immédiat sans
+ * Ferme un panneau CDK en fondu : pose `lc-overlay--closing`, attend la fin des animations du panneau (les animations infinies sont ignorées ; immédiat sans
  * animation, en réduction de mouvement ou sans `getAnimations`), puis `detach()`. Une réouverture pendant le fondu
  * (rattachement, ou classe retirée par l'appelant) annule le retrait ; un panneau détruit ou déjà détaché est laissé tel quel.
  *
@@ -20,7 +20,9 @@ export async function lcDetachAnimated(overlayRef: OverlayRef): Promise<void> {
   element.classList.add(CLOSING_CLASS);
   try {
     const animations = typeof element.getAnimations === 'function' ? element.getAnimations({ subtree: true }) : [];
-    await Promise.allSettled(animations.map((animation) => animation.finished));
+    // Une animation infinie (spinner, squelette…) ne finit jamais : l'attendre bloquerait le retrait.
+    const finite = animations.filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity);
+    await Promise.allSettled(finite.map((animation) => animation.finished));
   } finally {
     attachments.unsubscribe();
   }

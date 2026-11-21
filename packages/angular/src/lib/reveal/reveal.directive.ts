@@ -6,6 +6,9 @@ const MAX_REVEAL_INDEX = 7;
 /**
  * Entrée en fondu et descente à l'insertion de l'élément, retardée de `min(lcRevealIndex, 7)` écarts de cascade.
  * Rejoue à chaque réinsertion (`@if`, clé changée) : ne pas la poser sur un contenu réinséré à chaque rendu.
+ * Attention : `transition` et `transition-delay` restent posés sur l'hôte. Le délai `index × stagger` s'applique donc aussi
+ * à tout changement ultérieur d'opacity ou de transform (ex. un `:hover` avec transform), et la `transition` abrégée peut
+ * remplacer celle de l'hôte : si l'élément a ses propres transitions, poser `lcReveal` sur un enveloppant.
  * Styles et tokens `--lc-reveal-*` : feuille globale `ui-angular.css`.
  *
  * @example <li lcReveal [lcRevealIndex]="i">…</li>

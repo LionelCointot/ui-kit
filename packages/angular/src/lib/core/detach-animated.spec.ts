@@ -41,6 +41,13 @@ describe('lcDetachAnimated', () => {
     expect(detach).toHaveBeenCalledOnce();
   });
 
+  it('ignore une animation infinie : détache sans attendre', async () => {
+    const infinite = { finished: new Promise<void>(() => undefined), effect: { getComputedTiming: () => ({ endTime: Infinity }) } };
+    const { ref, detach } = fakeRef([infinite]);
+    await lcDetachAnimated(ref);
+    expect(detach).toHaveBeenCalledOnce();
+  });
+
   it('détache aussi quand une animation est annulée (promesse rejetée)', async () => {
     const { ref, detach } = fakeRef([{ finished: Promise.reject(new DOMException('annulée', 'AbortError')) }]);
     await lcDetachAnimated(ref);
