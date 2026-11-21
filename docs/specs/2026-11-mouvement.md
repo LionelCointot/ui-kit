@@ -51,7 +51,7 @@
 - **Choix validés après relecture** (2026-11-21, utilisateur, « oui » à Q1–Q5) : `Foundations/Motion` remplace la section Motion (`Foundations/Elevation`) ; `lc-calendar-fade` remplacé par l'entrée commune ; exception de `DESIGN.md` à 350 ms pour la cascade ; nouvelle durée `duration-long` 350 ms ; `lcTooltip`, `lc-toggletip`, `lc-drawer` inchangés, calendrier de `lc-date-range-input` inclus.
 - **Animation de la différence de liste et ressort** (2026-11-21, utilisateur) : à la question « que ferait Apple ? Si une ligne apparaît entre deux lignes après un changement de filtre, elle apparaît et fait pousser gracieusement ? » puis « Mais un peu en bounce ? Ou comme une courbe de vélocité ? » : « Pour la 1. Tu fais la B » et « pour le 2. Une demo comparative ».
   26. Après le premier affichage (cascade inchangée), tout changement de la liste (filtre, tri, retrait de pastille) anime la **différence** : lignes conservées qui glissent vers leur nouvelle place (FLIP, Web Animations API), lignes ajoutées en fondu à leur place, lignes retirées en fondu puis resserrement (`animate.leave` d'Angular). Sur les **cartes du téléphone et les lignes du tableau sur ordinateur**. Remplace la cascade rejouée de la décision 23.
-  27. Courbe de déplacement : un token `--lc-sys-easing-spring` en `linear()` (Baseline 2023-12-11), pour les seuls déplacements (lignes, indicateurs des onglets et de la nav latérale) ; réglage (doux, vif, rebond) choisi par l'utilisateur sur une démo comparative.
+  27. Courbe de déplacement : un token `--lc-sys-easing-spring` en `linear()` (Baseline 2023-12-11), pour les seuls déplacements (lignes, indicateurs des onglets et de la nav latérale). Après « je trouve un peu trop abrupt et des fois les listes sortent beaucoup de leur zone », recherche (Apple SwiftUI, Material 3) et démo v2 ; choix de l'utilisateur (« Facon apple alors ») : **ressort sans rebond (amortissement critique, `x(t) = 1 − (1 + ωt)·e^(−ωt)`, ω = 8 sur une durée normalisée), 500 ms fixes** (nouveau token `duration-move`).
 - **Ordre de livraison** : après [`2026-11-filtre-periode-tableau.md`](2026-11-filtre-periode-tableau.md) (mêmes fichiers que T6).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
@@ -223,7 +223,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [ ] CA-21 : Une ligne ou carte ajoutée apparaît en fondu à sa place ; ses voisines glissent (CA-20).
 - [ ] CA-22 : Une ligne ou carte retirée reste dans le DOM le temps d'un fondu (`--lc-overlay-exit-duration`), puis disparaît et les suivantes glissent pour combler.
 - [ ] CA-23 : Avec `prefers-reduced-motion: reduce`, aucun glissement ni fondu de liste ; premier affichage : cascade inchangée (CA-12).
-- [ ] CA-24 : `--lc-sys-easing-spring` existe (valeur `linear(…)` du réglage choisi) et sert aux déplacements des lignes, du trait des onglets et du fond de la nav latérale ; fondus et entrées gardent `easing-standard`.
+- [ ] CA-24 : `--lc-sys-easing-spring` (`linear(…)` d'un ressort sans rebond : valeurs croissantes de 0 à 1, aucune > 1) et `--lc-sys-duration-move` (500 ms) existent et servent aux déplacements des lignes, du trait des onglets et du fond de la nav latérale ; fondus et entrées gardent `easing-standard` et leurs durées.
 - [ ] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
 
 ## 11. Découpage en tâches
@@ -234,7 +234,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] T5 : indicateur de `lc-nav-list` (M, CA-5, CA-14, CA-15).
 - [ ] T6 : `lc-data-table` : menu de filtre, dialogue du téléphone, sections, pastilles, cartes (M, CA-7, CA-8, CA-10 à CA-12, CA-15).
 - [ ] T6b : différence de liste animée sur `lc-data-table` (cartes et lignes, décision 26) et retouches de relecture de T6 (jeton de fermeture du dialogue, tests du menu pendant le fondu, `pendingReveal` en erreur) (M, CA-20 à CA-23).
-- [ ] T6c : token `--lc-sys-easing-spring` selon le réglage choisi, appliqué aux déplacements (S, CA-24).
+- [ ] T6c : tokens `--lc-sys-easing-spring` (ressort sans rebond) et `--lc-sys-duration-move` (500 ms), tokens `--lc-list-move-*`, appliqués aux déplacements des lignes, du trait des onglets et du fond de la nav latérale (S, CA-24).
 - [ ] T7 : Storybook (`Foundations/Motion`, `Foundations/Elevation`, stories `Animation`, bandeau), `CONVENTIONS.md`, `DESIGN.md`, catalogue (M, CA-16a à CA-16e, CA-17, CA-18).
 - [ ] T8 (QA) : commande `motion` de `storybook-browser.mjs`, stories d'acceptation, contrôles statiques (CA-13, CA-15, et preuves de tous les CA navigateur).
 
