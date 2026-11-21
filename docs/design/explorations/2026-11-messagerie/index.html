@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lc-message-composer : 3 directions</title>
+<style>
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --lc-ref-color-neutral-0: #ffffff;
+  --lc-ref-color-neutral-25: #fcfcfb;
+  --lc-ref-color-neutral-50: #f9f9f7;
+  --lc-ref-color-neutral-100: #f0efec;
+  --lc-ref-color-neutral-150: #e1e0d9;
+  --lc-ref-color-neutral-200: #c3c2b7;
+  --lc-ref-color-neutral-300: #a3a29a;
+  --lc-ref-color-neutral-400: #898781;
+  --lc-ref-color-neutral-500: #6b6a66;
+  --lc-ref-color-neutral-600: #52514e;
+  --lc-ref-color-neutral-700: #383835;
+  --lc-ref-color-neutral-800: #2c2c2a;
+  --lc-ref-color-neutral-850: #232322;
+  --lc-ref-color-neutral-900: #1a1a19;
+  --lc-ref-color-neutral-950: #0d0d0d;
+  --lc-ref-color-neutral-1000: #0b0b0b;
+  --lc-ref-color-blue-100: #cde2fb;
+  --lc-ref-color-blue-150: #b7d3f6;
+  --lc-ref-color-blue-200: #9ec5f4;
+  --lc-ref-color-blue-250: #86b6ef;
+  --lc-ref-color-blue-300: #6da7ec;
+  --lc-ref-color-blue-350: #5598e7;
+  --lc-ref-color-blue-400: #3987e5;
+  --lc-ref-color-blue-450: #2a78d6;
+  --lc-ref-color-blue-500: #256abf;
+  --lc-ref-color-blue-550: #1c5cab;
+  --lc-ref-color-blue-600: #184f95;
+  --lc-ref-color-blue-650: #104281;
+  --lc-ref-color-blue-700: #0d366b;
+  --lc-ref-color-green-100: #dcf3dc;
+  --lc-ref-color-green-500: #0ca30c;
+  --lc-ref-color-green-600: #008300;
+  --lc-ref-color-green-700: #006300;
+  --lc-ref-color-amber-100: #fdf0d0;
+  --lc-ref-color-amber-400: #fab219;
+  --lc-ref-color-amber-600: #c98500;
+  --lc-ref-color-amber-800: #5c3c00;
+  --lc-ref-color-red-100: #fbe1e1;
+  --lc-ref-color-red-400: #e66767;
+  --lc-ref-color-red-500: #e34948;
+  --lc-ref-color-red-600: #d03b3b;
+  --lc-ref-color-red-700: #a82c2c;
+  --lc-ref-color-purple-100: #e9e6fa;
+  --lc-ref-color-purple-200: #d8d3fb;
+  --lc-ref-color-purple-400: #9085e9;
+  --lc-ref-color-purple-550: #6250d6;
+  --lc-ref-color-purple-700: #4a3aa8;
+  --lc-ref-color-purple-900: #26214f;
+  --lc-ref-color-chart-light-1: #2a78d6;
+  --lc-ref-color-chart-light-2: #eb6834;
+  --lc-ref-color-chart-light-3: #1baf7a;
+  --lc-ref-color-chart-light-4: #eda100;
+  --lc-ref-color-chart-light-5: #e87ba4;
+  --lc-ref-color-chart-light-6: #008300;
+  --lc-ref-color-chart-light-7: #6250d6;
+  --lc-ref-color-chart-light-8: #e34948;
+  --lc-ref-color-chart-dark-1: #3987e5;
+  --lc-ref-color-chart-dark-2: #d95926;
+  --lc-ref-color-chart-dark-3: #199e70;
+  --lc-ref-color-chart-dark-4: #c98500;
+  --lc-ref-color-chart-dark-5: #d55181;
+  --lc-ref-color-chart-dark-6: #008300;
+  --lc-ref-color-chart-dark-7: #9085e9;
+  --lc-ref-color-chart-dark-8: #e66767;
+  --lc-ref-color-chart-status-good: #0ca30c;
+  --lc-ref-color-chart-status-warning: #fab219;
+  --lc-ref-color-chart-status-serious: #ec835a;
+  --lc-ref-color-chart-status-critical: #d03b3b;
+  --lc-ref-color-chart-diverging-neutral-light: #f0efec;
+  --lc-ref-color-chart-diverging-neutral-dark: #383835;
+  --lc-ref-color-orange-100: #f1ded7;
+  --lc-ref-color-orange-200: #e6bdac;
+  --lc-ref-color-orange-300: #dc987d;
+  --lc-ref-color-orange-400: #d4714a;
+  --lc-ref-color-orange-500: #cb4c19;
+  --lc-ref-color-orange-600: #9a3913;
+  --lc-ref-color-orange-700: #6b280d;
+  --lc-ref-space-0: 0;
+  --lc-ref-space-1: 4px;
+  --lc-ref-space-2: 8px;
+  --lc-ref-space-3: 12px;
+  --lc-ref-space-4: 16px;
+  --lc-ref-space-5: 20px;
+  --lc-ref-space-6: 24px;
+  --lc-ref-space-8: 32px;
+  --lc-ref-space-10: 40px;
+  --lc-ref-space-12: 48px;
+  --lc-ref-space-16: 64px;
+  --lc-ref-radius-none: 0;
+  --lc-ref-radius-sm: 4px;
+  --lc-ref-radius-md: 8px;
+  --lc-ref-radius-lg: 12px;
+  --lc-ref-radius-full: 9999px;
+  --lc-ref-font-family-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --lc-ref-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --lc-ref-font-size-xs: 0.75rem;
+  --lc-ref-font-size-sm: 0.875rem;
+  --lc-ref-font-size-md: 1rem;
+  --lc-ref-font-size-lg: 1.125rem;
+  --lc-ref-font-size-xl: 1.25rem;
+  --lc-ref-font-size-2xl: 1.5rem;
+  --lc-ref-font-size-3xl: 1.875rem;
+  --lc-ref-font-weight-regular: 400;
+  --lc-ref-font-weight-medium: 500;
+  --lc-ref-font-weight-semibold: 600;
+  --lc-ref-font-weight-bold: 700;
+  --lc-ref-font-line-height-tight: 1.25;
+  --lc-ref-font-line-height-normal: 1.5;
+  --lc-ref-font-line-height-relaxed: 1.7;
+  --lc-ref-duration-fast: 100ms;
+  --lc-ref-duration-normal: 200ms;
+  --lc-ref-duration-slow: 300ms;
+  --lc-ref-duration-long: 350ms;
+  --lc-ref-duration-move: 500ms;
+  --lc-ref-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --lc-ref-easing-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --lc-ref-motion-stagger: 80ms;
+  --lc-button-press-scale: 0.97;
+  --lc-sheet-dismiss-ratio: 0.25; /** Share of its height the sheet must be pulled down to close (unitless number). */
+  --lc-sheet-card-width: 35rem; /** Width of the centred card the sheet becomes on wide screens. */
+  --lc-sheet-card-max-height: 80dvh; /** Maximum height of that card; the body scrolls beyond it. */
+  --lc-dialog-enter-scale: 0.96; /** Scale a dialog starts from when it fades in (unitless number). */
+  --lc-shell-nav-width: 16rem;
+  --lc-shell-nav-collapsed-width: 4.5rem;
+  --lc-truncate-speed: 96; /** Scroll speed of a truncated text on hover, in pixels per second (unitless number). */
+  --lc-button-height-sm: var(--lc-sys-control-height-sm);
+  --lc-button-height-md: var(--lc-sys-control-height-md);
+  --lc-button-height-lg: var(--lc-sys-control-height-lg);
+  --lc-calendar-shadow: var(--lc-sys-shadow-3);
+  --lc-card-shadow: var(--lc-sys-shadow-1);
+  --lc-chart-marker-color: var(--lc-sys-chart-ink-muted);
+  --lc-input-height: var(--lc-sys-control-height-md);
+  --lc-button-radius: var(--lc-sys-radius-md);
+  --lc-button-font-weight: var(--lc-sys-font-weight-semibold);
+  --lc-button-padding-inline-sm: var(--lc-sys-space-3);
+  --lc-button-padding-inline-md: var(--lc-sys-space-4);
+  --lc-button-padding-inline-lg: var(--lc-sys-space-5);
+  --lc-button-press-duration: var(--lc-sys-duration-fast);
+  --lc-calendar-cell-size: var(--lc-sys-space-10);
+  --lc-calendar-padding: var(--lc-sys-space-3);
+  --lc-calendar-month-gap: var(--lc-sys-space-6);
+  --lc-calendar-presets-width: calc(var(--lc-sys-space-16) * 3);
+  --lc-calendar-radius: var(--lc-sys-radius-md);
+  --lc-calendar-background: var(--lc-sys-color-surface-raised);
+  --lc-calendar-border: var(--lc-sys-color-border);
+  --lc-calendar-text: var(--lc-sys-color-on-surface);
+  --lc-calendar-weekday-text: var(--lc-sys-color-on-surface-muted);
+  --lc-calendar-day-hover-bg: var(--lc-sys-color-surface-sunken);
+  --lc-calendar-day-disabled-text: var(--lc-sys-color-on-surface-subtle);
+  --lc-calendar-selected-bg: var(--lc-sys-color-primary);
+  --lc-calendar-selected-text: var(--lc-sys-color-on-primary);
+  --lc-calendar-range-bg: var(--lc-sys-color-primary-container);
+  --lc-calendar-range-text: var(--lc-sys-color-on-primary-container);
+  --lc-calendar-range-preview-edge: var(--lc-sys-color-primary);
+  --lc-calendar-today-mark: var(--lc-sys-color-primary);
+  --lc-calendar-today-mark-size: var(--lc-sys-space-1);
+  --lc-calendar-title-border: var(--lc-sys-color-border-strong);
+  --lc-calendar-focus-ring: var(--lc-sys-color-focus-ring);
+  --lc-calendar-zone-bg: var(--lc-sys-color-primary);
+  --lc-calendar-zone-text: var(--lc-sys-color-on-primary);
+  --lc-card-radius: var(--lc-sys-radius-lg);
+  --lc-card-background: var(--lc-sys-color-surface-raised);
+  --lc-card-border: var(--lc-sys-color-border);
+  --lc-input-radius: var(--lc-sys-radius-md);
+  --lc-input-background: var(--lc-sys-color-surface-raised);
+  --lc-input-border: var(--lc-sys-color-border-strong);
+  --lc-input-border-invalid: var(--lc-sys-color-error);
+  --lc-tabs-indicator-duration: var(--lc-sys-duration-move);
+  --lc-tabs-indicator-easing: var(--lc-sys-easing-standard);
+  --lc-nav-item-indicator-duration: var(--lc-sys-duration-move);
+  --lc-nav-item-indicator-easing: var(--lc-sys-easing-standard);
+  --lc-overlay-enter-duration: var(--lc-sys-duration-normal);
+  --lc-overlay-exit-duration: var(--lc-sys-duration-fast);
+  --lc-overlay-easing: var(--lc-sys-easing-standard);
+  --lc-collapse-duration: var(--lc-sys-duration-move);
+  --lc-chip-enter-duration: var(--lc-sys-duration-fast);
+  --lc-reveal-duration: var(--lc-sys-duration-long);
+  --lc-reveal-easing: var(--lc-sys-easing-standard);
+  --lc-reveal-stagger: var(--lc-sys-motion-stagger);
+  --lc-list-move-duration: var(--lc-sys-duration-move);
+  --lc-list-move-easing: var(--lc-sys-easing-standard);
+  --lc-slide-enter-duration: var(--lc-sys-duration-move);
+  --lc-slide-exit-duration: var(--lc-sys-duration-normal);
+  --lc-sheet-top-gap: var(--lc-sys-space-10);
+  --lc-sheet-radius: var(--lc-sys-radius-lg);
+  --lc-shell-nav-duration: var(--lc-sys-duration-long);
+  --lc-shell-header-background: var(--lc-sys-color-surface-raised);
+  --lc-shell-nav-background: var(--lc-sys-color-surface);
+  --lc-table-header-background: var(--lc-sys-color-surface-sunken);
+  --lc-table-row-hover: var(--lc-sys-color-surface-sunken);
+  --lc-table-border: var(--lc-sys-color-border);
+  --lc-table-group-background: var(--lc-sys-color-surface);
+  --lc-calendar-duration: var(--lc-overlay-enter-duration);
+  --lc-calendar-easing: var(--lc-overlay-easing);
+  --lc-overlay-offset: var(--lc-sys-motion-offset);
+  --lc-reveal-offset: var(--lc-sys-motion-offset);
+}
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root, [data-theme="default"] {
+  --lc-sys-color-backdrop: rgba(11, 11, 11, 0.45);
+  --lc-sys-state-hover-opacity: 0.08;
+  --lc-sys-state-pressed-opacity: 0.12;
+  --lc-sys-state-disabled-opacity: 0.38;
+  --lc-sys-state-selected-opacity: 0.12;
+  --lc-sys-font-numeric-tabular: tabular-nums;
+  --lc-sys-control-height-sm: 36px;
+  --lc-sys-control-height-md: 44px;
+  --lc-sys-control-height-lg: 52px;
+  --lc-sys-shadow-1: 0 1px 2px rgba(11, 11, 11, 0.06), 0 1px 1px rgba(11, 11, 11, 0.04);
+  --lc-sys-shadow-2: 0 2px 6px rgba(11, 11, 11, 0.08), 0 1px 2px rgba(11, 11, 11, 0.06);
+  --lc-sys-shadow-3: 0 8px 24px rgba(11, 11, 11, 0.12);
+  --lc-sys-shadow-4: 0 16px 48px rgba(11, 11, 11, 0.18);
+  --lc-sys-z-dropdown: 1000;
+  --lc-sys-z-sticky: 1100;
+  --lc-sys-z-overlay: 1200;
+  --lc-sys-z-dialog: 1300;
+  --lc-sys-z-toast: 1400;
+  --lc-sys-z-tooltip: 1500;
+  --lc-sys-icon-size-sm: 16px;
+  --lc-sys-icon-size-md: 20px;
+  --lc-sys-icon-size-lg: 24px;
+  --lc-sys-focus-ring-width: 2px;
+  --lc-sys-focus-ring-offset: 2px;
+  --lc-sys-chart-role-neutral: #898781;
+  --lc-sys-chart-gridline: #e1e0d9;
+  --lc-sys-chart-axis: #c3c2b7;
+  --lc-sys-chart-ink-muted: #898781;
+  --lc-sys-border-width-thin: 1px; /** Filet des contrôles, cartes, tableaux et séparateurs. */
+  --lc-sys-border-width-thick: 2px; /** Indicateur de sélection (onglet actif, élément de navigation actif). */
+  --lc-sys-color-primary: var(--lc-ref-color-blue-550);
+  --lc-sys-color-on-primary: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-primary-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-on-primary-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-secondary: var(--lc-ref-color-neutral-700);
+  --lc-sys-color-on-secondary: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-secondary-container: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-on-secondary-container: var(--lc-ref-color-neutral-900);
+  --lc-sys-color-success: var(--lc-ref-color-green-700);
+  --lc-sys-color-on-success: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-success-container: var(--lc-ref-color-green-100);
+  --lc-sys-color-on-success-container: var(--lc-ref-color-green-700);
+  --lc-sys-color-warning: var(--lc-ref-color-amber-400);
+  --lc-sys-color-on-warning: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-warning-container: var(--lc-ref-color-amber-100);
+  --lc-sys-color-on-warning-container: var(--lc-ref-color-amber-800);
+  --lc-sys-color-error: var(--lc-ref-color-red-600);
+  --lc-sys-color-on-error: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-error-container: var(--lc-ref-color-red-100);
+  --lc-sys-color-on-error-container: var(--lc-ref-color-red-700);
+  --lc-sys-color-info: var(--lc-ref-color-blue-500);
+  --lc-sys-color-on-info: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-info-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-on-info-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-highlight: var(--lc-ref-color-purple-550);
+  --lc-sys-color-on-highlight: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-highlight-container: var(--lc-ref-color-purple-100);
+  --lc-sys-color-on-highlight-container: var(--lc-ref-color-purple-700);
+  --lc-sys-color-neutral: var(--lc-ref-color-neutral-600);
+  --lc-sys-color-on-neutral: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-background: var(--lc-ref-color-neutral-50);
+  --lc-sys-color-surface: var(--lc-ref-color-neutral-25);
+  --lc-sys-color-surface-raised: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-surface-sunken: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-on-surface: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-surface-muted: var(--lc-ref-color-neutral-600);
+  --lc-sys-color-on-surface-subtle: var(--lc-ref-color-neutral-500);
+  --lc-sys-color-border: var(--lc-ref-color-neutral-150);
+  --lc-sys-color-border-strong: var(--lc-ref-color-neutral-400);
+  --lc-sys-color-focus-ring: var(--lc-ref-color-blue-450);
+  --lc-sys-font-family-base: var(--lc-ref-font-family-sans);
+  --lc-sys-font-family-mono: var(--lc-ref-font-family-mono);
+  --lc-sys-font-size-xs: var(--lc-ref-font-size-xs);
+  --lc-sys-font-size-sm: var(--lc-ref-font-size-sm);
+  --lc-sys-font-size-md: var(--lc-ref-font-size-md);
+  --lc-sys-font-size-lg: var(--lc-ref-font-size-lg);
+  --lc-sys-font-size-xl: var(--lc-ref-font-size-xl);
+  --lc-sys-font-size-2xl: var(--lc-ref-font-size-2xl);
+  --lc-sys-font-size-3xl: var(--lc-ref-font-size-3xl);
+  --lc-sys-font-weight-regular: var(--lc-ref-font-weight-regular);
+  --lc-sys-font-weight-medium: var(--lc-ref-font-weight-medium);
+  --lc-sys-font-weight-semibold: var(--lc-ref-font-weight-semibold);
+  --lc-sys-font-weight-bold: var(--lc-ref-font-weight-bold);
+  --lc-sys-font-line-height-tight: var(--lc-ref-font-line-height-tight);
+  --lc-sys-font-line-height-normal: var(--lc-ref-font-line-height-normal);
+  --lc-sys-font-line-height-relaxed: var(--lc-ref-font-line-height-relaxed);
+  --lc-sys-space-0: var(--lc-ref-space-0);
+  --lc-sys-space-1: var(--lc-ref-space-1);
+  --lc-sys-space-2: var(--lc-ref-space-2);
+  --lc-sys-space-3: var(--lc-ref-space-3);
+  --lc-sys-space-4: var(--lc-ref-space-4);
+  --lc-sys-space-5: var(--lc-ref-space-5);
+  --lc-sys-space-6: var(--lc-ref-space-6);
+  --lc-sys-space-8: var(--lc-ref-space-8);
+  --lc-sys-space-10: var(--lc-ref-space-10);
+  --lc-sys-space-12: var(--lc-ref-space-12);
+  --lc-sys-space-16: var(--lc-ref-space-16);
+  --lc-sys-radius-none: var(--lc-ref-radius-none);
+  --lc-sys-radius-sm: var(--lc-ref-radius-sm);
+  --lc-sys-radius-md: var(--lc-ref-radius-md);
+  --lc-sys-radius-lg: var(--lc-ref-radius-lg);
+  --lc-sys-radius-full: var(--lc-ref-radius-full);
+  --lc-sys-duration-fast: var(--lc-ref-duration-fast);
+  --lc-sys-duration-normal: var(--lc-ref-duration-normal);
+  --lc-sys-duration-slow: var(--lc-ref-duration-slow);
+  --lc-sys-duration-long: var(--lc-ref-duration-long);
+  --lc-sys-duration-move: var(--lc-ref-duration-move);
+  --lc-sys-easing-standard: var(--lc-ref-easing-standard);
+  --lc-sys-easing-emphasized: var(--lc-ref-easing-emphasized);
+  --lc-sys-chart-categorical-1: var(--lc-ref-color-chart-light-1);
+  --lc-sys-chart-categorical-2: var(--lc-ref-color-chart-light-2);
+  --lc-sys-chart-categorical-3: var(--lc-ref-color-chart-light-3);
+  --lc-sys-chart-categorical-4: var(--lc-ref-color-chart-light-4);
+  --lc-sys-chart-categorical-5: var(--lc-ref-color-chart-light-5);
+  --lc-sys-chart-categorical-6: var(--lc-ref-color-chart-light-6);
+  --lc-sys-chart-categorical-7: var(--lc-ref-color-chart-light-7);
+  --lc-sys-chart-categorical-8: var(--lc-ref-color-chart-light-8);
+  --lc-sys-chart-role-success: var(--lc-ref-color-chart-light-6);
+  --lc-sys-chart-role-warning: var(--lc-ref-color-chart-light-4);
+  --lc-sys-chart-role-error: var(--lc-ref-color-chart-light-8);
+  --lc-sys-chart-role-info: var(--lc-ref-color-chart-light-1);
+  --lc-sys-chart-role-highlight: var(--lc-ref-color-chart-light-7);
+  --lc-sys-chart-sequential-100: var(--lc-ref-color-blue-100);
+  --lc-sys-chart-sequential-200: var(--lc-ref-color-blue-200);
+  --lc-sys-chart-sequential-300: var(--lc-ref-color-blue-300);
+  --lc-sys-chart-sequential-400: var(--lc-ref-color-blue-400);
+  --lc-sys-chart-sequential-500: var(--lc-ref-color-blue-500);
+  --lc-sys-chart-sequential-600: var(--lc-ref-color-blue-600);
+  --lc-sys-chart-sequential-700: var(--lc-ref-color-blue-700);
+  --lc-sys-chart-diverging-negative: var(--lc-ref-color-chart-light-8);
+  --lc-sys-chart-diverging-neutral: var(--lc-ref-color-chart-diverging-neutral-light);
+  --lc-sys-chart-diverging-positive: var(--lc-ref-color-chart-light-1);
+  --lc-sys-chart-status-good: var(--lc-ref-color-chart-status-good);
+  --lc-sys-chart-status-warning: var(--lc-ref-color-chart-status-warning);
+  --lc-sys-chart-status-serious: var(--lc-ref-color-chart-status-serious);
+  --lc-sys-chart-status-critical: var(--lc-ref-color-chart-status-critical);
+  --lc-sys-chart-surface: var(--lc-ref-color-neutral-25);
+  --lc-sys-chart-ink-primary: var(--lc-ref-color-neutral-1000);
+  --lc-sys-chart-ink-secondary: var(--lc-ref-color-neutral-600);
+  --lc-sys-chart-sequential-warm-100: var(--lc-ref-color-orange-100);
+  --lc-sys-chart-sequential-warm-200: var(--lc-ref-color-orange-200);
+  --lc-sys-chart-sequential-warm-300: var(--lc-ref-color-orange-300);
+  --lc-sys-chart-sequential-warm-400: var(--lc-ref-color-orange-400);
+  --lc-sys-chart-sequential-warm-500: var(--lc-ref-color-orange-500);
+  --lc-sys-chart-sequential-warm-600: var(--lc-ref-color-orange-600);
+  --lc-sys-chart-sequential-warm-700: var(--lc-ref-color-orange-700);
+  --lc-sys-motion-stagger: var(--lc-ref-motion-stagger);
+  --lc-sys-motion-offset: var(--lc-sys-space-2);
+}
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+[data-theme="dark"] {
+  --lc-sys-color-success-container: #0f2a10;
+  --lc-sys-color-warning-container: #33270a;
+  --lc-sys-color-error-container: #3a1414;
+  --lc-sys-color-surface-sunken: #121211;
+  --lc-sys-color-backdrop: rgba(0, 0, 0, 0.6);
+  --lc-sys-state-hover-opacity: 0.08;
+  --lc-sys-state-pressed-opacity: 0.12;
+  --lc-sys-state-disabled-opacity: 0.38;
+  --lc-sys-state-selected-opacity: 0.12;
+  --lc-sys-font-numeric-tabular: tabular-nums;
+  --lc-sys-control-height-sm: 36px;
+  --lc-sys-control-height-md: 44px;
+  --lc-sys-control-height-lg: 52px;
+  --lc-sys-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --lc-sys-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.55);
+  --lc-sys-shadow-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --lc-sys-shadow-4: 0 16px 48px rgba(0, 0, 0, 0.7);
+  --lc-sys-z-dropdown: 1000;
+  --lc-sys-z-sticky: 1100;
+  --lc-sys-z-overlay: 1200;
+  --lc-sys-z-dialog: 1300;
+  --lc-sys-z-toast: 1400;
+  --lc-sys-z-tooltip: 1500;
+  --lc-sys-icon-size-sm: 16px;
+  --lc-sys-icon-size-md: 20px;
+  --lc-sys-icon-size-lg: 24px;
+  --lc-sys-focus-ring-width: 2px;
+  --lc-sys-focus-ring-offset: 2px;
+  --lc-sys-chart-role-neutral: #898781;
+  --lc-sys-chart-gridline: #2c2c2a;
+  --lc-sys-chart-axis: #383835;
+  --lc-sys-chart-ink-muted: #898781;
+  --lc-sys-border-width-thin: 1px; /** Filet des contrôles, cartes, tableaux et séparateurs. */
+  --lc-sys-border-width-thick: 2px; /** Indicateur de sélection (onglet actif, élément de navigation actif). */
+  --lc-sys-color-primary: var(--lc-ref-color-blue-300);
+  --lc-sys-color-on-primary: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-primary-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-on-primary-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-secondary: var(--lc-ref-color-neutral-200);
+  --lc-sys-color-on-secondary: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-secondary-container: var(--lc-ref-color-neutral-800);
+  --lc-sys-color-on-secondary-container: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-success: var(--lc-ref-color-green-500);
+  --lc-sys-color-on-success: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-success-container: var(--lc-ref-color-green-100);
+  --lc-sys-color-warning: var(--lc-ref-color-amber-400);
+  --lc-sys-color-on-warning: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-warning-container: var(--lc-ref-color-amber-100);
+  --lc-sys-color-error: var(--lc-ref-color-red-400);
+  --lc-sys-color-on-error: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-error-container: var(--lc-ref-color-red-100);
+  --lc-sys-color-info: var(--lc-ref-color-blue-300);
+  --lc-sys-color-on-info: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-info-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-on-info-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-highlight: var(--lc-ref-color-purple-400);
+  --lc-sys-color-on-highlight: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-highlight-container: var(--lc-ref-color-purple-900);
+  --lc-sys-color-on-highlight-container: var(--lc-ref-color-purple-200);
+  --lc-sys-color-neutral: var(--lc-ref-color-neutral-300);
+  --lc-sys-color-on-neutral: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-background: var(--lc-ref-color-neutral-950);
+  --lc-sys-color-surface: var(--lc-ref-color-neutral-900);
+  --lc-sys-color-surface-raised: var(--lc-ref-color-neutral-850);
+  --lc-sys-color-on-surface: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-on-surface-muted: var(--lc-ref-color-neutral-200);
+  --lc-sys-color-on-surface-subtle: var(--lc-ref-color-neutral-400);
+  --lc-sys-color-border: var(--lc-ref-color-neutral-800);
+  --lc-sys-color-border-strong: var(--lc-ref-color-neutral-400);
+  --lc-sys-color-focus-ring: var(--lc-ref-color-blue-300);
+  --lc-sys-font-family-base: var(--lc-ref-font-family-sans);
+  --lc-sys-font-family-mono: var(--lc-ref-font-family-mono);
+  --lc-sys-font-size-xs: var(--lc-ref-font-size-xs);
+  --lc-sys-font-size-sm: var(--lc-ref-font-size-sm);
+  --lc-sys-font-size-md: var(--lc-ref-font-size-md);
+  --lc-sys-font-size-lg: var(--lc-ref-font-size-lg);
+  --lc-sys-font-size-xl: var(--lc-ref-font-size-xl);
+  --lc-sys-font-size-2xl: var(--lc-ref-font-size-2xl);
+  --lc-sys-font-size-3xl: var(--lc-ref-font-size-3xl);
+  --lc-sys-font-weight-regular: var(--lc-ref-font-weight-regular);
+  --lc-sys-font-weight-medium: var(--lc-ref-font-weight-medium);
+  --lc-sys-font-weight-semibold: var(--lc-ref-font-weight-semibold);
+  --lc-sys-font-weight-bold: var(--lc-ref-font-weight-bold);
+  --lc-sys-font-line-height-tight: var(--lc-ref-font-line-height-tight);
+  --lc-sys-font-line-height-normal: var(--lc-ref-font-line-height-normal);
+  --lc-sys-font-line-height-relaxed: var(--lc-ref-font-line-height-relaxed);
+  --lc-sys-space-0: var(--lc-ref-space-0);
+  --lc-sys-space-1: var(--lc-ref-space-1);
+  --lc-sys-space-2: var(--lc-ref-space-2);
+  --lc-sys-space-3: var(--lc-ref-space-3);
+  --lc-sys-space-4: var(--lc-ref-space-4);
+  --lc-sys-space-5: var(--lc-ref-space-5);
+  --lc-sys-space-6: var(--lc-ref-space-6);
+  --lc-sys-space-8: var(--lc-ref-space-8);
+  --lc-sys-space-10: var(--lc-ref-space-10);
+  --lc-sys-space-12: var(--lc-ref-space-12);
+  --lc-sys-space-16: var(--lc-ref-space-16);
+  --lc-sys-radius-none: var(--lc-ref-radius-none);
+  --lc-sys-radius-sm: var(--lc-ref-radius-sm);
+  --lc-sys-radius-md: var(--lc-ref-radius-md);
+  --lc-sys-radius-lg: var(--lc-ref-radius-lg);
+  --lc-sys-radius-full: var(--lc-ref-radius-full);
+  --lc-sys-duration-fast: var(--lc-ref-duration-fast);
+  --lc-sys-duration-normal: var(--lc-ref-duration-normal);
+  --lc-sys-duration-slow: var(--lc-ref-duration-slow);
+  --lc-sys-duration-long: var(--lc-ref-duration-long);
+  --lc-sys-duration-move: var(--lc-ref-duration-move);
+  --lc-sys-easing-standard: var(--lc-ref-easing-standard);
+  --lc-sys-easing-emphasized: var(--lc-ref-easing-emphasized);
+  --lc-sys-chart-categorical-1: var(--lc-ref-color-chart-dark-1);
+  --lc-sys-chart-categorical-2: var(--lc-ref-color-chart-dark-2);
+  --lc-sys-chart-categorical-3: var(--lc-ref-color-chart-dark-3);
+  --lc-sys-chart-categorical-4: var(--lc-ref-color-chart-dark-4);
+  --lc-sys-chart-categorical-5: var(--lc-ref-color-chart-dark-5);
+  --lc-sys-chart-categorical-6: var(--lc-ref-color-chart-dark-6);
+  --lc-sys-chart-categorical-7: var(--lc-ref-color-chart-dark-7);
+  --lc-sys-chart-categorical-8: var(--lc-ref-color-chart-dark-8);
+  --lc-sys-chart-role-success: var(--lc-ref-color-chart-dark-6);
+  --lc-sys-chart-role-warning: var(--lc-ref-color-chart-dark-4);
+  --lc-sys-chart-role-error: var(--lc-ref-color-chart-dark-8);
+  --lc-sys-chart-role-info: var(--lc-ref-color-chart-dark-1);
+  --lc-sys-chart-role-highlight: var(--lc-ref-color-chart-dark-7);
+  --lc-sys-chart-sequential-100: var(--lc-ref-color-blue-100);
+  --lc-sys-chart-sequential-200: var(--lc-ref-color-blue-200);
+  --lc-sys-chart-sequential-300: var(--lc-ref-color-blue-300);
+  --lc-sys-chart-sequential-400: var(--lc-ref-color-blue-400);
+  --lc-sys-chart-sequential-500: var(--lc-ref-color-blue-500);
+  --lc-sys-chart-sequential-600: var(--lc-ref-color-blue-600);
+  --lc-sys-chart-sequential-700: var(--lc-ref-color-blue-700);
+  --lc-sys-chart-diverging-negative: var(--lc-ref-color-chart-dark-8);
+  --lc-sys-chart-diverging-neutral: var(--lc-ref-color-chart-diverging-neutral-dark);
+  --lc-sys-chart-diverging-positive: var(--lc-ref-color-chart-dark-1);
+  --lc-sys-chart-status-good: var(--lc-ref-color-chart-status-good);
+  --lc-sys-chart-status-warning: var(--lc-ref-color-chart-status-warning);
+  --lc-sys-chart-status-serious: var(--lc-ref-color-chart-status-serious);
+  --lc-sys-chart-status-critical: var(--lc-ref-color-chart-status-critical);
+  --lc-sys-chart-surface: var(--lc-ref-color-neutral-900);
+  --lc-sys-chart-ink-primary: var(--lc-ref-color-neutral-100);
+  --lc-sys-chart-ink-secondary: var(--lc-ref-color-neutral-200);
+  --lc-sys-chart-sequential-warm-100: var(--lc-ref-color-orange-700);
+  --lc-sys-chart-sequential-warm-200: var(--lc-ref-color-orange-600);
+  --lc-sys-chart-sequential-warm-300: var(--lc-ref-color-orange-500);
+  --lc-sys-chart-sequential-warm-400: var(--lc-ref-color-orange-400);
+  --lc-sys-chart-sequential-warm-500: var(--lc-ref-color-orange-300);
+  --lc-sys-chart-sequential-warm-600: var(--lc-ref-color-orange-200);
+  --lc-sys-chart-sequential-warm-700: var(--lc-ref-color-orange-100);
+  --lc-sys-motion-stagger: var(--lc-ref-motion-stagger);
+  --lc-sys-motion-offset: var(--lc-sys-space-2);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:var(--lc-sys-font-family-base);font-size:1rem;line-height:1.5;background:var(--lc-sys-color-surface);color:var(--lc-sys-color-on-surface)}
+.page{max-width:1280px;margin:0 auto;padding:var(--lc-sys-space-6) var(--lc-sys-space-4) var(--lc-sys-space-16)}
+h1{font-size:1.5rem;margin:0 0 var(--lc-sys-space-2)} h2{font-size:1.125rem;margin:0 0 var(--lc-sys-space-1)} h3{font-size:1rem;margin:0 0 var(--lc-sys-space-1)}
+p{margin:0 0 var(--lc-sys-space-2)} .muted{color:var(--lc-sys-color-on-surface-muted);font-size:.875rem}
+code{font-family:var(--lc-sys-font-family-mono);font-size:.875rem;background:var(--lc-sys-color-surface-sunken);padding:0 .25em;border-radius:4px}
+pre{font-family:var(--lc-sys-font-family-mono);font-size:.8125rem;background:var(--lc-sys-color-surface-sunken);padding:var(--lc-sys-space-4);border-radius:var(--lc-sys-radius-md);overflow:auto;margin:0}
+.top{display:flex;gap:var(--lc-sys-space-4);justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.theme{min-height:44px;padding:0 var(--lc-sys-space-4);border:1px solid var(--lc-sys-color-border-strong);background:var(--lc-sys-color-surface-raised);color:inherit;border-radius:var(--lc-sys-radius-md);font:inherit;cursor:pointer}
+.state{margin-top:var(--lc-sys-space-10)}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--lc-sys-space-6);margin-top:var(--lc-sys-space-3)}
+@media (max-width:960px){.trio{grid-template-columns:minmax(0,1fr)}}
+.tag{font-size:.875rem;font-weight:600;margin-bottom:var(--lc-sys-space-2)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--lc-sys-space-6)}
+@media (max-width:960px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--lc-sys-color-surface-raised);border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-lg);padding:var(--lc-sys-space-4)}
+.card ul{margin:0;padding-left:1.2em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* ===== Composant (même DOM, trois mises en page par grille) ===== */
+.mc{--_btn:var(--lc-sys-control-height-md);font-size:1rem}
+.mc-head{margin-bottom:var(--lc-sys-space-2)}
+.mc-seg{display:inline-flex;border:0;margin:0;padding:2px;gap:2px;background:var(--lc-sys-color-surface-sunken);border-radius:var(--lc-sys-radius-md);max-width:100%;flex-wrap:wrap}
+.mc-seg label{display:inline-flex;align-items:center;gap:var(--lc-sys-space-2);min-height:40px;padding:0 var(--lc-sys-space-3);border-radius:6px;cursor:pointer;font-size:.875rem;font-weight:500;color:var(--lc-sys-color-on-surface-muted)}
+.mc-seg input{position:absolute;opacity:0;pointer-events:none}
+.mc-seg label:has(input:checked){background:var(--lc-sys-color-surface-raised);color:var(--lc-sys-color-on-surface);box-shadow:var(--lc-sys-shadow-1)}
+.mc-seg label:has(input:focus-visible){outline:2px solid var(--lc-sys-color-focus-ring);outline-offset:2px}
+.ico{width:var(--lc-sys-icon-size-md);height:var(--lc-sys-icon-size-md);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.sm{width:var(--lc-sys-icon-size-sm);height:var(--lc-sys-icon-size-sm)}
+
+.mc-box{
+  --_bw:var(--lc-message-composer-border-width,var(--lc-sys-border-width-thin));
+  --_bs:var(--lc-message-composer-border-style,solid);
+  --_bc:var(--lc-message-composer-border-color,var(--lc-sys-color-border-strong));
+  --_sep:var(--lc-message-composer-separator-color,var(--lc-sys-color-border));
+  --_fg:var(--lc-message-composer-color,var(--lc-sys-color-on-surface));
+  --_hint:var(--lc-message-composer-placeholder-color,var(--lc-sys-color-on-surface-muted));
+  --_icon:var(--lc-message-composer-icon-color,var(--lc-sys-color-on-surface-muted));
+  --_send-bg:var(--lc-message-composer-send-background,var(--lc-sys-color-primary));
+  --_send-fg:var(--lc-message-composer-send-color,var(--lc-sys-color-on-primary));
+  position:relative;display:grid;border:var(--_bw) var(--_bs) var(--_bc);background:var(--lc-message-composer-background,var(--lc-sys-color-surface-raised));color:var(--_fg);
+  border-radius:var(--_r);transition:background-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),border-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard)}
+.mc-box:focus-within{outline:2px solid var(--lc-sys-color-focus-ring);outline-offset:2px}
+.mc-files{grid-area:files;display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-2);padding:var(--lc-sys-space-2) var(--lc-sys-space-2) 0}
+.mc-files:empty{display:none}
+.mc-text{grid-area:text;min-width:0;display:block;width:100%;border:0;background:transparent;color:inherit;font:inherit;line-height:1.5;resize:none;padding:10px var(--lc-sys-space-2);min-height:var(--_btn);max-height:11rem;overflow-y:auto;outline:0;align-self:center}
+.mc-text::placeholder{color:var(--_hint);opacity:1}
+.mc-left{grid-area:left;display:flex;align-items:center;align-self:end}
+.mc-sep{width:1px;align-self:stretch;margin:var(--lc-sys-space-2) var(--lc-sys-space-1);background:var(--_sep)}
+.mc-actions{display:flex;align-items:center}
+.mc-btn{display:inline-grid;place-items:center;width:var(--_btn);height:var(--_btn);flex:none;border:0;background:transparent;color:var(--_icon);border-radius:var(--lc-sys-radius-md);cursor:pointer;padding:0;font:inherit;transition:background-color var(--lc-sys-duration-fast)}
+.mc-btn:hover{background:var(--lc-sys-color-surface-sunken)}
+.mc-btn:focus-visible,.mc-send:focus-visible,.mc-x:focus-visible,.mc-retry:focus-visible{outline:2px solid var(--lc-sys-color-focus-ring);outline-offset:2px}
+.mc-send{grid-area:send;align-self:end;display:inline-grid;place-items:center;width:var(--_btn);height:var(--_btn);border:0;padding:0;cursor:pointer;background:var(--_send-bg);color:var(--_send-fg);font:inherit;transition:background-color var(--lc-sys-duration-normal),opacity var(--lc-sys-duration-normal)}
+.mc-send[aria-disabled=true]{opacity:.4;cursor:default}
+.mc-send[aria-busy=true]{cursor:progress;opacity:1}
+.mc-spin{animation:mc-spin 900ms linear infinite}
+@keyframes mc-spin{to{transform:rotate(360deg)}}
+
+/* vignettes */
+.mc-file{position:relative;display:flex;align-items:center;gap:var(--lc-sys-space-2);min-width:0;max-width:100%;background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-md);padding:var(--lc-sys-space-1);padding-right:0;overflow:hidden}
+.mc-file.is-new{animation:mc-in var(--lc-sys-duration-slow) var(--lc-sys-easing-emphasized) both}
+@keyframes mc-in{from{opacity:0;transform:translateY(var(--lc-sys-motion-offset)) scale(.96)}}
+.mc-file.is-error{border-color:var(--lc-sys-color-error)}
+.mc-prev{width:40px;height:40px;flex:none;border-radius:6px;display:grid;place-items:center;background:var(--lc-sys-color-surface-raised);color:var(--lc-sys-color-on-surface-muted);overflow:hidden}
+.mc-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.mc-meta{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.mc-name{font-size:.875rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:14ch}
+.mc-st{font-size:.75rem;color:var(--lc-sys-color-on-surface-muted);display:flex;gap:var(--lc-sys-space-2);align-items:center;white-space:nowrap}
+.is-error .mc-st{color:var(--lc-sys-color-error)}
+.mc-retry{min-height:24px;border:0;background:none;color:var(--lc-sys-color-primary);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer;padding:0 2px}
+.mc-x{width:var(--_btn);height:var(--_btn);flex:none;border:0;background:none;color:var(--lc-sys-color-on-surface-muted);cursor:pointer;display:grid;place-items:center;padding:0;border-radius:var(--lc-sys-radius-md)}
+.mc-x:hover{color:var(--lc-sys-color-on-surface)}
+.mc-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--lc-sys-color-border)}
+.mc-bar i{display:block;height:100%;background:var(--lc-sys-color-primary);transform-origin:left;transform:scaleX(var(--p,0));transition:transform var(--lc-sys-duration-normal) linear}
+
+/* dépôt */
+.mc-drop{position:absolute;inset:0;border-radius:inherit;display:flex;align-items:center;justify-content:center;gap:var(--lc-sys-space-2);background:var(--lc-sys-color-primary-container);color:var(--lc-sys-color-on-primary-container);outline:2px solid var(--lc-sys-color-primary);outline-offset:-2px;font-weight:600;opacity:0;pointer-events:none;transition:opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard)}
+.mc-box.is-dragover .mc-drop{opacity:1}
+
+/* pied : aide + refus */
+.mc-foot{min-height:1.5rem;margin-top:var(--lc-sys-space-2);font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
+.mc-err{display:flex;gap:var(--lc-sys-space-2);align-items:flex-start;color:var(--lc-sys-color-error);font-weight:500}
+.mc-hint-fine{display:none}
+@media (pointer:fine){.mc-hint-fine{display:inline}.mc-hint-coarse{display:none}}
+.mc-box.shake{animation:mc-shake 320ms var(--lc-sys-easing-standard)}
+@keyframes mc-shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){
+  .mc-box.shake{animation:none}
+  .mc-file.is-new{animation:mc-fade var(--lc-sys-duration-normal) linear both}
+  @keyframes mc-fade{from{opacity:0}}
+  .mc-spin{animation:none}
+  .mc-bar i,.mc-box,.mc-drop{transition:none}
+}
+
+/* ===== Direction A : compact, flèche ronde pleine ===== */
+.mc--a .mc-box{--_r:var(--lc-sys-radius-lg);grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"files files files" "left text send";padding:var(--lc-sys-space-1);gap:0}
+.mc--a .mc-send{border-radius:var(--lc-sys-radius-full)}
+.mc--a .mc-files{padding:var(--lc-sys-space-1) var(--lc-sys-space-1) var(--lc-sys-space-2)}
+/* ===== Direction B : barre d'outils basse (type Slack) ===== */
+.mc--b .mc-box{--_r:var(--lc-sys-radius-lg);grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"files files" "text text" "left send";padding:0 var(--lc-sys-space-1) var(--lc-sys-space-1)}
+.mc--b .mc-text{padding:var(--lc-sys-space-3) var(--lc-sys-space-3) var(--lc-sys-space-1);min-height:3.5rem;align-self:stretch}
+@media (pointer:fine){.mc--b .mc{--_btn:var(--lc-sys-control-height-sm)}.mc--b{--_btn:var(--lc-sys-control-height-sm)}}
+.mc--b .mc-send{border-radius:var(--lc-sys-radius-md);align-self:center;padding:0 var(--lc-sys-space-2)}
+.mc--b .mc-files{padding:var(--lc-sys-space-3) var(--lc-sys-space-3) 0}
+.mc--b .mc-file{flex-direction:column;align-items:stretch;width:7rem;padding:0;gap:0}
+.mc--b .mc-prev{width:100%;height:4.5rem;border-radius:0}
+.mc--b .mc-meta{padding:var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-2)}
+.mc--b .mc-name{max-width:100%}
+.mc--b .mc-st{white-space:normal;flex-wrap:wrap}
+.mc--b .mc-x{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:var(--lc-sys-radius-full);background:var(--lc-sys-color-surface-raised);box-shadow:var(--lc-sys-shadow-1)}
+.mc--b .mc-x::after{content:"";position:absolute;inset:-8px}
+.mc--b .mc-bar{bottom:auto;top:calc(4.5rem - 3px)}
+/* ===== Direction C : cellules bordées, séparateurs nets ===== */
+.mc--c .mc-box{--_r:var(--lc-sys-radius-md);--_bc:var(--lc-message-composer-border-color,var(--lc-sys-color-border-strong));grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"files files files" "left text send"}
+.mc--c .mc-files{padding:var(--lc-sys-space-2);border-bottom:1px solid var(--_sep);flex-direction:column;gap:var(--lc-sys-space-1)}
+.mc--c .mc-file{width:100%;border-radius:var(--lc-sys-radius-md)}
+.mc--c .mc-name{max-width:none;flex:1}
+.mc--c .mc-meta{flex:1}
+.mc--c .mc-left{align-self:stretch;border-right:1px solid var(--_sep);padding:0 var(--lc-sys-space-1)}
+.mc--c .mc-sep{display:none}
+.mc--c .mc-actions{border-left:1px solid var(--_sep);margin-left:var(--lc-sys-space-1);padding-left:var(--lc-sys-space-1);align-self:stretch}
+.mc--c .mc-actions:empty{display:none}
+.mc--c .mc-text{padding:var(--lc-sys-space-3)}
+.mc--c .mc-send{align-self:stretch;height:auto;min-height:var(--_btn);width:calc(var(--_btn) + 8px);background:transparent;color:var(--lc-sys-color-primary);border-left:1px solid var(--_sep);border-radius:0 calc(var(--_r) - 1px) calc(var(--_r) - 1px) 0}
+.mc--c .mc-send:hover:not([aria-disabled=true]){background:var(--lc-sys-color-primary-container)}
+.mc--c .mc-send[aria-disabled=true]{color:var(--lc-sys-color-on-surface-subtle)}
+
+/* ===== Variante « note interne » : écrite par l'APPLICATION, pas par le kit ===== */
+.note-interne{
+  --lc-message-composer-border-style:dashed;
+  --lc-message-composer-border-width:2px;
+  --lc-message-composer-border-color:var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-background:var(--lc-sys-color-warning-container);
+  --lc-message-composer-color:var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-placeholder-color:var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-icon-color:var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-separator-color:var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-send-background:var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-send-color:var(--lc-sys-color-warning-container);
+}
+.note-interne.mc--c .mc-send{background:transparent;color:var(--lc-sys-color-on-warning-container)}
+.note-interne .mc-file{background:var(--lc-sys-color-surface-raised)}
+.note-interne .mc-send:hover{filter:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+ <symbol id="i-send" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+ <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+ <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+ <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></symbol>
+ <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
+ <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+ <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+</svg>
+<main class="page">
+<div class="top">
+ <div>
+  <h1>lc-message-composer : trois directions</h1>
+  <p class="muted">Maquettes autonomes. Mêmes données d'exemple partout (les textes de copropriété sont des valeurs d'exemple d'un consommateur, pas du kit). Jetons du kit uniquement (<code>--lc-sys-*</code>), jetons du composant <code>--lc-message-composer-*</code> avec repli. Même balisage pour A, B et C : seule la grille CSS change.</p>
+ </div>
+ <button class="theme" id="theme" type="button">Thème sombre</button>
+</div>
+
+<section class="state" id="live">
+ <h2>0. Essayez-les</h2>
+ <p class="muted">Déposez un vrai fichier sur un rectangle, ou utilisez le trombone. Image ou PDF de moins de 10 Mo : accepté. Autre type : refusé avec secousse. Un nom contenant « echec » échoue à l'envoi (bouton « Réessayer »). Entrée envoie (pointeur fin), Maj+Entrée va à la ligne. Le sélecteur au-dessus est l'exemple d'en-tête libre : « Note interne » ajoute la classe de l'application.</p>
+ <div class="trio" id="t-live"></div>
+</section>
+<section class="state"><h2>1. Vide</h2><div class="trio" id="t-empty"></div></section>
+<section class="state"><h2>2. Texte sur plusieurs lignes</h2><p class="muted">Le champ s'agrandit (limité à 7 lignes, puis défile). Flèche et trombone restent en bas.</p><div class="trio" id="t-multi"></div></section>
+<section class="state"><h2>3. Deux pièces jointes : une en cours, une en erreur</h2><div class="trio" id="t-files"></div></section>
+<section class="state"><h2>4. Survol d'un fichier (dépôt)</h2><div class="trio" id="t-drop"></div></section>
+<section class="state"><h2>5. Envoi en cours</h2><p class="muted">La flèche devient un indicateur d'attente et refuse le double envoi ; le texte reste lisible.</p><div class="trio" id="t-send"></div></section>
+<section class="state"><h2>6. Note interne (variante faite par l'application)</h2><p class="muted">Aucune variante métier dans le kit : l'application pose une classe qui redéfinit les jetons. L'état ne repose pas sur la couleur seule : pointillés, cadenas et libellé « Note interne ».</p><div class="trio" id="t-note"></div></section>
+<section class="state"><h2>7. Refus d'un fichier</h2><p class="muted">Message sous le rectangle, avec la raison ; petite secousse (supprimée si les animations sont réduites).</p><div class="trio" id="t-refuse"></div></section>
+
+<section class="state">
+ <h2>Jetons et classe de l'application</h2>
+<pre>.note-interne {  /* CSS de l'application (copro-ticket) */
+  --lc-message-composer-border-style: dashed;
+  --lc-message-composer-border-width: 2px;
+  --lc-message-composer-border-color: var(--lc-sys-color-on-warning-container);
+  --lc-message-composer-background:   var(--lc-sys-color-warning-container);
+  --lc-message-composer-color / -placeholder-color / -icon-color / -separator-color
+  --lc-message-composer-send-background / -send-color
+}</pre>
+</section>
+
+<section class="state">
+ <h2>Forces, faiblesses, recommandation</h2>
+ <div class="cards">
+  <div class="card"><h3>A · Compact, flèche ronde</h3><ul>
+   <li><b>Pour :</b> geste connu (Messages, WhatsApp), hauteur minimale, une seule ligne au repos.</li>
+   <li><b>Contre :</b> constaté à 360 px : avec trombone et une action, le texte est déjà réduit à environ 130 px et l'aide à la saisie passe sur deux lignes.</li></ul></div>
+  <div class="card"><h3>B · Barre d'outils basse</h3><ul>
+   <li><b>Pour :</b> texte pleine largeur, place pour plusieurs actions ; vignettes en tuiles lisibles.</li>
+   <li><b>Contre :</b> plus haut au repos (environ 40 px de plus) ; un tuilage d'images demande plus de CSS que les deux autres.</li></ul></div>
+  <div class="card"><h3>C · Cellules bordées</h3><ul>
+   <li><b>Pour :</b> zones très lisibles, vignettes en liste (noms longs, erreurs explicites).</li>
+   <li><b>Contre :</b> aspect « formulaire », moins chaleureux pour une conversation ; filets multiples, plus lourd visuellement.</li></ul></div>
+ </div>
+ <p style="margin-top:var(--lc-sys-space-4)"><b>Recommandation : A avec zéro ou une action</b> (cas du demandeur), car l'utilisateur écrit surtout une phrase et envoie, souvent sur téléphone ; c'est la plus proche du « petit rectangle » demandé. Choisir B dès que l'application met une action ou plus sur téléphone, comme le montre la capture à 360 px (le kit peut basculer par un simple modificateur, le balisage est le même). C seulement si l'écran voisin est un formulaire dense.</p>
+ <p class="muted">Contrainte Baseline 2024 : l'agrandissement du champ se fait par script (<code>field-sizing: content</code> n'est pas dans la cible). Police du champ à 16 px minimum (évite le zoom automatique sur iOS).</p>
+</section>
+</main>
+<script>
+const ico=(n,c='')=>`<svg class="ico ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const fmt=b=>b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' Mo':Math.max(1,Math.round(b/1024))+' Ko';
+const SVG=(a,b)=>'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="80" height="80" fill="url(#g)"/><circle cx="56" cy="24" r="8" fill="#fff" fill-opacity=".6"/><path d="M0 68 26 40l16 14 12-10 26 26v10H0Z" fill="#fff" fill-opacity=".45"/></svg>`);
+const MAXMB=10,OK=/^(image\/|application\/pdf)/;
+let uid=0;
+
+function composer(host,dir,o={}){
+  const id='mc'+(++uid);
+  const root=document.createElement('div');root.className=`mc mc--${dir}`+(o.note?' note-interne':'');
+  root.innerHTML=`
+   ${o.head?`<div class="mc-head"><fieldset class="mc-seg"><legend class="sr">Visibilité du message</legend>
+     <label>${ico('lock','sm')}<input type="radio" name="${id}" value="note" ${o.note?'checked':''}>Note interne</label>
+     <label><input type="radio" name="${id}" value="pub" ${o.note?'':'checked'}>Visible par le demandeur</label></fieldset></div>`:''}
+   <div class="mc-box">
+     <div class="mc-files" role="list" aria-label="Pièces jointes"></div>
+     <textarea class="mc-text" rows="1" placeholder="Écrivez votre message…" aria-label="Message"></textarea>
+     <div class="mc-left"><button type="button" class="mc-btn mc-clip" aria-label="Joindre un fichier">${ico('clip')}</button>
+       <span class="mc-sep" aria-hidden="true"></span>
+       <div class="mc-actions">${o.actions===false?'':`<button type="button" class="mc-btn" aria-label="Insérer un émoji (action libre d'exemple)">${ico('smile')}</button>`}</div></div>
+     <button type="button" class="mc-send" aria-label="Envoyer le message" aria-disabled="true">${ico('send')}</button>
+     <div class="mc-drop" aria-hidden="true">${ico('upload')}Déposez vos fichiers ici</div>
+     <input type="file" multiple hidden accept="image/*,application/pdf">
+   </div>
+   <div class="mc-foot"><div class="mc-live" role="alert"></div><div class="mc-help"><span class="mc-hint-fine">Entrée pour envoyer, Maj+Entrée pour aller à la ligne.</span><span class="mc-hint-coarse">Touchez la flèche pour envoyer.</span></div></div>`;
+  host.append(root);
+  const $=s=>root.querySelector(s),box=$('.mc-box'),ta=$('.mc-text'),list=$('.mc-files'),send=$('.mc-send'),live=$('.mc-live'),help=$('.mc-help'),pick=$('input[type=file]');
+  let files=[],sending=!!o.sending,drag=0;
+  const grow=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight+(ta.offsetHeight-ta.clientHeight),176)+'px'};
+  const canSend=()=>!sending&&(ta.value.trim()||files.some(f=>!f.error&&f.p==null));
+  function render(){
+    list.innerHTML='';
+    files.forEach(f=>{
+      const li=document.createElement('div');li.setAttribute('role','listitem');
+      li.className='mc-file'+(f.error?' is-error':'')+(f.fresh?' is-new':'');f.fresh=false;
+      const busy=f.p!=null&&!f.error;
+      li.innerHTML=`<span class="mc-prev">${f.url?`<img src="${f.url}" alt="" width="40" height="40">`:ico('file')}</span>
+        <span class="mc-meta"><span class="mc-name" title="${f.name.replace(/"/g,'&quot;')}"></span>
+        <span class="mc-st">${f.error?`${ico('alert','sm')}Échec <button type="button" class="mc-retry">Réessayer</button>`:busy?`Envoi… ${Math.round(f.p)} %`:fmt(f.size)}</span></span>
+        <button type="button" class="mc-x" aria-label="Retirer le fichier ${f.name.replace(/"/g,'&quot;')}">${ico('x','sm')}</button>
+        ${busy?`<span class="mc-bar" role="progressbar" aria-label="Envoi de ${f.name.replace(/"/g,'&quot;')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(f.p)}"><i style="--p:${f.p/100}"></i></span>`:''}`;
+      li.querySelector('.mc-name').textContent=f.name;
+      li.querySelector('.mc-x').onclick=()=>{clearInterval(f.t);files=files.filter(x=>x!==f);render();ta.focus()};
+      const r=li.querySelector('.mc-retry');if(r)r.onclick=()=>{f.error=false;f.p=0;run(f);render()};
+      list.append(li);
+    });
+    send.setAttribute('aria-disabled',canSend()?'false':'true');
+    send.setAttribute('aria-busy',sending?'true':'false');
+    send.innerHTML=sending?`<svg class="ico mc-spin" aria-hidden="true"><use href="#i-loader"/></svg><span class="sr">Envoi en cours</span>`:ico('send');
+    grow();
+  }
+  function run(f){f.t=setInterval(()=>{f.p+=f.fail&&f.p>=65?0:12;if(f.fail&&f.p>=65){f.error=true;clearInterval(f.t)}else if(f.p>=100){f.p=null;clearInterval(f.t)}render()},350)}
+  function refuse(msg){live.innerHTML=`<span class="mc-err">${ico('alert','sm')}<span></span></span>`;live.querySelector('span span').textContent=msg;help.hidden=true;
+    box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');setTimeout(()=>{live.innerHTML='';help.hidden=false},6000)}
+  box.addEventListener('animationend',()=>box.classList.remove('shake'));
+  function add(list_){
+    for(const file of list_){
+      if(!OK.test(file.type)){refuse(`« ${file.name} » n'est pas accepté. Formats admis : images et PDF.`);continue}
+      if(file.size>MAXMB*1048576){refuse(`« ${file.name} » dépasse ${MAXMB} Mo.`);continue}
+      live.innerHTML='';
+      const f={name:file.name,size:file.size,p:0,fresh:true,fail:/echec/i.test(file.name),url:file.type.startsWith('image/')?URL.createObjectURL(file):null};
+      files.push(f);run(f);
+    }render()}
+  $('.mc-clip').onclick=()=>pick.click();pick.onchange=()=>{add([...pick.files]);pick.value=''};
+  box.addEventListener('dragenter',e=>{e.preventDefault();drag++;box.classList.add('is-dragover')});
+  box.addEventListener('dragover',e=>e.preventDefault());
+  box.addEventListener('dragleave',()=>{if(--drag<=0){drag=0;box.classList.remove('is-dragover')}});
+  box.addEventListener('drop',e=>{e.preventDefault();drag=0;box.classList.remove('is-dragover');add([...e.dataTransfer.files])});
+  ta.addEventListener('input',()=>{render()});
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&matchMedia('(pointer:fine)').matches){e.preventDefault();go()}});
+  function go(){if(!canSend())return;sending=true;render();setTimeout(()=>{sending=false;ta.value='';files=[];render();ta.focus()},1400)}
+  send.onclick=go;
+  root.querySelectorAll('.mc-seg input').forEach(r=>r.onchange=()=>root.classList.toggle('note-interne',r.value==='note'));
+  if(o.text)ta.value=o.text;
+  (o.files||[]).forEach(f=>files.push(f));
+  if(o.drag)box.classList.add('is-dragover');
+  if(o.refuse)refuse(o.refuse);
+  render();addEventListener('load',grow);
+  return root;
+}
+
+const DIRS=[['a','A · Compact, flèche ronde'],['b','B · Barre d\'outils basse'],['c','C · Cellules bordées']];
+function row(id,o){const t=document.getElementById(id);DIRS.forEach(([d,l])=>{const w=document.createElement('div');w.innerHTML=`<div class="tag">${l}</div>`;t.append(w);composer(w,d,typeof o==='function'?o():o)})}
+const IMG=()=>SVG('#3b82c4','#c0d8ef');
+row('t-live',{head:true});
+row('t-empty',{});
+row('t-multi',{text:"Bonjour,\nLe plombier passera jeudi entre 9 h et 11 h.\nMerci de prévoir l'accès à la cave et de prévenir le gardien.\nCordialement."});
+row('t-files',()=>({text:'Voici les photos de la fuite.',files:[{name:'facade-fuite-escalier-B.jpg',size:2400000,p:62,url:IMG()},{name:'devis-plomberie.pdf',size:480000,p:40,error:true}]}));
+row('t-drop',{drag:true,text:'Je joins le devis.'});
+row('t-send',{sending:true,text:"Merci, c'est noté pour jeudi."});
+row('t-note',{head:true,note:true,text:'À vérifier avec le syndic avant de répondre.',files:[{name:'rapport-visite.pdf',size:890000}]});
+row('t-refuse',{refuse:'« virus.exe » n\'est pas accepté. Formats admis : images et PDF.',text:''});
+const th=document.getElementById('theme');th.onclick=()=>{const d=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=d?'default':'dark';th.textContent=d?'Thème sombre':'Thème clair'};
+</script>
+</body>
+</html>
