@@ -1,6 +1,6 @@
 # Spec : Messagerie générique (zone de saisie, puis fil de messages)
 
-- **Statut** : Brouillon (2026-11-21), cadrage
+- **Statut** : En revue (2026-11-21)
 - **Auteur** : session principale
 - **Date** : 2026-11-21
 - **ADR liés** : 0009 (cible navigateurs, CDK par défaut)
@@ -23,7 +23,7 @@
   4. Zone de dépôt : le rectangle seul ; il s'éclaire au survol d'un fichier (« Déposez vos fichiers ici ») ; refus signalé sous le rectangle avec sa raison, petite secousse sauf réduction des animations. Le fil de la PR 2 pourra étendre le dépôt à toute la conversation, en option.
   5. Zones libres : un en-tête au-dessus du rectangle (copro-ticket y garde le choix « Note interne / Visible par le demandeur ») et une zone d'actions à côté du trombone.
   6. Apparence personnalisable par l'application : tokens CSS du composant qu'une classe de l'application redéfinit, avec transition ; le kit ne fournit aucune variante métier. Retenu après relecture du `cadreur` (consommateur : la note interne de copro-ticket) : style, couleur et épaisseur de bordure, fond ; d'autres tokens viendront avec un besoin.
-  7. Décidé par la session (technique, 2026-11-21) : le composant ne valide pas ; il reçoit de l'application `label` (masqué visuellement si demandé), `hint`, `error`, `sending`, et émet l'envoi ; il réutilise les types et la logique de filtrage de `lc-file-upload` (`accept`, taille, nombre, raisons de refus) sans composer ce composant. Le fil (PR 2) est cadré après la PR 1.
+  7. Décidé par la session (technique, 2026-11-21, révisé après relectures) : le composant ne valide pas ; libellé, aide et erreurs viennent de `lc-form-field` ; il réutilise les types et le filtrage de `lc-file-upload` (`accept`, nombre, raisons de refus) par un utilitaire partagé, sans composer ce composant. Le fil (PR 2) est cadré après la PR 1.
   8. Direction **B** (barre d'outils basse, maquette `docs/design/explorations/2026-11-messagerie/`), avec une modification : « Je prefere la B par contre ca serait le l'icone actuelle pour envoyer en bouton sans contour un oeu a la maniere de whatapp » : l'envoi est l'icône `send` (celle de copro-ticket aujourd'hui), bouton sans contour ni fond, en couleur principale ; icône remplaçable par l'application (copro-ticket met `lock` pour une note interne).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
@@ -38,125 +38,172 @@ copro-ticket assemble sa réponse à une demande avec `lc-form-field` + `textare
 - O1 : un composant générique `lc-message-composer` : un seul rectangle (texte pleine largeur, barre d'outils basse avec trombone, actions libres et envoi), décisions 1 à 8.
 - O2 : pièces jointes affichées en vignettes dans le rectangle, ajoutées par trombone ou dépôt animé ; l'application fait l'envoi réel.
 - O3 : apparence redéfinissable par une classe de l'application (tokens), sans variante métier dans le kit.
-- O4 : copro-ticket remplace son assemblage par le composant (demandeur et gestionnaire), dans la même passe.
-- O5 (PR 2, spec à compléter après la PR 1) : `lc-message-thread`.
+- O4 : copro-ticket remplace son assemblage de réponse (demandeur et gestionnaire) par le composant, dans une PR de copro-ticket qui suit celle du kit.
+- O5 (PR 2, spec à compléter après la PR 1) : `lc-message-thread`, qui reçoit le composer par projection (aucun import entre points d'entrée).
 
 ## 3. Hors périmètre (non-objectifs)
-- Envoi réseau, compression, conversion d'images, aperçu d'un PDF : l'application.
-- Validation du texte (longueur minimale, droits) : l'application, qui fournit `error`.
+- Envoi réseau, compression, conversion d'images, aperçu d'un PDF, contrôle de la taille des fichiers et du type réel : l'application et le serveur.
+- Validation du texte (longueur minimale, droits) : l'application, par `lc-form-field` (erreurs du champ).
 - Émojis, mentions, mise en forme riche, dictée, enregistrement audio.
-- Contrôle de la taille des fichiers : `lc-file-upload` ne le fait pas non plus ; l'application refuse et fournit le message (`error`).
 - Zone de dépôt étendue à toute la conversation (PR 2, en option).
+- La nouvelle demande de copro-ticket (`new-request-form`) garde `photos-field` tel quel.
 - `lc-message-thread` : cadré après la PR 1.
 
 ## 4. Utilisateurs et cas d'usage
-**Utilisateur principal** : hypothèse présentée à l'utilisateur, non corrigée (2026-11-21) : un copropriétaire débutant qui écrit une phrase sur téléphone ; en second, le gestionnaire sur ordinateur qui répond souvent et joint des documents.
+**Utilisateur principal** : à confirmer par l'utilisateur (hypothèse : un copropriétaire débutant qui écrit une phrase sur téléphone ; en second, le gestionnaire sur ordinateur qui répond souvent et joint des documents).
 
 | Acteur | Cas d'usage | Résultat attendu |
 |---|---|---|
-| Copropriétaire (téléphone) | Écrit, joint une photo par le trombone, touche la flèche | Le message part ; la vignette montre l'avancement |
+| Copropriétaire (téléphone) | Écrit, joint une photo par le trombone, touche l'icône d'envoi | Le message part ; la vignette montre l'avancement |
 | Gestionnaire (ordinateur) | Glisse un PDF sur le rectangle, écrit, Entrée | Le rectangle s'éclaire, la vignette apparaît, Entrée envoie |
-| Gestionnaire | Bascule « Note interne » au-dessus | Rectangle en pointillés et couleur (classe de l'application), icône d'envoi `lock` |
+| Gestionnaire | Bascule « Note interne » au-dessus | Rectangle en pointillés et couleur (classe de l'application), icône `lock`, nom « Ajouter la note » |
 | Tous | Dépose un type refusé | Message sous le rectangle avec la raison, secousse |
+| Tous | Appuie sur Envoyer pendant qu'une photo part | Rien n'est émis ; l'application reçoit `sendBlocked` et affiche son message |
 
 ## 5. Solution proposée
 ### 5.1 Vue d'ensemble de l'architecture
-- `lc-message-composer` dans le point d'entrée `forms` (`packages/angular/forms/src/message-composer/`), à côté de `lc-file-upload` dont il réutilise les types (`LcFileUploadItem`, `LcFileUploadRejection`) et le filtrage par `accept` (`matchesAccept`, extrait dans un utilitaire interne partagé si besoin). Aucun nouvel import entre points d'entrée.
-- Contrôle de formulaire : `FormValueControl<string>` (Signal Forms) pour le texte (`value` en `model`).
-- Hauteur du texte : agrandissement par script jusqu'à `maxRows` puis défilement (`field-sizing: content` est hors Baseline 2024).
-- Dépôt : événements `dragenter/over/leave/drop` sur le rectangle (compteur d'entrées pour éviter le clignotement) ; `<input type="file">` caché, ouvert par le trombone (bouton, clavier).
-- Animations : apparition de vignette (agrandissement 0,96 → 1 et fondu, `duration-normal`), éclairage du dépôt (`duration-fast`), secousse de refus (`transform`, `duration-normal`), transition de couleur de bordure et fond (`duration-normal`) ; toutes nulles sous `prefers-reduced-motion`.
-- Remplacer une brique : changer la mise en page = le `.css` du composant ; changer la logique de fichiers = l'utilitaire partagé avec `lc-file-upload`.
+- `lc-message-composer` dans le point d'entrée `forms` (`packages/angular/forms/src/message-composer/`). Il importe `LcButton`, `LcIcon`, `LC_LABELS` du principal et les types de `lc-file-upload` du même point d'entrée : aucun nouvel import entre points d'entrée.
+- **Contrôle de formulaire** : `FormValueControl<string>` (`value` en `model`, `disabled`, `readonly`, `invalid`, `touched`, `maxLength`) et fournisseur `LC_FORM_FIELD_CONTROL`, sur le modèle de `password-input.component.ts` : libellé, aide et erreurs viennent de `lc-form-field` ; hors champ, `ariaLabel` est obligatoire (avertissement en développement). Si `lc-form-field` ne sait pas masquer visuellement son libellé, on le lui ajoute (manque générique ; copro-ticket le fait aujourd'hui par `::ng-deep`).
+- **Fichiers partagés avec `lc-file-upload`** : extraction de `forms/src/shared/file-filter.ts` : `matchesAccept` et `filterFiles(list, { accept, room, multiple }) → { accepted, refused }` (raisons `type`, `count`), plus le test « le glisser contient des fichiers » et la sortie de zone par `contains(relatedTarget)` (pas de compteur d'entrées). `lc-file-upload` l'appelle sans changement de comportement : son spec existant, inchangé, est le filet. Le composer est toujours multiple ; `room = maxFiles − items.length`.
+- **Dépôt** : `dragenter/over/leave/drop` sur le rectangle, `preventDefault` seulement si le glisser contient des fichiers ; les dossiers, éléments non fichiers et fichiers de taille 0 sont ignorés. `<input type="file" multiple>` caché, ouvert par le trombone, remis à vide après chaque choix.
+- **Hauteur du texte** : script (`afterRenderEffect` : hauteur remise à `auto`, puis `scrollHeight`, bornée entre `minRows` et `maxRows` lignes calculées depuis la hauteur de ligne des tokens), recalculée aussi par un `ResizeObserver` sur la largeur ; jamais d'attribut `style` en chaîne (propriété CSS posée par `Renderer2`). `field-sizing: content` est hors Baseline 2024.
+- **Entrée** : `enterSends` `'auto'` lit `matchMedia('(pointer: coarse)')` à chaque `keydown` (aucune valeur figée).
+- **Tokens** : lus sur un élément interne par `var(--lc-message-composer-x, repli)` et jamais déclarés sur `:host`, pour qu'une classe de l'application posée sur l'hôte l'emporte toujours ; valeurs par défaut dans `message-composer.tokens.json`.
+- **Le fil (PR 2)** reçoit le composer par projection.
+- Remplacer une brique : mise en page = `.css` et tokens du composant ; filtrage des fichiers = `file-filter.ts` (partagé) ; ajouter une raison de refus (`size`) = `LcFileRejectionReason`, `file-filter.ts`, `LC_LABELS`.
 
 ### 5.2 Modèle de données
-Aucune donnée persistée. Pièces jointes : `LcFileUploadItem` existant (id, name, size, status, progress, errorMessage, previewUrl, retryable). Tokens composant (`packages/tokens/src/components/message-composer.tokens.json`, repli `sys`) : `--lc-message-composer-border-style` (`solid`), `-border-width` (`sys.border-width.thin`), `-border-color` (`sys.color.border`), `-background` (`sys.color.surface-raised`) ; couleurs du dépôt et du focus en `sys`.
+Aucune donnée persistée. Pièces jointes : `LcFileUploadItem` existant (`id`, `name`, `size`, `status`, `progress`, `errorMessage`, `previewUrl`, `retryable`). Tokens du composant (`packages/tokens/src/components/message-composer.tokens.json`, valeurs en `{sys.*}`) :
+
+| Token | Défaut |
+|---|---|
+| `--lc-message-composer-border-style` | `solid` |
+| `--lc-message-composer-border-width` | `sys.border-width.thin` |
+| `--lc-message-composer-border-color` | `--lc-input-border`, sinon `sys.color.border-strong` (comme les champs) |
+| `--lc-message-composer-background` | `sys.color.surface-raised` |
+| `--lc-message-composer-shake-distance` | `sys.space.1` |
+| `--lc-message-composer-shake-duration` | `sys.duration.normal` |
+
+Transitions du rectangle sur `border-color`, `border-width` et `background` (`border-style` ne s'anime pas : le passage aux pointillés est immédiat).
 
 ### 5.3 API / interfaces
 ```ts
-<lc-message-composer
-  [(value)]="text"                 // string (FormValueControl)
-  label="Votre message"            // nom accessible du champ (obligatoire)
-  [labelHidden]="true"             // libellé masqué visuellement
-  placeholder="Écrivez votre message…"
-  [hint]="…" [error]="…"           // texte sous le rectangle ; error prioritaire, annoncé
-  [sending]="false"                // flèche en attente, envoi bloqué, texte lisible
-  [disabled]="false"
-  [maxLength]="null"               // compteur affiché à l'approche
-  [minRows]="1" [maxRows]="7"
-  [enterSends]="'auto'"            // 'auto' (pointeur fin) | true | false
-  [sendIcon]="'send'"              // icône du bouton d'envoi
-  [attachments]="true"             // trombone et dépôt
-  [items]="uploads"                // LcFileUploadItem[]
-  accept="image/*,.pdf" [maxFiles]="null"
-  (send)="…"                       // { text: string } ; jamais si vide sans pièce jointe, ni si sending, ni si un item est 'uploading'
-  (filesAdded)="…" (rejected)="…" (remove)="…" (retry)="…">
-  <div lcComposerHeader>…</div>    // en-tête libre au-dessus du rectangle
-  <button lcComposerAction>…</button> // actions libres après le trombone
-</lc-message-composer>
+<lc-form-field label="Votre message">         // libellé, aide, erreurs : lc-form-field
+  <lc-message-composer
+    [(value)]="text"                           // string (FormValueControl)
+    placeholder="Écrivez votre message…"
+    [sending]="false"                          // attente sur l'envoi, texte en readonly
+    [maxLength]="undefined"
+    [minRows]="1" [maxRows]="7"
+    enterSends="auto"                          // 'auto' | true | false
+    sendIcon="send" [sendLabel]="undefined"     // nom accessible ; défaut composerSend
+    attachIcon="paperclip" [attachments]="true"
+    [items]="uploads"                          // LcFileUploadItem[]
+    accept="image/*,.pdf" [maxFiles]="10"      // 10 par défaut ; null : sans limite
+    [showSize]="true"
+    (send)="…"                                 // { text: string } ; text = value().trim()
+    (sendBlocked)="…"                          // 'empty' | 'sending' | 'uploading'
+    (filesAdded)="…" (rejected)="…" (remove)="…" (retry)="…">
+    <div lcComposerHeader>…</div>              // en-tête libre au-dessus du rectangle
+    <button lcComposerAction>…</button>        // actions libres après le trombone
+  </lc-message-composer>
+</lc-form-field>
 ```
-Libellés `LC_LABELS` (fr, en) : `composerSend` (« Envoyer »), `composerAttach` (« Joindre un fichier »), `composerDrop` (« Déposez vos fichiers ici »), `composerEnterHint` (« Entrée pour envoyer, Maj+Entrée pour aller à la ligne »), raisons de refus reprises de `lc-file-upload`.
+- Méthode publique `focus()` (via `LcFormFieldControl`).
+- `send` n'est jamais émis si le texte rogné est vide et qu'aucun item n'est présent (`sendBlocked('empty')`), ni pendant `sending` (`'sending'`), ni si un item est `uploading` (`'uploading'`) ; les items `error` ne bloquent pas. Après un `send`, le composant refuse un nouvel envoi jusqu'à ce que `sending` ait été vrai puis faux, ou que `value` ait changé. Le composant ne modifie jamais `value` : l'application le vide.
+- Refus : le composant affiche lui-même le message sous le rectangle (nom et raison) et fait la secousse ; il émet aussi `rejected` (l'application n'affiche pas le même message). Le message disparaît au prochain ajout, retrait ou à la prochaine saisie.
+- `previewUrl` n'est rendu que par `<img>` et seulement s'il commence par `blob:`, `data:image/` ou s'il est de même origine ; sinon l'icône de repli.
+- Libellés `LC_LABELS` (fr, en) : nouveaux `composerSend` (« Envoyer »), `composerAttach` (« Joindre un fichier »), `composerDrop` (« Déposez vos fichiers ici »), `composerAttachments` (« Pièces jointes »), `composerSending` (« Envoi en cours… »), `composerRejected(name, reason)` ; repris de `lc-file-upload` pour que la même surcharge d'application s'applique : `fileUploadRemove`, `fileUploadRetry`, `fileUploadUploading`, `fileUploadFailed`, `fileUploadProgress`, `fileUploadLimitReached`.
+- Icône `paperclip` ajoutée aux icônes par défaut du kit (même famille que `send`).
 
 ### 5.4 Interface utilisateur
-Direction **B** choisie (maquette `docs/design/explorations/2026-11-messagerie/index.html`, capture `capture-1280.png`), flèche remplacée par l'icône `send` en bouton sans contour (décision 8). Brief de `ui-ux-designer` : à compléter (`/impeccable shape`), avec la maquette B corrigée. Test `novice-user` sur captures (CA-C14).
+Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (décision 8). Maquette `docs/design/explorations/2026-11-messagerie/index.html` (section « B retenue »), captures `capture-b-1280.png` et `capture-b-360.png`. Brief de `ui-ux-designer` (2026-11-21) :
+- **Structure** : `lcComposerHeader` au-dessus ; dans le rectangle, de haut en bas : vignettes (`role="list"`, « Pièces jointes »), champ pleine largeur, barre basse (trombone, filet vertical puis actions s'il y en a, envoi à droite) ; sous le rectangle : message de refus. Calque de dépôt sur le rectangle (`inset: 0`, `pointer-events: none`).
+- **Dimensions** : rayon `radius-lg` ; champ ≥ 16 px de police, `space-3` de marge ; trombone et envoi 44 × 44 px (`control-height-md`), icônes `icon-size-md` ; vignette de 7 rem, aperçu 4,5 rem, nom coupé par points de suspension (nom complet en `title`) ; ✕ visible 28 px, zone de clic 44 px ; « Réessayer » avec 44 px de zone de clic.
+- **Envoi** : icône `primary`, sans fond ni bordure, jamais grisé hors `disabled` ; survol et appui en teinte `state-hover/pressed-opacity`, appui `--lc-button-press-scale` ; focus `focus-ring` 2 px ; `sending` : anneau de chargement de même taille, `aria-busy`, `aria-disabled`, zone `role="status"` « Envoi en cours… ». Contraste mesuré 6,6:1 (clair), 6,3:1 (sombre), 5,9:1 (note interne).
+- **États** : vignette en cours (« Envoi… 62 % », barre de 3 px `role="progressbar"`), en erreur (bordure `error`, icône et mot « Échec », « Réessayer ») ; survol de dépôt : calque `primary-container`, contour `primary` 2 px, « Déposez vos fichiers ici » ; refus : icône `circle-alert` et texte `error` ; désactivé : `state-disabled-opacity`, seul cas où l'envoi est grisé.
+- **Animations** : vignette : fondu, 0,96 → 1 et décalage `motion-offset` en `duration-normal` ; calque de dépôt : opacité en `duration-fast` ; rectangle (couleurs, fond, épaisseur) en `duration-normal` ; secousse : `transform`, tokens `shake-*` ; aucune animation de hauteur du champ. Réduction : secousse supprimée, vignette en fondu seul, calque immédiat, anneau fixe, transitions supprimées.
+- **forced-colors** : bordure `CanvasText`, envoi `ButtonText` avec contour `Highlight` au survol et au focus, calque `Canvas` contour `Highlight`, avancement `Highlight`.
+- **Accessibilité** : ordre de tabulation : en-tête, vignettes (✕, Réessayer), champ, trombone, actions, envoi ; refus en `role="alert"` ; noms de fichiers isolés (`<bdi>`) ; focus visible partout, anneau `focus-within` sur le rectangle.
+- **À 360 px** : pleine largeur, aucun défilement horizontal, vignettes à la ligne, `env(safe-area-inset-bottom)` respecté, tenue à 200 % de zoom.
+- Test `novice-user` sur captures : CA-C14.
 
 ## 6. Cas limites et gestion des erreurs
-- Envoi avec texte vide et aucune pièce jointe : rien n'est émis, la flèche reste active (pas de bouton grisé) et le focus reste dans le champ.
-- Double appui pendant `sending` : un seul `send`.
-- Pièce jointe encore `uploading` : `send` bloqué, l'aide indique « Envoi des pièces jointes en cours ».
-- Dépôt d'un dossier ou d'un élément non fichier : ignoré.
-- Plusieurs fichiers dont certains refusés : les acceptés sont émis par `filesAdded`, les autres par `rejected`, un message par raison.
-- `maxFiles` atteint : le trombone reste actif, l'ajout est refusé avec la raison `count`.
-- Composition IME (japonais, etc.) : Entrée ne valide pas pendant la composition (`isComposing`).
-- `disabled` : ni saisie, ni dépôt, ni envoi.
+- Texte vide et aucune pièce jointe : rien n'est émis (`sendBlocked('empty')`), le focus reste dans le champ.
+- Double appui ou double Entrée : un seul `send` (verrou décrit en 5.3).
+- Pièce jointe `uploading` : `sendBlocked('uploading')` ; elle passe à `done` ou `error` : l'envoi se débloque sans autre action.
+- Dossier, élément non fichier, fichier de 0 octet : ignorés, sans erreur ni éclairage coincé.
+- Lot en partie refusé : acceptés par `filesAdded`, refusés par `rejected`, un message par raison.
+- `maxFiles` atteint : le trombone reste actif ; l'ajout est refusé avec la raison `count`.
+- Composition IME : Entrée ne valide pas pendant la composition (`isComposing`).
+- `disabled` : ni saisie, ni dépôt (le navigateur n'ouvre pas le fichier), ni trombone, ni envoi, ni retrait, ni réessai.
+- Retrait d'une vignette : le focus va à la vignette suivante, sinon au champ.
+- Aperçu qui ne charge pas : icône de repli ; le composant ne crée jamais d'URL d'objet.
 
 ## 7. Sécurité, performance, observabilité
-- **Sécurité et données** : le composant ne lit pas le contenu des fichiers et n'envoie rien ; il transmet des `File` à l'application. Les noms de fichiers sont affichés en texte (jamais `innerHTML`). Les aperçus viennent de `previewUrl` fourni par l'application (le kit ne crée pas d'URL d'objet). `accept` est une aide, pas un contrôle de sécurité : l'application et le serveur vérifient le type réel. À relire par `security-reviewer`.
-- Performance : agrandissement mesuré une fois par saisie ; aucune lecture de fichier.
-- Logs : avertissements console en développement seulement (`label` absent).
+- **Sécurité et données** (relu par `security-reviewer`) : le composant ne lit pas le contenu des fichiers et n'envoie rien ; il transmet des `File`. `accept` est une aide, pas un contrôle (type déclaré falsifiable) : README. Noms de fichiers affichés en texte, isolés (`<bdi>`), caractères de contrôle et marqueurs bidi retirés de l'affichage et du nom accessible, nom accessible et annonce plafonnés à 80 caractères ; `File.name` émis inchangé. `previewUrl` : `<img>` seulement, schémas admis `blob:`, `data:image/`, même origine (pas de requête vers un tiers). Pas de `innerHTML`, pas de style en ligne généré, fonctionne sous CSP stricte (`img-src 'self' blob: data:`, sans `unsafe-inline`). Aucun nom de fichier ni texte saisi dans la console en production.
+- Performance : `maxFiles` 10 par défaut (borne des vignettes) ; hauteur mesurée une fois par saisie et par changement de largeur.
+- Logs : avertissements en développement seulement (`ariaLabel` absent hors `lc-form-field`).
 
 ## 8. Alternatives envisagées
 | Option | Avantages | Inconvénients | Retenue ? |
 |---|---|---|---|
-| Composer `lc-file-upload` dans le composant | Aucune logique en double | Liste verticale et bouton « Choisir » incompatibles avec la vignette dans le rectangle | Non, types et filtrage partagés |
-| Un seul « chat » configurable (fil + saisie) | Un seul composant | Beaucoup d'options, usage séparé impossible | Non, deux composants (décision 1) |
-| Variantes intégrées (`tone="internal"`) | Clé en main | Vocabulaire métier dans le kit | Non, tokens (décision 6) |
+| Composer `lc-file-upload` dans le composant | Aucune logique en double | Liste verticale et bouton « Choisir » incompatibles avec la vignette dans le rectangle | Non : `file-filter.ts` partagé |
+| Libellé, aide, erreur propres au composant | Autonome | Double `lc-form-field` | Non : `LC_FORM_FIELD_CONTROL` |
+| Un seul « chat » configurable (fil + saisie) | Un seul composant | Beaucoup d'options, usage séparé impossible | Non (décision 1) |
+| Variantes intégrées (`tone="internal"`) | Clé en main | Vocabulaire métier dans le kit | Non : tokens (décision 6) |
+| Texte d'aide fixe « Envoi des pièces jointes en cours » | Simple | copro-ticket publie des messages plus fins | Non : `sendBlocked` |
 
 ## 9. Plan de test
-- Unitaires (`senior-developer`) : émission de `send` (Entrée, Maj+Entrée, `enterSends`, IME, vide, `sending`, upload en cours), filtrage `accept`/`maxFiles`, agrandissement borné, libellés, tokens.
-- Acceptation (`qa-engineer`, Chromium) : dépôt réel (`DataTransfer`), éclairage, vignette animée, secousse, réduction des animations, classe d'application qui change bordure et fond, axe, clavier.
-- Bout en bout : copro-ticket, réponse du demandeur et note interne du gestionnaire.
-- Architecture : aucun import entre points d'entrée ajouté (`tools/qa/entrypoint-imports.test.mjs`) ; aucune valeur en dur (`motion.static.test.mjs`).
+- Unitaires (`senior-developer`, Vitest) : `file-filter.ts` ; `send` et `sendBlocked` (Entrée, Maj+Entrée, `enterSends` avec `matchMedia` simulé, IME, vide, verrou, `sending`, `uploading`) ; filtrage ; libellés ; `previewUrl` ; noms de fichiers ; Signal Forms ; spec de `lc-file-upload` relancé inchangé.
+- Acceptation (`qa-engineer`) : `tools/qa/message-composer-browser.mjs` et une story `QA/Forms/Message composer`, sur le modèle de `ios-motion-browser.mjs` : dépôt réel (`DataTransfer`), éclairage, vignette animée, secousse, réduction, classe d'application, hauteur, Tab, axe (clair et sombre), CSP.
+- Bout en bout : copro-ticket (`photos.spec.ts`, `parcours-demande.spec.ts`, `file.spec.ts`, plus un parcours « note interne ») dans la PR de copro-ticket ; les sélecteurs changent, la QA les réécrit sans les affaiblir.
+- Architecture : `tools/qa/entrypoint-imports.test.mjs`, `motion.static.test.mjs`, contrôle statique « aucun `--lc-message-composer-*` déclaré sur `:host` ».
 
 ## 10. Critères d'acceptation
-- [ ] CA-C1 : Un seul rectangle : texte pleine largeur en haut, barre basse avec trombone, actions projetées, puis bouton d'envoi à droite (icône `sendIcon`, sans contour ni fond, couleur principale, nom accessible « Envoyer », cible ≥ 44 px).
-- [ ] CA-C2 : Sur pointeur fin, Entrée émet `send` une fois et vide rien d'elle-même ; Maj+Entrée insère un saut de ligne ; sur pointeur grossier, Entrée insère un saut de ligne ; `enterSends` true / false force le comportement ; aucune émission pendant une composition IME.
-- [ ] CA-C3 : `send` n'est jamais émis si le texte (espaces retirés) est vide et qu'il n'y a aucune pièce jointe, ni pendant `sending`, ni si un item est `uploading` ; un double clic n'émet qu'une fois.
-- [ ] CA-C4 : Le champ s'agrandit de `minRows` à `maxRows` lignes puis défile ; la barre basse reste visible.
-- [ ] CA-C5 : Le trombone (bouton, clavier) ouvre le sélecteur de fichiers ; les fichiers acceptés sont émis par `filesAdded`, les refusés par `rejected` avec la raison (`type`, `count`).
-- [ ] CA-C6 : Survol d'un fichier : le rectangle s'éclaire et affiche « Déposez vos fichiers ici » en `duration-fast` ; sortie ou lâcher : l'éclairage s'éteint ; passer sur un enfant ne fait pas clignoter.
-- [ ] CA-C7 : Chaque item est une vignette au-dessus du texte : aperçu (`previewUrl`) ou icône et nom, avancement (`progress`), erreur avec « Réessayer » (`retry`), ✕ (`remove`) avec nom accessible « Retirer <nom> » ; un nouvel item apparaît en agrandissement 0,96 → 1 et fondu en `duration-normal`.
-- [ ] CA-C8 : Refus : message sous le rectangle avec la raison et le nom, annoncé (`role="alert"`), et secousse du rectangle ; aucune secousse ni agrandissement sous réduction des animations.
-- [ ] CA-C9 : `sending` : le bouton d'envoi montre une attente et est désactivé pour l'envoi, le texte reste lisible et sélectionnable.
-- [ ] CA-C10 : Une classe de l'application redéfinissant `--lc-message-composer-border-style`, `-border-width`, `-border-color` et `-background` change le rendu (bordure pointillée et couleur) sans autre CSS, avec une transition de `duration-normal`.
-- [ ] CA-C11 : `lcComposerHeader` s'affiche au-dessus du rectangle, `lcComposerAction` après le trombone, dans l'ordre de tabulation : en-tête, champ, trombone, actions, envoi.
-- [ ] CA-C12 : axe sans erreur (vide, avec items, erreur, note interne) à 360 et 1 280 px ; aucun texte en dur (`LC_LABELS` fr et en) ; aucune valeur en dur.
-- [ ] CA-C13 : copro-ticket utilise `lc-message-composer` pour la réponse du demandeur et celle du gestionnaire ; ses tests unitaires et ses parcours passent.
-- [ ] CA-C14 (manuel) : test `novice-user` sur captures (vide, photo en cours, refus, note interne) à 360 px.
+- [ ] CA-C1 : Ordre DOM : vignettes, champ pleine largeur, puis barre basse avec le trombone (si `attachments`), les `lcComposerAction` et l'envoi tout à droite. L'envoi affiche `sendIcon`, n'a ni bordure ni fond, est en `--lc-sys-color-primary`, a le nom `sendLabel` (défaut « Envoyer ») et une cible ≥ 44 × 44 px mesurée à 360 px.
+- [ ] CA-C2 : « Entrée envoie » est actif si `enterSends` vaut `true`, ou `'auto'` et `matchMedia('(pointer: coarse)')` est faux au moment de l'appui. Actif : Entrée sans Maj émet `send` une fois ; Maj+Entrée insère un saut de ligne. Inactif : Entrée insère un saut de ligne. Aucune émission si `isComposing`. Le composant ne modifie jamais `value`.
+- [ ] CA-C3 : `send` (`{ text: value().trim() }`) n'est pas émis si le texte rogné est vide sans item (`sendBlocked('empty')`), pendant `sending` (`'sending'`), ni si un item est `uploading` (`'uploading'`) ; un item `error` ne bloque pas ; après un `send`, deux clics ou deux Entrées du même cycle n'en émettent qu'un ; un envoi refusé laisse le focus dans le champ.
+- [ ] CA-C4 : Le champ a `minRows` lignes vide, grandit jusqu'à `maxRows` puis défile ; la barre basse reste entièrement visible ; un changement de largeur recalcule la hauteur. Vérifié en Chromium.
+- [ ] CA-C5 : Le trombone (clic, Entrée, Espace) ouvre le sélecteur multiple ; acceptés par `filesAdded`, refusés par `rejected` (`type`, `count`) ; le même fichier rechoisi est repris ; `lc-file-upload` garde son comportement (son spec inchangé passe).
+- [ ] CA-C6 : Un glisser contenant au moins un fichier sur le rectangle (y compris sur un enfant) affiche le calque « Déposez vos fichiers ici » en `duration-fast` sans clignoter ; il s'éteint à la sortie et au lâcher. Un glisser sans fichier n'éclaire rien et n'est pas annulé. `disabled` ou `attachments` faux : rien n'est éclairé, le fichier n'est pas ouvert par le navigateur, rien n'est émis.
+- [ ] CA-C7 : Chaque item est une vignette : aperçu ou icône et nom, avancement (`progressbar`), erreur (« Échec », « Réessayer » → `retry`), ✕ (`remove`, nom « Retirer <nom> ») ; un nouvel item apparaît en fondu, 0,96 → 1, en `duration-normal` ; après un retrait, le focus va à la vignette suivante ou au champ.
+- [ ] CA-C8 : Refus : un message par raison sous le rectangle (nom et raison) en `role="alert"`, secousse en `transform` aux tokens `shake-*` ; le message disparaît au prochain ajout, retrait ou à la saisie ; sous réduction des animations, durée nulle (`getAnimations`) et message affiché.
+- [ ] CA-C9 : `sending` : anneau d'attente, envoi `aria-disabled="true"` sans perte du focus, champ en `readonly` (pas `disabled`) : texte sélectionnable, contraste inchangé, « Envoi en cours… » en `role="status"`.
+- [ ] CA-C10 : Une classe de l'application sur l'hôte redéfinissant les quatre tokens de bordure et de fond change le rendu sans autre CSS ; couleur, épaisseur et fond passent en `duration-normal` ; aucun `--lc-message-composer-*` n'est déclaré sur `:host`.
+- [ ] CA-C11 : `lcComposerHeader` est au-dessus du rectangle, `lcComposerAction` après le trombone ; Tab suit : en-tête, vignettes, champ, trombone, actions, envoi.
+- [ ] CA-C12 : axe sans violation (WCAG 2 A/AA) sur 4 états (vide ; items dont un en erreur ; refus affiché ; en-tête et icône `lock`) à 360 et 1 280 px, thèmes clair et sombre ; test statique : aucun libellé ni valeur en dur, clés fr et en présentes.
+- [ ] CA-C13 : Dans `lc-form-field`, libellé, aide et erreurs du champ s'appliquent (`aria-describedby`, `aria-invalid`, `touched` à la sortie) ; hors champ sans `ariaLabel`, avertissement en développement seulement ; `[(value)]` et Signal Forms mettent à jour le champ ; `focus()` place le focus dans le champ.
+- [ ] CA-C14 (manuel) : test `novice-user` sur captures à 360 px (vide, photo en cours, refus, note interne).
+- [ ] CA-C15 : Dossier, élément non fichier ou fichier de 0 octet : ignorés, sans exception ni éclairage coincé ; `maxFiles` atteint : refus `count`.
+- [ ] CA-C16 : `maxLength` : compteur affiché à partir de 90 %, saisie limitée, annonce sans répétition à chaque touche.
+- [ ] CA-S1 : Un nom contenant `<img src=x onerror=alert(1)>` ou `<script>` est affiché littéralement ; aucun nœud HTML créé dans la vignette, le nom accessible, le message de refus ni `title`.
+- [ ] CA-S2 : Un nom de plus de 255 caractères est coupé sur une ligne sans casser la mise en page à 360 px ; nom accessible et annonce plafonnés à 80 caractères ; `File.name` émis inchangé.
+- [ ] CA-S3 : Caractères de contrôle et marqueurs bidi retirés de l'affichage et du nom accessible, nom isolé : `facture‮fdp.exe` ne s'affiche pas comme `facture` suivi de `exe.pdf`.
+- [ ] CA-S4 : `previewUrl` `javascript:…`, `data:text/html…`, ou `http(s)` d'une autre origine : non chargé, icône de repli, aucun script exécuté ; `blob:`, `data:image/` et même origine affichés par `<img>`.
+- [ ] CA-S5 : Sous la CSP `default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self'`, aucune violation en Chromium pour dépôt, vignette, secousse et agrandissement.
+- [ ] CA-S6 : Un fichier `.exe` déclaré `application/pdf` avec `accept=".pdf"` est accepté (test de documentation) ; le README dit qu'`accept` n'est pas un contrôle de sécurité ; aucun nom de fichier ni texte saisi dans la console en production.
 
 ## 11. Découpage en tâches
-- [ ] M1 : utilitaire de fichiers partagé avec `lc-file-upload` (sans changement de comportement) et tokens (S ; CA-C5, CA-C10).
-- [ ] M2 : `lc-message-composer` : rectangle, texte, Entrée, envoi, projections, libellés (M ; CA-C1 à C4, C9, C11).
-- [ ] M3 : pièces jointes, dépôt, refus et animations (M ; CA-C5 à C8).
+- [ ] M0 (QA) : tests d'acceptation (`message-composer-browser.mjs`, story QA, tests statiques) avant le code (tous les CA sauf C14).
+- [ ] M1 : `file-filter.ts` partagé, `lc-file-upload` l'utilise sans changement ; icône `paperclip` ; tokens ; libellé masqué de `lc-form-field` si absent (S ; CA-C5, C10, C15).
+- [ ] M2 : `lc-message-composer` : rectangle, champ, `FormValueControl`, Entrée, envoi, verrou, `sendBlocked`, projections, libellés (M ; CA-C1 à C4, C9, C11, C13, C16).
+- [ ] M3 : pièces jointes, dépôt, refus, animations, sécurité des noms et aperçus (M ; CA-C5 à C8, C15, CA-S1 à S6).
 - [ ] M4 : stories (`Playground`, `Animation`), catalogue, README (S ; CA-C12).
-- [ ] M5 : copro-ticket remplace son assemblage (M ; CA-C13).
-- [ ] M6 (QA) : acceptation, axe, novice (CA-C12, CA-C14).
+- [ ] M5 (QA) : verdict GO / NO-GO, axe, test novice (CA-C12, C14).
+- [ ] M6 (PR séparée, copro-ticket) : la réponse du demandeur et celle du gestionnaire utilisent le composant ; `reply-form` s'amincit (alertes et compteur restent) ; `photos-status` remplacé par `sendBlocked` ; parcours e2e réécrits par la QA, dont la note interne.
 
 ## 12. Risques et questions ouvertes
-- **Choix par défaut à confirmer** : utilisateur principal (§4) ; `maxRows` 7 ; bouton d'envoi jamais grisé (`frontend-guidelines`).
-- **Dettes** : agrandissement par script tant que `field-sizing` n'est pas dans la cible.
-- **Questions ouvertes** : aucune pour la PR 1.
+- **Choix par défaut à confirmer** : utilisateur principal (§4).
+- **Questions pour l'utilisateur** : dépôt d'un fichier à côté du rectangle (le navigateur l'ouvre et la saisie est perdue, ou le composant l'empêche sur toute la page tant qu'il est affiché) ; collage d'une image (Ctrl+V) comme pièce jointe.
+- **Dettes** : agrandissement par script tant que `field-sizing` n'est pas dans la cible ; iPad avec clavier : `'auto'` le traite en tactile (Entrée va à la ligne).
+- **Limites** : glisser-déposer absent sur iOS (le trombone sert) ; geste tactile non essayé sur vrai téléphone.
 
 ## 13. Relectures et écarts
 | Date | Relecteur | Phase | Statut | Retenu / écarté |
 |---|---|---|---|---|
 | 2026-11-21 | `cadreur` | cadrage | ÉCARTS | Options choisies recopiées mot pour mot ; tokens réduits au besoin du consommateur ; validation laissée à l'application (décision 7) ; accessibilité à cadrer en §5.4 ; fil cadré après la PR 1. |
+| 2026-11-21 | `security-reviewer` | conception | RISQUES (2 hautes) | Retenu : dossiers et fichiers vides, `previewUrl` limité (`blob:`, `data:image/`, même origine), noms isolés et plafonnés, CSP, `accept` documenté, borne `maxFiles` 10 ; CA-S1 à S6. Questions dépôt hors zone et collage posées à l'utilisateur. |
+| 2026-11-21 | `qa-engineer` | plan de test | À PRÉCISER | Retenu : CA réécrits (C1 à C4, C6, C8, C9, C12), cas limites (C15, C16 et 6), outil `message-composer-browser.mjs`, M0 avant le code, tests copro à risque. |
+| 2026-11-21 | `architect` | conception | RÉSERVES | Retenu : `lc-form-field` (`LC_FORM_FIELD_CONTROL`), `file-filter.ts` partagé, `contains(relatedTarget)`, multiple, tokens lus sans déclaration sur `:host`, défaut `border-strong`, `border-style` non animé, tokens de secousse, `ResizeObserver`, `sendLabel`, `focus()`, `attachIcon`, `showSize`, `sendBlocked`, clés `fileUpload*` réutilisées, PR copro-ticket séparée, fil par projection. |
+| 2026-11-21 | `ui-ux-designer` | brief | FAIT | Brief en §5.4, maquette B retenue ; `paperclip` ajoutée au kit ; vignette en `duration-normal`, calque de dépôt en `duration-fast` ; jeton `send-color` non retenu (aucun besoin). |
