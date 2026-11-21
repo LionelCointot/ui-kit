@@ -192,6 +192,30 @@ lc-form-field [lcSuffix] {
   background: var(--lc-sys-color-backdrop);
 }
 
+/* Fonds du dialogue et du tiroir : durée et courbe du kit à la place des 400 ms du CDK ; le fond s'éteint quand le CDK retire `cdk-overlay-backdrop-showing`. */
+.cdk-overlay-backdrop:is(.lc-dialog-backdrop, .lc-drawer-backdrop) {
+  transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+/* Dialogue : entrée en fondu et léger zoom sur le contenu du panneau (le CDK pose `panelClass` après un premier calcul de style : pas de `@starting-style`),
+   sortie en fondu (`lc-overlay--closing`, posée par LcDialogRef.close). */
+.lc-dialog-panel > * {
+  animation: lc-dialog-enter var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+@keyframes lc-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(var(--lc-dialog-enter-scale));
+  }
+}
+
+.lc-dialog-panel.lc-overlay--closing {
+  opacity: 0;
+  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
+  pointer-events: none;
+}
+
 .lc-dialog-panel {
   width: calc(100vw - 2 * var(--lc-sys-space-4));
   max-height: calc(100dvh - 2 * var(--lc-sys-space-4));
@@ -230,11 +254,25 @@ lc-form-field [lcSuffix] {
   block-size: 100dvh;
   max-block-size: 100dvh;
   max-inline-size: 100vw;
-  animation: lc-drawer-in-end var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-.lc-drawer-panel--start {
+/* Entrée en glissant de toute sa largeur sur le contenu du panneau ; sortie en glissant (`lc-overlay--closing`, posée par LcDialogRef.close). */
+.lc-drawer-panel > * {
+  animation: lc-drawer-in-end var(--lc-slide-enter-duration) var(--lc-overlay-easing);
+}
+
+.lc-drawer-panel--start > * {
   animation-name: lc-drawer-in-start;
+}
+
+.lc-drawer-panel.lc-overlay--closing {
+  transform: translateX(100%);
+  transition: transform var(--lc-slide-exit-duration) var(--lc-overlay-easing);
+  pointer-events: none;
+}
+
+.lc-drawer-panel--start.lc-overlay--closing {
+  transform: translateX(-100%);
 }
 
 .lc-drawer-panel--small {
@@ -261,20 +299,24 @@ lc-form-field [lcSuffix] {
 
 @keyframes lc-drawer-in-end {
   from {
-    opacity: 0;
-    transform: translateX(var(--lc-sys-space-8));
+    transform: translateX(100%);
   }
 }
 
 @keyframes lc-drawer-in-start {
   from {
-    opacity: 0;
-    transform: translateX(calc(-1 * var(--lc-sys-space-8)));
+    transform: translateX(-100%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-drawer-panel {
+  .cdk-overlay-backdrop:is(.lc-dialog-backdrop, .lc-drawer-backdrop),
+  .lc-dialog-panel.lc-overlay--closing,
+  .lc-drawer-panel.lc-overlay--closing {
+    transition: none;
+  }
+
+  :is(.lc-dialog-panel, .lc-drawer-panel) > * {
     animation: none;
   }
 }
@@ -475,6 +517,14 @@ lc-form-field [lcSuffix] {
 /* Hauteur fixe : ligne des jours + 6 semaines, pour ne pas sauter d'un mois à l'autre. */
 .lc-calendar__month {
   block-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+  animation: lc-calendar-fade var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+/* La grille est recréée à chaque mois, année ou niveau affiché (`track` par clé) : le fondu se rejoue. */
+@keyframes lc-calendar-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 .lc-calendar__month,

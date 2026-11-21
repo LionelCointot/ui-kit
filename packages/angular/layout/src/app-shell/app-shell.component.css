@@ -60,7 +60,7 @@
   overflow-y: auto;
   border-inline-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
   background: var(--lc-shell-nav-background, var(--lc-sys-color-surface));
-  transition: inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+  transition: inline-size var(--lc-shell-nav-duration) var(--lc-sys-easing-standard);
 }
 
 .lc-shell__nav--collapsed {
@@ -77,13 +77,13 @@
   box-shadow: var(--lc-sys-shadow-4);
   visibility: hidden;
   transform: translateX(-100%);
-  transition: transform var(--lc-sys-duration-normal) var(--lc-sys-easing-standard), visibility 0s linear var(--lc-sys-duration-normal);
+  transition: transform var(--lc-slide-exit-duration) var(--lc-sys-easing-standard), visibility 0s linear var(--lc-slide-exit-duration);
 }
 
 .lc-shell__nav--drawer.lc-shell__nav--open {
   visibility: visible;
   transform: none;
-  transition-delay: 0s;
+  transition: transform var(--lc-slide-enter-duration) var(--lc-sys-easing-standard), visibility 0s;
 }
 
 .lc-shell__backdrop {
@@ -104,7 +104,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .lc-shell__nav,
-  .lc-shell__nav--drawer {
+  .lc-shell__nav--drawer,
+  .lc-shell__nav--drawer.lc-shell__nav--open {
     transition: none;
   }
 }

@@ -32,7 +32,7 @@
     @if (chipViews().length) {
       <ul class="lc-data-table__chip-list">
         @for (chip of chipViews(); track chip.key) {
-          <li class="lc-data-table__chip">
+          <li class="lc-data-table__chip" (animate.leave)="fadeOutChip($event)">
             <button type="button" class="lc-data-table__chip-edit" [id]="uid + '-chip-' + chip.key"
               [attr.aria-label]="text.editFilter(chip.column.label, chip.summary)" (click)="editChip(chip.column)">
               <span class="lc-data-table__chip-key">{{ chip.label }} :</span><span class="lc-data-table__chip-value">{{ chip.shortSummary }}</span>
@@ -185,13 +185,18 @@
               <lc-icon name="chevron-down" />
             </button>
           </h3>
-          <div class="lc-data-table__section-body" [id]="uid + '-section-' + section.column.key" [hidden]="!section.open">
-            @if (section.open) {
-              <lc-column-filter lcNativeDatePicker [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
-                [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
-                [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
-                (valuesLoaded)="rememberLabels(section.column.key, $event)" />
-            }
+          <div class="lc-data-table__section-body" [class.lc-data-table__section-body--open]="section.open"
+            [id]="uid + '-section-' + section.column.key" [attr.inert]="section.open ? null : ''">
+            <div class="lc-data-table__section-clip">
+              <div class="lc-data-table__section-content">
+                @if (section.rendered) {
+                  <lc-column-filter lcNativeDatePicker [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
+                    [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
+                    [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
+                    (valuesLoaded)="rememberLabels(section.column.key, $event)" />
+                }
+              </div>
+            </div>
           </div>
         </section>
       }

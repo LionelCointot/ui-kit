@@ -202,6 +202,8 @@ export class LcDataTableComponent<T> {
   /** État ouvert de la feuille : faux dès l'intention de fermer, la sortie joue encore. */
   protected readonly panelVisible = signal(false);
   protected readonly panelSection = signal<string | null>(null);
+  /** Sections dépliées au moins une fois depuis l'ouverture : leur filtre reste rendu pendant le repli animé. */
+  private readonly panelOpened = signal<ReadonlySet<string>>(new Set());
   protected readonly panelDraft = signal<Readonly<Record<string, LcFilterValue>>>({});
   protected readonly panelQuery = computed<LcTableQuery>(() => {
     const filters: Record<string, LcFilterValue> = {};
@@ -220,7 +222,8 @@ export class LcDataTableComponent<T> {
   protected readonly panelSections = computed(() => this.filterColumns().map((column) => {
     const value = this.panelDraft()[column.key];
     const active = isFilterActive(value);
-    return { column, open: this.panelSection() === column.key, active, summary: active ? this.summary(column, value) : this.text.all };
+    const open = this.panelSection() === column.key;
+    return { column, open, rendered: open || this.panelOpened().has(column.key), active, summary: active ? this.summary(column, value) : this.text.all };
   }));
 
   /** Début de l'annonce faite quand la page demandée arrive (« Filtre État appliqué. ») ; le nombre de lignes la complète. */
@@ -281,6 +284,30 @@ export class LcDataTableComponent<T> {
     });
   }
 
+  /** Fondu de sortie d'une pastille (`animate.leave`) : elle sort du flux à sa place, la rangée se resserre aussitôt et sa hauteur finale est connue. */
+  protected fadeOutChip({ target, animationComplete }: AnimationCallbackEvent): void {
+    const timing = this.timing('--lc-sys-duration-fast', '--lc-overlay-easing');
+    if (!timing) return animationComplete();
+    const chip = target as HTMLElement;
+    const { offsetLeft, offsetTop, offsetWidth } = chip;
+    chip.setAttribute('data-leaving', '');
+    Object.assign(chip.style, { left: `${offsetLeft}px`, top: `${offsetTop}px`, width: `${offsetWidth}px` });
+    chip.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(animationComplete);
+  }
+
+  /** Applique un changement qui déplace le bloc de la liste (rangée de pastilles qui se resserre) : le bloc entier glisse d'un trait de sa place d'avant à sa place d'après. */
+  private slideList(change: () => void): void {
+    const scroll = this.host.querySelector<HTMLElement>('.lc-data-table__scroll');
+    const from = scroll?.getBoundingClientRect().top;
+    change();
+    if (!scroll || from === undefined) return;
+    afterNextRender(() => {
+      const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
+      const delta = from - scroll.getBoundingClientRect().top;
+      if (move && Math.abs(delta) >= MOVE_THRESHOLD_PX) scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move);
+    }, { injector: this.injector });
+  }
+
   /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
   private timing(duration: string, easing: string): KeyframeAnimationOptions | null {
     if (typeof this.host.animate !== 'function' || (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches)) return null;
@@ -301,7 +328,9 @@ export class LcDataTableComponent<T> {
         if (!this.hidden.has(row)) row.style.opacity = '';
       });
     }
-    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+    // Relatif au bloc de la liste : son propre glissement (`slideList`) ne compte pas comme un déplacement des lignes.
+    const origin = this.host.querySelector('.lc-data-table__scroll')?.getBoundingClientRect().top ?? 0;
+    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top - origin]));
   }
 
   /** Des lignes sortent encore : les conservées restent à leur place d'avant (transform inverse) et les ajoutées sont masquées, jusqu'au glissement. */
@@ -427,7 +456,7 @@ export class LcDataTableComponent<T> {
 
   // ---------- Résumé, pastilles ----------
   protected clearAll(): void {
-    this.setQuery({ ...this.query(), filters: {} }, this.text.announceAllCleared);
+    this.slideList(() => this.setQuery({ ...this.query(), filters: {} }, this.text.announceAllCleared));
     const first = this.filterColumns()[0];
     this.focusLater(this.narrow() || !first ? `${this.uid}-filters` : `${this.uid}-funnel-${first.key}`);
   }
@@ -446,7 +475,7 @@ export class LcDataTableComponent<T> {
     const index = keys.indexOf(key);
     const next = keys[index + 1] ?? keys[index - 1];
     const column = this.columns().find((candidate) => candidate.key === key);
-    this.setQuery(withFilter(this.query(), key, undefined), this.text.announceRemoved(column?.label ?? key));
+    this.slideList(() => this.setQuery(withFilter(this.query(), key, undefined), this.text.announceRemoved(column?.label ?? key)));
     this.focusLater(next ? `${this.uid}-chip-${next}` : `${this.uid}-filters`);
   }
 
@@ -454,7 +483,8 @@ export class LcDataTableComponent<T> {
   protected openPanel(section: string | null = null): void {
     this.closeMenu(false);
     this.panelDraft.set({ ...this.query().filters });
-    this.panelSection.set(section);
+    this.panelOpened.set(new Set());
+    this.showSection(section);
     this.panelOpen.set(true);
     this.panelVisible.set(true); // réouverture pendant la sortie comprise : la feuille repart de sa position
   }
@@ -468,7 +498,12 @@ export class LcDataTableComponent<T> {
   }
 
   protected toggleSection(key: string): void {
-    this.panelSection.update((open) => (open === key ? null : key));
+    this.showSection(this.panelSection() === key ? null : key);
+  }
+
+  private showSection(key: string | null): void {
+    this.panelSection.set(key);
+    if (key) this.panelOpened.update((opened) => new Set(opened).add(key));
   }
 
   protected setDraft(key: string, value: LcFilterValue | undefined): void {
@@ -489,7 +524,7 @@ export class LcDataTableComponent<T> {
     const inverted = this.filterColumns().find((column) => column.filter?.type === 'dateRange'
       && isDateRangeInverted(this.panelDraft()[column.key] as LcDateRange | undefined));
     if (inverted) {
-      this.panelSection.set(inverted.key);
+      this.showSection(inverted.key);
       this.focusLater(`${this.uid}-panel-${inverted.key}-from`);
       return;
     }

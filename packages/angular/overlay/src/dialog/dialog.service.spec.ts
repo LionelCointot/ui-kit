@@ -48,6 +48,35 @@ describe('LcDialogService', () => {
     await expect(ref.closed).resolves.toBe('ok');
   });
 
+  it('Échap et le fond ferment par la sortie animée ; dismissible: false les rend sans effet', async () => {
+    const service = TestBed.inject(LcDialogService);
+    const ref = service.open<RenameDialogComponent, { name: string }, string>(RenameDialogComponent, { data: { name: 'A' } });
+    await settle();
+    const pane = overlay().querySelector<HTMLElement>('.lc-dialog-panel')!;
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
+    expect(pane.classList).toContain('lc-overlay--closing');
+    await expect(ref.closed).resolves.toBeUndefined();
+
+    const fixed = service.open<RenameDialogComponent, { name: string }, string>(RenameDialogComponent, { data: { name: 'B' }, dismissible: false });
+    await settle();
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
+    overlay().querySelector<HTMLElement>('.cdk-overlay-backdrop')!.click();
+    await settle();
+    expect(overlay().querySelector('.lc-dialog-panel')).not.toBeNull();
+    overlay().querySelector<HTMLButtonElement>('#ok')!.click();
+    await expect(fixed.closed).resolves.toBe('ok');
+  });
+
+  it('close() garde le résultat du premier appel et ne ferme qu\'à la fin de la sortie', async () => {
+    const service = TestBed.inject(LcDialogService);
+    const ref = service.open<RenameDialogComponent, { name: string }, string>(RenameDialogComponent, { data: { name: 'A' } });
+    await settle();
+    ref.close('premier');
+    ref.close('second');
+    expect(overlay().querySelector('.lc-dialog-panel.lc-overlay--closing')).not.toBeNull();
+    await expect(ref.closed).resolves.toBe('premier');
+  });
+
   it('déclare le dialogue modal (le focus est piégé)', async () => {
     const service = TestBed.inject(LcDialogService);
     service.open<RenameDialogComponent, { name: string }, string>(RenameDialogComponent, { data: { name: 'A' } });

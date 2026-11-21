@@ -673,6 +673,23 @@ describe('LcDataTableComponent', () => {
       expect(host.emitted).toEqual([q({ state: ['Close'] })]);
     });
 
+    it('CA-H2 : une section jamais ouverte n\'est pas rendue ; repliée après ouverture, elle garde son filtre rendu (la hauteur se replie sans se vider) et devient inert', async () => {
+      await setup({ narrow: true });
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
+      const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!;
+      const body = () => document.getElementById(toggle.getAttribute('aria-controls')!)!;
+      expect(body().querySelector('lc-column-filter')).toBeNull();
+      expect(body().hasAttribute('inert')).toBe(true);
+      await click(toggle);
+      expect(body().querySelector('lc-column-filter')).not.toBeNull();
+      expect(body().hasAttribute('inert')).toBe(false);
+      await click(toggle);
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(body().hasAttribute('inert')).toBe(true);
+      expect(body().querySelector('lc-column-filter')).not.toBeNull();
+    });
+
     it('panneau : le premier contrôle (croix) porte autofocus, le dialogue n\'est pas focalisé à la main ; la croix s\'appelle « Fermer sans appliquer »', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
@@ -976,6 +993,57 @@ describe('LcDataTableComponent', () => {
         await settleFade();
         expect(calls.slice(1).filter((call) => 'opacity' in call.keyframes).map((call) => call.row)).toEqual(expect.arrayContaining(added));
         expect(calls.slice(1).filter((call) => 'transform' in call.keyframes && added.includes(call.row))).toHaveLength(0);
+      });
+
+      type ChipTarget = { fadeOutChip(event: unknown): void };
+      const chipComponent = () => fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as ChipTarget;
+
+      it('CA-H4 : pastille sortante : fondu duration-fast, sortie du flux à sa place, non cliquable (data-leaving) ; retirée à la fin du fondu', async () => {
+        await setup({ query: q({ state: ['Close'] }), chips: 'always' });
+        stubLayout();
+        tokens();
+        el.querySelector<HTMLElement>('lc-data-table')!.style.setProperty('--lc-sys-duration-fast', '150ms');
+        const chip = el.querySelector<HTMLElement>('.lc-data-table__chip')!;
+        const animationComplete = vi.fn();
+        chipComponent().fadeOutChip({ target: chip, animationComplete });
+        expect(chip.hasAttribute('data-leaving')).toBe(true);
+        expect(chip.style.left).toMatch(/px$/);
+        expect(chip.style.top).toMatch(/px$/);
+        expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
+        expect(calls[0].options).toEqual({ duration: 150, easing: 'ease-out', fill: 'forwards' });
+        expect(animationComplete).not.toHaveBeenCalled();
+        calls[0].finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        expect(animationComplete).toHaveBeenCalledOnce();
+      });
+
+      it('CA-R1 : pastille sortante en réduction de mouvement : retrait immédiat, sans animation', async () => {
+        await setup({ query: q({ state: ['Close'] }), chips: 'always' });
+        stubLayout(true);
+        tokens();
+        const animationComplete = vi.fn();
+        chipComponent().fadeOutChip({ target: el.querySelector<HTMLElement>('.lc-data-table__chip')!, animationComplete });
+        expect(animationComplete).toHaveBeenCalledOnce();
+        expect(calls).toHaveLength(0);
+      });
+
+      it('CA-H4 : retrait d\'une pastille : le bloc de la liste glisse d\'un seul trait de sa place d\'avant (translateY) vers sa place d\'après', async () => {
+        await setup({ query: q({ state: ['Close'] }), chips: 'always' });
+        stubLayout();
+        tokens();
+        // La rangée se resserre quand la pastille disparaît : le bloc de la liste remonte de 60 à 20.
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+          if (this.classList.contains('lc-data-table__scroll')) return { top: document.querySelector('.lc-data-table__chip') ? 60 : 20 } as DOMRect;
+          return { top: [...document.querySelectorAll('tbody tr')].indexOf(this) * 40 + (document.querySelector('.lc-data-table__chip') ? 60 : 20) } as DOMRect;
+        });
+        await click(el.querySelector<HTMLButtonElement>('.lc-data-table__chip-remove')!);
+        await stable();
+        const slides = calls.filter((call) => call.row.classList.contains('lc-data-table__scroll'));
+        expect(slides).toHaveLength(1);
+        expect(slides[0].keyframes['transform']).toEqual(['translateY(40px)', 'none']);
+        expect(slides[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
+        // Lignes mesurées relativement au bloc : seul leur déplacement propre compte (7 lignes ajoutées en fondu, 3 conservées), sans le décalage de 40 px du bloc.
+        expect(calls.filter((call) => 'transform' in call.keyframes && call.row !== slides[0].row).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
       });
 
       it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {

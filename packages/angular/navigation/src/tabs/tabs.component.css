@@ -98,6 +98,17 @@
   display: none;
 }
 
+/* Le panneau qui s'affiche apparaît en fondu pendant que le trait glisse (`hidden` → affiché : le départ vient de `@starting-style`). */
+.lc-tabs__panel {
+  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+@starting-style {
+  .lc-tabs__panel {
+    opacity: 0;
+  }
+}
+
 @media (forced-colors: active) {
   .lc-tabs__indicator {
     background: Highlight;

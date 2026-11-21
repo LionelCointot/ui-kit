@@ -37,6 +37,12 @@
       "$type": "dimension"
     }
   },
+  "collapse": {
+    "duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    }
+  },
   "chip": {
     "enter-duration": {
       "$value": "{sys.duration.fast}",
@@ -104,6 +110,19 @@
       "$description": "Maximum height of that card; the body scrolls beyond it.",
       "$value": "80dvh",
       "$type": "dimension"
+    }
+  },
+  "dialog": {
+    "enter-scale": {
+      "$description": "Scale a dialog starts from when it fades in (unitless number).",
+      "$value": "0.96",
+      "$type": "number"
+    }
+  },
+  "shell": {
+    "nav-duration": {
+      "$value": "{sys.duration.long}",
+      "$type": "duration"
     }
   }
 }

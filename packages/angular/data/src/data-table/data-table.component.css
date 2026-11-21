@@ -55,6 +55,7 @@ lc-data-table {
   display: none;
   flex-wrap: wrap;
   align-items: center;
+  position: relative;
   gap: var(--lc-sys-space-2) var(--lc-sys-space-3);
   padding: var(--lc-sys-space-2) var(--lc-sys-space-4);
   border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
@@ -96,6 +97,13 @@ lc-data-table {
   background: var(--lc-sys-color-secondary-container);
   color: var(--lc-sys-color-on-secondary-container);
   font-size: var(--lc-sys-font-size-sm);
+}
+
+/* Pastille en fondu de sortie (`animate.leave`) : hors du flux à sa place (left, top, width posés en ligne), plus cliquable. */
+.lc-data-table__chip[data-leaving] {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
 }
 
 .lc-data-table__chip button {
@@ -535,7 +543,7 @@ lc-data-table {
 
 .lc-data-table__section-toggle > lc-icon {
   color: var(--lc-sys-color-on-surface-muted);
-  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+  transition: transform var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard);
 }
 
 .lc-data-table__section-toggle[aria-expanded='true'] > lc-icon {
@@ -560,19 +568,32 @@ lc-data-table {
   font-weight: var(--lc-sys-font-weight-medium);
 }
 
+/* Hauteur animée : 0fr -> 1fr ; `visibility` ne passe à hidden qu'à la fin du repli. Le padding est porté par le petit-enfant. */
 .lc-data-table__section-body {
-  padding-block-end: var(--lc-sys-space-4);
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
   transition:
-    opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing),
-    transform var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
+    visibility 0s linear var(--lc-collapse-duration, var(--lc-sys-duration-move));
 }
 
-/* Le corps sort de `[hidden]` (display: none) : @starting-style joue à chaque dépliage ; pas d'animation de hauteur. */
-@starting-style {
-  .lc-data-table__section-body {
-    opacity: 0;
-    transform: translateY(calc(-1 * var(--lc-overlay-offset)));
-  }
+.lc-data-table__section-body--open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
+    visibility 0s;
+}
+
+/* Le rognage n'a ni padding ni bordure (sinon la section ne descendrait pas sous leur hauteur) : le padding est sur le contenu. */
+.lc-data-table__section-clip {
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.lc-data-table__section-content {
+  padding-block-end: var(--lc-sys-space-4);
 }
 
 @starting-style {
@@ -585,6 +606,7 @@ lc-data-table {
   .lc-data-table__funnel,
   .lc-data-table__section-toggle > lc-icon,
   .lc-data-table__section-body,
+  .lc-data-table__section-body--open,
   .lc-data-table__chip {
     transition: none;
   }

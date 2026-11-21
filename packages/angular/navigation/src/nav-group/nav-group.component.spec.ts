@@ -74,7 +74,7 @@ describe('LcNavGroupComponent', () => {
     expect(general.querySelector('button')).toBeNull();
     expect(general.querySelector('.lc-nav-group__title')!.tagName).toBe('P');
     expect(general.querySelector('.lc-nav-group__title')!.hasAttribute('aria-expanded')).toBe(false);
-    expect(general.querySelector<HTMLElement>('.lc-nav-group__items')!.hidden).toBe(false);
+    expect(general.querySelector<HTMLElement>('.lc-nav-group__items')!.hasAttribute('inert')).toBe(false);
     expect(general.querySelectorAll('a[lcNavItem]').length).toBe(2);
   });
 
@@ -87,7 +87,7 @@ describe('LcNavGroupComponent', () => {
       const group = groups()[index].querySelector('[role=group]')!;
       expect(groups()[index].querySelector(`#${CSS.escape(group.getAttribute('aria-labelledby')!)}`)!.textContent!.trim()).toBe(label);
       const title = groups()[index].querySelector<HTMLElement>('.lc-nav-group__title')!;
-      expect(title.hidden).toBe(false);
+      expect(title.hasAttribute('inert')).toBe(false);
       expect(title.getAttribute('aria-hidden')).toBeNull();
     }
   });
@@ -130,12 +130,12 @@ describe('LcNavGroupComponent', () => {
       toggle(projects).click();
       await fixture.whenStable();
       expect(toggle(projects).getAttribute('aria-expanded')).toBe('false');
-      expect(items(projects).hidden).toBe(true);
+      expect(items(projects).hasAttribute('inert')).toBe(true);
       expect(fixture.componentInstance.expanded()).toBe(false);
       toggle(projects).click();
       await fixture.whenStable();
       expect(toggle(projects).getAttribute('aria-expanded')).toBe('true');
-      expect(items(projects).hidden).toBe(false);
+      expect(items(projects).hasAttribute('inert')).toBe(false);
       expect(fixture.componentInstance.expanded()).toBe(true);
     });
 
@@ -144,9 +144,17 @@ describe('LcNavGroupComponent', () => {
       await update((host) => { host.collapsible.set(true); host.expanded.set(false); });
       const projects = groups()[1];
       expect(toggle(projects).getAttribute('aria-expanded')).toBe('false');
-      expect(items(projects).hidden).toBe(true);
+      expect(items(projects).hasAttribute('inert')).toBe(true);
       expect(items(projects).querySelectorAll('a').length).toBe(2);
-      expect(items(projects).hasAttribute('hidden')).toBe(true);
+    });
+
+    it('CA-H3 : une seule icône dans le bouton, chevron-right (la rotation est en CSS), aria-hidden', async () => {
+      const { groups, update } = await setup();
+      await update((host) => host.collapsible.set(true));
+      const icons = toggle(groups()[1]).querySelectorAll('lc-icon');
+      expect(icons).toHaveLength(1);
+      expect(icons[0].getAttribute('name')).toBe('chevron-right');
+      expect(icons[0].getAttribute('aria-hidden')).toBe('true');
     });
 
     it('le bouton est le seul arrêt de tabulation du titre : focalisable, sans tabindex négatif', async () => {
@@ -162,7 +170,7 @@ describe('LcNavGroupComponent', () => {
     it('sans collapsible, expanded=false n\'a aucun effet : les éléments restent visibles', async () => {
       const { groups, update } = await setup();
       await update((host) => host.expanded.set(false));
-      expect(groups()[1].querySelector<HTMLElement>('.lc-nav-group__items')!.hidden).toBe(false);
+      expect(groups()[1].querySelector<HTMLElement>('.lc-nav-group__items')!.hasAttribute('inert')).toBe(false);
     });
 
     it('mode réduit : un groupe collapsible replié reste déplié, titre non bouton', async () => {
@@ -170,10 +178,10 @@ describe('LcNavGroupComponent', () => {
       await update((host) => { host.collapsible.set(true); host.expanded.set(false); host.collapsed.set(true); });
       const projects = groups()[1];
       expect(projects.querySelector('button')).toBeNull();
-      expect(items(projects).hidden).toBe(false);
+      expect(items(projects).hasAttribute('inert')).toBe(false);
       await update((host) => host.collapsed.set(false));
       expect(toggle(projects).getAttribute('aria-expanded')).toBe('false');
-      expect(items(projects).hidden).toBe(true);
+      expect(items(projects).hasAttribute('inert')).toBe(true);
     });
 
     it('le composant autonome (hors lc-nav-list) se replie aussi', async () => {
@@ -182,7 +190,7 @@ describe('LcNavGroupComponent', () => {
       const element = fixture.nativeElement as HTMLElement;
       element.querySelector<HTMLButtonElement>('button')!.click();
       await fixture.whenStable();
-      expect(element.querySelector<HTMLElement>('.lc-nav-group__items')!.hidden).toBe(true);
+      expect(element.querySelector<HTMLElement>('.lc-nav-group__items')!.hasAttribute('inert')).toBe(true);
     });
   });
 

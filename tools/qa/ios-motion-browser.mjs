@@ -297,7 +297,7 @@ async function overlays() {
     const T = await page.evaluate(() => ({ move: Q.ms('--lc-sys-duration-move'), normal: Q.ms('--lc-sys-duration-normal'), fast: Q.ms('--lc-sys-duration-fast'), enterBd: Q.ms('--lc-overlay-enter-duration'), ease: Q.ease('--lc-sys-easing-standard'), scale: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-dialog-enter-scale')) }));
     for (const kind of ['drawer', 'dialog']) {
       const pane = `.cdk-overlay-pane:has(lc-${kind})`;
-      const results = () => page.evaluate(() => window.__qa.results.map((r) => r.slice()));
+      const results = () => page.evaluate(() => (window.__qa?.results ?? []).map((r) => r.slice()));
       // Entrée.
       await page.evaluate((k) => document.querySelector(`#qa-open-${k}`).click(), kind);
       const en = await page.evaluate(async ([k, sel]) => { await Q.until(() => document.querySelector(sel)); const p = document.querySelector(sel); await Q.raf(); const a = Q.anims(p).filter((x) => x.prop && !x.pseudo && p !== x.el || false); const inner = p.firstElementChild; const list = inner.getAnimations(); const info = list.map((x) => ({ d: x.effect.getComputedTiming().duration, n: x.animationName })); const reduced = Q.reduced(p); Q.at(p, 0); const m = new DOMMatrix(getComputedStyle(inner).transform); const bd = document.querySelector(`.cdk-overlay-backdrop.lc-${k}-backdrop`); const bcs = getComputedStyle(bd); const w = inner.getBoundingClientRect().width; const r = { info, x: m.m41, a: m.a, w, op: getComputedStyle(inner).opacity, reduced, bdDur: bcs.transitionDuration, bdEase: bcs.transitionTimingFunction, bdShowing: bd.classList.contains('cdk-overlay-backdrop-showing') }; p.getAnimations({ subtree: true }).forEach((x) => x.finish()); await Q.raf(); return r; }, [kind, pane]);
@@ -312,7 +312,7 @@ async function overlays() {
       const t0 = await page.evaluate(() => Date.now());
       await page.evaluate((k) => document.querySelector(`#qa-${k}-ok`).click(), kind);
       const ex = await page.evaluate(async (sel) => { await Q.raf(); const p = document.querySelector(sel); if (!p) return { gone: true }; const bd = document.querySelector('.cdk-overlay-backdrop'); return { gone: false, closing: p.classList.contains('lc-overlay--closing') || !!p.querySelector('.lc-overlay--closing'), durs: Q.anims(p).map((x) => x.t.duration), bdShowing: bd?.classList.contains('cdk-overlay-backdrop-showing'), reduced: Q.reduced(p), inDom: true }; }, pane);
-      await page.waitForFunction((n) => window.__qa.results.length >= n, kind === 'drawer' ? 1 : 2, { timeout: 4000 }).catch(() => {});
+      await page.waitForFunction((n) => (window.__qa?.results.length ?? 0) >= n, kind === 'drawer' ? 1 : 2, { timeout: 4000 }).catch(() => {});
       const res = (await results()).find((r) => r[0] === kind); await page.waitForTimeout(300);
       const gone = !(await page.locator(pane).count());
       const elapsed = res ? res[2] - t0 : -1;
