@@ -1,6 +1,6 @@
 # Spec : Fil de messages générique (`lc-message-thread`, PR 2 de la messagerie)
 
-- **Statut** : En revue (2026-11-21)
+- **Statut** : En revue (2026-11-21), prête pour validation
 - **Auteur** : session principale
 - **Date** : 2026-11-21
 - **ADR liés** : 0009 (cible navigateurs)
@@ -31,6 +31,10 @@
   13. Périmètre selon le consommateur (question du `cadreur`) : « En effet, on ne va pas implémenter s'il n'utilise pas coproticket. Par contre, le message système, j'aime beaucoup et je pense que coproticket pourrait s'en servir afin d'afficher les actions importantes comme mettre en pause, résolu, etc. Au lieu d'avoir une bannière tout au-dessus, ce qui est fait actuellement. Dans coproticket. » : hors PR 2 (prévus plus tard, avec un besoin) : état « Envoi… / Non envoyé » (5), « Messages précédents » (6), dépôt sur tout le fil (10) ; gardé : messages système (8), consommés par copro-ticket pour les actions importantes (mise en pause, résolution…) à la place de la bannière actuelle en haut de la demande ; la pastille « Nouveau message ↓ » et l'ouverture sur le dernier message (7) ne sont livrées que si copro-ticket pose le fil dans un conteneur de hauteur limitée (à trancher au cadrage de son adoption).
   14. Direction visuelle **A** (bulles douces et pleines, maquette `docs/design/explorations/2026-11-fil-de-messages/index.html`) : « Visuellement je prefere la A mais par contre gerer avec le scroll pour afficher plus automatiquement » ; précision « B » à la question suivante :
   15. Affichage progressif (réponse « B ») : l'application fournit tous les messages ; le fil n'affiche d'abord que les plus récents et révèle les plus anciens tout seuls en remontant, sans saut ; pas de pagination serveur pour l'instant.
+  16. Animation d'arrivée : après la démo `docs/design/explorations/2026-11-fil-de-messages/demo-arrivee.html` (A existant sans rebond, B ressort) et un point sur les droits (mouvement générique, aspect propre au kit) : « On prend l'animation apple et oui pour les autres » : ressort retenu (B), jeton de composant `--lc-message-thread-enter-easing` ; exception écrite à la décision 27 de `2026-11-mouvement.md`.
+  17. (« oui pour les autres ») Pas de gabarit de contenu de bulle pour l'instant : texte, liens, vignettes et `mention` suffisent à copro-ticket ; un gabarit viendra avec un besoin.
+  18. (idem) copro-ticket ajoute l'identifiant de l'auteur à son API (`MessageView.authorId`) et régénère son client, dans la PR d'adoption.
+  19. (idem) Dans copro-ticket, le bloc d'état garde ses actions (« Oui, c'est réglé / Non », lien, téléphone) ; son texte d'information passe dans le fil en messages système (« Demande mise en pause par Marc · 09:41 », avec « · motif : … » quand il y en a un).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : nouveau composant, templates, projection de `lc-message-composer` (aucun import entre points d'entrée).
@@ -98,7 +102,6 @@ interface LcThreadAttachment { id: string; name: string; previewUrl?: string; }
 ```html
 <lc-message-thread [messages]="messages" [showAvatars]="true" [pageSize]="30"
   (attachmentOpen)="open($event)" ariaLabel="Échanges">
-  <ng-template lcThreadMessageContent let-message>…</ng-template>  <!-- facultatif : contenu de bulle -->
   <lc-message-composer lcThreadComposer … />                        <!-- facultatif -->
 </lc-message-thread>
 ```
@@ -178,7 +181,7 @@ Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explor
 ## 12. Risques et questions ouvertes
 - **Dettes** : jeton de ressort nouveau (le ressort avait été retiré des listes ; il ne sert qu'ici).
 - **Risques** : compensation de défilement sans `overflow-anchor` (Safari) ; FLIP et ressort ensemble sur des listes longues.
-- **Questions ouvertes** : voir les questions posées à l'utilisateur le 2026-11-21 (gabarit de contenu, `authorId` côté copro-ticket, bloc d'état et texte des messages système).
+- **Questions ouvertes** : aucune.
 - **Limites** : position conservée prouvée sous Chromium ; WebKit et Firefox via Playwright si disponibles, sinon écart écrit.
 
 ## 13. Relectures et écarts
