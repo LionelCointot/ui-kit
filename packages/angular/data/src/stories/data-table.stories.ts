@@ -70,7 +70,7 @@ const columns: LcDataColumn<Ticket>[] = [
     ] } },
   { key: 'mgr', label: 'Assignée à', width: '7.25rem', value: (row) => row.mgr, filter: { type: 'multi', format: (value) => value || 'Non assignée' } },
   { key: 'recv', label: 'Reçue le', chipLabel: 'Reçue', width: '7.75rem', sortable: true, value: (row) => localDateToIso(daysAgo(row.recv)),
-    filter: { type: 'dateRange', presets: [7, 30] } },
+    filter: { type: 'dateRange' } },
   { key: 'open', label: 'Voir la demande', cardOnly: true },
 ];
 
@@ -94,7 +94,7 @@ const frozenSource: LcDataSource<Ticket> = {
 };
 
 const query = (filters: LcTableQuery['filters']): LcTableQuery => ({ filters, sort: null });
-const FOUR = query({ state: ['qualifie', 'encours'], urg: ['Urgente', 'Importante'], recv: { preset: 30 }, mgr: ['Inès Carpentier', 'Marc Delorme'] });
+const FOUR = query({ state: ['qualifie', 'encours'], urg: ['Urgente', 'Importante'], recv: { from: localDateToIso(daysAgo(30)), to: localDateToIso(daysAgo(0)) }, mgr: ['Inès Carpentier', 'Marc Delorme'] });
 const PHONE = query({ state: ['qualifie', 'encours'], urg: ['Urgente'] });
 const NONE = query({ state: ['rejete'], urg: ['Urgente'] });
 
