@@ -66,11 +66,14 @@ copro-ticket affiche ses échanges par une liste locale de `lc-message` (`reques
 ## 5. Solution proposée
 ### 5.1 Vue d'ensemble de l'architecture
 - `lc-message-thread` dans le point d'entrée `feedback` (`packages/angular/feedback/src/message-thread/`), à côté de `lc-message` ; `lc-avatar` vient du point d'entrée principal : aucun nouvel import entre points d'entrée. La zone de saisie est projetée (`[lcThreadComposer]`) : le fil n'importe pas `forms`.
-- Le fil réutilise `lc-message` pour la bulle s'il permet la direction A (variantes, nom et date masqués hors tête de groupe) ; sinon il porte sa propre bulle et `lc-message` reste tel quel (à trancher par l'`architect`).
+- Le fil porte sa propre bulle (`.lc-message-thread__bubble`, jetons `--lc-message-thread-*`) : `lc-message` impose un en-tête permanent, une annonce de variante et un tag de restriction incompatibles avec le regroupement. `lc-message` reste inchangé (ses 16 tests CA-D3 passent sans modification) ; son retrait sera examiné après l'adoption par copro-ticket.
+- `isSafePreviewUrl` et le nettoyage des caractères de contrôle et bidi (`cleanFileName` renommé `lcStripUnsafeChars`) passent dans `packages/angular/src/lib/core/safe-text.ts`, exportés par le point d'entrée principal ; `forms` et `feedback` les importent de là (pas de nouvel import entre points d'entrée secondaires ; contrat public : deux fonctions ajoutées).
+- Regroupement en fonction pure (`message-thread-grouping.ts`), testée seule.
 - Structure : colonne flex qui remplit son conteneur (fil puis saisie projetée). Le composant détecte s'il défile lui-même (`scrollHeight > clientHeight` sur sa zone) ; sinon la page défile (décision 12).
 - Regroupement calculé par le composant : même `authorId`, même visibilité (classe), moins de 5 minutes d'écart, même jour ; séparateur de jour selon la langue (`LC_LABELS`, `Intl`) et le fuseau du navigateur.
-- Arrivée : un message dont l'`id` n'était pas dans la liste précédente joue l'entrée (agrandissement depuis le coin de la bulle, ressort `linear()` en jeton, fondu) ; les messages déjà affichés glissent de l'écart (FLIP, `list-move`) dès la première image ; jamais au premier rendu ni à l'affichage progressif ; fondu seul sous réduction des animations.
-- Affichage progressif (décision 15) : seuls les `pageSize` (30) derniers messages sont rendus ; quand le haut du fil devient visible (`IntersectionObserver` sur une sentinelle), 30 de plus sont rendus et la position de lecture est conservée par compensation de défilement (pas de `overflow-anchor`, absent de Safari).
+- Arrivée : un message dont l'`id` n'était pas dans la liste précédente joue l'entrée (agrandissement `scale` depuis le coin de la bulle, ressort `linear()` du jeton de composant `--lc-message-thread-enter-easing`, fondu) ; les messages déjà affichés glissent de l'écart (FLIP en `translate`, jetons existants `--lc-list-move-*`) dès la première image, mesurés avant et écrits dans la même image (`afterRenderEffect`) ; propriétés individuelles `translate` et `scale` (pas de conflit) ; plusieurs arrivées décalées de `enter-stagger` (plafond 300 ms). Le premier rendu non vide (y compris une liste d'abord vide puis remplie) marque tous les `id` comme vus. Jamais d'entrée à l'affichage progressif. Réduction des animations : fondu seul, ni ressort ni FLIP (le fondu doit survivre à la règle globale de `base.css`, comme `lc-message-composer`).
+- Le ressort est une exception assumée à la décision 27 de `2026-11-mouvement.md` (pas de jeton `sys` de ressort) : il reste un jeton de composant, utilisé seulement ici (note ajoutée au CA-24 de cette spec).
+- Affichage progressif (décision 15) : seuls les `pageSize` (30) derniers messages sont rendus ; quand le haut du fil devient visible (`IntersectionObserver` sur une sentinelle), 30 de plus sont rendus (`aria-busy` pendant l'insertion) et la position de lecture est conservée par compensation (`scrollTop` en défilement interne, `window.scrollBy` en défilement de page), avec `overflow-anchor: none` pour un comportement identique dans les trois moteurs. « Défile-t-il lui-même ? » est recalculé par `ResizeObserver` (clavier mobile, rotation).
 - Liens : le texte est découpé en morceaux texte / adresse `http(s)` ; les adresses sont rendues en `<a target="_blank" rel="noopener noreferrer">` ; jamais d'`innerHTML`.
 
 ### 5.2 Modèle de données
@@ -89,7 +92,7 @@ interface LcThreadMessage {
 }
 interface LcThreadAttachment { id: string; name: string; previewUrl?: string; }
 ```
-Tokens (`message-thread.tokens.json`, repli `sys`) : `bubble-background-mine`, `bubble-background-other`, `bubble-color`, `bubble-border-color`, `bubble-border-width`, `bubble-border-style`, `bubble-radius`, `bubble-radius-tight` ; mouvement : `enter-easing` (ressort `linear()`), `enter-duration`, `enter-scale`.
+`sentAt` en chaîne ISO seulement. Tokens (`message-thread.tokens.json`, valeurs en `{sys.*}` sauf mention) : `bubble-background-mine` / `bubble-color-mine` (`primary-container` / `on-primary-container`), `bubble-background-other` / `bubble-color-other` (`secondary-container` / `on-secondary-container`), `bubble-border-width` (0), `-style` (`solid`), `-color` (`transparent`), `bubble-radius` (`radius-lg` × 1,5), `bubble-radius-tight` (`radius-sm`), `bubble-padding-block` / `-inline`, `bubble-gap`, `bubble-max-width` (26 rem), `group-gap`, `thread-padding`, `avatar-size` (2 rem), `thumb-width` / `thumb-height`, `day-background` / `day-color`, `meta-color`, `system-color` ; mouvement : `enter-easing` (`linear()` du ressort, valeur de composant), `enter-duration` (550 ms, calé sur le ressort), `enter-scale` (0,6), `enter-fade-duration` (`duration-normal`), `enter-stagger` (`motion-stagger`). Surcharges d'application non définies par le kit, lues en premier : `--lc-message-thread-bubble-background`, `--lc-message-thread-bubble-color` (la note interne les pose avec les jetons de bordure, quel que soit le côté).
 
 ### 5.3 API / interfaces
 ```html
@@ -101,10 +104,21 @@ Tokens (`message-thread.tokens.json`, repli `sys`) : `bubble-background-mine`, `
 ```
 - `attachmentOpen` : `{ message: LcThreadMessage; attachment: LcThreadAttachment }`.
 - Libellés `LC_LABELS` (fr, en) : `threadToday`, `threadYesterday`, `threadLabel`, `threadAttachmentOpen(name)`.
-- `previewUrl` filtré comme dans la zone de saisie (`isSafePreviewUrl`, partagé ou recopié selon l'`architect`).
+- `previewUrl` filtré par `isSafePreviewUrl` du principal (`blob:`, `data:image/`, même origine http(s)) ; l'application fournit la vignette, authentification comprise.
+- `authorName` est fourni tel quel par l'application (« Vous » pour ses propres messages) : le kit n'a pas de libellé « moi ».
+- Un `id` en double : le premier est rendu, avertissement en développement.
 
 ### 5.4 Interface utilisateur
-Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explorations/2026-11-fil-de-messages/index.html`, capture `capture-1280.png`). Brief de `ui-ux-designer` : à compléter. Test `novice-user` sur captures (CA-T12).
+Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explorations/2026-11-fil-de-messages/index.html`, section « A retenue », captures `capture-a-1280.png`, `capture-a-360.png`). Brief de `ui-ux-designer` (2026-11-21) :
+- **Structure** : `role="log"` nommé (`threadLabel`), `tabindex="0"` seulement quand il défile ; sentinelle en haut ; séparateur de jour (pastille centrée, `<time>`) ; groupe en ligne flex (`align-items: flex-end`) : avatar des autres (une fois, au niveau de la dernière bulle, `aria-hidden`), puis en-tête (`<bdi>` nom, `<time>`, `mention` avec cadenas décoratif) et bulles ; heure intermédiaire après ≥ 5 min ; ligne système centrée (texte · heure) hors groupe ; zone de saisie projetée dessous.
+- **Rayons** : `bubble-radius` partout ; dans un groupe, coins côté auteur resserrés (`bubble-radius-tight`) entre bulles ; propriétés logiques ; pas de queue ni de forme d'Apple.
+- **Contrastes calculés** : texte sur bulle « moi » 9,0:1 ; « autres » 15,2:1 (clair) / 12,2:1 (sombre) ; note interne 8,8:1 / 12,9:1 ; métadonnées 7,7:1 / 9,7:1 ; anneau de focus ≥ 3,3:1. Les liens héritent de la couleur de la bulle, soulignés.
+- **Vignettes** : `<button>` 6 × 4,5 rem (≥ 44 px), `radius-md`, `<img width height alt>` en `object-fit: cover`, nom accessible `threadAttachmentOpen(name)`.
+- **Animations** : entrée `scale` depuis le coin extérieur (bas droite pour moi, bas gauche pour les autres) + fondu ; FLIP des précédents ; réduction : fondu seul. **forced-colors** : bulle bordée `CanvasText`, vignette `ButtonText`, focus `Highlight`, pointillés de la note conservés.
+- **Accessibilité** : `role="log"` (polite implicite) ; ordre chronologique ; insertion des anciens messages sous `aria-busy` ; l'arrivée d'un message ne déplace jamais le focus.
+- **Métadonnées** (nom, heure, ligne système) en `font-size-sm` (14 px), choisi pour un débutant sur téléphone ; texte courant en `font-size-md`.
+- **360 px** : bulles repliées (`overflow-wrap: anywhere`), vignettes à la ligne, aucun défilement horizontal.
+- Test `novice-user` sur captures : CA-T12.
 
 ## 6. Cas limites et gestion des erreurs
 - Liste vide : rien (l'application affiche son état vide).
@@ -132,34 +146,45 @@ Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explor
 - copro-ticket : PR séparée (décision 11).
 
 ## 10. Critères d'acceptation
-- [ ] CA-T1 : Mes messages à droite, ceux des autres à gauche ; un groupe (même auteur, même visibilité, écart < 5 min, même jour) affiche nom et heure une fois en tête et ses bulles serrées ; un écart ≥ 5 min réaffiche l'heure ; un séparateur « Aujourd'hui », « Hier » ou la date courte sépare les jours (fr et en).
-- [ ] CA-T2 : Avec `showAvatars`, l'avatar (initiales) des autres apparaît une fois par groupe, au niveau de la dernière bulle ; jamais pour mes messages.
-- [ ] CA-T3 : Un message dont l'`id` est nouveau apparaît du côté de son auteur en ressort (agrandissement depuis le coin, jeton `enter-easing`), et dès la première image les messages précédents sont décalés de façon à ne laisser ni trou ni saut, y compris pour 3 messages consécutifs du même côté (position mesurée à t = 0 égale à la position d'avant, ± 1 px).
-- [ ] CA-T4 : Aucune animation au premier rendu, à l'affichage progressif ni au remplacement d'une liste sans identifiant nouveau ; sous réduction des animations, fondu seul.
-- [ ] CA-T5 : Une `cssClass` d'application redéfinissant les jetons de bordure et de fond change la bulle (pointillés, couleur) sans autre CSS ; `mention` s'affiche sous l'en-tête.
-- [ ] CA-T6 : Les pièces jointes s'affichent en vignettes dans la bulle ; un clic ou Entrée émet `attachmentOpen` ; un message sans texte n'a pas de zone de texte vide ; `previewUrl` non admise → icône.
-- [ ] CA-T7 : Un message `system` s'affiche en ligne centrée, grise, avec l'heure, hors groupe.
-- [ ] CA-T8 : Une adresse `http(s)` du texte est un lien (nouvel onglet, `rel="noopener noreferrer"`), sans la ponctuation finale ; `javascript:` et le HTML restent du texte ; retours à la ligne conservés.
-- [ ] CA-T9 : Dans un conteneur de hauteur limitée, le fil défile à l'intérieur et la saisie projetée reste visible ; sans limite, le fil s'allonge et la page défile.
-- [ ] CA-T10 : Seuls les `pageSize` derniers messages sont rendus ; en remontant jusqu'en haut, les suivants apparaissent sans que le message lu ne bouge (± 2 px), en défilement interne comme de page.
-- [ ] CA-T11 : axe sans violation (360 et 1 280 px, clair et sombre) ; le fil a `role="log"` et un nom ; aucun texte ni valeur en dur.
-- [ ] CA-T12 (manuel) : test `novice-user` sur captures à 360 px.
+- [ ] CA-T1 : Mes messages à droite, ceux des autres à gauche (bord de bulle à ≤ 2 px du bord du fil moins son remplissage). Groupe = même `authorId`, même visibilité (`cssClass`), écart < 5 min (5 min 00 s ouvre un nouveau groupe), même jour local ; nom et heure une fois en tête ; bulles d'un groupe séparées de `bubble-gap`, groupes de `group-gap` ; séparateur « Aujourd'hui », « Hier » ou date courte (`18 nov.` / `Nov 18`) en fr et en, horloge injectée et `TZ` fixé (23:59 et 00:01 locaux, `Europe/Paris` et `America/Los_Angeles`).
+- [ ] CA-T2 : Avec `showAvatars` (défaut vrai), l'avatar (initiales, 1 ou 2 lettres) des autres apparaît une fois par groupe, aligné sur le bas de la dernière bulle (± 2 px) ; jamais pour `mine` ni `system` ; sans `showAvatars`, aucun `lc-avatar` et même alignement des bulles.
+- [ ] CA-T3 : Chromium, conteneur limité collé en bas, 5 messages dont le dernier à moi ; on ajoute 1, puis 3 messages consécutifs du même côté ; animations mises en pause à `currentTime = 0` juste après l'insertion : (a) le bas de chaque bulle déjà affichée est à ± 1 px de sa position d'avant ; (b) aucun trou entre la dernière bulle précédente et le premier nouveau message (écart attendu ± 1 px) ; (c) la nouvelle bulle part de `--lc-message-thread-enter-scale` avec l'accélération du jeton `enter-easing` ; (d) `transform-origin` au coin côté auteur. Après `finished`, aucune animation et positions identiques à un rendu direct.
+- [ ] CA-T4 : Premier rendu (y compris liste vide puis remplie), affichage progressif et remplacement de liste sans `id` nouveau : aucune animation dans le fil immédiatement et après deux images. Sous `reducedMotion: 'reduce'`, l'arrivée ne joue que l'opacité (aucune animation de `transform`), les messages précédents ne sont pas animés.
+- [ ] CA-T5 : Une `cssClass` qui pose `--lc-message-thread-bubble-background`, `-bubble-color` et `-bubble-border-*` (pointillés) donne ce rendu à la bulle de ce message, de mon côté comme de l'autre, sans autre CSS ; les autres bulles ne changent pas ; `mention` s'affiche sous l'en-tête et est lue avant le texte.
+- [ ] CA-T6 : Les pièces jointes sont des vignettes `<button>` dans la bulle ; clic, Entrée ou Espace émet `attachmentOpen` une fois ; nom accessible `threadAttachmentOpen(name)` ; un message sans texte n'a pas de zone de texte ; `previewUrl` absente, `javascript:`, `data:text/html`, `http(s)` d'une autre origine → icône, jamais d'`<img>` avec cette `src` ; `blob:`, `data:image/png`, même origine → `<img>`.
+- [ ] CA-T7 : Un message `system` est une ligne centrée (± 2 px), couleur `system-color`, heure dans `<time>`, sans avatar ni nom ; il rompt le groupe (même auteur de part et d'autre = deux groupes).
+- [ ] CA-T8 : Une adresse `http(s)` est un `<a>` (`target="_blank"`, `rel="noopener noreferrer"`) sans ponctuation finale (`. , ; : ! ?`, parenthèse fermante non appariée) ; `javascript:` et le HTML restent du texte ; retours à la ligne conservés.
+- [ ] CA-T9 : Chromium, 360 × 640 et 1 280 × 800. Parent limité (`height: 400px`, flex en colonne) : le fil défile à l'intérieur, la saisie projetée reste visible, la page ne défile pas. Parent sans hauteur : le fil n'a pas de défilement propre, la page s'allonge. Un changement de hauteur du parent est pris en compte. Sans projection, aucune erreur.
+- [ ] CA-T10 : 100 messages, `pageSize = 30` : 30 rendus (les derniers) ; en remontant, paliers 60, 90, 100 ; le message témoin garde sa position à ± 2 px après deux images, en défilement interne et de page ; aucune animation ; plus de palier après 100 ; `pageSize` ≤ 0 ou non entier → 30.
+- [ ] CA-T11 : axe (`wcag2a`, `wcag2aa`, `best-practice`) sans violation sur un fil de 12 messages (avatars, système, pièces jointes, note interne), 360 et 1 280 px, clair et sombre ; `role="log"` nommé ; test statique : aucune couleur, durée ni taille en dur dans le `.css` (hors jetons), aucun libellé en dur ni `innerHTML` dans le `.ts`, libellés fr et en présents.
+- [ ] CA-T12 (manuel) : test `novice-user` sur captures à 360 px, clair et sombre.
+- [ ] CA-T13 : Arrivées pendant une animation : un second message ajouté 100 ms après un premier ne relance pas celui-ci et ne crée ni trou ni saut (± 1 px) ; un lot de 5 joue 5 entrées décalées de `enter-stagger`, 300 ms au plus au total ; un message retiré pendant son entrée ne laisse ni élément ni animation ; aucune erreur console.
+- [ ] CA-T14 : Liens déguisés (fonction pure du découpeur) : `javascript:`, `JAVASCRIPT:`, avec espace, tabulation, saut de ligne ou `\u0000` en tête ou dedans, entités HTML, `data:` (toutes casses), `vbscript:`, `file:`, `ftp:`, `//evil.test`, `www.example.com`, `http:/x` restent du texte ; `HTTP://EXAMPLE.COM/a` est un lien dont `href` est la valeur normalisée par `new URL()` ; tout `<a>` rendu a un `href` en `http://` ou `https://` (corpus aléatoire à graine fixe, ≥ 500 chaînes).
+- [ ] CA-T15 : Ponctuation et longueur : `(https://x.test/a)` → lien sans parenthèses ; `https://en.wikipedia.org/wiki/Foo_(bar)` entier ; `<…>` et guillemets exclus ; deux adresses → deux liens ; `https://` seul → texte ; une adresse de 200 000 caractères est découpée en < 50 ms (motif adverse chronométré) et ne crée aucun défilement horizontal à 360 px ; `<`, `>`, `&`, `"` rendus littéralement.
+- [ ] CA-T16 : Caractères de contrôle et marqueurs bidi retirés d'`authorName` et du texte des messages (DOM, `aria-label`, `title`) ; nom dans `<bdi>` ; un nom en arabe ne déplace pas l'heure (± 1 px) ; initiales sans couper un point de code, repli si le nom est vide ; texte de 100 000 caractères rendu en < 200 ms ; aucun nom ni texte dans la console.
+- [ ] CA-T17 : Liste vide : aucune bulle, `role="log"` présent ; groupe d'un message : en-tête et avatar sur cette bulle ; `sentAt` invalide : bulle sans `<time>`, un avertissement en développement sans le texte ; `id` en double : le premier rendu, avertissement en développement ; message sans texte ni pièce jointe : aucune bulle vide ; 12 pièces jointes à 360 px sans débordement ; ordre de la liste conservé.
+- [ ] CA-T18 : `lc-message` n'est pas modifié : ses 16 tests CA-D3 passent sans changement.
 
 ## 11. Découpage en tâches
-- [ ] F0 (QA) : tests d'acceptation avant le code.
-- [ ] F1 : jetons (bulle, ressort), modèle, regroupement et séparateurs, libellés (M ; CA-T1, T2, T7).
-- [ ] F2 : bulle direction A, note interne, vignettes, liens (M ; CA-T5, T6, T8).
-- [ ] F3 : arrivée en ressort et poussée, défilement, affichage progressif (M ; CA-T3, T4, T9, T10).
-- [ ] F4 : stories, catalogue, README (S ; CA-T11).
+- [ ] F0 (QA) : tests d'acceptation avant le code (`tools/qa/message-thread-browser.mjs`, story QA, tests statiques).
+- [ ] F1 : `safe-text.ts` dans le principal (`lcStripUnsafeChars`, `isSafePreviewUrl`), `forms` y passe sans changement de comportement ; jetons ; modèle ; `message-thread-grouping.ts` ; libellés (M ; CA-T1, T2, T7, T16, T17).
+- [ ] F2 : bulle direction A, note interne, vignettes, liens (découpeur pur) (M ; CA-T5, T6, T8, T14, T15).
+- [ ] F3a : arrivée en ressort, FLIP, arrivées multiples (M ; CA-T3, T4, T13).
+- [ ] F3b : défilement selon le conteneur, affichage progressif, compensation (M ; CA-T9, T10).
+- [ ] F4 : stories, catalogue, README (S ; CA-T11, T18).
 - [ ] F5 (QA) : verdict, novice (CA-T11, T12).
-- [ ] F6 (PR séparée, copro-ticket) : adoption, messages système à la place de la bannière.
+- [ ] F6 (PR séparée, copro-ticket ; prérequis : kit fusionné, `deps:refresh`) : adoption, messages système d'historique dans le fil.
 
 ## 12. Risques et questions ouvertes
 - **Dettes** : jeton de ressort nouveau (le ressort avait été retiré des listes ; il ne sert qu'ici).
 - **Risques** : compensation de défilement sans `overflow-anchor` (Safari) ; FLIP et ressort ensemble sur des listes longues.
-- **Questions ouvertes** : réutilisation de `lc-message` pour la bulle (à trancher par l'`architect`).
+- **Questions ouvertes** : voir les questions posées à l'utilisateur le 2026-11-21 (gabarit de contenu, `authorId` côté copro-ticket, bloc d'état et texte des messages système).
+- **Limites** : position conservée prouvée sous Chromium ; WebKit et Firefox via Playwright si disponibles, sinon écart écrit.
 
 ## 13. Relectures et écarts
 | Date | Relecteur | Phase | Statut | Retenu / écarté |
 |---|---|---|---|---|
 | 2026-11-21 | `cadreur` | cadrage | ÉCARTS | Défilement (décision 12), périmètre (13), identifiant d'auteur, rupture de groupe à la visibilité, 5 min, fuseau et langue, sécurité ouverte. |
+| 2026-11-21 | `architect` | conception | RÉSERVES | Bulle propre au fil, `lc-message` intact ; `safe-text.ts` dans le principal ; ressort en jeton de composant (exception écrite à la décision 27) ; FLIP sur `list-move-*` ; premier rendu non vide = tout vu ; `overflow-anchor: none` et compensation partout ; `ResizeObserver` ; F1 et F3 redécoupés ; copro-ticket : `authorId` absent de l'API, bloc d'état à actions (questions). |
+| 2026-11-21 | `qa-engineer` | plan de test | À PRÉCISER | CA-T1 à T12 réécrits (mesures, méthode à `currentTime = 0`) ; CA-T13 à T18 ajoutés (arrivées multiples, liens déguisés, ponctuation et longueur, noms bidi, cas limites du modèle, `lc-message` intact). Tranché par la session : bidi et contrôle retirés des noms et du texte ; `id` en double : le premier ; décalage 50 ms, plafond 300 ms. |
+| 2026-11-21 | `ui-ux-designer` | brief | FAIT | Brief en §5.4, jetons en §5.2 ; surcharges non préfixées pour la note interne ; « Vous » fourni par l'application ; métadonnées en `font-size-sm`. |
