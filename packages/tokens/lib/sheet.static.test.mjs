@@ -27,7 +27,7 @@ test('CA-S0 : stories Overlays/Sheet (Playground, Animation) et catalogue', () =
 
 test('CA-S0 : lc-data-table n’a plus de <dialog> propre et utilise lc-sheet', () => {
   const html = read('data/src/data-table/data-table.component.html');
-  assert.ok(!/<dialog/.test(html), '<dialog> encore présent'); assert.match(html, /<lc-sheet/); assert.match(html, /closeLabel/);
+  assert.ok(!/<dialog/.test(html), '<dialog> encore présent'); assert.match(html, /<lc-sheet/); assert.match(html, /\[closeText\]="labels\.cancel"/);
 });
 
 test('CA-R2 / spec 5.2 : jetons de composant du mouvement iOS', () => {
