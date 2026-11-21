@@ -47,6 +47,7 @@ async function openStory(browser, base, id, theme) {
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
   await page.waitForSelector('#storybook-root > *, #storybook-docs', { timeout: 20000 });
   await page.waitForTimeout(400);
+  if (id.includes('--animation')) await page.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 15000 }); // fin de la cascade : sinon axe mesure le contraste d'un texte à mi-fondu
   return { page, context, errors };
 }
 
@@ -1362,8 +1363,8 @@ async function storiesMotion(browser, base) {
       await page.waitForTimeout(400);
       const tag = `${id} [${reducedMotion}]`;
       const notice = await page.locator(`text=${NOTICE}`).count();
-      // CA-16c : le bandeau accompagne les démos animées ; Elevation n'en a pas (aucune animation)
-      if (!id.includes('elevation')) check(`CA-16c ${tag} bandeau ${reducedMotion === 'reduce' ? 'présent' : 'absent'}`, notice === (reducedMotion === 'reduce' ? 1 : 0), `(${notice})`);
+      // CA-16c : le bandeau accompagne la page Motion et les stories `Animation` (spec 5.4) ; ni Elevation ni le Playground de Reveal n'en ont
+      if (id.includes('motion') || id.includes('--animation')) check(`CA-16c ${tag} bandeau ${reducedMotion === 'reduce' ? 'présent' : 'absent'}`, notice === (reducedMotion === 'reduce' ? 1 : 0), `(${notice})`);
       else console.log(`INFO ${tag} bandeau : ${notice}`);
       if (reducedMotion === 'no-preference') {
         const buttons = page.getByRole('button', { name: 'Rejouer' });

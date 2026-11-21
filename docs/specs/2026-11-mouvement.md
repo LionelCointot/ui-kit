@@ -213,18 +213,18 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] CA-13 : Avec `reducedMotion: 'reduce'`, pour les indicateurs, le bouton, les cinq panneaux, le dialogue et les cartes : durée et délai calculés ≤ 0,01 ms ; panneaux et dialogue fermés sans attente.
 - [x] CA-14 : En `forced-colors: active`, l'onglet sélectionné et l'élément de nav actif ont une bordure, un contour ou un fond calculé non transparent et différent de celui d'un élément inactif.
 - [x] CA-15 : Contrôle automatique : aucun motif `\d+(ms|s|px)`, `cubic-bezier(` ni `scale(0.` hors `var(--lc-…)` dans les `.css` et `.ts` touchés (tabs, nav-list, nav-item, button, menu, combobox, date-input, date-range-input, data-table, reveal, `ui-angular.css`) ; fichiers de tokens exclus.
-- [ ] CA-16a : `Foundations/Motion` et les 8 stories `Animation` de 5.4 s'ouvrent sans erreur de page.
-- [ ] CA-16b : « Rejouer » relance l'animation (`getAnimations().length > 0` juste après le clic).
-- [ ] CA-16c : bandeau présent avec `reducedMotion: 'reduce'`, absent sinon.
-- [ ] CA-16d : `node tools/qa/storybook-controls.mjs` et le contrôle axe (clair et sombre) passent.
-- [ ] CA-16e : `CONVENTIONS.md` contient la règle de la story `Animation` ; `DESIGN.md` porte l'exception de durée.
+- [x] CA-16a : `Foundations/Motion` et les 8 stories `Animation` de 5.4 s'ouvrent sans erreur de page.
+- [x] CA-16b : « Rejouer » relance l'animation (`getAnimations().length > 0` juste après le clic).
+- [x] CA-16c : bandeau présent avec `reducedMotion: 'reduce'`, absent sinon.
+- [x] CA-16d : `node tools/qa/storybook-controls.mjs` et le contrôle axe (clair et sombre) passent.
+- [x] CA-16e : `CONVENTIONS.md` contient la règle de la story `Animation` ; `DESIGN.md` porte l'exception de durée.
 - [ ] CA-17 (manuel) : test `novice-user` sur `Foundations/Motion` : COMPRIS.
 - [x] CA-20 : Après un changement de filtre ou de tri, une ligne ou carte conservée (même clé) garde son élément DOM et joue une animation de `transform` de sa position précédente à la nouvelle ; aucune cascade ne se rejoue.
 - [x] CA-21 : Une ligne ou carte ajoutée apparaît en fondu à sa place ; ses voisines glissent (CA-20).
 - [x] CA-22 : Une ligne ou carte retirée reste dans le DOM le temps d'un fondu (`--lc-overlay-exit-duration`), puis disparaît et les suivantes glissent pour combler.
 - [x] CA-23 : Avec `prefers-reduced-motion: reduce`, aucun glissement ni fondu de liste ; premier affichage : cascade inchangée (CA-12).
 - [x] CA-24 : `--lc-sys-easing-spring` (`linear(…)` d'un ressort sans rebond : valeurs croissantes de 0 à 1, aucune > 1) et `--lc-sys-duration-move` (500 ms) existent et servent aux déplacements des lignes, du trait des onglets et du fond de la nav latérale ; fondus et entrées gardent `easing-standard` et leurs durées.
-- [ ] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
+- [x] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
 
 ## 11. Découpage en tâches
 - [x] T1 : tokens `ref`, `sys` et de composant ; délais dans la règle de réduction de `base.css` ; tests des tokens (S, CA-1, CA-13).
@@ -235,7 +235,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] T6 : `lc-data-table` : menu de filtre, dialogue du téléphone, sections, pastilles, cartes (M, CA-7, CA-8, CA-10 à CA-12, CA-15).
 - [x] T6b : différence de liste animée sur `lc-data-table` (cartes et lignes, décision 26) et retouches de relecture de T6 (jeton de fermeture du dialogue, tests du menu pendant le fondu, `pendingReveal` en erreur) (M, CA-20 à CA-23).
 - [x] T6c : tokens `--lc-sys-easing-spring` (ressort sans rebond) et `--lc-sys-duration-move` (500 ms), tokens `--lc-list-move-*`, appliqués aux déplacements des lignes, du trait des onglets et du fond de la nav latérale (S, CA-24).
-- [ ] T7 : Storybook (`Foundations/Motion`, `Foundations/Elevation`, stories `Animation`, bandeau), `CONVENTIONS.md`, `DESIGN.md`, catalogue (M, CA-16a à CA-16e, CA-17, CA-18).
+- [x] T7 : Storybook (`Foundations/Motion`, `Foundations/Elevation`, stories `Animation`, bandeau), `CONVENTIONS.md`, `DESIGN.md`, catalogue (M, CA-16a à CA-16e, CA-17, CA-18).
 - [x] T8 (QA) : commande `motion` de `storybook-browser.mjs`, stories d'acceptation, contrôles statiques (CA-13, CA-15, et preuves de tous les CA navigateur).
 
 ## 12. Risques et questions ouvertes
@@ -262,3 +262,4 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - 2026-11-21, `code-reviewer` (T6b, T6c, correctifs de T6) : APPROUVÉ. CA-12 réécrit selon la décision 26 (la cascade ne se rejoue plus). Retouches demandées : paramètre unique d'`easing` dans `timing()`, commentaire de `spring-easing.mjs`. Nits notés : le `linear()` du ressort est typé `cubicBezier` dans les tokens DTCG (type inexact, toléré).
 - 2026-11-21, T7 codée : page `Foundations/Motion` (la section Motion de `Foundations/Elevation and motion` retirée, page renommée `Foundations/Elevation`), stories `Animation` (12, dont `Data/Data table` en téléphone et en ordinateur pour la différence de liste ; story de `lc-nav-list` dans `Navigation/Nav group`, où le composant est documenté), bandeau, `CONVENTIONS.md`, `DESIGN.md`. `code-reviewer` APPROUVÉ. Test `novice-user` sur `Foundations/Motion` : BLOQUÉ (courbes illisibles, comment tout couper, jargon) → corrections en cours, test à refaire avec un agent neuf.
 - 2026-11-21, T8 : `qa-engineer` GO (CA-1 à CA-15, CA-18 à CA-24) : `storybook-browser.mjs motion` 544/544 dans Chromium (normal, réduit, forced-colors, 1 280 et 360 px), `filter-date` 7/7, axe 50/50, 81 tests de tokens dont le contrôle statique CA-15 (`motion.static.test.mjs`, lignes ajoutées par la branche), 2 043 puis 2 045 tests Angular. Défauts trouvés et corrigés en route : indicateur de `lc-tabs` jamais animé (règle sous `:host`), double glissement des lignes lors d'un filtre (un seul glissement désormais), ligne ajoutée révélée trop tôt si la liste change pendant le cycle. Limites : Chromium seulement ; 3 tests de format monétaire échouent sous Node 22 (données ICU plus anciennes), le projet exige Node ≥ 24.15.
+- 2026-11-21, T7 vérifiée : `qa-engineer` GO (CA-16a à CA-16e, CA-18) : `stories-motion` 57/57 (12 stories, avec et sans réduction), `storybook-controls` 63/63, axe 24/24, 2 045 tests Angular, `catalogue:check`, `motion` 544/544, `filter-date`, 81 tests de tokens, imports 1/1 (Node 24.22.2). Test `novice-user` sur `Foundations/Motion` : BLOQUÉ, puis HÉSITANT deux fois (agents neufs) après corrections (section « Turning motion off », réglage système localisé, courbes légendées, tableau en une colonne sur téléphone) ; les trois réponses de la mission sont justes ; restent le vocabulaire de base du front-end, le mélange anglais/français des conventions, et deux courbes presque superposées. Décision soumise à l'utilisateur.
