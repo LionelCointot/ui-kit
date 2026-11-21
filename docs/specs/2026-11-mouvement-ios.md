@@ -1,6 +1,6 @@
 # Spec : ressenti iOS (feuille de filtres du téléphone, hauteurs et sorties animées)
 
-- **Statut** : Brouillon (2026-11-21), en relecture
+- **Statut** : Validée par l'utilisateur (2026-11-21), en réalisation
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (Baseline 2024, inchangée)
