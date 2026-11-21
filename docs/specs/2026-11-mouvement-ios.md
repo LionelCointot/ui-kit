@@ -4,7 +4,7 @@
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (Baseline 2024, inchangée)
-- **Specs liées** : [`2026-11-mouvement.md`](2026-11-mouvement.md) (décisions 17, 19, 20, 22 révisées ici) · [`2026-11-tableau-filtrable.md`](2026-11-tableau-filtrable.md)
+- **Specs liées** : [`2026-11-mouvement.md`](2026-11-mouvement.md) (décisions 17, 19, 20, 22 et Q5 révisées ici) · [`2026-11-tableau-filtrable.md`](2026-11-tableau-filtrable.md)
 - **Consommateurs** : simulateur immobilier, copro-ticket (file des demandes, `lc-data-table` sur téléphone) et tout projet qui utilise `lc-disclosure`, `lc-drawer`, `lc-dialog`, `lc-nav-group`, `lc-tabs`, `lc-app-shell`, le calendrier
 
 ## 0. Fiche de cadrage
@@ -17,7 +17,7 @@
   - « Et egalement, je remarque par clic au touch, on a le rendu du hover qui s'applique j'ai l'impression et ca fait un rendu bizarre, est-ce qu'on peut avoir l'animation du hover h' uniquement lorsqu'in survol ( souris) je pense au nav bar ou menu qu'il y a ce probleme »
 - **Besoin en trois phrases** : Sur téléphone, le panneau des filtres du tableau doit se comporter comme une feuille iOS : il monte du bas, se referme vers le bas, et se tire au doigt. Plus largement, tout ce qui change de taille dans le kit (sections, accordéons, pastilles, groupes de nav) saute aujourd'hui d'un coup, et plusieurs sorties sont sèches ; l'utilisateur veut un ressenti iOS doux et cohérent. On garde la courbe et les durées existantes, on les applique aux hauteurs et aux sorties.
 - **Audit** (2026-11-21, `ui-ux-designer`, mesures Chromium) : entrées conformes ; hauteurs et sorties abruptes ; `cubic-bezier(0.2, 0, 0, 1)` équivaut au ressort iOS sans rebond, pas de nouvelle courbe ; seule incohérence de courbe : fond du dialogue et du tiroir (valeur CDK 400 ms).
-- **Décisions prises pendant le cadrage** (2026-11-21, utilisateur) :
+- **Décisions prises pendant le cadrage** (2026-11-21 ; 2 à 10 : recommandations de la feuille acceptées en bloc par « Oui tres bien » ; 11 à 18 : corrections de l'audit acceptées en bloc par « Fait tout les points ») :
   1. **Feuille de filtres (téléphone)**, forme B : monte du bas et s'arrête sous le haut de l'écran (le tableau assombri reste visible), coins supérieurs arrondis, poignée, contenu qui défile à l'intérieur.
   2. Ouverture : montée en `duration-move` (500 ms), fond assombri en fondu.
   3. Fermeture (croix, Échap, « Afficher N … », geste) : descente en `duration-normal` (200 ms), fond en fondu.
@@ -74,34 +74,34 @@ La spec du mouvement a livré entrées, indicateurs et différence de liste. L'a
 | Personne qui réduit les animations | Tout ce qui précède | Aucun mouvement ; le geste suit le doigt, sans animation de fin |
 
 ## 5. Solution proposée
-### 5.1 Vue d'ensemble
-- **Hauteur animée (technique partagée)** dans `styles/ui-angular.css` : une classe utilitaire interne (ex. `lc-collapse` sur la région, `lc-collapse__inner` sur l'enfant) : `display: grid; grid-template-rows: 0fr; visibility: hidden` → ouvert `grid-template-rows: 1fr; visibility: visible`, transition `grid-template-rows` en `--lc-collapse-duration` (repli `duration-move`) et `easing-standard`, `visibility` décalée de la même durée à la fermeture (retire le contenu de la tabulation et de l'arbre d'accessibilité une fois replié, remplace `[hidden]`) ; enfant `min-block-size: 0; overflow: hidden` ; fondu d'opacité de l'enfant en `duration-normal`. `grid-template-rows` est animable depuis 2023 (dans la cible). Utilisée par les sections du panneau de filtres, `lc-disclosure`, `lc-nav-group`, la rangée de pastilles.
-- **Chevrons** : rotation en `--lc-collapse-duration`.
-- **Feuille de filtres** (`lc-data-table`, `<dialog>` modal existant) : position en bas, hauteur max `100dvh − marge haute`, coins supérieurs arrondis, poignée décorative ; entrée `@starting-style` `translateY(100%) → 0` en `duration-move` ; sortie par `data-closing` (mécanisme existant) `translateY(100%)` en `duration-normal` ; fond en fondu `duration-normal`. Geste : événements pointer sur la poignée et l'en-tête (`touch-action: none` sur ces zones seulement), `transform` suivi du doigt sans transition, au relâchement : fermeture si déplacement > seuil (quart de la hauteur, token) ou vitesse > seuil, sinon retour `duration-normal`. Fermeture par geste = même chemin que la croix (rien d'appliqué, focus rendu à « Filtres »).
-- **Pastilles** : retrait par `animate.leave` (fondu `duration-fast`) puis resserrement ; la liste prend les positions avant le changement de pastille pour un seul glissement (correction de la mesure, audit).
-- **Tiroir et dialogue** (`overlay`) : entrée par `@keyframes` sur le contenu (comme les panneaux CDK), sortie par `lcDetachAnimated` / `lc-overlay--closing` (dialogue : fondu ; tiroir : glissement) ; fond CDK (`.cdk-overlay-backdrop` du kit) en `duration-normal` + `easing-standard`.
-- **Onglets** : `@starting-style` d'opacité sur le panneau affiché.
-- **Calendrier** : fondu de la grille rejoué par clé de mois.
-- **App-shell** : durées repointées sur les tokens.
+### 5.1 Vue d'ensemble (après relecture de l'`architect`)
+- **Hauteur animée** : bloc CSS d'une dizaine de lignes **dans la feuille de chaque composant** (`disclosure.component.css`, `nav-group.component.css`, `data-table.component.css` ; partiel `@import` si ng-packagr le résout, sinon duplication), jamais dans `ui-angular.css` (un consommateur sans la feuille globale aurait des régions toujours ouvertes). Région `display: grid; grid-template-rows: 0fr; visibility: hidden` → ouverte `1fr` / `visible` ; au repli, `visibility` décalée de `--lc-collapse-duration` ; enfant `min-block-size: 0; overflow: hidden`, **padding et espacement portés par l'enfant** (sinon visibles une fois replié : padding de `.lc-disclosure__region` et `.lc-data-table__section-body`, `gap` de `.lc-nav-group__group`). `inert` posé immédiatement au repli. Les sections de `lc-data-table` gardent leur filtre rendu après la première ouverture (aujourd'hui `@if (section.open)` le détruit, le repli serait vide). Suppression de `@keyframes lc-disclosure-open` et du `@starting-style` du corps de section. Précédent : `app-shell.component.css` (visibility décalée).
+- **Chevrons** : rotation en `--lc-collapse-duration`, `easing-standard` ; sections du panneau : `chevron-down` tourné de 180° ; `lc-disclosure` et `lc-nav-group` : `chevron-right` tourné de 90° (un seul chevron dans `lc-nav-group`) ; toujours `aria-hidden`, état porté par `aria-expanded`.
+- **Feuille de filtres** (`<dialog>` modal existant) : `::backdrop` passe de `color-background` (opaque) à `--lc-sys-color-backdrop` ; entrée `@starting-style` `translateY(100%)` en `--lc-slide-enter-duration` ; sortie : la règle `[open][data-closing]` passe de l'opacité à `transform: translateY(100%)` en `--lc-slide-exit-duration`. Geste : `data-dragging` (`transition: none`) et `transform` en ligne écrit une fois par image ; `setPointerCapture` sur poignée et en-tête (`touch-action: none` sur ces zones seulement, `overscroll-behavior: contain` sur le corps) ; `pointercancel` et `lostpointercapture` → retour à 0 ; borné à 0 vers le haut (pas d'élastique) ; au relâchement on retire `data-dragging` et le transform en ligne, puis `data-closing` ou rien : les transitions repartent de la position courante (réouverture pendant la descente comprise). Fermeture si déplacement > `--lc-sheet-dismiss-ratio` (0,25) de la hauteur, ou vitesse vers le bas > 0,5 px/ms sur les 100 dernières ms avec au moins 16 px de déplacement (constantes nommées du code). Le fond s'éclaircit avec la distance (`--lc-sheet-progress`, question Q2).
+- **Attente des animations** : `lcAnimationsEnd(el, { subtree: false })` pour la feuille et les panneaux CDK (sinon une section en cours de repli retarderait la fermeture jusqu'à 500 ms).
+- **Pastilles** : `animate.leave` (fondu `duration-fast`, `data-leaving`, `pointer-events: none`) ; positions des lignes mesurées **relativement à `.lc-data-table__scroll`** ; décalage du bloc entier animé en un seul `translateY`, mesuré dans `removeChip` / `clearAll` avant `setQuery`. Les pastilles voisines se décalent encore horizontalement d'un coup (écart accepté).
+- **Dialogue et tiroir** (`@angular/cdk/dialog`) : `LcDialogRef.close(result)` (partagé par `LcDrawerRef`) pose `lc-overlay--closing` sur le panneau, retire `cdk-overlay-backdrop-showing` du fond, attend `lcAnimationsEnd(…, { subtree: false })`, puis appelle `cdkRef.close(result)` (garde d'idempotence ; la valeur de retour est conservée ; `closed` est émis à la fin de la sortie). Le dialogue passe en `disableClose: true`, Échap et fond gérés par le kit comme le tiroir. `lcDetachAnimated` n'est **pas** employé ici (il détacherait et perdrait le résultat). Entrée par `@keyframes` sur `> *` du panneau ; l'animation actuelle du panneau du tiroir (`ui-angular.css`) est retirée ; règles dédiées (tiroir en `transform`, dialogue en fondu et `scale(var(--lc-dialog-enter-scale))`), sans ajouter ces panneaux au `:is(...)` des menus. Fond : `.cdk-overlay-backdrop.lc-dialog-backdrop` / `.lc-drawer-backdrop` seulement, en `--lc-overlay-enter-duration` et `--lc-overlay-easing`, réinitialisé en réduction.
+- **Onglets** : `@starting-style` d'opacité sur le panneau affiché (le panneau garde `hidden`). **Calendrier** : fondu de la grille rejoué par clé de mois. **App-shell** : `--lc-shell-nav-duration`.
+- **Survol** (décision 19) : `@media (hover: hover)` seule, comme `lc-disclosure` et `choice-card` aujourd'hui ; aucun `:hover` en JavaScript ; on ne crée pas de style `:active` là où il n'y en a pas.
 
-### 5.2 Tokens (composant, repli sur `sys`)
+### 5.2 Tokens (composant, dans `packages/tokens/src/components/motion.tokens.json`, valeurs en `{sys.*}`)
 | Token | Valeur |
 |---|---|
-| `--lc-collapse-duration` | `duration-move` |
-| `--lc-sheet-top-gap` | `sys.space.8` (à confirmer au brief) |
+| `--lc-collapse-duration` | `duration-move` (question Q1) |
+| `--lc-slide-enter-duration` / `-exit-duration` | `duration-move` / `duration-normal` (feuille et tiroir) |
+| `--lc-sheet-top-gap` | `sys.space.8` (32 px, question Q3), plus `env(safe-area-inset-top)` |
 | `--lc-sheet-radius` | `sys.radius.lg` |
-| `--lc-sheet-enter-duration` / `-exit-duration` | `duration-move` / `duration-normal` |
-| `--lc-sheet-dismiss-ratio` | 0.25 |
-| `--lc-dialog-enter-scale` | 0.96 |
-| `--lc-drawer-enter-duration` / `-exit-duration` | `duration-move` / `duration-normal` |
-| `--lc-scrim-duration` | `duration-normal` |
-| `--lc-app-shell-nav-duration` | `duration-long` |
+| `--lc-sheet-dismiss-ratio` | 0.25 (nombre lu par `getComputedStyle`) |
+| `--lc-dialog-enter-scale` | 0.96 (nombre) |
+| `--lc-shell-nav-duration` | `duration-long` |
+
+Le fond réutilise `--lc-overlay-enter-duration` et `--lc-overlay-easing`. Poignée : 36 × 5 px avec les tokens de taille existants.
 
 ### 5.3 API
 Aucune entrée ni sortie nouvelle. Classes CSS internes ajoutées. `lc-nav-group` : un seul chevron (icône) au lieu de deux ; `lc-disclosure` : plus de `[hidden]` sur la région (remplacé par `visibility` après transition).
 
 ### 5.4 Interface
-Brief à rédiger par `ui-ux-designer` (marge haute, poignée, rayon, seuil, sens des chevrons), puis test `novice-user` sur captures (360 px) de la feuille.
+Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/2026-11-mouvement-ios/index.html` (vérifiée en Chromium à 360 et 1 280 px). Feuille : marge haute 32 px plus zone sûre ; rayon 12 px en haut ; fond `--lc-sys-color-backdrop` ; en-tête et pied `surface-raised`, corps `background` ; poignée 36 × 5 px `border-strong` (≈ 3,5:1), centrée à 8 px du haut dans une bande de 24 px, `aria-hidden` ; zone de geste = bande + en-tête (≈ 76 px), croix exclue ; titre « Filtres » `font-size-lg`, croix 44 × 44 ; focus initial inchangé. `forced-colors` : bordure `CanvasText`, poignée `forced-color-adjust: none; background: CanvasText`. Pleine largeur jusqu'au point de rupture du menu de bureau ; en paysage, le corps défile. Aucun texte nouveau. Test `novice-user` sur captures à 360 px (fermée, ouverte, en cours de tirage, section dépliée).
 
 ## 6. Cas limites
 - Contenu de la feuille plus haut que l'écran : défile à l'intérieur ; le geste ne démarre jamais depuis la zone qui défile.
@@ -131,39 +131,48 @@ Brief à rédiger par `ui-ux-designer` (marge haute, poignée, rayon, seuil, sen
 - Non-régression : suites existantes, `motion`, `stories-motion`, `filter-date`.
 
 ## 10. Critères d'acceptation
-- [ ] CA-S1 : À 360 px, « Filtres (N) » ouvre une feuille ancrée en bas, coins supérieurs arrondis, poignée, haut à `--lc-sheet-top-gap` du haut de l'écran ; entrée `translateY` de 100 % à 0 en 500 ms ; fond en fondu.
-- [ ] CA-S2 : Les trois fermetures (croix, Échap, « Afficher N … ») font descendre la feuille en 200 ms puis `dialog.open === false` ; filtres et focus inchangés.
-- [ ] CA-S3 : Glisser la poignée de plus d'un quart de la hauteur ferme la feuille sans rien émettre, focus rendu à « Filtres » ; moins d'un quart et lentement : retour à 0 ; geste rapide court : fermeture.
-- [ ] CA-S4 : Un glissement commencé dans la liste des filtres fait défiler la liste et ne déplace pas la feuille.
-- [ ] CA-S5 : En réduction : aucune transition à l'ouverture ni à la fermeture ; le geste suit le doigt.
-- [ ] CA-H1 : Ouvrir une section du panneau, un `lc-disclosure`, un groupe de `lc-nav-group` : la hauteur passe de 0 à la valeur finale en 500 ms ; les éléments placés dessous se déplacent sans saut (aucun déplacement de plus de 20 % de la hauteur finale entre deux images) ; le repli est animé de même.
-- [ ] CA-H2 : Région repliée : contenu non focalisable et absent de l'arbre d'accessibilité.
-- [ ] CA-H3 : Chevrons : rotation de même durée que la région ; `lc-nav-group` n'affiche qu'une icône de chevron.
-- [ ] CA-H4 : Retirer une pastille : fondu, rangée qui se referme, liste qui glisse en un seul mouvement (aucun saut).
-- [ ] CA-O1 : `lc-drawer` : entrée par glissement de toute sa largeur en 500 ms, sortie par glissement en 200 ms avant retrait du DOM.
-- [ ] CA-O2 : `lc-dialog` : entrée en fondu et échelle 0,96 → 1 en 200 ms, sortie en fondu de 100 ms avant retrait.
-- [ ] CA-O3 : Fond du dialogue et du tiroir : 200 ms et `easing-standard`.
+- [ ] CA-S1 : À 360 px, « Filtres (N) » ouvre une feuille ancrée en bas, coins supérieurs arrondis, poignée, haut à `--lc-sheet-top-gap` (± 1 px) ; entrée `translateY` de 100 % à 0 en `--lc-slide-enter-duration` ; fond `--lc-sys-color-backdrop` en fondu ; le tableau reste visible au-dessus.
+- [ ] CA-S2 : Les trois fermetures (croix, Échap, « Afficher N … ») posent `data-closing`, font descendre la feuille en `--lc-slide-exit-duration` puis `dialog.open === false` ; filtres émis comme aujourd'hui ; focus sur le bouton « Filtres ».
+- [ ] CA-S3 : Poignée tirée de plus de 25 % de la hauteur : fermeture, rien d'émis, focus sur « Filtres ». Moins de 25 % à moins de 0,5 px/ms : retour à `translateY(0)` en 200 ms. Moins de 25 % à plus de 0,5 px/ms avec au moins 16 px : fermeture. Un toucher sans déplacement ne ferme rien. Vers le haut : jamais au-delà de 0. Pendant le tirage, le `transform` suit le doigt sans transition.
+- [ ] CA-S4 : Liste plus haute que sa zone : un glissement tactile commencé dans la liste augmente son `scrollTop` et laisse la feuille à `translateY(0)` ; `touch-action: none` seulement sur la poignée et l'en-tête.
+- [ ] CA-S5 : En réduction des animations : aucune transition à l'ouverture ni à la fermeture ; le geste suit le doigt.
+- [ ] CA-S6 : `pointercancel` (ou perte de capture) pendant un tirage : retour à `translateY(0)`, la feuille reste ouverte, rien n'est émis.
+- [ ] CA-S7 : Rouvrir pendant la descente : la feuille repart de sa position courante, `data-closing` est retiré, `dialog.open === true` à la fin ; une double fermeture n'appelle `close()` qu'une fois.
+- [ ] CA-H1 : Pour une section du panneau, un `lc-disclosure` et un groupe de `lc-nav-group` (trois tests) : à l'ouverture, une transition sur `grid-template-rows` de durée `--lc-collapse-duration` et de courbe `easing-standard` démarre ; la hauteur rendue va de 0 à sa hauteur finale (± 1 px) ; en positionnant l'animation à t = 0, 16,7, 33,3 … ms, le haut de l'élément suivant évolue de façon monotone et d'au plus 25 % de la hauteur finale entre deux pas ; le repli suit la même règle.
+- [ ] CA-H2 : Dès le repli, la région est `inert` ; une fois la transition finie, `visibility: hidden`, Tab ne place jamais le focus dedans et elle est absente de l'instantané d'accessibilité ; à l'ouverture, `visibility: visible` dès la première image ; `aria-expanded` à jour.
+- [ ] CA-H3 : Chevrons : rotation de même durée que la région (180° pour les sections du panneau, 90° pour `lc-disclosure` et `lc-nav-group`) ; `lc-nav-group` n'affiche qu'une icône.
+- [ ] CA-H4 : Retrait d'une pastille : fondu `duration-fast`, pastille non cliquable pendant le fondu ; la rangée se resserre ; le bloc de la liste porte une seule animation de glissement dont le premier pas le place à sa position d'avant (± 1 px).
+- [ ] CA-H5 : Repli commencé à mi-ouverture : la hauteur repart de sa valeur courante (± 5 %), sans saut vers 0 ni vers la hauteur finale.
+- [ ] CA-O1 : `lc-drawer` : entrée par glissement de toute sa largeur en 500 ms, sortie par glissement en 200 ms ; le panneau quitte le DOM et `closed` est émis (avec la valeur passée à `close`) à la fin de la sortie.
+- [ ] CA-O2 : `lc-dialog` : entrée en fondu et échelle 0,96 → 1 en 200 ms, sortie en fondu de 100 ms ; Échap et clic sur le fond passent par la sortie animée ; `closed` émis à la fin avec la valeur passée à `close`.
+- [ ] CA-O3 : Fond du dialogue et du tiroir : `--lc-overlay-enter-duration` et `easing-standard`, en même temps que le panneau à la sortie.
 - [ ] CA-T1 : `lc-tabs` : le panneau nouvellement affiché apparaît en fondu de 200 ms.
 - [ ] CA-C1 : Calendrier : la grille apparaît en fondu de 200 ms au changement de mois.
-- [ ] CA-A1 : `lc-app-shell` : largeur de la nav en 350 ms, tiroir mobile en 500 ms.
-- [ ] CA-V1 : Dans un contexte tactile (360 px, `hasTouch`, `hover: none`), un toucher sur un élément de `lc-nav-list`, `lc-menu`, `lc-tabs`, un bouton et une ligne de tableau ne laisse aucun style de survol (couleur de fond calculée identique à l'état de repos après le toucher) ; avec une souris, le survol s'affiche comme aujourd'hui.
-- [ ] CA-V2 : Contrôle statique : aucune règle contenant `:hover` hors d'un bloc `@media (hover: hover)` dans `packages/angular/**/*.css`.
-- [ ] CA-R1 : Avec `prefers-reduced-motion: reduce`, aucune des animations ci-dessus ne joue.
-- [ ] CA-R2 : Aucune valeur en dur (contrôle `motion.static.test.mjs` étendu aux fichiers touchés) ; tests existants verts ; axe sans erreur ; stories `Animation` mises à jour.
+- [ ] CA-A1 : `lc-app-shell` : largeur de la nav en 350 ms (1 280 px), tiroir mobile en 500 ms (360 px).
+- [ ] CA-V1 : Contexte tactile (360 px, `hasTouch`, `(hover: hover)` faux) : après un toucher puis retrait du focus, la couleur de fond d'un élément de `lc-nav-list`, de `lc-menu`, d'un onglet, d'un `button[lcButton]` (trois `fillMode`) et d'une ligne de `lc-data-table` est égale à celle d'un élément identique non touché. Contexte souris (1 280 px) : le survol change la propriété visée par la règle.
+- [ ] CA-V2 : Contrôle statique (`node --test`) sur `packages/angular/**/*.css` (hors `dist`, `node_modules`) : toute règle dont le sélecteur contient `:hover` (y compris dans `:is()`, `:not()`, `:has()`) est dans un `@media` dont la condition contient `hover: hover` (imbrication admise) ; le nombre de règles `:hover` ne baisse pas (49 au départ) ; au moins 23 fichiers lus.
+- [ ] CA-F1 : `forced-colors: active` : poignée visible (couleur système), bordure de la feuille, coins arrondis conservés.
+- [ ] CA-R1 : Sous `prefers-reduced-motion: reduce`, pour la feuille, la section, `lc-disclosure`, `lc-nav-group`, les chevrons, la pastille, le tiroir, le dialogue, leurs fonds, l'onglet, la grille du calendrier et la nav de l'app-shell : aucune animation de plus de 0,01 ms pendant ni après l'action ; l'état final est atteint tout de suite.
+- [ ] CA-R2 : `packages/tokens/lib/motion.static.test.mjs` corrigé (chemin réel `packages/angular/styles/ui-angular.css`) et étendu aux fichiers touchés : aucune valeur en dur ; suite Vitest verte ; modes `motion`, `stories-motion`, `filter-date` verts ; axe sans erreur (feuille ouverte, section dépliée, tiroir, dialogue, à 360 px) ; stories `Animation` mises à jour et sans erreur.
 - [ ] CA-R3 (manuel) : test `novice-user` sur captures de la feuille à 360 px.
 
 ## 11. Tâches
-- [ ] S1 : technique partagée de hauteur + sections du panneau de filtres + `lc-disclosure` + `lc-nav-group` + chevrons (M ; CA-H1 à H3).
-- [ ] S2 : feuille de filtres : forme, entrée, sortie, geste, tokens (M ; CA-S1 à S5).
+- [ ] S1 : hauteur animée dans `lc-disclosure`, `lc-nav-group` et les sections du panneau, chevrons (M ; CA-H1 à H3, H5).
+- [ ] S2 : feuille de filtres : forme, fond, entrée, sortie, geste, tokens, `lcAnimationsEnd({ subtree: false })` (M ; CA-S1 à S7, CA-F1).
 - [ ] S3 : retrait des pastilles (S ; CA-H4).
-- [ ] S4 : tiroir, dialogue, fonds (M ; CA-O1 à O3).
+- [ ] S4 : `LcDialogRef.close` asynchrone, tiroir, dialogue, fonds (M ; CA-O1 à O3).
 - [ ] S5 : onglets, calendrier, app-shell (S ; CA-T1, C1, A1).
-- [ ] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles eux-mêmes (S ; CA-V1, CA-V2).
-- [ ] S6 (QA) : contrôles navigateur, réduction, axe, stories (CA-R1, R2) ; S7 : test novice (CA-R3).
+- [ ] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles (S ; CA-V1, CA-V2).
+- [ ] S6 (QA) : contrôles navigateur, réduction, `forced-colors`, axe, stories, contrôle statique corrigé (CA-R1, R2, F1, V1, V2) ; S7 : test novice (CA-R3) ; mise à jour des décisions révisées dans `2026-11-mouvement.md` et `catalogue:build`.
 
 ## 12. Risques et questions ouvertes
-- 500 ms pour des petites hauteurs peut paraître lent : à juger sur la démo ou en Storybook ; repli possible sur 350 ms par le token `--lc-collapse-duration`.
-- Le geste n'est prouvé qu'en Chromium (pointeur simulé), pas sur un vrai téléphone.
-- `visibility` décalée : vérifier qu'aucun test existant ne repose sur `[hidden]`.
+- **Questions à l'utilisateur** : Q1 durée des dépliages (500 ou 350 ms) ; Q2 fond qui s'éclaircit pendant le geste ; Q3 marge haute de la feuille (32 ou 40 px) ; Q4 contrôle statique permanent sur `:hover`.
+- **Tests existants à réécrire** (comportement changé volontairement) : `disclosure.component.spec.ts` (≈ 10 assertions sur `region.hidden`), `nav-group.component.spec.ts` (≈ 10, CA-K8.2), `dialog.service.spec.ts` et `drawer.service.spec.ts` (`close()` devient asynchrone), `storybook-browser.mjs` (mutations sur `hidden` des sections, fondu de la feuille).
+- **Limites** : geste et survol prouvés en Chromium seulement (pointeur simulé, `hasTouch`), pas sur un vrai téléphone ; `visibility` décalée non vérifiée sous Safari iOS ; les pastilles voisines se décalent horizontalement d'un coup ; appareils hybrides (tactile et souris) : la requête suit le dispositif principal.
+- **Bug trouvé en relecture** : `motion.static.test.mjs` pointait un chemin inexistant pour `ui-angular.css` et ne le contrôlait pas (corrigé en S6).
 
 ## 13. Relectures et écarts
+- 2026-11-21, `cadreur` : ÉCARTS de rédaction. Retenu : décisions 2 à 18 marquées « acceptées en bloc », décision Q5 de la spec du mouvement citée, seuil de vitesse chiffré, cas limites en critères (S6, S7, H5, F1), tokens ramenés à 7, survol rattaché (O6). Questions Q1 et Q4 posées.
+- 2026-11-21, `qa-engineer` (plan de test) : À PRÉCISER. Retenu : CA-S2, S3, S4, H1 (seuil 25 % par pas de 16,7 ms, mesure par animation en pause), H2, H4, O1, O2, R1, R2, V1, V2 réécrits ; CA-S6, S7, H5, F1 ajoutés ; liste des tests à risque. Tranché par la session principale : requête `(hover: hover)` seule, nombre de règles `:hover` qui ne baisse pas, `closed` émis à la fin de la sortie, pas d'effet élastique vers le haut, seuils du geste en constantes nommées.
+- 2026-11-21, `ui-ux-designer` (brief, maquette) : FAIT. Retenu en 5.1 et 5.4. Questions Q2 et Q3.
+- 2026-11-21, `architect` : RÉSERVES. Retenu : hauteur animée dans la feuille de chaque composant (pas dans `ui-angular.css`), padding et espacement sur l'enfant, `inert` immédiat, sections gardées rendues, `LcDialogRef.close` asynchrone au lieu de `lcDetachAnimated` (résultat conservé, `disableClose`), entrée du tiroir et du dialogue sur `> *`, fonds ciblés, `lcAnimationsEnd({ subtree: false })`, pastilles mesurées par rapport au conteneur, tokens dans `motion.tokens.json` avec les noms `slide-*` et `shell-*`, chemin corrigé de `motion.static.test.mjs`.
