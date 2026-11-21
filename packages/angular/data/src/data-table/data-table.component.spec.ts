@@ -913,25 +913,31 @@ describe('LcDataTableComponent', () => {
         expect(calls).toHaveLength(0);
       });
 
-      it('lignes retirées : fondu de sortie (--lc-overlay-exit-duration), retrait à la fin, puis les suivantes glissent', async () => {
+      it('lignes retirées : fondu de sortie, conservées figées à leur place d\'avant, puis UN SEUL glissement de l\'avant à la fin', async () => {
         await setup();
+        const before = rowNodes();
         stubLayout();
         tokens();
         const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
-        const [first, second] = rowNodes();
-        const animationComplete = vi.fn(() => first.remove());
-        component.fadeOut({ target: first, animationComplete });
-        expect(first.hasAttribute('data-leaving')).toBe(true);
-        expect(calls).toHaveLength(1);
+        // Angular ne joue pas `animate.leave` sous jsdom : on déclare la ligne 1 (État Nouvelle, retirée par le filtre) comme sortante.
+        const animationComplete = vi.fn();
+        component.fadeOut({ target: before[0], animationComplete });
+        expect(before[0].hasAttribute('data-leaving')).toBe(true);
         expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
         expect(calls[0].options).toEqual({ duration: 100, easing: 'ease-out', fill: 'forwards' });
+        await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
+        const kept = [before[1], before[4], before[7]];
+        expect(calls).toHaveLength(1); // pas de glissement pendant le fondu
+        expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['translateY(40px)', 'translateY(120px)', 'translateY(200px)']);
         expect(animationComplete).not.toHaveBeenCalled();
         calls[0].finish();
         await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
         await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
         expect(animationComplete).toHaveBeenCalledOnce();
-        expect(calls[1].row).toBe(second); // 40 px → 0 : la suivante comble la place
-        expect(calls[1].keyframes['transform']).toEqual(['translateY(40px)', 'none']);
+        const glides = calls.slice(1);
+        expect(glides.map((call) => call.row)).toEqual(kept); // un seul glissement par ligne conservée
+        expect(glides.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
+        expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['', '', '']);
       });
 
       it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {

@@ -223,8 +223,10 @@ export class LcDataTableComponent<T> {
   /** Vrai dès qu'une page a été affichée : la cascade du premier affichage est finie, les changements suivants animent la différence. */
   private readonly settled = signal(false);
   private listShown = false;
-  /** Positions des lignes relevées à la fin du fondu de sortie, avant leur retrait : les suivantes glissent pour combler. */
-  private gapSnapshot: ReadonlyMap<Element, number> | undefined;
+  /** Positions des lignes avant le dernier changement : le glissement (un seul par changement) part de là. */
+  private diff: ReadonlyMap<Element, number> | undefined;
+  /** Lignes retirées encore en fondu de sortie : le glissement attend leur retrait, les lignes conservées restent à leur place d'avant. */
+  private leaving = 0;
   private closeToken = 0;
 
   constructor() {
@@ -237,7 +239,8 @@ export class LcDataTableComponent<T> {
         this.listShown = true;
         if (!before) return;
         this.settled.set(true);
-        afterNextRender(() => this.animateDiff(before), { injector: this.injector });
+        this.diff = before;
+        afterNextRender(() => (this.leaving ? this.freeze(before) : this.glide()), { injector: this.injector });
       });
     });
     effect(() => {
@@ -258,18 +261,16 @@ export class LcDataTableComponent<T> {
     return this.narrow() && !this.settled() && index < REVEAL_CARDS ? index : null;
   }
 
-  /** Fondu de sortie d'une ligne (`animate.leave`), puis les suivantes glissent. Sans animation (réduction de mouvement…) : retrait immédiat. */
+  /** Fondu de sortie d'une ligne (`animate.leave`) ; quand la dernière a disparu, les lignes conservées glissent d'un trait. Sans animation (réduction de mouvement…) : retrait immédiat. */
   protected fadeOut({ target, animationComplete }: AnimationCallbackEvent): void {
     const timing = this.timing('--lc-overlay-exit-duration', '--lc-overlay-easing');
     if (!timing) return animationComplete();
     target.setAttribute('data-leaving', '');
+    this.leaving++;
     target.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(() => {
-      this.gapSnapshot ??= this.rowTops();
       animationComplete();
       requestAnimationFrame(() => {
-        const before = this.gapSnapshot;
-        this.gapSnapshot = undefined;
-        if (before) this.animateDiff(before);
+        if (--this.leaving === 0) this.glide();
       });
     });
   }
@@ -284,19 +285,39 @@ export class LcDataTableComponent<T> {
     return { duration: ms, easing: style.getPropertyValue(easing).trim() || undefined };
   }
 
-  /** Position verticale visible de chaque ligne (hors lignes en fondu de sortie), puis annulation des animations en cours : la mesure suivante lit la mise en page. */
-  private rowTops(): Map<Element, number> {
-    const rows = [...this.host.querySelectorAll('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
-    const tops = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
-    rows.forEach((row) => row.getAnimations?.().forEach((animation) => animation.cancel()));
-    return tops;
+  /** Position verticale de chaque ligne (hors lignes en fondu de sortie) : visible par défaut ; `layout` annule d'abord animations et décalages posés, pour lire la mise en page. */
+  private rowTops(layout = false): Map<Element, number> {
+    const rows = [...this.host.querySelectorAll<HTMLElement>('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
+    if (layout) {
+      rows.forEach((row) => {
+        row.getAnimations?.().forEach((animation) => animation.cancel());
+        row.style.transform = row.style.opacity = '';
+      });
+    }
+    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+  }
+
+  /** Des lignes sortent encore : les conservées restent à leur place d'avant (transform inverse) et les ajoutées sont masquées, jusqu'au glissement. */
+  private freeze(before: ReadonlyMap<Element, number>): void {
+    for (const [row, top] of this.rowTops(true)) {
+      const from = before.get(row);
+      const style = (row as HTMLElement).style;
+      if (from === undefined) style.opacity = '0';
+      else if (Math.abs(from - top) >= 0.5) style.transform = `translateY(${from - top}px)`;
+    }
+  }
+
+  private glide(): void {
+    const before = this.diff;
+    this.diff = undefined;
+    if (before) this.animateDiff(before);
   }
 
   /** FLIP : lignes conservées glissent de leur ancienne place à la nouvelle ; lignes ajoutées apparaissent en fondu. */
   private animateDiff(before: ReadonlyMap<Element, number>): void {
     const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
     const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
-    for (const [row, top] of this.rowTops()) {
+    for (const [row, top] of this.rowTops(true)) {
       const from = before.get(row);
       if (from === undefined) {
         if (enter) row.animate({ opacity: [0, 1] }, enter);
