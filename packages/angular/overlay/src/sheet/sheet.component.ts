@@ -40,7 +40,7 @@ interface Drag {
             [attr.aria-label]="closeLabel() ?? labels.close" (click)="open.set(false)"><lc-icon name="x" /></button>
         </header>
       </div>
-      <div #body class="lc-sheet__body" [attr.tabindex]="scrolls() ? 0 : null" [attr.role]="scrolls() ? 'region' : null" [attr.aria-labelledby]="scrolls() ? titleId : null"><ng-content /></div>
+      <div #body class="lc-sheet__body" [attr.tabindex]="scrolls() ? 0 : null" [attr.role]="scrolls() ? 'region' : null" [attr.aria-labelledby]="scrolls() ? titleId : null"><div class="lc-sheet__content"><ng-content /></div></div>
       <footer class="lc-sheet__footer"><ng-content select="[lcSheetFooter]" /></footer>
     </dialog>
   `,
@@ -83,8 +83,8 @@ export class LcSheetComponent {
       const body = this.body().nativeElement;
       const observer = new ResizeObserver(() => this.scrolls.set(body.scrollHeight > body.clientHeight));
       observer.observe(body);
-      // shortcut: les enfants présents au premier rendu seulement ; un enfant ajouté plus tard ne relance pas la mesure avant un redimensionnement.
-      Array.from(body.children).forEach((child) => observer.observe(child));
+      // Le corps garde une hauteur fixe : seul le contenu interne change de taille quand du contenu est monté plus tard.
+      observer.observe(body.firstElementChild ?? body);
       destroyRef.onDestroy(() => observer.disconnect());
     });
     effect(() => {

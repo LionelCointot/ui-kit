@@ -165,6 +165,18 @@ describe('LcSheetComponent', () => {
       expect(body().hasAttribute('tabindex')).toBe(false);
     });
 
+    it('observe aussi le contenu projeté : du contenu ajouté plus tard qui déborde rend le corps focusable', async () => {
+      const content = body().querySelector('.lc-sheet__content')!;
+      expect(content).not.toBeNull();
+      expect(FakeResizeObserver.instances.some((observer) => observer.observe.mock.calls.some(([target]) => target === content))).toBe(true);
+      measure(200, 200);
+      await stable();
+      expect(body().hasAttribute('tabindex')).toBe(false);
+      measure(900, 200); // le contenu grandit : l'observateur du contenu relance la mesure
+      await stable();
+      expect(body().getAttribute('tabindex')).toBe('0');
+    });
+
     it('se déconnecte à la destruction', async () => {
       fixture.destroy();
       expect(FakeResizeObserver.instances.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);

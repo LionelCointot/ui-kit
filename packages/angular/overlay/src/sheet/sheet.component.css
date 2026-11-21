@@ -117,6 +117,10 @@ lc-sheet {
   overscroll-behavior: contain;
 }
 
+.lc-sheet__content {
+  display: flow-root;
+}
+
 .lc-sheet__footer {
   display: flex;
   flex: none;
