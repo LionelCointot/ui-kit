@@ -971,6 +971,23 @@ describe('LcDataTableComponent', () => {
       expect(dialog.close).toHaveBeenCalledOnce();
     });
 
+    it('menu de filtre : Échap passe par la fermeture en fondu (contenu présent, focus rendu à l\'entonnoir, rien d\'appliqué)', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      // keyCode comme un vrai navigateur : le CDK s'y fie pour détacher lui-même le panneau sans `disableClose`.
+      (document.activeElement ?? menu()!).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true, cancelable: true }));
+      await stable();
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      expect(menu()).not.toBeNull();
+      finish();
+      await stable();
+      expect(menu()).toBeNull();
+      expect(document.activeElement).toBe(funnel('state'));
+      expect(host.emitted).toHaveLength(0);
+    });
+
     it('menu de filtre : rouvrir la même colonne pendant le fondu annule la fermeture', async () => {
       await setup();
       await open('state');

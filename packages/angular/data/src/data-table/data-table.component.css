@@ -662,6 +662,7 @@ lc-data-table {
   .lc-data-table__section-toggle > lc-icon,
   .lc-data-table__panel[open],
   .lc-data-table__panel::backdrop,
+  .lc-data-table__panel[data-closing]::backdrop,
   .lc-data-table__section-body,
   .lc-data-table__chip {
     transition: none;

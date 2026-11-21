@@ -148,7 +148,7 @@
 
 <!-- Menu de filtre (ordinateur) : boîte de dialogue non modale ancrée sous l'entonnoir -->
 <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="menuOrigin()" [cdkConnectedOverlayOpen]="!!menuColumn()"
-  [cdkConnectedOverlayPositions]="menuPositions" [cdkConnectedOverlayPush]="true" cdkConnectedOverlayPanelClass="lc-data-table__overlay"
+  [cdkConnectedOverlayPositions]="menuPositions" [cdkConnectedOverlayPush]="true" [cdkConnectedOverlayDisableClose]="true" cdkConnectedOverlayPanelClass="lc-data-table__overlay"
   (overlayOutsideClick)="onMenuOutsideClick($event)" (overlayKeydown)="onMenuKeydown($event)" (detach)="menuColumn.set(null)">
   @if (menuColumn(); as column) {
     <div class="lc-data-table__menu" role="dialog" aria-modal="false" tabindex="-1" cdkTrapFocus [id]="uid + '-menu'"
