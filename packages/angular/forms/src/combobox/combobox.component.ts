@@ -38,6 +38,7 @@ import {
   LcSpinnerComponent,
   joinIds,
   lcUniqueId,
+  lcDetachAnimated,
 } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import { LcComboboxOptionDirective } from './combobox-option.directive';
@@ -496,19 +497,21 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
       positionStrategy: this.overlay.position().flexibleConnectedTo(frame).withFlexibleDimensions(true).withViewportMargin(8)
         .withPositions([
           { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-          { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
+          { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
         ]),
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
       panelClass: 'lc-combobox-overlay',
     });
     this.overlayRef.updateSize({ width: frame.getBoundingClientRect().width });
+    // Réouverture pendant le fondu de fermeture : le rattachement annule le retrait (lcDetachAnimated).
+    if (this.overlayRef.hasAttached()) this.overlayRef.detach();
     this.overlayRef.attach(new TemplatePortal(this.panelRef(), this.viewContainerRef));
     this.open.set(true);
   }
 
   private closePanel(): void {
     if (!this.open()) return;
-    this.overlayRef?.detach();
+    if (this.overlayRef) void lcDetachAnimated(this.overlayRef);
     this.open.set(false);
     this.keyManager.setActiveItem(-1);
     if (this.status() === 'loading') {

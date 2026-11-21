@@ -38,7 +38,8 @@
   transition:
     background-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard),
     border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard),
-    color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+    color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard),
+    transform var(--lc-button-press-duration, var(--lc-sys-duration-fast)) var(--lc-sys-easing-standard);
 }
 
 :host(:hover:not(:disabled):not([aria-disabled='true'])) {
@@ -47,6 +48,7 @@
 
 :host(:active:not(:disabled):not([aria-disabled='true'])) {
   background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-pressed-opacity) * 100%), var(--_bg));
+  transform: scale(var(--lc-button-press-scale));
 }
 
 /* État enfoncé (bascule) : fond teinté et anneau intérieur dans la couleur du texte (la forme porte l'état, pas la seule couleur).

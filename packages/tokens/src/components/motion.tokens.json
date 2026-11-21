@@ -1,0 +1,74 @@
+{
+  "tabs": {
+    "indicator-duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    },
+    "indicator-easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
+    }
+  },
+  "nav-item": {
+    "indicator-duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    },
+    "indicator-easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
+    }
+  },
+  "overlay": {
+    "enter-duration": {
+      "$value": "{sys.duration.normal}",
+      "$type": "duration"
+    },
+    "exit-duration": {
+      "$value": "{sys.duration.fast}",
+      "$type": "duration"
+    },
+    "easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
+    },
+    "offset": {
+      "$value": "{sys.motion.offset}",
+      "$type": "dimension"
+    }
+  },
+  "chip": {
+    "enter-duration": {
+      "$value": "{sys.duration.fast}",
+      "$type": "duration"
+    }
+  },
+  "reveal": {
+    "duration": {
+      "$value": "{sys.duration.long}",
+      "$type": "duration"
+    },
+    "easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
+    },
+    "offset": {
+      "$value": "{sys.motion.offset}",
+      "$type": "dimension"
+    },
+    "stagger": {
+      "$value": "{sys.motion.stagger}",
+      "$type": "duration"
+    }
+  },
+  "list": {
+    "move-duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    },
+    "move-easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
+    }
+  }
+}

@@ -15,6 +15,7 @@ import { LcTabComponent } from './tab.component';
     <div #list class="lc-tabs__list" role="tablist" [attr.aria-label]="ariaLabel() || null"
       [class.lc-tabs__list--fade-left]="fadeLeft()" [class.lc-tabs__list--fade-right]="fadeRight()"
       (scroll)="updateFades()">
+      <span #indicator class="lc-tabs__indicator" role="presentation" aria-hidden="true" hidden></span>
       @for (tab of tabs(); track tab.id()) {
         <button #tabButton type="button" role="tab" class="lc-tabs__tab"
           [id]="tabId(tab.id())" [attr.aria-selected]="tab.id() === current()"
@@ -38,7 +39,7 @@ import { LcTabComponent } from './tab.component';
   `,
   styleUrl: './tabs.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-tabs' },
+  host: { class: 'lc-tabs', '[class.lc-tabs--ready]': 'ready()' },
 })
 export class LcTabsComponent {
   readonly selected = model<string | null>(null);
@@ -48,11 +49,15 @@ export class LcTabsComponent {
   protected readonly tabs = contentChildren(LcTabComponent);
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
   private readonly list = viewChild.required<ElementRef<HTMLElement>>('list');
+  private readonly indicator = viewChild.required<ElementRef<HTMLElement>>('indicator');
   private readonly view = inject(DOCUMENT).defaultView;
   private readonly baseId = lcUniqueId('tabs');
   /** Onglets cachés à gauche / à droite de la rangée : un fondu de bord le signale. */
   protected readonly fadeLeft = signal(false);
   protected readonly fadeRight = signal(false);
+  /** Vrai après la première mesure de l'indicateur : avant, il se pose sans transition. */
+  protected readonly ready = signal(false);
+  private placedId: string | null = null;
   protected readonly visited = signal<ReadonlySet<string>>(new Set());
 
   /** Onglet affiché : `selected` s'il existe et n'est pas désactivé, sinon le premier onglet actif. */
@@ -70,12 +75,18 @@ export class LcTabsComponent {
     // Ramène l'onglet focalisable (sélectionné ou au focus) dans la zone visible, puis met à jour les fondus.
     afterRenderEffect(() => {
       const index = this.tabs().findIndex((tab) => tab.id() === this.focusable());
-      this.reveal(this.buttons()[index]?.nativeElement);
+      this.scrollTabIntoView(this.buttons()[index]?.nativeElement);
       this.updateFades();
+      this.placeIndicator(false);
     });
     afterRenderEffect((onCleanup) => {
-      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.updateFades());
+      // Une remesure due à la taille (et non à une sélection) pose l'indicateur sans transition.
+      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+        this.updateFades();
+        this.placeIndicator(true);
+      });
       observer?.observe(this.list().nativeElement);
+      this.buttons().forEach((button) => observer?.observe(button.nativeElement));
       onCleanup(() => observer?.disconnect());
     });
   }
@@ -89,8 +100,26 @@ export class LcTabsComponent {
     this.fadeRight.set(max - hiddenLeft > 1);
   }
 
+  /**
+   * Place le trait sous l'onglet sélectionné ; masqué sans sélection. Seul un changement d'onglet sélectionné
+   * glisse : une remesure (`resized`) ou une même sélection (ajout d'onglet, focus) pose le trait sans transition.
+   */
+  private placeIndicator(resized: boolean): void {
+    const indicator = this.indicator().nativeElement;
+    const id = this.current();
+    const button = this.buttons()[this.tabs().findIndex((tab) => tab.id() === id)]?.nativeElement;
+    indicator.hidden = !button;
+    if (!button) return;
+    // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
+    indicator.classList.toggle('lc-tabs__indicator--instant', resized || id === this.placedId);
+    this.placedId = id;
+    indicator.style.transform = `translateX(${button.offsetLeft}px)`;
+    indicator.style.width = `${button.offsetWidth}px`;
+    this.ready.set(true);
+  }
+
   /** Fait défiler la rangée (jamais la page) jusqu'à l'onglet, en laissant la largeur du fondu de chaque côté. */
-  private reveal(button: HTMLElement | undefined): void {
+  private scrollTabIntoView(button: HTMLElement | undefined): void {
     if (!button || !this.view) return;
     const list = this.list().nativeElement;
     const margin = parseFloat(this.view.getComputedStyle(list).scrollPaddingLeft) || 0;

@@ -1,6 +1,7 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, Type, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormField, form, max, min } from '@angular/forms/signals';
 import { BehaviorSubject } from 'rxjs';
 import { LC_LABELS_FR, LcFormatService } from '@lionelcointot/ui-angular';
@@ -189,7 +190,7 @@ describe('lc-date-range-input, mode calendrier', () => {
     expect(panel()!.classList.contains('lc-calendar--range')).toBe(true);
     expect(panel()!.querySelectorAll('.lc-calendar__month')).toHaveLength(2);
     expect(panel()!.querySelector('.lc-calendar__layout--column')).not.toBeNull();
-    expect(panel()!.querySelectorAll('.lc-calendar__preset')).toHaveLength(4);
+    expect(panel()!.querySelectorAll('.lc-calendar__preset')).toHaveLength(5);
     const cells = panel()!.querySelectorAll<HTMLElement>('td[data-date]');
     const first = cells[2];
     first.click();
@@ -306,18 +307,21 @@ describe('lc-date-range-input, mode natif', () => {
     await fixture.whenStable();
     expect(host.value()).toEqual({ from: '2026-11-10', to: null });
     expect(el.querySelector('.lc-date-range-input__error')!.textContent).toContain('avant la date de début');
+    const range = fixture.debugElement.query(By.directive(LcDateRangeInputComponent)).componentInstance as LcDateRangeInputComponent;
+    expect(range.orderInvalid()).toBe(true);
     inputs()[1].value = '2026-11-12';
     inputs()[1].dispatchEvent(new Event('change'));
     await fixture.whenStable();
     expect(host.value()).toEqual({ from: '2026-11-10', to: '2026-11-12' });
     expect(el.querySelector('.lc-date-range-input__error')).toBeNull();
+    expect(range.orderInvalid()).toBe(false);
   });
 
   it('raccourcis en rangée nommée « Raccourcis » ; un clic remplit la période ; désactivés si le champ l’est', async () => {
     const { el, host, fixture } = await mount('native');
     const row = el.querySelector('.lc-date-range-input__shortcuts')!;
     expect(row.getAttribute('aria-label')).toBe('Raccourcis');
-    expect(row.querySelectorAll('button')).toHaveLength(4);
+    expect(row.querySelectorAll('button')).toHaveLength(5);
     row.querySelector('button')!.click();
     await fixture.whenStable();
     expect(host.value().from).not.toBeNull();
@@ -485,8 +489,8 @@ describe('lc-date-range-input, corrections', () => {
     const formats = TestBed.inject(LcFormatService);
     const longDate = (iso: string) => formats.date(iso, 'long');
     const items = describePresets(labels, 'fr-FR', kitDatePresets(labels), '2026-11-19', '2026-11-15', '2026-11-30', longDate);
-    expect(items.map((item) => item.dates)).toEqual(['du 15 au 19 novembre 2026', 'du 15 au 19 novembre 2026', 'du 15 au 30 novembre 2026', labels.dateNoneAllowed]);
-    expect(items[3].interval).toBeNull();
+    expect(items.map((item) => item.dates)).toEqual(['du 15 au 19 novembre 2026', 'le 15 novembre 2026', 'du 15 au 19 novembre 2026', 'du 15 au 30 novembre 2026', labels.dateNoneAllowed]);
+    expect(items[4].interval).toBeNull();
     // Le lendemain, les mêmes raccourcis donnent d'autres dates : rien n'est figé.
     expect(describePresets(labels, 'fr-FR', kitDatePresets(labels), '2026-11-20', null, null, longDate)[0].interval).toEqual({ from: '2026-11-14', to: '2026-11-20' });
   });

@@ -98,6 +98,12 @@ export const lastDaysInterval = (today: string, days: number): LcDateInterval =>
   to: today,
 });
 
+/** Lundi au dimanche de la semaine précédant `today` (semaine ISO, comme le calendrier). */
+export function lastWeekInterval(today: string): LcDateInterval {
+  const monday = addDays(today, -((isoToLocalDate(today)!.getDay() + 6) % 7) - 7);
+  return { from: monday, to: addDays(monday, 6) };
+}
+
 export const thisMonthInterval = (today: string): LcDateInterval => ({
   from: firstOfMonth(today),
   to: lastOfMonth(today),

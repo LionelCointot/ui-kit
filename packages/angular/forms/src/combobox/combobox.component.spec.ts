@@ -1,3 +1,4 @@
+import { ConnectedPosition, FlexibleConnectedPositionStrategy } from '@angular/cdk/overlay';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LcComboboxOptionDirective } from './combobox-option.directive';
@@ -177,6 +178,31 @@ describe('LcComboboxComponent (mode local)', () => {
     expect(input.value).toBe('');
     expect(fixture.componentInstance.value()).toBeNull();
     expect(fixture.componentInstance.changes).toEqual([DEPARTMENTS[2], null]);
+  });
+
+  it('ferme en fondu (lc-overlay--closing puis retrait) ; rouvrir pendant le fondu garde la liste', async () => {
+    input.focus();
+    await fixture.whenStable();
+    const pane = document.querySelector<HTMLElement>('.lc-combobox-overlay')!;
+    key(input, 'Escape');
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+    expect(panel()).not.toBeNull();
+    key(input, 'ArrowDown');
+    await fixture.whenStable();
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+    expect(panel()).not.toBeNull();
+    await press('Escape');
+    expect(panel()).toBeNull();
+  });
+
+  it('les positions au-dessus portent lc-overlay--above, celles en dessous non', async () => {
+    const withPositions = vi.spyOn(FlexibleConnectedPositionStrategy.prototype, 'withPositions');
+    input.focus();
+    await fixture.whenStable();
+    const positions = withPositions.mock.calls[0][0] as ConnectedPosition[];
+    withPositions.mockRestore();
+    expect(positions.length).toBeGreaterThan(0);
+    for (const position of positions) expect(position.panelClass).toBe(position.overlayY === 'bottom' ? 'lc-overlay--above' : undefined);
   });
 
   it('Tab ferme la liste sans sélectionner', async () => {

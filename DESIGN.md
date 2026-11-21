@@ -236,7 +236,7 @@ Tous les composants viennent du ui-kit ; une application ne redéfinit ni un tok
 - **Don't** utiliser `themeColor="error"` ailleurs que sur le bouton de confirmation d'une action à fort impact, ni un second accent, un dégradé, une ombre décorative.
 - **Don't** laisser un bouton icône sans nom accessible ; un bouton désactivé sans raison lisible.
 - **Don't** écrire de couleur, taille ou durée en dur ; ne pas utiliser `innerHTML` pour des contenus non fiables.
-- **Don't** animer plus de 200 ms (hors `prefers-reduced-motion` : aucune animation).
+- **Don't** animer plus de 200 ms, sauf la cascade `lcReveal` (350 ms par élément) et les déplacements (500 ms) ; avec `prefers-reduced-motion`, aucune animation.
 
 ## Actions et icônes
 

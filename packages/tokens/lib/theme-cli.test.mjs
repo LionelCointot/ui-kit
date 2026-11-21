@@ -33,13 +33,13 @@ function parseVariables(css) {
   return variables;
 }
 
-/** Remplace les `var(--lc-ref-…)` par la valeur finale du token de référence. */
+/** Remplace les `var(--lc-ref-…)` par la valeur finale du token de référence (et `--lc-sys-motion-offset`, alias de `--lc-sys-space-2`, par la sienne). */
 async function inlineReferences(variables, baseTheme) {
   const references = new Map();
   for (const [tokenPath, value] of await resolvedTokens(baseTheme)) {
-    if (tokenPath.startsWith('ref.')) references.set(`--lc-${tokenPath.replaceAll('.', '-')}`, String(value));
+    if (tokenPath.startsWith('ref.') || tokenPath === 'sys.space.2') references.set(`--lc-${tokenPath.replaceAll('.', '-')}`, String(value));
   }
-  return new Map([...variables].map(([name, value]) => [name, value.replace(/var\((--lc-ref-[\w-]+)\)/g, (_, ref) => references.get(ref))]));
+  return new Map([...variables].map(([name, value]) => [name, value.replace(/var\((--lc-(?:ref-[\w-]+|sys-space-2))\)/g, (_, ref) => references.get(ref))]));
 }
 
 test('les données générées du thème sont à jour (npm run build les régénère)', async () => {

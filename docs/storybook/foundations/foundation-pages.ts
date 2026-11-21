@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, inject, signal, viewChild, viewChildren } from '@angular/core';
+import { StoryMotionNoticeComponent, pressButton, prefersReducedMotion, replayable, tokenMs } from '@lc/storybook';
+import { LcButtonComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
 import { baseValues, contrastRatio, cssVarOf } from '@lionelcointot/ui-tokens/theme';
 
 /*
@@ -225,7 +227,7 @@ export class DocSpacingComponent {
   }
 }
 
-/** Ombres, durées, courbes et plans de superposition. */
+/** Ombres et plans de superposition. */
 @Component({
   selector: 'lc-doc-elevation',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -237,21 +239,6 @@ export class DocSpacingComponent {
         <div class="card" [style.box-shadow]="'var(' + row.cssVar + ')'"><strong>{{ row.cssVar }}</strong></div>
       }
     </div>
-
-    <h2>Motion</h2>
-    <p class="lead">Hover a row to play the transition. Motion is reduced automatically when the system asks for it.</p>
-    <table>
-      <tbody>
-        @for (row of durations; track row.key) {
-          <tr class="motion"><td><code>{{ row.cssVar }}</code></td><td class="muted">{{ row.value }}</td>
-            <td><span class="dot" [style.transition-duration]="'var(' + row.cssVar + ')'"></span></td></tr>
-        }
-        @for (row of easings; track row.key) {
-          <tr class="motion"><td><code>{{ row.cssVar }}</code></td><td class="muted"><code>{{ row.value }}</code></td>
-            <td><span class="dot" [style.transition-timing-function]="'var(' + row.cssVar + ')'"></span></td></tr>
-        }
-      </tbody>
-    </table>
 
     <h2>Layers</h2>
     <table>
@@ -267,10 +254,6 @@ export class DocSpacingComponent {
     `
     .shadows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--lc-sys-space-6); padding: var(--lc-sys-space-4); background: var(--lc-sys-color-background); border-radius: var(--lc-sys-radius-lg); }
     .card { padding: var(--lc-sys-space-8) var(--lc-sys-space-4); background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-lg); font-size: var(--lc-sys-font-size-xs); }
-    .dot { display: inline-block; width: 16px; height: 16px; border-radius: var(--lc-sys-radius-full); background: var(--lc-sys-color-primary);
-      transition-property: transform; transition-duration: var(--lc-sys-duration-slow); transition-timing-function: var(--lc-sys-easing-standard); }
-    .motion:hover .dot { transform: translateX(160px); }
-    td:last-child { width: 200px; }
     `,
   ],
 })
@@ -278,7 +261,196 @@ export class DocElevationComponent {
   private readonly rows = (prefix: string) =>
     keysOf(prefix).map((key) => ({ key, cssVar: cssVarOf(key), value: light[key] }));
   protected readonly shadows = this.rows('shadow.');
-  protected readonly durations = this.rows('duration.');
-  protected readonly easings = this.rows('easing.');
   protected readonly layers = this.rows('z.');
+}
+
+const MOTION_VALUES = [
+  { key: 'duration.fast', use: 'Button press, closing fades' },
+  { key: 'duration.normal', use: 'Panels and menus opening' },
+  { key: 'duration.long', use: 'Each item of a list appearing one after another (lcReveal directive)' },
+  { key: 'duration.move', use: 'Things moving to a new place: list rows, tab and nav indicators' },
+  { key: 'motion.stagger', use: 'Delay between two items of such a list' },
+  { key: 'motion.offset', use: 'How far an element travels when it appears' },
+].map(({ key, use }) => ({ key, cssVar: cssVarOf(key), value: light[key], use }));
+
+const MOTION_CURVE = {
+  name: 'standard',
+  cssVar: cssVarOf('easing.standard'),
+  value: light['easing.standard'],
+  use: 'A fixed curve that eases in and out: for fades, things appearing and things moving to a new place (over the longer move duration).',
+};
+
+const MOTION_OFF_CSS = `:root {
+  --lc-sys-duration-fast: 0ms;
+  --lc-sys-duration-normal: 0ms;
+  --lc-sys-duration-long: 0ms;
+  --lc-sys-duration-move: 0ms;
+  --lc-sys-motion-stagger: 0ms;
+}`;
+
+interface CurveTrace { path: string; mid: number }
+const CURVE_SAMPLES = 60;
+const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
+
+/** Durées, courbes, distance et petites démos du mouvement, chacune avec son « Rejouer ». */
+@Component({
+  selector: 'lc-doc-motion',
+  imports: [LcButtonComponent, LcRevealDirective, StoryMotionNoticeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <h2>Motion</h2>
+    <p class="lead">Every animation in the kit reads the <code>--lc-sys-*</code> tokens below, so a theme changes the feel of all components at once.</p>
+    <lc-story-motion-notice />
+
+    <h2>Durations and distance</h2>
+    <div class="scroll">
+      <table>
+        <tbody>
+          @for (row of values; track row.key) {
+            <tr><td class="nowrap"><code>{{ row.cssVar }}</code></td><td class="muted nowrap">{{ row.value }}</td><td class="muted">{{ row.use }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Curves</h2>
+    <p class="lead">A curve says how fast something goes at each moment. The curve below goes from 0 to 1 over the duration of the animation; the dot marks half of the time. Moves (list rows, tab and nav indicators) use the same curve as fades, over a longer duration (500ms instead of 200ms).</p>
+    <div class="curves">
+      <figure>
+        <span class="axis">progress ↑</span>
+        <svg viewBox="-4 -4 108 108" role="img" [attr.aria-label]="'Curve ' + curve.name + ': progress over time'">
+          <path class="axes" d="M0 0 V100 H100" />
+          <path class="halfway" d="M50 0 V100" />
+          <path class="trace" [attr.d]="trace()?.path" />
+          <circle class="dot" cx="50" [attr.cy]="trace()?.mid" r="3" />
+        </svg>
+        <span class="axis end">time →</span>
+        <figcaption><strong>{{ curve.name }}</strong><span>{{ curve.use }}</span><code>{{ curve.cssVar }}</code></figcaption>
+      </figure>
+    </div>
+    <span #probe class="probe"></span>
+
+    <h2>Demos</h2>
+    <div class="demos">
+      <section>
+        <h3>Panel appears <button lcButton fillMode="outline" size="small" (click)="panel.replay(host)">Rejouer</button></h3>
+        @for (key of panel.keys(); track key) { <div class="panel">Renommer<br />Dupliquer<br />Supprimer</div> }
+      </section>
+      <section>
+        <h3>Cascade of 4 rows <button lcButton fillMode="outline" size="small" (click)="cascadeDemo.replay(host)">Rejouer</button></h3>
+        @for (key of cascadeDemo.keys(); track key) {
+          @for (row of cascade; track row) { <div lcReveal [lcRevealIndex]="row" class="row">Ligne {{ row + 1 }}</div> }
+        }
+      </section>
+      <section>
+        <h3>Button press <button lcButton fillMode="outline" size="small" (click)="playPress()">Rejouer</button></h3>
+        <button lcButton #press>Enregistrer</button>
+      </section>
+      <section>
+        <h3>List reorders <button lcButton fillMode="outline" size="small" (click)="reverseList()">Rejouer</button></h3>
+        <ul>
+          @for (item of items(); track item) { <li #row [attr.data-id]="item" class="row">{{ item }}</li> }
+        </ul>
+      </section>
+    </div>
+
+    <h2>Turning motion off</h2>
+    <h3>For people using an app</h3>
+    <p class="lead">The kit already follows the system accessibility setting: when it is on, every animation stops by itself, with nothing to configure. Where to find it: iPhone and iPad, Settings › Accessibility › Motion › Reduce Motion; Mac, System Settings › Accessibility › Display › Reduce motion; Windows, Settings › Accessibility › Visual effects › Animation effects (off); Android, Settings › Accessibility › Remove animations.</p>
+    <h3>For developers and themes</h3>
+    <p class="lead">Only if your product wants motion off for everyone, whatever the system setting: set the durations to <code>0ms</code> in your theme file or in the global stylesheet of your application (the file listed under <code>styles</code> in <code>angular.json</code>, often <code>src/styles.css</code>).
+      The curves and the distance do not need to change.</p>
+    <pre><code>{{ offCss }}</code></pre>
+  `,
+  styles: [
+    PAGE_STYLES,
+    `
+    h3 { display: flex; align-items: center; justify-content: space-between; gap: var(--lc-sys-space-2); font-size: var(--lc-sys-font-size-sm); font-weight: var(--lc-sys-font-weight-medium); color: var(--lc-sys-color-on-surface-muted); margin: 0 0 var(--lc-sys-space-2); }
+    .scroll { overflow-x: auto; }
+    .nowrap, code { white-space: nowrap; }
+    pre { overflow-x: auto; }
+    pre code { white-space: pre; }
+    td:last-child { min-width: 16rem; }
+    @media (max-width: 40rem) {
+      .scroll table, .scroll tbody, .scroll tr, .scroll td { display: block; }
+      .scroll tr { padding-block: var(--lc-sys-space-2); border-bottom: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); }
+      .scroll td { border: 0; padding: 0; min-width: 0; }
+      .scroll td:last-child { white-space: normal; }
+    }
+    pre { margin: 0; padding: var(--lc-sys-space-3) var(--lc-sys-space-4); overflow-x: auto; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
+    .curves { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-6); }
+    figure { margin: 0; width: 14rem; max-width: 100%; }
+    figcaption { display: grid; gap: var(--lc-sys-space-1); margin-top: var(--lc-sys-space-2); font-size: var(--lc-sys-font-size-sm); }
+    .axis { display: block; font-size: var(--lc-sys-font-size-xs); color: var(--lc-sys-color-on-surface-muted); }
+    .axis.end { text-align: end; }
+    svg { display: block; width: 100%; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
+    svg path { fill: none; vector-effect: non-scaling-stroke; }
+    .axes { stroke: var(--lc-sys-color-border-strong); stroke-width: 1; }
+    .halfway { stroke: var(--lc-sys-color-border); stroke-width: 1; stroke-dasharray: 4 4; }
+    .trace { stroke-width: 2; stroke: var(--lc-sys-color-primary); }
+    .dot { fill: var(--lc-sys-color-primary); }
+    .probe { position: absolute; visibility: hidden; }
+    .demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: var(--lc-sys-space-6); align-items: start; }
+    ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--lc-sys-space-2); }
+    .row, .panel { padding: var(--lc-sys-space-2) var(--lc-sys-space-3); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); border-radius: var(--lc-sys-radius-md); background: var(--lc-sys-color-surface-raised); }
+    .demos section > .row + .row { margin-top: var(--lc-sys-space-2); }
+    .panel { line-height: var(--lc-sys-font-line-height-relaxed); box-shadow: var(--lc-sys-shadow-2);
+      animation: panel-enter var(--lc-sys-duration-normal) var(--lc-sys-easing-standard) both; }
+    @keyframes panel-enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset))); } }
+    `,
+  ],
+})
+export class DocMotionComponent {
+  private readonly injector = inject(Injector);
+  protected readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly probe = viewChild.required<ElementRef<HTMLElement>>('probe');
+  private readonly press = viewChild.required('press', { read: ElementRef });
+  private readonly rows = viewChildren<ElementRef<HTMLElement>>('row');
+  protected readonly values = MOTION_VALUES;
+  protected readonly curve = MOTION_CURVE;
+  protected readonly offCss = MOTION_OFF_CSS;
+  protected readonly cascade = [0, 1, 2, 3];
+  protected readonly items = signal(LIST_ITEMS);
+  protected readonly trace = signal<CurveTrace | undefined>(undefined);
+  protected readonly panel = replayable({ destroyRef: inject(DestroyRef) });
+  protected readonly cascadeDemo = replayable({ destroyRef: inject(DestroyRef) });
+
+  constructor() {
+    // The curve is sampled from the browser itself (a paused animation of opacity), so any `cubic-bezier()` or `linear()` value is drawn as it runs.
+    afterNextRender(() => {
+      const probe = this.probe().nativeElement;
+      const animation = probe.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1000, easing: MOTION_CURVE.value, fill: 'both' });
+      animation.pause();
+      const ys = Array.from({ length: CURVE_SAMPLES + 1 }, (_, i) => {
+        animation.currentTime = (i / CURVE_SAMPLES) * 1000;
+        return 100 - Number(getComputedStyle(probe).opacity) * 100;
+      });
+      animation.cancel();
+      this.trace.set({ path: `M${ys.map((y, i) => `${((i / CURVE_SAMPLES) * 100).toFixed(1)} ${y.toFixed(1)}`).join(' L')}`, mid: ys[CURVE_SAMPLES / 2] });
+    });
+  }
+
+  protected playPress(): void {
+    pressButton(this.press().nativeElement);
+  }
+
+  /** FLIP: rows are measured, the order is reversed, then each row travels from its old place with the list move duration and curve. */
+  protected reverseList(): void {
+    const before = new Map(this.rows().map(({ nativeElement: row }) => [row.dataset['id'], row.getBoundingClientRect().top]));
+    this.items.update((list) => [...list].reverse());
+    afterNextRender(
+      () => {
+        if (prefersReducedMotion()) return;
+        for (const { nativeElement: row } of this.rows()) {
+          const shift = (before.get(row.dataset['id']) ?? 0) - row.getBoundingClientRect().top;
+          if (!shift) continue;
+          row.animate([{ transform: `translateY(${shift}px)` }, { transform: 'none' }], {
+            duration: tokenMs(row, '--lc-list-move-duration'),
+            easing: getComputedStyle(row).getPropertyValue('--lc-list-move-easing').trim(),
+          });
+        }
+      },
+      { injector: this.injector },
+    );
+  }
 }

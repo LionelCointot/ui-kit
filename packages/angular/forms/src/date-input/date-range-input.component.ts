@@ -28,6 +28,7 @@ import { transformedValue } from '@angular/forms/signals';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   LC_LABELS, LC_LOCALE, LcFillMode, LcFormatService, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId, localDateToIso,
+  lcDetachAnimated,
 } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import { LcCalendarPanelComponent } from './calendar-panel.component';
@@ -134,7 +135,7 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   // Écriture `unknown` : sous `[formField]`, Signal Forms type `min` et `max` comme la valeur (ici une période) ; seule une date ISO est retenue.
   readonly min = input<string | undefined, unknown>(undefined, { transform: isoOrUndefined });
   readonly max = input<string | undefined, unknown>(undefined, { transform: isoOrUndefined });
-  /** Raccourcis ; par défaut les quatre du kit, `[]` les masque. */
+  /** Raccourcis ; par défaut les cinq du kit, `[]` les masque. */
   readonly presets = input<readonly LcDateIntervalPreset[] | undefined>(undefined);
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly readonly = input(false, { transform: booleanAttribute });
@@ -224,6 +225,9 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   /** Fin avant début (saisie refusée) : le message de l'ordre. */
   private readonly orderError = computed(() =>
     this.states().start === 'order' || this.states().end === 'order' ? this.labels.dataTable.dateOrderError : null);
+
+  /** Vrai tant qu'une fin saisie avant le début est refusée (la borne fautive n'est pas dans la valeur). */
+  readonly orderInvalid = computed(() => this.orderError() !== null);
 
   /** Une seule borne remplie : la phrase le dit en clair (pas pendant une erreur d'ordre : la borne refusée n'est pas « sans date »). */
   protected readonly openLine = computed(() => {
@@ -343,6 +347,8 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
     if (this.panel() || this.disabled() || this.readonly()) return;
     this.overlayRef ??= createCalendarOverlay(this.injector, this.group().nativeElement, this.doc,
       (target) => !!this.buttonRef()?.nativeElement.contains(target), (restore) => this.close(restore));
+    // Réouverture pendant le fondu de fermeture : le rattachement annule le retrait (lcDetachAnimated).
+    if (this.overlayRef.hasAttached()) this.overlayRef.detach();
     const panel = this.overlayRef.attach(new ComponentPortal(LcCalendarPanelComponent, this.viewContainerRef));
     panel.setInput('mode', 'range');
     this.syncPanel(panel);
@@ -368,7 +374,7 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   private close(restoreFocus: boolean): void {
     if (!this.panel()) return;
     this.panel.set(null);
-    this.overlayRef?.detach();
+    if (this.overlayRef) void lcDetachAnimated(this.overlayRef);
     if (restoreFocus) this.buttonRef()?.nativeElement.focus();
   }
 }

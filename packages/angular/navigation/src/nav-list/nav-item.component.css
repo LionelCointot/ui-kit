@@ -9,14 +9,19 @@
   font-weight: var(--lc-sys-font-weight-medium);
   text-decoration: none;
   cursor: pointer;
+  /* Au-dessus de l'indicateur glissant de la liste. */
+  position: relative;
 }
 
 :host(:hover) {
   background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
 }
 
-:host(.lc-nav-item--active) {
+:host(.lc-nav-item--active:not(.lc-nav-item--indicated)) {
   background: var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container));
+}
+
+:host(.lc-nav-item--active) {
   color: var(--lc-nav-item-active-color, var(--lc-sys-color-on-primary-container));
 }
 

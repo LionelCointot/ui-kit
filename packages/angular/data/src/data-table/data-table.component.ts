@@ -3,33 +3,42 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, Injector, ViewEncapsulation, afterNextRender, booleanAttribute, computed, contentChildren,
+  AnimationCallbackEvent, ChangeDetectionStrategy, Component, ElementRef, Injector, ViewEncapsulation, afterNextRender, booleanAttribute, computed, contentChildren,
   effect, inject, input, linkedSignal, model, signal, untracked, viewChild,
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
-  LC_LABELS, LC_LOCALE, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate, lcUniqueId,
+  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate,
+  lcAnimationsEnd, lcDetachAnimated, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
 import { LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
 import { LcCellDirective } from '../table/cell.directive';
 import { LC_TABLE_MAX_ROWS, LcSort, columnAlign, nextSort } from '../table/table-model';
-import { LcColumnFilterComponent } from './column-filter.component';
+import { LcColumnFilterComponent, LcNativeDatePickerDirective } from './column-filter.component';
 import {
   LC_EMPTY_QUERY, LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcFilterValue, LcPage, LcTableQuery,
   cleanFilterValue, isDateRangeInverted, isFilterActive, lcLocalSource, withFilter,
 } from './data-table-model';
 
+/** Cartes du téléphone qui entrent en cascade au premier affichage ; les suivantes apparaissent sans animation. */
+const REVEAL_CARDS = 8;
+
 /** Sous cette largeur (768 px), le tableau passe en cartes : mêmes ruptures que le CSS. */
 const NARROW = '(max-width: 47.99em)';
+
+const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+
+/** Écart minimal (px) à partir duquel une ligne est considérée déplacée. */
+const MOVE_THRESHOLD_PX = 0.5;
 
 /** Menu : sous l'entonnoir, calé à droite puis à gauche ; au-dessus s'il manque de place. */
 const MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
   { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom' },
-  { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
+  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
+  { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
 ];
 
 interface HeaderView<T> {
@@ -65,6 +74,7 @@ interface ChipView<T> {
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
     LcEmptyStateComponent, LcTooltipDirective, LcColumnFilterComponent,
+    LcNativeDatePickerDirective,
   ],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
@@ -104,7 +114,7 @@ export class LcDataTableComponent<T> {
   protected readonly menuPositions = MENU_POSITIONS;
   protected readonly cellTemplates = computed(() => new Map(this.cells().map((cell) => [cell.lcCell(), cell.template])));
   private readonly cells = contentChildren(LcCellDirective);
-  private readonly narrow = toSignal(inject(BreakpointObserver).observe(NARROW).pipe(map((state) => state.matches)), { initialValue: false });
+  protected readonly narrow = toSignal(inject(BreakpointObserver).observe(NARROW).pipe(map((state) => state.matches)), { initialValue: false });
 
   protected readonly dataSource = computed<LcDataSource<T>>(() => {
     const source = this.source();
@@ -180,6 +190,7 @@ export class LcDataTableComponent<T> {
   protected readonly menuOrigin = signal<HTMLElement>(this.host);
   protected readonly menuDraft = signal<LcFilterValue | undefined>(undefined);
   private readonly menuFilter = viewChild<LcColumnFilterComponent<T>>('menuFilter');
+  private readonly menuOverlay = viewChild(CdkConnectedOverlay);
   protected readonly menuCanClear = computed(() => {
     const column = this.menuColumn();
     return !!column && (isFilterActive(this.query().filters[column.key]) || isFilterActive(this.menuDraft()));
@@ -212,8 +223,31 @@ export class LcDataTableComponent<T> {
 
   /** Début de l'annonce faite quand la page demandée arrive (« Filtre État appliqué. ») ; le nombre de lignes la complète. */
   private pendingAnnouncement: string | null = null;
+  /** Vrai dès qu'une page a été affichée : la cascade du premier affichage est finie, les changements suivants animent la différence. */
+  private readonly settled = signal(false);
+  private listShown = false;
+  /** Positions des lignes avant le dernier changement : le glissement (un seul par changement) part de là. */
+  private diff: ReadonlyMap<Element, number> | undefined;
+  /** Lignes retirées encore en fondu de sortie : le glissement attend leur retrait, les lignes conservées restent à leur place d'avant. */
+  private leaving = 0;
+  /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
+  private readonly hidden = new WeakSet<Element>();
+  private closeToken = 0;
 
   constructor() {
+    // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : positions actuelles, puis glissement après le rendu.
+    effect(() => {
+      if (!this.loaded()) return;
+      this.rows();
+      untracked(() => {
+        const before = this.listShown ? this.rowTops() : null;
+        this.listShown = true;
+        if (!before) return;
+        this.settled.set(true);
+        this.diff = before;
+        afterNextRender(() => (this.leaving ? this.freeze(before) : this.glide()), { injector: this.injector });
+      });
+    });
     effect(() => {
       if (!this.result.hasValue()) return;
       const count = this.result.value().rows.length;
@@ -225,6 +259,82 @@ export class LcDataTableComponent<T> {
     effect(() => {
       if (this.narrow() && untracked(() => this.menuColumn())) this.closeMenu(false);
     });
+  }
+
+  /** Rang de cascade d'une carte du téléphone (8 premières, premier affichage), sinon `null`. */
+  protected cascadeIndex(index: number): number | null {
+    return this.narrow() && !this.settled() && index < REVEAL_CARDS ? index : null;
+  }
+
+  /** Fondu de sortie d'une ligne (`animate.leave`) ; quand la dernière a disparu, les lignes conservées glissent d'un trait. Sans animation (réduction de mouvement…) : retrait immédiat. */
+  protected fadeOut({ target, animationComplete }: AnimationCallbackEvent): void {
+    const timing = this.timing('--lc-overlay-exit-duration', '--lc-overlay-easing');
+    if (!timing) return animationComplete();
+    target.setAttribute('data-leaving', '');
+    this.leaving++;
+    target.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(() => {
+      animationComplete();
+      requestAnimationFrame(() => {
+        if (--this.leaving === 0) this.glide();
+      });
+    });
+  }
+
+  /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
+  private timing(duration: string, easing: string): KeyframeAnimationOptions | null {
+    if (typeof this.host.animate !== 'function' || (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches)) return null;
+    const style = getComputedStyle(this.host);
+    const raw = style.getPropertyValue(duration).trim();
+    const ms = parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000);
+    if (!(ms > 0)) return null;
+    return { duration: ms, easing: style.getPropertyValue(easing).trim() || undefined };
+  }
+
+  /** Position verticale de chaque ligne (hors lignes en fondu de sortie) : visible par défaut ; `layout` annule d'abord animations et décalages posés, pour lire la mise en page. */
+  private rowTops(layout = false): Map<Element, number> {
+    const rows = [...this.host.querySelectorAll<HTMLElement>('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
+    if (layout) {
+      rows.forEach((row) => {
+        row.getAnimations?.().forEach((animation) => animation.cancel());
+        row.style.transform = '';
+        if (!this.hidden.has(row)) row.style.opacity = '';
+      });
+    }
+    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+  }
+
+  /** Des lignes sortent encore : les conservées restent à leur place d'avant (transform inverse) et les ajoutées sont masquées, jusqu'au glissement. */
+  private freeze(before: ReadonlyMap<Element, number>): void {
+    for (const [row, top] of this.rowTops(true)) {
+      const from = before.get(row);
+      const style = (row as HTMLElement).style;
+      if (from === undefined || this.hidden.has(row)) {
+        this.hidden.add(row);
+        style.opacity = '0';
+      } else if (Math.abs(from - top) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top}px)`;
+    }
+  }
+
+  private glide(): void {
+    const before = this.diff;
+    this.diff = undefined;
+    if (before) this.animateDiff(before);
+  }
+
+  /** FLIP : lignes conservées glissent de leur ancienne place à la nouvelle ; lignes ajoutées apparaissent en fondu. */
+  private animateDiff(before: ReadonlyMap<Element, number>): void {
+    const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
+    const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
+    for (const [row, top] of this.rowTops(true)) {
+      const from = before.get(row);
+      if (from === undefined || this.hidden.has(row)) {
+        if (enter) row.animate({ opacity: [0, 1] }, enter);
+        this.hidden.delete(row);
+        (row as HTMLElement).style.opacity = '';
+      } else if (move && Math.abs(from - top) >= MOVE_THRESHOLD_PX) {
+        row.animate({ transform: [`translateY(${from - top}px)`, 'none'] }, move);
+      }
+    }
   }
 
   protected cellText(column: LcDataColumn<T>, row: T): string {
@@ -253,8 +363,10 @@ export class LcDataTableComponent<T> {
 
   // ---------- Menu ----------
   protected toggleMenu(column: LcDataColumn<T>, button: HTMLElement): void {
+    const closing = this.menuElement()?.classList.contains(LC_OVERLAY_CLOSING_CLASS);
+    this.menuElement()?.classList.remove(LC_OVERLAY_CLOSING_CLASS);
     if (this.menuColumn()?.key === column.key) {
-      this.closeMenu(true);
+      if (!closing) this.closeMenu(true);
       return;
     }
     this.menuOrigin.set(button);
@@ -269,9 +381,16 @@ export class LcDataTableComponent<T> {
 
   protected closeMenu(returnFocus: boolean): void {
     const column = this.menuColumn();
-    if (!column) return;
-    this.menuColumn.set(null);
+    if (!column || this.menuElement()?.classList.contains(LC_OVERLAY_CLOSING_CLASS)) return;
     if (returnFocus) this.focusLater(`${this.uid}-funnel-${column.key}`);
+    // Fondu de sortie : la colonne reste affichée jusqu'à l'événement `detach` du panneau, qui la vide.
+    const overlay = this.menuOverlay()?.overlayRef;
+    if (overlay?.hasAttached()) void lcDetachAnimated(overlay);
+    else this.menuColumn.set(null);
+  }
+
+  private menuElement(): HTMLElement | undefined {
+    return this.menuOverlay()?.overlayRef?.overlayElement;
   }
 
   protected onMenuOutsideClick(event: MouseEvent): void {
@@ -336,6 +455,7 @@ export class LcDataTableComponent<T> {
     this.panelDraft.set({ ...this.query().filters });
     this.panelSection.set(section);
     this.panelOpen.set(true);
+    this.panel().nativeElement.removeAttribute('data-closing'); // réouverture pendant le fondu de sortie : annule la fermeture
     // Une fois le contenu rendu : `showModal()` donne le focus au contrôle `autofocus`.
     afterNextRender(() => {
       const dialog = this.panel().nativeElement;
@@ -343,9 +463,23 @@ export class LcDataTableComponent<T> {
     }, { injector: this.injector });
   }
 
-  protected closePanel(): void {
-    this.panel().nativeElement.close?.();
+  /** Fermeture en fondu : `data-closing`, attente de la fin des animations, puis `close()`. Rouvrir pendant le fondu annule la fermeture. */
+  protected async closePanel(): Promise<void> {
+    const dialog = this.panel().nativeElement;
+    if (dialog.hasAttribute('data-closing')) return;
+    const token = ++this.closeToken;
+    dialog.setAttribute('data-closing', '');
+    await lcAnimationsEnd(dialog);
+    if (token !== this.closeToken || !dialog.hasAttribute('data-closing')) return; // rouvert (puis refermé) pendant l'attente : une autre attente décide
+    dialog.removeAttribute('data-closing');
+    dialog.close?.();
     this.onPanelClosed();
+  }
+
+  /** Échap : la fermeture native est remplacée par la fermeture en fondu. */
+  protected onPanelCancel(event: Event): void {
+    event.preventDefault();
+    void this.closePanel();
   }
 
   /** Fermeture par Échap (événement `close` du dialogue natif) ou par la croix : rien n'est appliqué. */
@@ -383,7 +517,7 @@ export class LcDataTableComponent<T> {
       return;
     }
     this.setQuery({ ...this.query(), filters: this.panelQuery().filters }, this.text.announceFiltersApplied);
-    this.closePanel();
+    void this.closePanel();
   }
 
   // ---------- Outils ----------
@@ -403,7 +537,6 @@ export class LcDataTableComponent<T> {
         return filter.options.find((option) => option.value === value)?.label ?? String(value);
       case 'dateRange': {
         const range = value as LcDateRange;
-        if (range.preset) return this.text.lastDays(range.preset);
         const day = new Intl.DateTimeFormat(this.locale, { day: 'numeric', month: 'short' });
         const from = range.from ? isoToLocalDate(range.from) : null;
         const to = range.to ? isoToLocalDate(range.to) : null;

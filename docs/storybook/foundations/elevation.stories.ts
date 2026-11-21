@@ -3,15 +3,15 @@ import { DocElevationComponent } from './foundation-pages';
 
 /** Page de fondations : une story unique, générée depuis les tokens résolus (voir foundation-pages.ts). */
 const meta: Meta = {
-  title: 'Foundations/Elevation and motion',
+  title: 'Foundations/Elevation',
   tags: ['!autodocs'],
   decorators: [moduleMetadata({ imports: [DocElevationComponent] })],
   parameters: { controls: { disable: true }, actions: { disable: true } },
 };
 export default meta;
 
-export const ElevationAndMotion: StoryObj = {
-  name: 'Elevation and motion',
+export const Elevation: StoryObj = {
+  name: 'Elevation',
   // Page de fondations : l'extrait montre l'usage des tokens, la démonstration elle-même est générée (foundation-pages.ts).
   parameters: {
     docs: {
@@ -21,7 +21,7 @@ export const ElevationAndMotion: StoryObj = {
 @Component({
   selector: 'app-example',
   template: '<div class="card">Carte surélevée</div>',
-  styles: '.card { padding: var(--lc-sys-space-4); box-shadow: var(--lc-sys-shadow-2); transition: box-shadow var(--lc-sys-duration-normal); } .card:hover { box-shadow: var(--lc-sys-shadow-3); }',
+  styles: '.card { padding: var(--lc-sys-space-4); box-shadow: var(--lc-sys-shadow-2); }',
 })
 export class ExampleComponent {}`,
       },

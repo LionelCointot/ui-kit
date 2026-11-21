@@ -1,3 +1,4 @@
+import { ConnectedPosition, FlexibleConnectedPositionStrategy } from '@angular/cdk/overlay';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LcMenuComponent } from './menu.component';
@@ -64,6 +65,38 @@ describe('LcMenu', () => {
     expect(panel()).toBeNull();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('ferme en fondu : lc-overlay--closing d\'abord, retrait du DOM ensuite ; une réouverture pendant le fondu garde le panneau', async () => {
+    const { fixture, trigger } = await setup();
+    trigger.click();
+    await fixture.whenStable();
+    const pane = document.querySelector<HTMLElement>('.lc-menu-overlay')!;
+    trigger.click();
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+    fixture.detectChanges();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(panel()).not.toBeNull();
+    trigger.click();
+    await fixture.whenStable();
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+    expect(panel()).not.toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    trigger.click();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+  });
+
+  it('les positions au-dessus portent lc-overlay--above, celles en dessous non', async () => {
+    const withPositions = vi.spyOn(FlexibleConnectedPositionStrategy.prototype, 'withPositions');
+    const { fixture, trigger } = await setup();
+    trigger.click();
+    await fixture.whenStable();
+    const positions = withPositions.mock.calls[0][0] as ConnectedPosition[];
+    withPositions.mockRestore();
+    expect(positions.length).toBeGreaterThan(0);
+    for (const position of positions) expect(position.panelClass).toBe(position.overlayY === 'bottom' ? 'lc-overlay--above' : undefined);
   });
 
   it('un clic sur un élément exécute l\'action puis ferme le menu', async () => {

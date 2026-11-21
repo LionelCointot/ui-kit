@@ -373,6 +373,41 @@ lc-form-field [lcSuffix] {
   }
 }
 
+/* Panneaux CDK (menu, liste du combobox, calendriers). Entrée en animation sur le contenu du conteneur `.cdk-overlay-pane` (le CDK pose
+   `panelClass` après un premier calcul de style : `@starting-style` ne jouerait jamais ; et une animation sur le conteneur empêcherait
+   la transition de sortie pendant l'entrée). `lc-overlay--above` (position « au-dessus » du CDK, sur le conteneur) inverse le sens par
+   héritage ; changer le signe ne relance pas l'animation. `lc-overlay--closing` (posée par lcDetachAnimated) fond le conteneur. */
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay) > * {
+  animation: lc-overlay-enter var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay).lc-overlay--above {
+  --lc-overlay-enter-sign: 1;
+}
+
+@keyframes lc-overlay-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--lc-overlay-enter-sign, -1) * var(--lc-overlay-offset)));
+  }
+}
+
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay).lc-overlay--closing {
+  opacity: 0;
+  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay) > * {
+    animation: none;
+  }
+
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay).lc-overlay--closing {
+    transition: none;
+  }
+}
+
 /* Menu : le panneau vit dans la surcouche CDK, hors des composants. */
 .lc-menu-panel {
   display: flex;
@@ -418,18 +453,11 @@ lc-form-field [lcSuffix] {
   box-shadow: var(--lc-calendar-shadow, var(--lc-sys-shadow-3));
   color: var(--lc-calendar-text, var(--lc-sys-color-on-surface));
   font-size: var(--lc-sys-font-size-md);
-  animation: lc-calendar-fade var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
 }
 
 /* Focalisé par un clic dans une zone morte : aucun anneau, le panneau n'est pas un contrôle. */
 .lc-calendar:focus {
   outline: none;
-}
-
-@keyframes lc-calendar-fade {
-  from {
-    opacity: 0;
-  }
 }
 
 .lc-calendar__months {
@@ -883,10 +911,6 @@ lc-form-field [lcSuffix] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-calendar {
-    animation: none;
-  }
-
   .lc-calendar__nav,
   .lc-calendar__title,
   .lc-calendar__day::before {
@@ -922,5 +946,20 @@ lc-form-field [lcSuffix] {
 
   100% {
     text-indent: 0;
+  }
+}
+
+/* lcReveal : entrée en fondu et descente à l'insertion (@starting-style), retardée par rang (--lc-reveal-index posée par la directive). */
+[lcReveal] {
+  transition:
+    opacity var(--lc-reveal-duration) var(--lc-reveal-easing),
+    transform var(--lc-reveal-duration) var(--lc-reveal-easing);
+  transition-delay: calc(var(--lc-reveal-index, 0) * var(--lc-reveal-stagger));
+}
+
+@starting-style {
+  [lcReveal] {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--lc-reveal-offset)));
   }
 }

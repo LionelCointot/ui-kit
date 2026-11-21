@@ -1,5 +1,6 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective } from '@lionelcointot/ui-angular/navigation';
 
 type Args = LcMenuComponent & { itemIcon: string; destructive: boolean; itemDisabled: boolean };
@@ -13,7 +14,7 @@ type Args = LcMenuComponent & { itemIcon: string; destructive: boolean; itemDisa
 const meta: Meta<Args> = {
   title: 'Navigation/Menu',
   component: LcMenuComponent,
-  decorators: [moduleMetadata({ imports: [LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective] })],
+  decorators: [moduleMetadata({ imports: [LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective, LcButtonComponent, StoryMotionNoticeComponent] })],
   args: { ariaLabel: 'Actions du dossier', itemIcon: 'pencil', destructive: true, itemDisabled: false },
   argTypes: {
     itemIcon: { control: 'select', options: ['pencil', 'copy', 'download', 'settings'], description: 'Input `icon` of the first `lcMenuItem`.' },
@@ -55,5 +56,42 @@ export const WithIconsAndStates: Story = {
         <button lcMenuItem icon="lock" disabled>Verrouillé</button>
         <button lcMenuItem icon="x" destructive>Supprimer</button>
       </lc-menu>`,
+  }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective } from '@lionelcointot/ui-angular/navigation';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective],
+  template: \`
+    <button type="button" [lcMenuTriggerFor]="menu">Actions</button>
+    <lc-menu #menu ariaLabel="Actions du dossier">
+      <button lcMenuItem icon="pencil">Renommer</button>
+      <button lcMenuItem icon="copy">Dupliquer</button>
+      <button lcMenuItem icon="x" destructive>Supprimer</button>
+    </lc-menu>\`,
+})
+export class ExampleComponent {}`;
+
+/** The panel fades in while moving down from its trigger, and fades out when it closes. "Rejouer" reopens it. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({
+    props: { ...replayable({ play: (_later, root) => root.querySelector<HTMLElement>('[data-replay]')?.click() }) },
+    template: `
+      <lc-story-motion-notice />
+      <div #root>
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+        @for (key of keys(); track key) {
+          <button type="button" data-replay [lcMenuTriggerFor]="menu">Actions</button>
+          <lc-menu #menu ariaLabel="Actions du dossier">
+            <button lcMenuItem icon="pencil">Renommer</button>
+            <button lcMenuItem icon="copy">Dupliquer</button>
+            <button lcMenuItem icon="x" destructive>Supprimer</button>
+          </lc-menu>
+        }
+      </div>`,
   }),
 };
