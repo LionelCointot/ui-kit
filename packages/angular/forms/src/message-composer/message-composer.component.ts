@@ -293,10 +293,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       };
     });
   });
-  private readonly acceptedText = computed(() => {
-    const l = this.labels;
-    return this.acceptLabel()?.trim() || acceptedFilesText(this.accept(), { images: l.composerAcceptImages, videos: l.composerAcceptVideos, audio: l.composerAcceptAudio, pdf: l.composerAcceptPdf });
-  });
+  private readonly acceptedText = computed(() => this.acceptLabel()?.trim() || acceptedFilesText(this.accept()));
   /** Un message par raison de refus, avec les noms des fichiers concernés. */
   protected readonly refusalMessages = computed(() => {
     const refused = this.refusals();

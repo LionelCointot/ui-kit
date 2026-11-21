@@ -269,7 +269,7 @@ describe('LcMessageComposerComponent', () => {
       for (const key of keys) expect(labels[key]).toBeTruthy();
       expect(labels.composerRejected('a.pdf', 'type')).toContain('a.pdf');
       expect(labels.composerRejected('a.pdf', 'count')).not.toBe(labels.composerRejected('a.pdf', 'type'));
-      expect(labels.composerRejectedType('a.pdf', 'PDF')).toContain('PDF');
+      expect(labels.composerRejectedType('a.pdf', '.pdf')).toContain('.pdf');
       expect(labels.composerCount(3, 500)).toBe('3 / 500');
     }
     expect(TestBed.inject(LC_LABELS).composerSend).toBe('Envoyer');

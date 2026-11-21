@@ -93,11 +93,6 @@ export interface LcLabels {
   readonly composerSending: string;
   /** Refus d'un fichier déposé ou choisi : nom et raison (`type` : type non accepté, `count` : trop de fichiers). */
   readonly composerRejected: (name: string, reason: 'type' | 'count') => string;
-  /** Types de fichiers dans le message de refus par type. */
-  readonly composerAcceptImages: string;
-  readonly composerAcceptVideos: string;
-  readonly composerAcceptAudio: string;
-  readonly composerAcceptPdf: string;
   /** Refus par type quand `accept` est renseigné : nom du fichier et liste des types acceptés. */
   readonly composerRejectedType: (name: string, accepted: string) => string;
   /** Compteur de caractères : saisis sur maximum. */
@@ -713,10 +708,6 @@ export const LC_LABELS_FR: LcLabels = {
   composerAttachments: 'Pièces jointes',
   composerSending: 'Envoi en cours…',
   composerRejected: (name, reason) => `${name} : ${reason === 'type' ? 'type de fichier non accepté.' : 'nombre maximal de fichiers atteint.'}`,
-  composerAcceptImages: 'images',
-  composerAcceptVideos: 'vidéos',
-  composerAcceptAudio: 'fichiers audio',
-  composerAcceptPdf: 'PDF',
   composerRejectedType: (name, accepted) => `${name} n'est pas accepté. Fichiers acceptés : ${accepted}.`,
   composerCount: (length, max) => `${length} / ${max}`,
   composerLimitNear: 'Vous approchez de la limite de caractères.',
@@ -969,10 +960,6 @@ export const LC_LABELS_EN: LcLabels = {
   composerAttachments: 'Attachments',
   composerSending: 'Sending…',
   composerRejected: (name, reason) => `${name}: ${reason === 'type' ? 'file type not accepted.' : 'maximum number of files reached.'}`,
-  composerAcceptImages: 'images',
-  composerAcceptVideos: 'videos',
-  composerAcceptAudio: 'audio files',
-  composerAcceptPdf: 'PDF',
   composerRejectedType: (name, accepted) => `${name} is not accepted. Accepted files: ${accepted}.`,
   composerCount: (length, max) => `${length} / ${max}`,
   composerLimitNear: 'You are nearing the character limit.',

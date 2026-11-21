@@ -247,7 +247,7 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
         await settle();
         return element.querySelector('[role="alert"]')!.textContent!;
       };
-      expect(await refuse()).toContain("x.txt n'est pas accepté. Fichiers acceptés : images, PDF.");
+      expect(await refuse()).toContain("x.txt n'est pas accepté. Fichiers acceptés : .jpg, .png, .gif, .webp, .heic, .pdf.");
       host.acceptLabel.set('Photos');
       await settle();
       expect(await refuse()).toContain('Fichiers acceptés : Photos.');

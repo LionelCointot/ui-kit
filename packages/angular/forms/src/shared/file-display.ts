@@ -43,14 +43,20 @@ export function fileSizeText(bytes: number, units: readonly string[], formatNumb
   return `${formatNumber(shown)}\u00A0${units[unit]}`; // espace insécable : le nombre et l'unité restent ensemble
 }
 
-/** Liste lisible des types de `accept` (« images, PDF, DOCX »), dans l'ordre, sans doublon ; vide si `accept` est vide. */
-export function acceptedFilesText(accept: string, names: { images: string; videos: string; audio: string; pdf: string }): string {
-  const kinds = accept.split(',').map((token) => token.trim().toLowerCase()).filter(Boolean).map((token) => {
-    if (token === 'image/*') return names.images;
-    if (token === 'video/*') return names.videos;
-    if (token === 'audio/*') return names.audio;
-    if (token === '.pdf' || token === 'application/pdf') return names.pdf;
-    return (token.startsWith('.') ? token.slice(1) : token.slice(token.indexOf('/') + 1)).toUpperCase();
+const FAMILY_EXTENSIONS: Record<string, readonly string[]> = {
+  'image/*': ['.jpg', '.png', '.gif', '.webp', '.heic'],
+  'video/*': ['.mp4', '.mov', '.webm'],
+  'audio/*': ['.mp3', '.m4a', '.wav'],
+};
+
+/** Extensions lisibles des types de `accept` (« .jpg, .png, .pdf »), dans l'ordre, sans doublon ; vide si `accept` est vide. */
+export function acceptedFilesText(accept: string): string {
+  const extensions = accept.split(',').map((token) => token.trim().toLowerCase()).filter(Boolean).flatMap((token) => {
+    if (token.startsWith('.')) return [token];
+    if (FAMILY_EXTENSIONS[token]) return FAMILY_EXTENSIONS[token];
+    if (token.endsWith('/*')) return [token];
+    const subtype = token.slice(token.indexOf('/') + 1).split('+')[0];
+    return [subtype === 'jpeg' ? '.jpg' : `.${subtype}`];
   });
-  return [...new Set(kinds)].join(', ');
+  return [...new Set(extensions)].join(', ');
 }

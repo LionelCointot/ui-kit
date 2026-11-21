@@ -47,15 +47,15 @@ describe('file-display', () => {
   });
 
   describe('acceptedFilesText', () => {
-    const names = { images: 'images', videos: 'vidéos', audio: 'fichiers audio', pdf: 'PDF' };
     it.each([
-      ['image/*,.pdf', 'images, PDF'],
-      ['video/*, audio/*', 'vidéos, fichiers audio'],
-      ['application/pdf,.PDF', 'PDF'],
-      ['.docx,.xlsx', 'DOCX, XLSX'],
-      ['text/csv, image/*', 'CSV, images'],
-      ['image/*,image/*,.docx,.DOCX', 'images, DOCX'],
+      ['image/*,.pdf', '.jpg, .png, .gif, .webp, .heic, .pdf'],
+      ['video/*, audio/*', '.mp4, .mov, .webm, .mp3, .m4a, .wav'],
+      ['application/pdf,.PDF', '.pdf'],
+      ['image/png,image/jpeg,image/svg+xml', '.png, .jpg, .svg'],
+      ['.DOCX,.xlsx', '.docx, .xlsx'],
+      ['text/csv, image/*', '.csv, .jpg, .png, .gif, .webp, .heic'],
+      ['.pdf,application/pdf,.PDF', '.pdf'],
       ['', ''],
-    ])('%s -> %s', (accept, expected) => expect(acceptedFilesText(accept, names)).toBe(expected));
+    ])('%s -> %s', (accept, expected) => expect(acceptedFilesText(accept)).toBe(expected));
   });
 });
