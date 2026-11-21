@@ -561,7 +561,7 @@ describe('CA-36 mode natif', () => {
     const { root, inputs, host, settle } = await mount({ mode: 'native' });
     const row = root.querySelector('[role="group"][aria-label="Raccourcis"]')!;
     expect(row).not.toBeNull();
-    expect(row.querySelectorAll('button')).toHaveLength(4);
+    expect(row.querySelectorAll('button')).toHaveLength(5);
     expect(inputs()[1].compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const seven = [...row.querySelectorAll('button')].find((b) => /7 derniers jours/.test(b.textContent!))!;
     seven.click();

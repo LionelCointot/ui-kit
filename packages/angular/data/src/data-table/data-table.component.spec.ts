@@ -347,22 +347,22 @@ describe('LcDataTableComponent', () => {
         expect(bodyIds()).toEqual(['Demande 1', 'Demande 2', 'Demande 3', 'Demande 4']);
       });
 
-      it('CA-P3a : aucun bouton radio ; quatre raccourcis du kit, dans le calendrier (ordinateur)', async () => {
+      it('CA-P3a : aucun bouton radio ; cinq raccourcis du kit, dans le calendrier (ordinateur)', async () => {
         await setup({ picker: 'calendar' });
         await open('date');
         expect(menu()!.querySelector('input[type=radio]')).toBeNull();
         await click(calendarButton());
         expect(presetButtons().map((b) => b.textContent!)).toEqual([
-          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
+          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/La semaine dernière/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
         ]);
       });
 
-      it('CA-P3a : aucun bouton radio ; quatre raccourcis du kit, sous le champ (mode natif)', async () => {
+      it('CA-P3a : aucun bouton radio ; cinq raccourcis du kit, sous le champ (mode natif)', async () => {
         await setup({ picker: 'native' });
         await open('date');
         expect(menu()!.querySelector('input[type=radio]')).toBeNull();
         expect(presetButtons().map((b) => b.textContent!)).toEqual([
-          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
+          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/La semaine dernière/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
         ]);
       });
 

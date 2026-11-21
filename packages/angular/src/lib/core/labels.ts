@@ -175,6 +175,7 @@ export interface LcLabels {
   readonly datePeriodFrom: string;
   readonly datePeriodTo: string;
   readonly dateOnDay: (date: string) => string;
+  readonly dateLastWeek: string;
   readonly dateThisMonth: string;
   readonly dateLastMonth: string;
   /** Champ de période : nom du groupe, bouton (`text` : « du 3 au 12 novembre 2026 » ou une borne), ligne d'une seule borne, groupe des raccourcis natifs. */
@@ -763,6 +764,7 @@ export const LC_LABELS_FR: LcLabels = {
   datePeriodFrom: 'du',
   datePeriodTo: 'au',
   dateOnDay: (date) => `le ${date}`,
+  dateLastWeek: 'La semaine dernière',
   dateThisMonth: 'Ce mois-ci',
   dateLastMonth: 'Le mois dernier',
   datePeriod: 'Période',
@@ -1004,6 +1006,7 @@ export const LC_LABELS_EN: LcLabels = {
   datePeriodFrom: 'from',
   datePeriodTo: 'to',
   dateOnDay: (date) => date,
+  dateLastWeek: 'Last week',
   dateThisMonth: 'This month',
   dateLastMonth: 'Last month',
   datePeriod: 'Period',

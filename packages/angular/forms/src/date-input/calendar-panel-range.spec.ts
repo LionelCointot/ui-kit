@@ -242,11 +242,11 @@ describe('calendar-panel, mode période', () => {
   it('raccourcis : deux lignes, rognés par les bornes, désactivés quand il n’en reste rien', async () => {
     const { el, click, range } = await setup({ presets: kitDatePresets(LC_LABELS_FR), min: '2026-11-15', max: '2026-11-30' });
     const presets = [...el.querySelectorAll<HTMLButtonElement>('.lc-calendar__preset')];
-    expect(presets.map((p) => p.querySelector('.lc-calendar__preset-label')!.textContent)).toEqual(['7 derniers jours', '30 derniers jours', 'Ce mois-ci', 'Le mois dernier']);
+    expect(presets.map((p) => p.querySelector('.lc-calendar__preset-label')!.textContent)).toEqual(['7 derniers jours', 'La semaine dernière', '30 derniers jours', 'Ce mois-ci', 'Le mois dernier']);
     const dates = presets.map((p) => p.querySelector('.lc-calendar__preset-dates')!.textContent);
-    expect(dates).toEqual(['du 15 au 19 novembre 2026', 'du 15 au 19 novembre 2026', 'du 15 au 30 novembre 2026', 'Aucune date autorisée sur cette période.']);
-    expect(presets[3].disabled).toBe(true);
-    await click(presets[2]);
+    expect(dates).toEqual(['du 15 au 19 novembre 2026', 'le 15 novembre 2026', 'du 15 au 19 novembre 2026', 'du 15 au 30 novembre 2026', 'Aucune date autorisée sur cette période.']);
+    expect(presets[4].disabled).toBe(true);
+    await click(presets[3]);
     expect(range).toHaveBeenCalledExactlyOnceWith({ from: '2026-11-15', to: '2026-11-30' });
   });
 
@@ -268,7 +268,7 @@ describe('calendar-panel, mode période', () => {
   });
 
   it('les quatre raccourcis du kit, en anglais', () => {
-    expect(kitDatePresets(LC_LABELS_EN).map((p) => p.label)).toEqual(['Last 7 days', 'Last 30 days', 'This month', 'Last month']);
+    expect(kitDatePresets(LC_LABELS_EN).map((p) => p.label)).toEqual(['Last 7 days', 'Last week', 'Last 30 days', 'This month', 'Last month']);
     expect(kitDatePresets(LC_LABELS_EN)[0].interval(TODAY)).toEqual({ from: '2026-11-13', to: '2026-11-19' });
   });
 });
