@@ -235,8 +235,6 @@ export class LcDataTableComponent<T> {
   private diff: ReadonlyMap<Element, number> | undefined;
   /** Lignes retirées encore en fondu de sortie : le glissement attend leur retrait, les lignes conservées restent à leur place d'avant. */
   private leaving = 0;
-  /** Distance dont le bloc de la liste vient de glisser (`slideList`) : les lignes la portent déjà, leur glissement propre l'en déduit. */
-  private slideDelta = 0;
   /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
   private readonly hidden = new WeakSet<Element>();
 
@@ -306,10 +304,7 @@ export class LcDataTableComponent<T> {
     afterNextRender(() => {
       const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
       const delta = from - scroll.getBoundingClientRect().top;
-      if (!move || Math.abs(delta) < MOVE_THRESHOLD_PX) return;
-      this.slideDelta = delta;
-      // Le bloc ne porte plus rien une fois le glissement fini : sans différence de liste pour la consommer, la valeur serait périmée.
-      scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move).finished.catch(() => undefined).then(() => (this.slideDelta = 0));
+      if (move && Math.abs(delta) >= MOVE_THRESHOLD_PX) scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move);
     }, { injector: this.injector });
   }
 
@@ -323,7 +318,7 @@ export class LcDataTableComponent<T> {
     return { duration: ms, easing: style.getPropertyValue(easing).trim() || undefined };
   }
 
-  /** Position verticale de chaque ligne (hors lignes en fondu de sortie) : visible par défaut ; `layout` annule d'abord animations et décalages posés, pour lire la mise en page. */
+  /** Position verticale de chaque ligne (hors lignes en fondu de sortie), glissement du bloc de la liste (`slideList`) compris : il part déjà de l'ancienne place, le départ de la ligne s'en déduit donc tel quel. `layout` annule d'abord animations et décalages posés des lignes, pour lire la mise en page. */
   private rowTops(layout = false): Map<Element, number> {
     const rows = [...this.host.querySelectorAll<HTMLElement>('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
     if (layout) {
@@ -344,7 +339,7 @@ export class LcDataTableComponent<T> {
       if (from === undefined || this.hidden.has(row)) {
         this.hidden.add(row);
         style.opacity = '0';
-      } else if (Math.abs(from - top - this.slideDelta) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top - this.slideDelta}px)`;
+      } else if (Math.abs(from - top) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top}px)`;
     }
   }
 
@@ -358,16 +353,14 @@ export class LcDataTableComponent<T> {
   private animateDiff(before: ReadonlyMap<Element, number>): void {
     const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
     const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
-    const slid = this.slideDelta;
-    this.slideDelta = 0;
     for (const [row, top] of this.rowTops(true)) {
       const from = before.get(row);
       if (from === undefined || this.hidden.has(row)) {
         if (enter) row.animate({ opacity: [0, 1] }, enter);
         this.hidden.delete(row);
         (row as HTMLElement).style.opacity = '';
-      } else if (move && Math.abs(from - top - slid) >= MOVE_THRESHOLD_PX) {
-        row.animate({ transform: [`translateY(${from - top - slid}px)`, 'none'] }, move);
+      } else if (move && Math.abs(from - top) >= MOVE_THRESHOLD_PX) {
+        row.animate({ transform: [`translateY(${from - top}px)`, 'none'] }, move);
       }
     }
   }
