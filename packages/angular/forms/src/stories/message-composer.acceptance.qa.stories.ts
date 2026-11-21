@@ -7,7 +7,7 @@ import { LcMessageComposerComponent } from '../message-composer/message-composer
 // Fixture de la spec 2026-11-messagerie (M0, tests d'acceptation) : pilotée par `node tools/qa/message-composer-browser.mjs`, sans `play`.
 // Écrite avant le code : le composant est attendu dans ../message-composer/message-composer.component (LcMessageComposerComponent) ;
 // en attente du code, la construction de Storybook échoue sur cet import.
-// Fenêtre : window.__composer = { patch(partiel), value() } ; window.__qa.events = [{ type, detail }] (send, sendBlocked, filesAdded, rejected, remove, retry).
+// Fenêtre : window.__composer = { patch(partiel), value(), set(texte), destroy() } ; window.__qa.events = [{ type, detail }] (send, sendBlocked, filesAdded, rejected, remove, retry).
 
 interface QaState {
   items: LcFileUploadItem[];
@@ -30,7 +30,7 @@ const DEFAULTS: QaState = { items: [], sending: false, disabled: false, attachme
 
 declare global {
   interface Window {
-    __composer: { patch: (p: Partial<QaState>) => void; value: () => string; set: (v: string) => void };
+    __composer: { patch: (p: Partial<QaState>) => void; value: () => string; set: (v: string) => void; destroy: () => void };
     __qa: { events: { type: string; detail: unknown }[] };
   }
 }
@@ -43,7 +43,9 @@ declare global {
   // Classe d'application (CA-C10) : redéfinit les quatre tokens de bordure et de fond, rien d'autre.
   styles: [`.qa-note { --lc-message-composer-border-style: dashed; --lc-message-composer-border-width: var(--lc-sys-border-width-thick); --lc-message-composer-border-color: var(--lc-sys-color-warning); --lc-message-composer-background: var(--lc-sys-color-warning-container); }`],
   template: `
-    @if (variant() === 'field') {
+    @if (!alive()) {
+      <p id="qa-destroyed">composant détruit</p>
+    } @else if (variant() === 'field') {
       <lc-form-field label="Votre message" hint="Aide du champ" [errors]="s().errors">
         <lc-message-composer [(value)]="text" placeholder="Écrivez votre message…" [class.qa-note]="s().note"
           [sending]="s().sending" [disabled]="s().disabled" [attachments]="s().attachments" [enterSends]="s().enterSends"
@@ -66,10 +68,11 @@ class ComposerQaComponent {
   readonly variant = input<'field' | 'bare'>('field');
   protected readonly s = signal<QaState>({ ...DEFAULTS });
   protected readonly text = signal('');
+  protected readonly alive = signal(true);
 
   constructor() {
     window.__qa = { events: [] };
-    window.__composer = { patch: (p) => this.s.update((v) => ({ ...v, ...p })), value: () => this.text(), set: (v) => this.text.set(v) };
+    window.__composer = { patch: (p) => this.s.update((v) => ({ ...v, ...p })), value: () => this.text(), set: (v) => this.text.set(v), destroy: () => this.alive.set(false) };
   }
 
   protected log(type: string, detail: unknown): void {
