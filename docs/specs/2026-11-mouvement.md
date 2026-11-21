@@ -1,6 +1,6 @@
 # Spec : mouvement sobre (indicateurs qui glissent, appui du bouton, apparition du haut vers le bas)
 
-- **Statut** : Brouillon (2026-11-21), en relecture
+- **Statut** : Validée le 2026-11-21 par l'utilisateur (« Oui pour tout »)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0001 Tokens](../adr/0001-design-tokens.md) · [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (inchangé : Baseline 2024 conservée)
