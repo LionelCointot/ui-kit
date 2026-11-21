@@ -83,11 +83,6 @@ export function isFilterActive(value: LcFilterValue | undefined): boolean {
   return value.length > 0;
 }
 
-/** Bornes ISO d'une période ; une borne absente vaut `''`. */
-export function dateRangeBounds(range: LcDateRange): { from: string; to: string } {
-  return { from: range.from ?? '', to: range.to ?? '' };
-}
-
 /**
  * Période du filtre → valeur de `lc-date-range-input`. Rend `previous` quand les bornes sont les mêmes : le champ prend
  * tout nouvel objet pour une valeur posée par le code et efface alors sa saisie en cours (pas d'écho saisie → valeur → champ).
@@ -113,7 +108,7 @@ export function normalizeText(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
-/** Valeur de filtre normalisée : `undefined` si elle ne filtre rien . */
+/** Valeur de filtre normalisée : `undefined` si elle ne filtre rien. */
 export function cleanFilterValue(value: LcFilterValue | undefined): LcFilterValue | undefined {
   if (!isFilterActive(value)) return undefined;
   if (typeof value === 'string') return value.trim();
@@ -152,7 +147,7 @@ export function matchesFilter<T>(row: T, column: LcDataColumn<T>, value: LcFilte
       return option?.match ? option.match(row) : cellString(cell) === value;
     }
     case 'dateRange': {
-      const { from, to } = dateRangeBounds(value as LcDateRange);
+      const { from, to } = value as LcDateRange;
       const date = cellIsoDate(cell);
       return !!date && (!from || date >= from) && (!to || date <= to);
     }

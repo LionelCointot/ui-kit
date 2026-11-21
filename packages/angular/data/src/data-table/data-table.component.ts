@@ -15,7 +15,7 @@ import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angul
 import { LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
 import { LcCellDirective } from '../table/cell.directive';
 import { LC_TABLE_MAX_ROWS, LcSort, columnAlign, nextSort } from '../table/table-model';
-import { LcColumnFilterComponent } from './column-filter.component';
+import { LcColumnFilterComponent, LcNativeDatePickerDirective } from './column-filter.component';
 import {
   LC_EMPTY_QUERY, LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcFilterValue, LcPage, LcTableQuery,
   cleanFilterValue, isDateRangeInverted, isFilterActive, lcLocalSource, withFilter,
@@ -65,6 +65,7 @@ interface ChipView<T> {
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
     LcEmptyStateComponent, LcTooltipDirective, LcColumnFilterComponent,
+    LcNativeDatePickerDirective,
   ],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',

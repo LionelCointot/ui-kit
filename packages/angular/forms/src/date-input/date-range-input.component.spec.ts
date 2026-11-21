@@ -1,6 +1,7 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, Type, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormField, form, max, min } from '@angular/forms/signals';
 import { BehaviorSubject } from 'rxjs';
 import { LC_LABELS_FR, LcFormatService } from '@lionelcointot/ui-angular';
@@ -306,11 +307,14 @@ describe('lc-date-range-input, mode natif', () => {
     await fixture.whenStable();
     expect(host.value()).toEqual({ from: '2026-11-10', to: null });
     expect(el.querySelector('.lc-date-range-input__error')!.textContent).toContain('avant la date de début');
+    const range = fixture.debugElement.query(By.directive(LcDateRangeInputComponent)).componentInstance as LcDateRangeInputComponent;
+    expect(range.orderInvalid()).toBe(true);
     inputs()[1].value = '2026-11-12';
     inputs()[1].dispatchEvent(new Event('change'));
     await fixture.whenStable();
     expect(host.value()).toEqual({ from: '2026-11-10', to: '2026-11-12' });
     expect(el.querySelector('.lc-date-range-input__error')).toBeNull();
+    expect(range.orderInvalid()).toBe(false);
   });
 
   it('raccourcis en rangée nommée « Raccourcis » ; un clic remplit la période ; désactivés si le champ l’est', async () => {

@@ -1,12 +1,12 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, linkedSignal, model, output, signal,
+  ChangeDetectionStrategy, Component, Directive, ElementRef, Injector, afterNextRender, computed, effect, inject, input, linkedSignal, model, output, signal,
   untracked, viewChild,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { LC_LABELS, LcButtonComponent, LcIconComponent, LcSkeletonComponent } from '@lionelcointot/ui-angular';
 import { LcAlertComponent } from '@lionelcointot/ui-angular/feedback';
-import { LcDateRangeInputComponent, type LcDateInterval } from '@lionelcointot/ui-angular/forms';
+import { LC_DATE_PICKER, LcDateRangeInputComponent, type LcDateInterval } from '@lionelcointot/ui-angular/forms';
 import {
   LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcFilterValue, LcTableQuery,
   fromDateInterval, isDateRange, normalizeText, orderDistinct, toDateInterval,
@@ -298,3 +298,10 @@ export class LcColumnFilterComponent<T> {
     )?.focus();
   }
 }
+
+/** Panneau plein écran du téléphone : le champ de période du filtre y prend le sélecteur natif (ADR 0008). */
+@Directive({
+  selector: 'lc-column-filter[lcNativeDatePicker]',
+  providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }],
+})
+export class LcNativeDatePickerDirective {}

@@ -187,7 +187,7 @@
           </h3>
           <div class="lc-data-table__section-body" [id]="uid + '-section-' + section.column.key" [hidden]="!section.open">
             @if (section.open) {
-              <lc-column-filter [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
+              <lc-column-filter lcNativeDatePicker [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
                 [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
                 [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
                 (valuesLoaded)="rememberLabels(section.column.key, $event)" />
