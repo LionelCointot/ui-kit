@@ -256,7 +256,7 @@ export class LcMessageThreadComponent {
     const stagger = cssMs(style, '--lc-message-thread-enter-stagger') || 0;
     const entering = Array.from(log.querySelectorAll<HTMLElement>(ENTERING)).filter((el) => arrived.has(el.dataset['messageId'] ?? el.dataset['key'] ?? ''));
     entering.forEach((el, i) => {
-      const timing = { delay: staggerDelay(i, stagger), fill: 'backwards' } as const;
+      const timing = { delay: staggerDelay(i, entering.length, stagger), fill: 'backwards' } as const;
       if (fade > 0) el.animate({ opacity: [0, 1] }, { ...timing, duration: fade });
       const own = getComputedStyle(el);
       const scale = parseFloat(own.getPropertyValue('--_enter-scale'));

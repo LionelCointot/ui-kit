@@ -301,7 +301,7 @@ async function motion() {
       return { rendered, overflow, moved, hole, per, tok, scaleErr: per.map((p) => p.enter && Math.abs(p.scale0 - tok.scale)) };
     }, { add });
     const after = (nums) => page.evaluate(async (nums) => {
-      await Q.settle(); const log = Q.log(); const pos = () => Object.fromEntries(Q.nums().map((n) => [n, Q.R(Q.bubble(n)).top - Q.R(log).top + log.scrollTop]));
+      await Q.settle(); const pos = () => { const log = Q.log(); return Object.fromEntries(Q.nums().map((n) => [n, Q.R(Q.bubble(n)).top - Q.R(log).top + log.scrollTop])); };
       const a = Q.anims().length, p1 = pos(); window.__thread.remount(); await new Promise((r) => setTimeout(r, 300)); await Q.until(() => !!Q.log() && Q.bubbles().length === nums.length, 3000); await Q.raf(); await Q.raf(); const p2 = pos();
       return { anims: a, diff: Object.keys(p1).filter((k) => !(k in p2) || Math.abs(p1[k] - p2[k]) > 1) };
     }, nums);
@@ -379,10 +379,12 @@ async function motion() {
       const stagger = Q.ms('--lc-message-thread-enter-stagger'); await Q.settle();
       return { delays, stagger, after: Q.anims().length };
     }, Array.from({ length: n }, (_, i) => long(me(100 + n * 10 + i, { s: 100 + n * 10 + i }))));
+    // Pas égal = min(enter-stagger, 300 ms / (n − 1)) ; premier à 0 ; 300 ms au plus au total.
+    const even = (r, n) => { const want = Math.min(r.stagger, 300 / (n - 1)); return r.delays.length === n && r.delays.every((d) => typeof d === 'number') && Math.abs(r.delays[0]) <= 1 && r.delays.every((d, i) => i === 0 || Math.abs(d - r.delays[i - 1] - want) <= 1) && r.delays.at(-1) <= 300.5 && r.after === 0; };
     const b5 = await batch(5);
-    check('CA-T13 lot de 5 : cinq entrées décalées de enter-stagger (± 1 ms), 300 ms au plus au total', b5.delays.every((d) => typeof d === 'number') && b5.delays.every((d, i) => i === 0 ? d >= 0 && d <= 1 : Math.abs(d - b5.delays[i - 1] - b5.stagger) <= 1) && b5.delays.at(-1) <= 300 && b5.after === 0, JSON.stringify(b5));
+    check('CA-T13 lot de 5 : cinq entrées décalées d\'un pas égal min(enter-stagger, 300/(n-1)) (± 1 ms), 300 ms au plus au total', even(b5, 5), JSON.stringify(b5));
     const b12 = await batch(12);
-    check('CA-T13 lot de 12 : décalage plafonné à 300 ms, croissant', b12.delays.every((d) => typeof d === 'number') && Math.max(...b12.delays) <= 300 && b12.delays.every((d, i) => i === 0 || d >= b12.delays[i - 1]), JSON.stringify(b12.delays));
+    check('CA-T13 lot de 12 : pas égal plafonné (≤ enter-stagger), total ≤ 300 ms', even(b12, 12), JSON.stringify(b12));
     const rm = await page.evaluate(async (m) => {
       await Q.settle(); const keep = Q.nums(); window.__thread.add([m]); await Q.until(() => !!Q.bubble(900)); await new Promise((r) => setTimeout(r, 100)); window.__thread.remove('m900'); await Q.raf(); await Q.settle();
       return { gone: !Q.bubble(900), anims: Q.anims().length, kept: JSON.stringify(keep) === JSON.stringify(Q.nums()) };
