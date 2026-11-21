@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { Router, RouterLink, provideRouter } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
@@ -11,6 +11,7 @@ class PageComponent {}
 /** Demo of the `Animation` story: the active item moves from the first to the last item of the list. */
 @Component({
   selector: 'lc-nav-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LcNavListComponent, LcNavGroupComponent, LcNavItemComponent, RouterLink, LcButtonComponent, StoryMotionNoticeComponent],
   template: `
     <lc-story-motion-notice />
@@ -34,7 +35,7 @@ class PageComponent {}
 })
 class NavAnimationDemoComponent {
   private readonly router = inject(Router);
-  protected readonly demo = replayable({ play: () => void this.router.navigateByUrl('/settings') });
+  protected readonly demo = replayable({ destroyRef: inject(DestroyRef), play: () => void this.router.navigateByUrl('/settings') });
 
   constructor() {
     void this.router.navigateByUrl('/overview');

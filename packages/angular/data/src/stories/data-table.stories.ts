@@ -247,11 +247,7 @@ const animationTemplate = () => `
     @for (key of keys(); track key) { ${template(fixedBindings())} }
   </div>`;
 
-/**
- * At 360 px (phone viewport in the Canvas tab): the cards cascade on first display, then a filter is applied and removed:
- * kept cards slide to their new place with a spring, added cards fade in, removed cards fade out and the others close the gap.
- * The filter panel fades in and out as well. "Rejouer" starts again.
- */
+/** At 360 px (phone viewport, Canvas tab): the cards cascade, then a filter is applied and removed so the list difference moves; "Rejouer" starts again. */
 export const Animation: Story = {
   parameters: {
     ...fixedExample,
