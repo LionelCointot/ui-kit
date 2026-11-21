@@ -81,8 +81,8 @@ describe('CA-T17 cas limites du modèle', () => {
 describe('CA-T16 nettoyage et console', () => {
   it('contrôles et bidi retirés du nom et du texte (DOM, aria-label, title) ; retours à la ligne gardés ; nom dans <bdi> ; rien dans la console', async () => {
     const s = spies();
-    const { el } = await render([msg('1', { authorName: 'Al‮ice\u0007 Dupont', text: 'Bon‮jour\u0000\nsuite‏' })]);
-    const UNSAFE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F؜​-‏ -‮⁠⁦-⁩﻿]/;
+    const { el } = await render([msg('1', { authorName: 'Al\u202Eice\u0007 Dupont', text: 'Bon\u202Ejour\u0000\nsuite\u200F' })]);
+    const UNSAFE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u061C\u200B-\u200F\u2028-\u202E\u2060\u2066-\u2069\uFEFF]/;
     expect(el.innerHTML).not.toMatch(UNSAFE);
     for (const e of el.querySelectorAll('[aria-label], [title]')) expect(`${e.getAttribute('aria-label')}${e.getAttribute('title')}`).not.toMatch(UNSAFE);
     expect(el.querySelector('bdi')?.textContent).toBe('Alice Dupont');

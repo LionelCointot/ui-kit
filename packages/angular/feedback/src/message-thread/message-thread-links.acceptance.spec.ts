@@ -31,7 +31,7 @@ describe('CA-T14 liens déguisés', () => {
   it('corpus aléatoire à graine fixe (≥ 500 chaînes) : tout lien est http(s) et rien n\'est perdu', () => {
     let seed = 0xc0ffee;
     const rnd = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    const FRAGS = ['http://', 'https://', 'HTTPS://', 'javascript:', 'JAVASCRIPT:', 'data:', 'vbscript:', 'file:', 'ftp://', '//', 'www.', 'x.test', 'example.com/a', '/path', '?q=1&b=2', '#h', '(', ')', '.', ',', ';', ':', '!', '?', '<', '>', '"', "'", '&#106;', '&amp;', ' ', '\t', '\n', '\u0000', '‮', 'é', '😀', 'alert(1)', '%20', '[', ']'];
+    const FRAGS = ['http://', 'https://', 'HTTPS://', 'javascript:', 'JAVASCRIPT:', 'data:', 'vbscript:', 'file:', 'ftp://', '//', 'www.', 'x.test', 'example.com/a', '/path', '?q=1&b=2', '#h', '(', ')', '.', ',', ';', ':', '!', '?', '<', '>', '"', "'", '&#106;', '&amp;', ' ', '\t', '\n', '\u0000', '\u202E', 'é', '😀', 'alert(1)', '%20', '[', ']'];
     let count = 0;
     for (; count < 800; count += 1) {
       const n = 1 + Math.floor(rnd() * 9);

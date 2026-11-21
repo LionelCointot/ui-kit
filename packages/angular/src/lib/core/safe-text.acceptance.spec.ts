@@ -5,7 +5,7 @@ import { isSafePreviewUrl, lcStripUnsafeChars } from './safe-text';
 
 describe('CA-T16 lcStripUnsafeChars', () => {
   it('retire contrôles C0/C1, marqueurs bidi et invisibles', () => {
-    expect(lcStripUnsafeChars('A\u0000B‮C‏D\u0007E⁦F⁩G؜H\u0085I﻿J​K')).toBe('ABCDEFGHIJK');
+    expect(lcStripUnsafeChars('A\u0000B\u202EC\u200FD\u0007E\u2066F\u2069G\u061CH\u0085I\uFEFFJ\u200BK')).toBe('ABCDEFGHIJK');
   });
   it('garde le texte normal : accents, arabe, emoji, espaces', () => {
     for (const s of ['Élodie Dupont', 'محمد علي', '😀 Zoé', 'Jean-Pierre  Martin']) expect(lcStripUnsafeChars(s)).toBe(s);

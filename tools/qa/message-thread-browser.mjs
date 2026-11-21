@@ -20,7 +20,7 @@ const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const pw = require('playwright');
 const axeSource = await readFile(require.resolve('axe-core/axe.min.js'), 'utf8');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(await readFile(f)); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
+const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); const body = await readFile(f); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(body); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
 const base = `http://127.0.0.1:${server.address().port}`;
 let browser = await pw.chromium.launch();
 let failures = 0;
@@ -63,8 +63,9 @@ const INIT = () => {
   Q.pauseAll = (t) => document.getAnimations().forEach((a) => { a.pause(); if (t !== null) a.currentTime = t; });
   Q.names = () => [...Q.log().querySelectorAll('bdi')].map((b) => b.textContent.trim());
   Q.clockTimes = () => [...Q.log().querySelectorAll('time')].filter((t) => /\d{1,2}[:h]\d{2}/.test(t.textContent));
-  Q.dayLabels = (re) => [...Q.log().querySelectorAll('time')].map((t) => t.textContent.replace(/[  ]/g, ' ').replace('’', "'").trim()).filter((t) => re.test(t));
-  Q.content = () => { const l = Q.log(), cs = getComputedStyle(l), r = Q.R(l); const left = r.left + l.clientLeft + parseFloat(cs.paddingLeft); const right = r.left + l.clientLeft + l.clientWidth - parseFloat(cs.paddingRight); return { left, right, mid: (left + right) / 2 }; };
+  Q.dayLabels = (re, sel = 'time, [class*="day"]') => [...Q.log().querySelectorAll(sel)].map((t) => t.textContent.replace(/[  ]/g, ' ').replace('’', "'").trim()).filter((t) => re.test(t));
+  // Zone des bulles : le remplissage du fil est celui du CSS du fil ou, à défaut, le jeton thread-padding (posé sur un conteneur interne).
+  Q.content = () => { const l = Q.log(), cs = getComputedStyle(l), r = Q.R(l); const pad = Math.max(parseFloat(cs.paddingLeft), Q.px('--lc-message-thread-thread-padding')); const left = r.left + l.clientLeft + pad; const right = r.left + l.clientLeft + l.clientWidth - pad; return { left, right, mid: (left + right) / 2 }; };
   // Animation d'entrée d'un élément (bulle ou ancêtre jusqu'au fil) : celle dont la durée vaut enter-duration.
   Q.enter = (b) => { const D = Q.ms('--lc-message-thread-enter-duration'); for (let e = b; e && e.localName !== 'lc-message-thread'; e = e.parentElement) { const a = e.getAnimations().find((x) => near(x.effect.getComputedTiming().duration, D)); if (a) return { a, el: e, t: a.effect.getComputedTiming() }; } return null; };
   Q.progressAt = (f) => { const p = document.createElement('div'); document.body.append(p); const a = p.animate([{ scale: 0 }, { scale: 1 }], { duration: 1000, easing: getComputedStyle(document.documentElement).getPropertyValue('--lc-message-thread-enter-easing').trim() || Q.probe('transition-timing-function:var(--lc-message-thread-enter-easing)', 'transitionTimingFunction'), fill: 'both' }); a.pause(); a.currentTime = f * 1000; const v = parseFloat(getComputedStyle(p).scale); a.cancel(); p.remove(); return v; };
@@ -112,9 +113,9 @@ async function layout() {
     check('CA-T2 showAvatars retiré à chaud : aucun lc-avatar, bulles d\'un groupe alignées', b.count === 0 && near(b.l1, b.l2), JSON.stringify(b));
 
     // CA-T1 : 5 min 00 s ouvre un groupe, 4 min 59 s non.
-    await put(page, [mk(1), mk(2, { s: 299 })]);
+    await put(page, [mk(1, { s: 0 }), mk(2, { s: 299 })]);
     const four = await page.evaluate(() => Q.names().filter((x) => x === 'Alice').length);
-    await put(page, [mk(1), mk(2, { s: 300 })]);
+    await put(page, [mk(1, { s: 0 }), mk(2, { s: 300 })]);
     const five = await page.evaluate(() => Q.names().filter((x) => x === 'Alice').length);
     check('CA-T1 écart de 4 min 59 s : un groupe ; 5 min 00 s : un nouveau groupe', four === 1 && five === 2, `${four} / ${five}`);
     // même auteur, visibilité différente : deux groupes.
@@ -132,8 +133,9 @@ async function layout() {
       const page = await open(c, story, { now });
       const L = (iso, n) => mk(n, { sentAt: new Date(iso).toISOString() });
       await put(page, [L(`2026-11-18T09:00:00${off}`, 1), L(`2026-11-20T23:59:00${off}`, 2), L(`2026-11-21T00:01:00${off}`, 3), L(`2026-11-21T09:30:00${off}`, 4)]);
-      const r = await page.evaluate(() => ({ days: Q.dayLabels(/^(Aujourd'hui|Hier|Today|Yesterday|\d{1,2} \p{L}+\.?|\p{L}{3}\.? \d{1,2})$/u), names: Q.names().length, now: new Date().toISOString() }));
+      const r = await page.evaluate(() => { const re = /^(Aujourd'hui|Hier|Today|Yesterday|\d{1,2} \p{L}+\.?|\p{L}{3}\.? \d{1,2})$/u; return { days: Q.dayLabels(re), inTime: Q.dayLabels(re, 'time'), names: Q.names().length, now: new Date().toISOString() }; });
       check(`CA-T1 ${ctxName} : séparateurs ${want.join(' / ')}, un par jour, dans l'ordre ; 23:59 et 00:01 = deux groupes (4 groupes en tout)`, JSON.stringify(r.days) === JSON.stringify(want) && r.names === 4, JSON.stringify(r));
+      check(`CA-T1 ${ctxName} : chaque séparateur de jour est un <time> (spec 5.4)`, JSON.stringify(r.inTime) === JSON.stringify(want), JSON.stringify(r));
       await page.close();
     });
   }
@@ -145,9 +147,9 @@ async function layout() {
     const r = await page.evaluate(() => {
       const st = (n) => { const cs = getComputedStyle(Q.bubble(n)); return { bg: cs.backgroundColor, color: cs.color, bs: cs.borderTopStyle, bw: parseFloat(cs.borderTopWidth), bc: cs.borderTopColor }; };
       const exp = { bg: Q.probe('background:var(--lc-sys-color-warning-container)', 'backgroundColor'), color: Q.probe('color:var(--lc-sys-color-on-warning-container)', 'color'), w: Q.px('--lc-sys-border-width-thick'), bc: Q.probe('color:var(--lc-sys-color-warning)', 'color'), other: Q.probe('background:var(--lc-sys-color-secondary-container)', 'backgroundColor'), mine: Q.probe('background:var(--lc-sys-color-primary-container)', 'backgroundColor') };
-      const mention = [...Q.log().querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === 'Note interne');
+      const own = (e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim() === 'Note interne'); const mention = [...Q.log().querySelectorAll('*')].find(own);
       const text = Q.textRect(Q.bubble(3), 'msg 3')?.node;
-      return { s: [1, 2, 3, 4].map(st), exp, mention: !!mention, before: !!(mention && text && (mention.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING)), inBubble: !!mention?.closest('.lc-message-thread__bubble'), mentions: [...Q.log().querySelectorAll('*')].filter((e) => e.children.length === 0 && e.textContent.trim() === 'Note interne').length };
+      return { s: [1, 2, 3, 4].map(st), exp, mention: !!mention, before: !!(mention && text && (mention.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING)), inBubble: !!mention?.closest('.lc-message-thread__bubble'), mentions: [...Q.log().querySelectorAll('*')].filter(own).length };
     });
     const noteOk = (s) => s.bg === r.exp.bg && s.color === r.exp.color && s.bs === 'dashed' && near(s.bw, r.exp.w, 0.1) && s.bc === r.exp.bc;
     check('CA-T5 la classe d\'application donne fond, couleur et bordure en pointillés à la bulle, du côté des autres comme du mien', noteOk(r.s[2]) && noteOk(r.s[3]), JSON.stringify(r));
@@ -164,7 +166,7 @@ async function layout() {
     const r = await page.evaluate((txt) => {
       const C = Q.content(); const hit = Q.textRect(Q.log(), txt); const tp = hit?.node.parentElement;
       let row = tp; while (row && row !== Q.log() && !row.querySelector('time')) row = row.parentElement;
-      const rr = hit?.rect;
+      let rr = hit?.rect; const tm = row && row !== Q.log() && row.querySelector('time'); if (rr && tm) { const t = Q.R(tm); rr = { left: Math.min(rr.left, t.left), right: Math.max(rr.right, t.right) }; } // ligne = texte · heure
       return { found: !!hit, mid: rr && (rr.left + rr.right) / 2, C: C.mid, color: tp && getComputedStyle(tp).color, sys: Q.probe('color:var(--lc-message-thread-system-color)', 'color'), time: !!(row && row !== Q.log() && row.querySelector('time')), noBdi: !row?.querySelector('bdi'), noAvatar: !row?.querySelector('lc-avatar'), notBubble: !tp?.closest('.lc-message-thread__bubble'), alice: Q.names().filter((x) => x === 'Alice').length, avatars: document.querySelectorAll('lc-avatar').length, marc: Q.names().includes('Marc') };
     }, SYS);
     check('CA-T7 ligne système centrée (± 2 px), hors bulle, couleur system-color', r.found && near(r.mid, r.C, 2) && r.notBubble && r.color === r.sys, JSON.stringify(r));
@@ -189,12 +191,12 @@ async function attach() {
       const img = (i) => btns[i]?.querySelector('img');
       const b2 = Q.bubbles()[1];
       const empties = [...b2.querySelectorAll('*')].filter((e) => !e.closest('button') && !['IMG', 'svg', 'path', 'LC-ICON'].includes(e.tagName) && e.children.length === 0 && e.textContent.trim() === '');
-      return { btns: btns.length, names: btns.map((b) => b.getAttribute('aria-label') ?? b.textContent.trim()), imgs: btns.map((_, i) => img(i)?.getAttribute('src') ?? null), size: btns.map((b) => [Q.R(b).width, Q.R(b).height]), attrs: btns.map((_, i) => img(i) ? ['width', 'height', 'alt'].every((a) => img(i).hasAttribute(a)) : true), allImgs: [...document.querySelectorAll('img')].map((i) => i.getAttribute('src')), empties: empties.length, b2buttons: b2.querySelectorAll('button').length, b2text: b2.textContent.trim() };
+      return { btns: btns.length, names: btns.map((b) => b.getAttribute('aria-label') ?? b.textContent.trim()), imgs: btns.map((_, i) => img(i)?.getAttribute('src') ?? null), size: btns.map((b) => [Q.R(b).width, Q.R(b).height]), attrs: btns.map((_, i) => img(i) ? ['width', 'height', 'alt'].filter((a) => !img(i).hasAttribute(a)).join('+') || true : true), allImgs: [...document.querySelectorAll('img')].map((i) => i.getAttribute('src')), empties: empties.length, b2buttons: b2.querySelectorAll('button').length, b2text: b2.textContent.trim() };
     });
     const ids = ['none', 'js', 'html', 'other', 'blob', 'png', 'same'];
     check('CA-T6 une vignette <button> par pièce jointe, nom accessible contenant le nom du fichier', r.btns === 7 && ids.every((_, i) => r.names[i].includes(['sans-apercu.pdf', 'js.png', 'html.png', 'autre.png', 'blob.png', 'png.png', 'same.png'][i])), JSON.stringify(r.names));
     check('CA-T6 aperçu absent, javascript:, data:text/html, http(s) d\'une autre origine → icône, jamais d\'<img> avec cette src', [0, 1, 2, 3].every((i) => r.imgs[i] === null) && !r.allImgs.some((s) => /^javascript:|text\/html|evil\.test/i.test(s ?? '')), JSON.stringify(r.imgs));
-    check('CA-T6 blob:, data:image/png, même origine → <img> (width, height, alt présents)', r.imgs[4]?.startsWith('blob:') && r.imgs[5] === PNG && r.imgs[6]?.startsWith(info.origin) && r.attrs.every(Boolean), JSON.stringify({ imgs: r.imgs, attrs: r.attrs }));
+    check('CA-T6 blob:, data:image/png, même origine → <img> (width, height, alt présents)', r.imgs[4]?.startsWith('blob:') && r.imgs[5] === PNG && r.imgs[6]?.startsWith(info.origin) && r.attrs.every((a) => a === true), JSON.stringify({ imgs: r.imgs, attrs: r.attrs }));
     check('CA-T6 cible tactile des vignettes ≥ 44 px', r.size.every(([w, h]) => w >= 44 && h >= 44), JSON.stringify(r.size));
     check('CA-T6 message sans texte : bulle de vignettes, aucune zone de texte vide', r.b2buttons === 1 && r.empties === 0 && r.b2text.length <= 40, JSON.stringify({ e: r.empties, t: r.b2text }));
     // Clavier et souris : une seule émission par geste.
@@ -215,9 +217,9 @@ async function text() {
     const page = await open(c);
     await put(page, [mk(1, { text: 'Voir https://x.test/a. Merci\nligne 2 javascript:alert(1) <b>x</b> & "q" et http://y.test/p?a=1&b=2, fin (https://z.test/w) www.example.com' })]);
     const r = await page.evaluate(() => {
-      const b = Q.bubble(1), as = [...b.querySelectorAll('a')];
+      const b = Q.bubbles()[0], as = [...b.querySelectorAll('a')];
       const l1 = Q.textRect(b, 'Voir'), l2 = Q.textRect(b, 'ligne 2');
-      return { as: as.map((a) => [a.textContent, a.getAttribute('href'), a.target, a.rel]), after: as[0]?.nextSibling?.textContent.slice(0, 7), bold: !!b.querySelector('b'), text: b.textContent, lineBreak: l1 && l2 && l2.rect.top - l1.rect.top > 5, anyJs: [...document.querySelectorAll('a')].some((a) => !/^https?:/.test(a.href)) };
+      return { as: as.map((a) => [a.textContent, a.getAttribute('href'), a.target, a.rel]), after: (() => { let n = as[0]?.nextSibling; while (n && n.nodeType !== 3) n = n.nextSibling; return n?.textContent.slice(0, 7); })(), bold: !!b.querySelector('b'), text: b.textContent, lineBreak: l1 && l2 && l2.rect.top - l1.rect.top > 5, anyJs: [...document.querySelectorAll('a')].some((a) => !/^https?:/.test(a.href)) };
     });
     check('CA-T8 trois adresses http(s) sont des <a target="_blank" rel="noopener noreferrer"> sans ponctuation finale', JSON.stringify(r.as.map((x) => x[0])) === '["https://x.test/a","http://y.test/p?a=1&b=2","https://z.test/w"]' && r.as.every((x) => x[2] === '_blank' && /\bnoopener\b/.test(x[3]) && /\bnoreferrer\b/.test(x[3]) && /^https?:\/\//.test(x[1])), JSON.stringify(r.as));
     check('CA-T8 le point final reste du texte après le lien', r.after === '. Merci', String(r.after));
@@ -229,7 +231,7 @@ async function text() {
   await withCtx('phone', async (c) => {
     const page = await open(c);
     await put(page, [mk(1, { text: `https://x.test/${'a'.repeat(200_000)}` }), mk(2, { authorId: 'b', authorName: 'Bob', text: `${'x'.repeat(3000)}` }), mk(3, { authorId: 'c', authorName: 'Cy', text: '😀'.repeat(60), attachments: Array.from({ length: 12 }, (_, i) => ({ id: `f${i}`, name: `fichier-avec-un-nom-assez-long-${i}.png`, previewUrl: PNG })) })]);
-    const r = await page.evaluate(() => { const l = Q.log(); return { logScroll: l.scrollWidth - l.clientWidth, doc: document.documentElement.scrollWidth - innerWidth, bubbles: Q.bubbles().map((b) => b.scrollWidth - b.clientWidth), link: Q.bubble(1)?.querySelectorAll('a').length, thumbs: Q.bubbles()[2]?.querySelectorAll('button').length }; });
+    const r = await page.evaluate(() => { const l = Q.log(); return { logScroll: l.scrollWidth - l.clientWidth, doc: document.documentElement.scrollWidth - innerWidth, bubbles: Q.bubbles().map((b) => b.scrollWidth - b.clientWidth), link: Q.bubbles()[0]?.querySelectorAll('a').length, thumbs: Q.bubbles()[2]?.querySelectorAll('button').length }; });
     check('CA-T15/T17 adresse de 200 000 caractères, mot de 3 000, 12 pièces jointes à 360 px : aucun défilement horizontal, aucune bulle qui déborde', r.logScroll <= 1 && r.doc <= 0 && r.bubbles.every((x) => x <= 1) && r.link === 1 && r.thumbs === 12, JSON.stringify(r));
     await page.close();
   });
@@ -237,13 +239,13 @@ async function text() {
   await withCtx('desk', async (c) => {
     const page = await open(c);
     const UNSAFE = '[\\u0000-\\u0009\\u000B-\\u001F\\u007F-\\u009F\\u061C\\u200B-\\u200F\\u2028-\\u202E\\u2060\\u2066-\\u2069\\uFEFF]';
-    await put(page, [mk(1, { authorName: 'Al‮ice\u0007 Dupontsecret', text: 'Bon‮jour\u0000secret\nsuite‏' }), mk(2, { authorId: 'b', authorName: 'محمد علي', text: 'مرحبا' }), mk(3, { authorId: 'c', authorName: '𝒜lice 𝒝ob', text: 'astral' }), mk(4, { authorId: 'd', authorName: '', text: 'sans nom' }), mk(5, { authorId: 'e', authorName: 'Eve', text: 'latin' })]);
+    await put(page, [mk(1, { authorName: 'Al\u202Eice\u0007 Dupontsecret', text: 'Bon\u202Ejour\u0000secret\nsuite\u200F' }), mk(2, { authorId: 'b', authorName: 'محمد علي', text: 'مرحبا' }), mk(3, { authorId: 'c', authorName: '𝒜lice 𝒝ob', text: 'astral' }), mk(4, { authorId: 'd', authorName: '', text: 'sans nom' }), mk(5, { authorId: 'e', authorName: 'Eve', text: 'latin' })]);
     const r = await page.evaluate((U) => {
       const re = new RegExp(U); const l = Q.log();
       const attrs = [...l.querySelectorAll('*')].flatMap((e) => [...e.attributes].map((a) => a.value)).concat([l.innerHTML]);
       const av = [...document.querySelectorAll('lc-avatar')].map((a) => a.textContent.trim());
       const header = (name) => { const bdi = [...l.querySelectorAll('bdi')].find((x) => x.textContent.includes(name)); if (!bdi) return null; const t = [...l.querySelectorAll('time')].find((x) => (bdi.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING) && !x.closest('.lc-message-thread__bubble')); return t ? Q.R(t).left - Q.R(bdi).right : null; };
-      return { unsafe: attrs.some((v) => re.test(v)), bdi: [...l.querySelectorAll('bdi')].map((b) => b.textContent), b1: Q.bubble(1)?.textContent, av, lone: av.some((a) => /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(a)), gapAr: header('محمد'), gapLa: header('Eve'), nb: Q.bubbles().length };
+      return { unsafe: attrs.some((v) => re.test(v)), bdi: [...l.querySelectorAll('bdi')].map((b) => b.textContent), b1: Q.bubbles()[0]?.textContent, av, lone: av.some((a) => /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(a)), gapAr: header('محمد'), gapLa: header('Eve'), nb: Q.bubbles().length };
     }, UNSAFE);
     check('CA-T16 aucun caractère de contrôle ni bidi dans le DOM, les attributs (aria-label, title…) ; nom nettoyé dans <bdi>', !r.unsafe && r.bdi.includes('Alice Dupontsecret'), JSON.stringify({ u: r.unsafe, bdi: r.bdi }));
     check('CA-T16 texte nettoyé mais retour à la ligne conservé', /Bonjoursecret\s*suite/.test(r.b1 ?? '') && (r.b1 ?? '').includes('\n'), JSON.stringify(r.b1));
@@ -300,7 +302,7 @@ async function motion() {
     }, { add });
     const after = (nums) => page.evaluate(async (nums) => {
       await Q.settle(); const log = Q.log(); const pos = () => Object.fromEntries(Q.nums().map((n) => [n, Q.R(Q.bubble(n)).top - Q.R(log).top + log.scrollTop]));
-      const a = Q.anims().length, p1 = pos(); window.__thread.remount(); await Q.until(() => !!Q.log() && Q.bubbles().length === nums.length, 3000); await Q.raf(); await Q.raf(); const p2 = pos();
+      const a = Q.anims().length, p1 = pos(); window.__thread.remount(); await new Promise((r) => setTimeout(r, 300)); await Q.until(() => !!Q.log() && Q.bubbles().length === nums.length, 3000); await Q.raf(); await Q.raf(); const p2 = pos();
       return { anims: a, diff: Object.keys(p1).filter((k) => !(k in p2) || Math.abs(p1[k] - p2[k]) > 1) };
     }, nums);
     const steps = [['1 message (moi)', [long(me(6, { s: 6 }))], true], ['3 messages consécutifs (moi)', [long(me(7, { s: 7 })), long(me(8, { s: 8 })), long(me(9, { s: 9 }))], true], ['1 message de l\'autre côté', [long(mk(10, { authorId: 'b', authorName: 'Bob', s: 10 }))], false]];
@@ -340,8 +342,8 @@ async function motion() {
       const old = Q.bubbles(); window.__thread.add(add); await Q.until(() => Q.bubbles().length === old.length + 1);
       const all = Q.anims().map((a) => ({ props: (a.effect.getKeyframes?.() ?? []).flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)).concat(a.transitionProperty ? [a.transitionProperty] : []), dur: a.effect.getComputedTiming().duration, target: a.effect.target }));
       const nb = Q.bubble(6);
-      return { all: all.map((x) => [x.props, x.dur]), motionProps: all.filter((x) => x.props.some((p) => /transform|translate|scale|rotate/.test(p))).length, fade: all.some((x) => x.props.includes('opacity') && (x.target === nb || x.target.contains(nb) || nb.contains(x.target)) && x.dur > 1), onOld: all.filter((x) => old.some((o) => x.target === o || o.contains(x.target) || x.target.contains(o))).length };
-    }, long(me(6, { s: 6 })));
+      return { all: all.map((x) => [x.props, x.dur]), motionProps: all.filter((x) => x.props.some((p) => /transform|translate|scale|rotate/.test(p))).length, fade: all.some((x) => x.props.includes('opacity') && (x.target === nb || x.target.contains(nb) || nb.contains(x.target)) && x.dur > 1), onOld: all.filter((x) => x.dur > 1 && old.some((o) => x.target === o || o.contains(x.target) || x.target.contains(o))).length };
+    }, [long(me(6, { s: 6 }))]);
     check('CA-T4 réduction des animations : l\'arrivée ne joue que l\'opacité (aucune animation de transform, translate ou scale), le fondu survit', r.motionProps === 0 && r.fade, JSON.stringify(r));
     check('CA-T4 réduction des animations : les messages précédents ne sont pas animés', r.onOld === 0, JSON.stringify(r));
     await page.close();

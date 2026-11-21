@@ -49,7 +49,7 @@ declare global {
         <div id="qa-box" class="qa-box" [style.height.px]="s().height">
           <lc-message-thread [messages]="msgs()" [showAvatars]="s().showAvatars" [pageSize]="s().pageSize" [ariaLabel]="s().ariaLabel" (attachmentOpen)="open($event)">
             @if (s().composer) {
-              <lc-message-composer lcThreadComposer [(value)]="text" />
+              <lc-message-composer lcThreadComposer ariaLabel="Votre message" [(value)]="text" />
             }
           </lc-message-thread>
         </div>

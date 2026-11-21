@@ -12,6 +12,8 @@
   flex-direction: column;
   min-block-size: 0;
   overflow-y: auto;
+  /* Le dépassement du ressort ne fait pas apparaître de défilement horizontal. */
+  overflow-x: hidden;
   overscroll-behavior: contain;
   /* Le défilement progressif compense la position lui-même. */
   overflow-anchor: none;
@@ -137,6 +139,15 @@
   align-items: flex-end;
 }
 
+/* Coin extérieur de la bulle : l'entrée en `scale` en part (bas gauche pour les autres, bas droite pour moi). */
+.lc-message-thread__message {
+  transform-origin: 0 100%;
+}
+
+.lc-message-thread__group--mine .lc-message-thread__message {
+  transform-origin: 100% 100%;
+}
+
 .lc-message-thread__time {
   margin: var(--lc-sys-space-2) 0 var(--lc-sys-space-1);
   color: var(--lc-message-thread-meta-color, var(--lc-sys-color-on-surface-muted));
@@ -243,10 +254,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* Réservé aux entrées animées (F3a) : fondu seul, ni ressort ni glissement. */
 }
 
 @media (forced-colors: active) {

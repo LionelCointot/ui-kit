@@ -16,7 +16,13 @@ export interface LcThreadGroupMessage {
   /** Heure intermédiaire (≥ 5 min depuis la dernière heure affichée) ; absente sinon. */
   time: LcThreadTime | null;
 }
-export interface LcThreadDay { type: 'day'; key: string; label: string }
+export interface LcThreadDay {
+  type: 'day';
+  key: string;
+  label: string;
+  /** Date locale `AAAA-MM-JJ`, valeur de l'attribut `datetime`. */
+  date: string;
+}
 export interface LcThreadGroup {
   type: 'group';
   key: string;
@@ -40,6 +46,7 @@ export interface LcThreadGroupingContext {
   now?: Date;
 }
 
+const isoDay = (d: Date) => `${String(d.getFullYear()).padStart(4, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 function warn(message: string): void {
@@ -89,7 +96,7 @@ export function groupThreadMessages(messages: readonly LcThreadMessage[], ctx: L
     if (valid) lastTs = ts;
     if (!joins) {
       group = undefined;
-      if (newDay) items.push({ type: 'day', key: `day-${day}`, label: dayLabel(date) });
+      if (newDay) items.push({ type: 'day', key: `day-${day}`, label: dayLabel(date), date: isoDay(date) });
     }
     if (day !== undefined) lastDay = day;
 

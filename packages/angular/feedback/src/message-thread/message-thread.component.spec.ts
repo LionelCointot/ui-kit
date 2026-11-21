@@ -11,11 +11,12 @@ const msg = (id: string, over: Partial<LcThreadMessage> = {}): LcThreadMessage =
 
 @Component({
   imports: [LcMessageThreadComponent],
-  template: `<lc-message-thread [messages]="messages()" [showAvatars]="showAvatars()" (attachmentOpen)="opened.push($event)"><p lcThreadComposer id="composer">saisie</p></lc-message-thread>`,
+  template: `<lc-message-thread [messages]="messages()" [showAvatars]="showAvatars()" [pageSize]="pageSize()" (attachmentOpen)="opened.push($event)"><p lcThreadComposer id="composer">saisie</p></lc-message-thread>`,
 })
 class HostComponent {
   readonly messages = signal<LcThreadMessage[]>([]);
   readonly showAvatars = signal(true);
+  readonly pageSize = signal(30);
   readonly opened: LcThreadAttachmentOpenEvent[] = [];
 }
 
@@ -180,5 +181,49 @@ describe('lc-message-thread', () => {
     host.messages.update((m) => [...m, msg('2', { sentAt: at(9, 1) })]);
     fixture.detectChanges();
     expect(qa('.lc-message-thread__bubble').length).toBe(2);
+  });
+
+  it('séparateur de jour : <time datetime="AAAA-MM-JJ">', () => {
+    expect(render([msg('1')]).q('.lc-message-thread__day time')?.getAttribute('datetime')).toBe('2026-11-18');
+  });
+
+  describe('affichage progressif', () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => msg(String(i + 1), { sentAt: at(9, i) }));
+    const ids = (qa: (s: string) => HTMLElement[]) => qa('[data-message-id]').map((e) => e.dataset['messageId']);
+    let notify: (visible: boolean) => void = () => undefined;
+
+    beforeEach(() => {
+      vi.stubGlobal('IntersectionObserver', class {
+        constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+          notify = (isIntersecting) => callback([{ isIntersecting }]);
+        }
+        observe() { /* sans effet */ }
+        disconnect() { /* sans effet */ }
+      });
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('seuls les pageSize derniers sont rendus, puis un palier chaque fois que la sentinelle revient à l\'écran, jusqu\'au dernier', async () => {
+      const { fixture, qa, q } = render(many(25), (h) => h.pageSize.set(10));
+      await fixture.whenStable();
+      expect(ids(qa)).toEqual(Array.from({ length: 10 }, (_, i) => String(i + 16)));
+      notify(true); // sentinelle déjà visible au départ : pas de palier
+      fixture.detectChanges();
+      expect(qa('[data-message-id]').length).toBe(10);
+      for (const expected of [20, 25, 25]) {
+        notify(false);
+        notify(true);
+        fixture.detectChanges();
+        await fixture.whenStable();
+        expect(qa('[data-message-id]').length).toBe(expected);
+      }
+      expect(ids(qa)[0]).toBe('1');
+      expect(q('[role="log"]')?.hasAttribute('aria-busy')).toBe(false);
+    });
+
+    it.each([0, -3, 2.5, NaN])('pageSize %s : 30 messages rendus', (size) => {
+      const { qa } = render(many(40), (h) => h.pageSize.set(size));
+      expect(qa('[data-message-id]').length).toBe(30);
+    });
   });
 });

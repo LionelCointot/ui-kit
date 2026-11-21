@@ -43,6 +43,11 @@ describe('groupThreadMessages', () => {
     expect(days(LC_LABELS_EN, 'en')).toEqual(['Nov 18', 'Yesterday', 'Today']);
   });
 
+  it('séparateur de jour : date machine locale AAAA-MM-JJ (mois et jour sur deux chiffres)', () => {
+    const dates = run([msg('1', { sentAt: at(3, 9, 0) }), msg('2', { sentAt: new Date(2025, 0, 5, 9).toISOString() })]).flatMap((i) => (i.type === 'day' ? [i.date] : []));
+    expect(dates).toEqual(['2026-11-03', '2025-01-05']);
+  });
+
   it('jour d\'une autre année : l\'année est ajoutée', () => {
     const [day] = run([msg('1', { sentAt: new Date(2025, 10, 18, 9).toISOString() })]);
     expect(day.type === 'day' && day.label).toMatch(/2025/);

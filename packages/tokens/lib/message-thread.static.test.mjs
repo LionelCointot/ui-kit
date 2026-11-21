@@ -95,8 +95,14 @@ test('architecture : safe-text.ts dans le principal ; forms et feedback n\'en ga
   const st = read(path.join(ng, 'src/lib/core/safe-text.ts'));
   assert.match(st, /export (function|const) lcStripUnsafeChars/, 'lcStripUnsafeChars absent'); assert.match(st, /export (function|const) isSafePreviewUrl/);
   assert.match(read(path.join(ng, 'src/public-api.ts')), /lib\/core\/safe-text/, 'safe-text non exporté par le principal');
-  const dup = [...files(path.join(ng, 'forms/src'), /\.ts$/), ...files(path.join(ng, 'feedback/src'), /\.ts$/)].filter((f) => /(function|const)\s+(cleanFileName|isSafePreviewUrl|lcStripUnsafeChars)\b/.test(read(f)));
+  const srcs = [...files(path.join(ng, 'forms/src'), /\.ts$/), ...files(path.join(ng, 'feedback/src'), /\.ts$/)].filter((f) => !/\.stories\.ts$/.test(f));
+  const dup = srcs.filter((f) => /(function|const)\s+(isSafePreviewUrl|lcStripUnsafeChars)\b/.test(read(f)));
   assert.deepEqual(dup.map((f) => path.relative(ng, f)), [], 'copie locale à retirer');
+  // Une enveloppe cleanFileName qui appelle lcStripUnsafeChars est admise (forms garde son comportement) ; une liste de caractères recopiée ne l'est pas.
+  const wrappers = srcs.filter((f) => /(function|const)\s+cleanFileName\b/.test(read(f)));
+  for (const f of wrappers) assert.match(read(f), /lcStripUnsafeChars\(/, `${path.relative(ng, f)} : cleanFileName doit appeler lcStripUnsafeChars`);
+  const copied = srcs.filter((f) => /\\u200B-\\u200F|\\u202A-\\u202E|\\u2066-\\u2069/i.test(read(f)));
+  assert.deepEqual(copied.map((f) => path.relative(ng, f)), [], 'liste de caractères bidi recopiée');
 });
 
 test('feedback : lc-message-thread exporté par le point d\'entrée', () => {
