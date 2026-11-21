@@ -1,7 +1,7 @@
 /**
  * Courbe du token `easing.spring` : ressort à amortissement critique, sans rebond, x(t) = 1 − (1 + ωt)·e^(−ωt), ω = 8, t ∈ [0, 1].
  * Échantillonnée en `linear()` (points à pas égal, 3 décimales, dernier point exactement 1).
- * Régénérer : `node lib/spring-easing.mjs`, puis recopier la valeur dans `ref.easing.spring` et `sys.easing.spring`.
+ * Régénérer : `node lib/spring-easing.mjs`, puis recopier la valeur dans `ref.easing.spring` (`sys.easing.spring` en est l'alias).
  */
 export const SPRING_OMEGA = 8;
 export const SPRING_POINTS = 56;

@@ -275,13 +275,13 @@ export class LcDataTableComponent<T> {
   }
 
   /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
-  private timing(duration: string, ...easings: string[]): KeyframeAnimationOptions | null {
+  private timing(duration: string, easing: string): KeyframeAnimationOptions | null {
     if (typeof this.host.animate !== 'function' || (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches)) return null;
     const style = getComputedStyle(this.host);
     const raw = style.getPropertyValue(duration).trim();
     const ms = parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000);
     if (!(ms > 0)) return null;
-    return { duration: ms, easing: easings.map((name) => style.getPropertyValue(name).trim()).find(Boolean) };
+    return { duration: ms, easing: style.getPropertyValue(easing).trim() || undefined };
   }
 
   /** Position verticale visible de chaque ligne (hors lignes en fondu de sortie), puis annulation des animations en cours : la mesure suivante lit la mise en page. */
