@@ -571,6 +571,8 @@ const MOTION_INIT = () => {
   q.sections = [];
   q.chipsIn = [];
   q.chipOut = null;
+  // Voisines = les autres pastilles (le survol d'un bouton qui glisse sous le pointeur n'est pas une transition de pastille).
+  const chipAnims = (box) => [...box.querySelectorAll('li.lc-data-table__chip')].flatMap((li) => li.getAnimations({ subtree: true }));
   new MutationObserver((records) => {
     for (const r of records) {
       if (r.type === 'attributes' && r.target.matches?.('.lc-data-table__section-body') && !r.target.hidden) q.sections.push(measure(r.target));
@@ -578,9 +580,9 @@ const MOTION_INIT = () => {
       for (const n of r.removedNodes) {
         if (n.nodeType !== 1 || !n.matches('li.lc-data-table__chip')) continue;
         const box = document.querySelector('.lc-data-table__chips');
-        const out = { connected: n.isConnected, own: n.getAnimations().length, neighbours: box.getAnimations({ subtree: true }).length, remaining: box.querySelectorAll('li.lc-data-table__chip').length };
+        const out = { connected: n.isConnected, own: n.getAnimations().length, neighbours: chipAnims(box).length, remaining: box.querySelectorAll('li.lc-data-table__chip').length };
         q.chipOut = out;
-        requestAnimationFrame(() => requestAnimationFrame(() => { out.neighboursLater = box.getAnimations({ subtree: true }).length; }));
+        requestAnimationFrame(() => requestAnimationFrame(() => { out.neighboursLater = chipAnims(box).length; out.laterWhich = box.getAnimations({ subtree: true }).map((a) => `${a.transitionProperty ?? a.animationName}@${a.effect.target.className}`); }));
       }
     }
   }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
@@ -677,7 +679,10 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open, undefined, { timeout: 5000 });
     const after = await page.evaluate(() => ({ closingAttr: document.querySelector('dialog.lc-data-table__panel').hasAttribute('data-closing'), query: (window.__emitted ?? []).length }));
     const c = got.closing;
-    if (reduced) check(c.open && quick(c.cssDuration) && quick(c.backdropCssDuration) && c.props.length === 0, `CA-10/13 ${tag} ${label} sortie sans attente`, `durée dialogue=${c.cssDuration} fond=${c.backdropCssDuration} transitions=${c.props}`);
+    if (reduced) {
+      check(c.open && quick(c.cssDuration) && c.durations.every((d) => d <= 0.01), `CA-10/13 ${tag} ${label} sortie sans attente (dialogue)`, `durée dialogue=${c.cssDuration} transitions=${c.props} durées=${c.durations}`);
+      check(quick(c.backdropCssDuration), `CA-13 ${tag} ${label} durée calculée du fond (::backdrop) ≤ 0,01 ms`, `durée du fond=${c.backdropCssDuration} (aucune transition ne joue : ${c.props.includes('::backdrop:opacity') ? 'si, une joue' : 'transition-property: none'})`);
+    }
     else check(c.open && c.props.includes('dialog:opacity') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.exit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.exit}, fondu en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
     check(!after.closingAttr, `CA-10 ${tag} ${label} fermé après le fondu`, `open=false, data-closing retiré=${!after.closingAttr}`);
     check(await focusOnFilters(page), `CA-10 ${tag} ${label} focus rendu au bouton « Filtres »`);
@@ -746,7 +751,7 @@ async function motionPhone(context, base, reduced, tag, check) {
   await page.locator('.lc-data-table__chip-remove').first().click();
   await page.waitForFunction(() => window.__qa.chipOut?.neighboursLater !== undefined);
   const out = await page.evaluate(() => window.__qa.chipOut);
-  check(!out.connected && out.own === 0 && out.neighbours === 0 && out.neighboursLater === 0 && out.remaining === 1, `CA-11c ${tag} pastille retirée`, `dans le DOM=${out.connected}, animations de la pastille=${out.own}, du reste de la zone des pastilles=${out.neighbours} puis ${out.neighboursLater}, pastilles restantes=${out.remaining}`);
+  check(!out.connected && out.own === 0 && out.neighbours === 0 && out.neighboursLater === 0 && out.remaining === 1, `CA-11c ${tag} pastille retirée`, `dans le DOM=${out.connected}, animations de la pastille=${out.own}, des pastilles voisines=${out.neighbours} puis ${out.neighboursLater} (toutes animations de la zone : ${out.laterWhich}), pastilles restantes=${out.remaining}`);
   await page.waitForFunction(() => document.querySelectorAll('lc-data-table tbody tr').length > 0);
   await tick(page);
   const snapsAfterChip = await page.evaluate(() => window.__qa.cardSnaps.length);

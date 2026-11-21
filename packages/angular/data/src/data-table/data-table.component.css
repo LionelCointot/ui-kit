@@ -511,6 +511,11 @@ lc-data-table {
     transform var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
 }
 
+/* Ligne en fondu de sortie (`animate.leave`) : plus cliquable, elle disparaît avant que les suivantes ne comblent la place. */
+.lc-data-table__table tbody tr[data-leaving] {
+  pointer-events: none;
+}
+
 /* Entrée : fondu et descente (@starting-style joue à l'ouverture du dialogue). Sortie : `data-closing` (posé avant `close()`) fond le panneau. */
 @starting-style {
   .lc-data-table__panel[open] {

@@ -2,6 +2,7 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
 import { LcDataTableComponent } from './data-table.component';
@@ -813,7 +814,7 @@ describe('LcDataTableComponent', () => {
       expect(rowNodes().filter((row) => row.hasAttribute('lcReveal'))).toHaveLength(0);
     });
 
-    it('cartes : la cascade rejoue après l\'application des filtres (lignes recréées), pas à un simple rechargement', async () => {
+    it('cartes : la cascade ne joue qu\'au premier affichage ; après un filtre, les cartes conservées gardent leur élément, sans lcReveal', async () => {
       await setup({ narrow: true });
       const before = rowNodes();
       host.source.set([...ROWS]); // nouvelle source, même requête : lignes conservées (suivies par id), pas de cascade
@@ -825,8 +826,180 @@ describe('LcDataTableComponent', () => {
       await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
       await stable();
       const after = rowNodes();
-      expect(after).toHaveLength(3);
-      expect(after.every((row) => !before.includes(row) && row.hasAttribute('lcReveal'))).toBe(true);
+      expect(after).toEqual([before[1], before[4], before[7]]);
+      expect(after.some((row) => row.hasAttribute('lcReveal'))).toBe(false);
+    });
+
+    describe('différence de liste (décision 26)', () => {
+      type Call = { row: HTMLElement; keyframes: Record<string, unknown[]>; options: KeyframeAnimationOptions; finish: () => void };
+      let calls: Call[];
+
+      /** Web Animations simulée : `animate` enregistre ses appels ; la mise en page est simulée (40 px par ligne, dans l'ordre du DOM). */
+      const stubLayout = (reduced = false) => {
+        calls = [];
+        (HTMLElement.prototype as { animate?: unknown }).animate = function (this: HTMLElement, keyframes: Record<string, unknown[]>, options: KeyframeAnimationOptions) {
+          let finish!: () => void;
+          const finished = new Promise<void>((resolve) => (finish = resolve));
+          calls.push({ row: this, keyframes, options, finish });
+          return { finished };
+        };
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+          const top = [...document.querySelectorAll('tbody tr')].indexOf(this) * 40;
+          return { top } as DOMRect;
+        });
+        if (reduced) vi.stubGlobal('matchMedia', () => ({ matches: true }));
+      };
+      const tokens = (easings: Record<string, string> = { '--lc-sys-easing-standard': 'ease-in' }) => {
+        const table = el.querySelector<HTMLElement>('lc-data-table') ?? el;
+        for (const [name, value] of Object.entries({ '--lc-sys-duration-normal': '200ms', '--lc-overlay-enter-duration': '0.3s', '--lc-overlay-exit-duration': '100ms', '--lc-overlay-easing': 'ease-out', ...easings })) {
+          table.style.setProperty(name, value);
+        }
+      };
+      const filterTo = async (names: readonly string[]) => {
+        host.query.set(q(names.length ? { state: names } : {}));
+        await stable();
+      };
+      const on = (rows: readonly Element[]) => calls.filter((call) => rows.includes(call.row));
+
+      afterEach(() => {
+        delete (HTMLElement.prototype as { animate?: unknown }).animate;
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+      });
+
+      it('lignes conservées : même élément, glissement translateY(ancienne - nouvelle place) → none, durée et courbe lues en CSS', async () => {
+        await setup();
+        const before = rowNodes();
+        stubLayout();
+        tokens({ '--lc-sys-easing-standard': 'ease-in', '--lc-list-move-easing': 'ease-in-out' });
+        await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
+        const kept = [before[1], before[4], before[7]];
+        expect(rowNodes()).toEqual(kept);
+        expect(calls.map((call) => call.row)).toEqual(kept);
+        expect(calls.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
+        expect(calls[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
+      });
+
+      it('courbe : repli sur --lc-sys-easing-standard sans --lc-list-move-easing', async () => {
+        await setup();
+        stubLayout();
+        tokens();
+        await filterTo(['Close']);
+        expect(calls[0].options.easing).toBe('ease-in');
+      });
+
+      it('lignes ajoutées : fondu d\'entrée (--lc-overlay-enter-duration) ; conservées : glissement', async () => {
+        await setup({ query: q({ state: ['Close'] }) });
+        const before = rowNodes();
+        stubLayout();
+        tokens();
+        await filterTo([]);
+        expect(rowNodes()).toHaveLength(10);
+        const fades = calls.filter((call) => 'opacity' in call.keyframes);
+        expect(fades).toHaveLength(7);
+        expect(fades[0].keyframes['opacity']).toEqual([0, 1]);
+        expect(fades[0].options).toEqual({ duration: 300, easing: 'ease-out' });
+        expect(fades.some((call) => before.includes(call.row))).toBe(false);
+        expect(on(before).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
+      });
+
+      it('ligne qui ne bouge pas : pas d\'animation', async () => {
+        await setup();
+        stubLayout();
+        tokens();
+        host.source.set([...ROWS]);
+        await stable();
+        expect(calls).toHaveLength(0);
+      });
+
+      it('réduction de mouvement : ni glissement ni fondu', async () => {
+        await setup();
+        stubLayout(true);
+        tokens();
+        await filterTo(['Close']);
+        await filterTo([]);
+        expect(calls).toHaveLength(0);
+      });
+
+      it('lignes retirées : fondu de sortie (--lc-overlay-exit-duration), retrait à la fin, puis les suivantes glissent', async () => {
+        await setup();
+        stubLayout();
+        tokens();
+        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
+        const [first, second] = rowNodes();
+        const animationComplete = vi.fn(() => first.remove());
+        component.fadeOut({ target: first, animationComplete });
+        expect(first.hasAttribute('data-leaving')).toBe(true);
+        expect(calls).toHaveLength(1);
+        expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
+        expect(calls[0].options).toEqual({ duration: 100, easing: 'ease-out', fill: 'forwards' });
+        expect(animationComplete).not.toHaveBeenCalled();
+        calls[0].finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        expect(animationComplete).toHaveBeenCalledOnce();
+        expect(calls[1].row).toBe(second); // 40 px → 0 : la suivante comble la place
+        expect(calls[1].keyframes['transform']).toEqual(['translateY(40px)', 'none']);
+      });
+
+      it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {
+        await setup();
+        stubLayout(true);
+        tokens();
+        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
+        const animationComplete = vi.fn();
+        component.fadeOut({ target: rowNodes()[0], animationComplete });
+        expect(animationComplete).toHaveBeenCalledOnce();
+        expect(calls).toHaveLength(0);
+      });
+    });
+
+    it('panneau : une première attente ne ferme pas le dialogue rouvert puis refermé pendant la seconde', async () => {
+      await setup({ narrow: true });
+      const dialog = await openPanel();
+      const finishFirst = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!); // rouvre pendant le fondu
+      const finishSecond = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      finishFirst();
+      await stable();
+      expect(dialog.close).not.toHaveBeenCalled();
+      finishSecond();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+    });
+
+    it('menu de filtre : rouvrir la même colonne pendant le fondu annule la fermeture', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      await click(applyBtn());
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      await open('state');
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+      finish();
+      await stable();
+      expect(menu()).not.toBeNull();
+      expect(funnel('state').getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('menu de filtre : ouvrir une autre colonne pendant le fondu garde le menu, sur la nouvelle colonne', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      await click(applyBtn());
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      await open('city');
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+      finish();
+      await stable();
+      expect(menu()).not.toBeNull();
+      expect(optionLabels()).toContain('Annecy');
+      expect(funnel('city').getAttribute('aria-expanded')).toBe('true');
     });
   });
 });

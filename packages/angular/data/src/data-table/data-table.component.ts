@@ -3,13 +3,13 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, Injector, ViewEncapsulation, afterNextRender, booleanAttribute, computed, contentChildren,
+  AnimationCallbackEvent, ChangeDetectionStrategy, Component, ElementRef, Injector, ViewEncapsulation, afterNextRender, booleanAttribute, computed, contentChildren,
   effect, inject, input, linkedSignal, model, signal, untracked, viewChild,
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
-  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, isoToLocalDate,
+  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate,
   lcAnimationsEnd, lcDetachAnimated, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
@@ -22,11 +22,13 @@ import {
   cleanFilterValue, isDateRangeInverted, isFilterActive, lcLocalSource, withFilter,
 } from './data-table-model';
 
-/** Cartes du téléphone qui entrent en cascade (`lcReveal`) ; les suivantes apparaissent sans animation. */
+/** Cartes du téléphone qui entrent en cascade au premier affichage ; les suivantes apparaissent sans animation. */
 const REVEAL_CARDS = 8;
 
 /** Sous cette largeur (768 px), le tableau passe en cartes : mêmes ruptures que le CSS. */
 const NARROW = '(max-width: 47.99em)';
+
+const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
 /** Menu : sous l'entonnoir, calé à droite puis à gauche ; au-dessus s'il manque de place. */
 const MENU_POSITIONS: ConnectedPosition[] = [
@@ -69,7 +71,7 @@ interface ChipView<T> {
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
     LcEmptyStateComponent, LcTooltipDirective, LcColumnFilterComponent,
-    LcNativeDatePickerDirective, LcRevealDirective,
+    LcNativeDatePickerDirective,
   ],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
@@ -107,7 +109,6 @@ export class LcDataTableComponent<T> {
 
   protected readonly uid = lcUniqueId('data-table');
   protected readonly menuPositions = MENU_POSITIONS;
-  protected readonly revealCards = REVEAL_CARDS;
   protected readonly cellTemplates = computed(() => new Map(this.cells().map((cell) => [cell.lcCell(), cell.template])));
   private readonly cells = contentChildren(LcCellDirective);
   protected readonly narrow = toSignal(inject(BreakpointObserver).observe(NARROW).pipe(map((state) => state.matches)), { initialValue: false });
@@ -219,19 +220,29 @@ export class LcDataTableComponent<T> {
 
   /** Début de l'annonce faite quand la page demandée arrive (« Filtre État appliqué. ») ; le nombre de lignes la complète. */
   private pendingAnnouncement: string | null = null;
-  /** Une nouvelle requête vient d'être posée sur téléphone : la cascade des cartes rejoue à l'arrivée de la page. */
-  private pendingReveal = false;
-  /** Clé de rendu des lignes : incrémentée, elle recrée les cartes et rejoue la cascade (`lcReveal`). */
-  protected readonly renderKey = signal(0);
+  /** Vrai dès qu'une page a été affichée : la cascade du premier affichage est finie, les changements suivants animent la différence. */
+  private readonly settled = signal(false);
+  private listShown = false;
+  /** Positions des lignes relevées à la fin du fondu de sortie, avant leur retrait : les suivantes glissent pour combler. */
+  private gapSnapshot: ReadonlyMap<Element, number> | undefined;
+  private closeToken = 0;
 
   constructor() {
+    // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : positions actuelles, puis glissement après le rendu.
+    effect(() => {
+      if (!this.loaded()) return;
+      this.rows();
+      untracked(() => {
+        const before = this.listShown ? this.rowTops() : null;
+        this.listShown = true;
+        if (!before) return;
+        this.settled.set(true);
+        afterNextRender(() => this.animateDiff(before), { injector: this.injector });
+      });
+    });
     effect(() => {
       if (!this.result.hasValue()) return;
       const count = this.result.value().rows.length;
-      if (this.pendingReveal) {
-        this.pendingReveal = false;
-        untracked(() => this.renderKey.update((key) => key + 1));
-      }
       if (this.pendingAnnouncement === null) return;
       const rows = this.text.rows(count);
       this.announcer.announce(`${this.pendingAnnouncement} ${rows.charAt(0).toUpperCase()}${rows.slice(1)}.`, 'polite');
@@ -240,6 +251,59 @@ export class LcDataTableComponent<T> {
     effect(() => {
       if (this.narrow() && untracked(() => this.menuColumn())) this.closeMenu(false);
     });
+  }
+
+  /** Rang de cascade d'une carte du téléphone (8 premières, premier affichage), sinon `null`. */
+  protected cascadeIndex(index: number): number | null {
+    return this.narrow() && !this.settled() && index < REVEAL_CARDS ? index : null;
+  }
+
+  /** Fondu de sortie d'une ligne (`animate.leave`), puis les suivantes glissent. Sans animation (réduction de mouvement…) : retrait immédiat. */
+  protected fadeOut({ target, animationComplete }: AnimationCallbackEvent): void {
+    const timing = this.timing('--lc-overlay-exit-duration', '--lc-overlay-easing');
+    if (!timing) return animationComplete();
+    target.setAttribute('data-leaving', '');
+    target.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(() => {
+      this.gapSnapshot ??= this.rowTops();
+      animationComplete();
+      requestAnimationFrame(() => {
+        const before = this.gapSnapshot;
+        this.gapSnapshot = undefined;
+        if (before) this.animateDiff(before);
+      });
+    });
+  }
+
+  /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
+  private timing(duration: string, ...easings: string[]): KeyframeAnimationOptions | null {
+    if (typeof this.host.animate !== 'function' || (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches)) return null;
+    const style = getComputedStyle(this.host);
+    const raw = style.getPropertyValue(duration).trim();
+    const ms = parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000);
+    if (!(ms > 0)) return null;
+    return { duration: ms, easing: easings.map((name) => style.getPropertyValue(name).trim()).find(Boolean) };
+  }
+
+  /** Position verticale visible de chaque ligne (hors lignes en fondu de sortie), puis annulation des animations en cours : la mesure suivante lit la mise en page. */
+  private rowTops(): Map<Element, number> {
+    const rows = [...this.host.querySelectorAll('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
+    const tops = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+    rows.forEach((row) => row.getAnimations?.().forEach((animation) => animation.cancel()));
+    return tops;
+  }
+
+  /** FLIP : lignes conservées glissent de leur ancienne place à la nouvelle ; lignes ajoutées apparaissent en fondu. */
+  private animateDiff(before: ReadonlyMap<Element, number>): void {
+    const move = this.timing('--lc-sys-duration-normal', '--lc-list-move-easing', '--lc-sys-easing-standard');
+    const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
+    for (const [row, top] of this.rowTops()) {
+      const from = before.get(row);
+      if (from === undefined) {
+        if (enter) row.animate({ opacity: [0, 1] }, enter);
+      } else if (move && Math.abs(from - top) >= 0.5) {
+        row.animate({ transform: [`translateY(${from - top}px)`, 'none'] }, move);
+      }
+    }
   }
 
   protected cellText(column: LcDataColumn<T>, row: T): string {
@@ -372,9 +436,10 @@ export class LcDataTableComponent<T> {
   protected async closePanel(): Promise<void> {
     const dialog = this.panel().nativeElement;
     if (dialog.hasAttribute('data-closing')) return;
+    const token = ++this.closeToken;
     dialog.setAttribute('data-closing', '');
     await lcAnimationsEnd(dialog);
-    if (!dialog.hasAttribute('data-closing')) return;
+    if (token !== this.closeToken || !dialog.hasAttribute('data-closing')) return; // rouvert (puis refermé) pendant l'attente : une autre attente décide
     dialog.removeAttribute('data-closing');
     dialog.close?.();
     this.onPanelClosed();
@@ -452,7 +517,6 @@ export class LcDataTableComponent<T> {
 
   private setQuery(query: LcTableQuery, announcement: string | null = null): void {
     this.pendingAnnouncement = announcement;
-    this.pendingReveal = this.narrow();
     this.query.set(query);
   }
 
