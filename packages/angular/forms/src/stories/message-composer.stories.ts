@@ -91,7 +91,7 @@ const fixed = (items: readonly LcFileUploadItem[], attributes = '', value = ''):
 export const Playground: Story = {
   // `value` est une propriété du champ (absente du HTML comparé) ; `maxRows`, `enterSends` et `maxFiles` n'agissent qu'avec un long texte,
   // le clavier ou une limite atteinte : vérifiés à la main.
-  parameters: { controlsCheck: { stateDependent: ['value', 'maxRows', 'enterSends', 'maxFiles'] } },
+  parameters: { controlsCheck: { stateDependent: ['value', 'maxRows', 'enterSends', 'maxFiles', 'acceptLabel'] } },
   render: (args) => ({
     props: { ...args, items: [DONE, UPLOADING] },
     template: `
