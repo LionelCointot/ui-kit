@@ -1,6 +1,6 @@
 # Spec : Messagerie générique (zone de saisie, puis fil de messages)
 
-- **Statut** : En revue (2026-11-21)
+- **Statut** : En revue (2026-11-21), prête pour validation
 - **Auteur** : session principale
 - **Date** : 2026-11-21
 - **ADR liés** : 0009 (cible navigateurs, CDK par défaut)
@@ -26,6 +26,7 @@
   7. Décidé par la session (technique, 2026-11-21, révisé après relectures) : le composant ne valide pas ; libellé, aide et erreurs viennent de `lc-form-field` ; il réutilise les types et le filtrage de `lc-file-upload` (`accept`, nombre, raisons de refus) par un utilitaire partagé, sans composer ce composant. Le fil (PR 2) est cadré après la PR 1.
   8. Direction **B** (barre d'outils basse, maquette `docs/design/explorations/2026-11-messagerie/`), avec une modification : « Je prefere la B par contre ca serait le l'icone actuelle pour envoyer en bouton sans contour un oeu a la maniere de whatapp » : l'envoi est l'icône `send` (celle de copro-ticket aujourd'hui), bouton sans contour ni fond, en couleur principale ; icône remplaçable par l'application. Révisé le 2026-11-21 : « Pourquoi c'est un cadena quand on est en note interne? Ca reste le bouton encoye et les icones oont la oculeur primary? » ; à la proposition de garder `send` en couleur principale en note interne : « Oui » : seuls la bordure et le fond changent ; copro-ticket retire le cadenas de son bouton d'envoi (il reste dans le sélecteur).
   9. Fichier lâché hors du rectangle (2026-11-21, recommandation A, réponse « Oui ») : tant que le composant est affiché, un fichier lâché ailleurs dans la page est ignoré (le navigateur ne l'ouvre pas, la saisie n'est pas perdue) ; il n'est pas ajouté. Écouteurs `dragover`/`drop` sur le document, posés à l'affichage et retirés à la destruction, `preventDefault` seulement pour un glisser contenant des fichiers.
+  10. Collage d'image (2026-11-21, recommandation A, réponse « Oui ») : un fichier collé dans le champ (Ctrl+V, « Coller ») devient une pièce jointe, filtrée comme un dépôt (`accept`, `maxFiles`, raisons de refus) ; un collage de texte reste du texte brut (le champ est un `textarea`).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : deux nouveaux composants, réutilisation de la logique de `lc-file-upload`, points d'entrée à choisir.
@@ -177,6 +178,7 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 - [ ] CA-C13 : Dans `lc-form-field`, libellé, aide et erreurs du champ s'appliquent (`aria-describedby`, `aria-invalid`, `touched` à la sortie) ; hors champ sans `ariaLabel`, avertissement en développement seulement ; `[(value)]` et Signal Forms mettent à jour le champ ; `focus()` place le focus dans le champ.
 - [ ] CA-C14 (manuel) : test `novice-user` sur captures à 360 px (vide, photo en cours, refus, note interne).
 - [ ] CA-C17 : Un fichier lâché hors du rectangle, composant affiché, n'est ni ouvert par le navigateur ni ajouté ; un texte ou un lien glissé ailleurs n'est pas bloqué ; composant détruit, les écouteurs du document sont retirés.
+- [ ] CA-C18 : Un fichier collé dans le champ suit le filtrage du dépôt (`filesAdded` ou `rejected`, message et secousse) et n'insère pas de texte ; un collage de texte ou d'HTML n'insère que du texte brut et n'ajoute aucune pièce jointe ; `attachments` faux ou `disabled` : aucun fichier n'est ajouté.
 - [ ] CA-C15 : Dossier, élément non fichier ou fichier de 0 octet : ignorés, sans exception ni éclairage coincé ; `maxFiles` atteint : refus `count`.
 - [ ] CA-C16 : `maxLength` : compteur affiché à partir de 90 %, saisie limitée, annonce sans répétition à chaque touche.
 - [ ] CA-S1 : Un nom contenant `<img src=x onerror=alert(1)>` ou `<script>` est affiché littéralement ; aucun nœud HTML créé dans la vignette, le nom accessible, le message de refus ni `title`.
@@ -190,13 +192,12 @@ Direction **B** choisie, envoi par l'icône `send` en bouton sans contour (déci
 - [ ] M0 (QA) : tests d'acceptation (`message-composer-browser.mjs`, story QA, tests statiques) avant le code (tous les CA sauf C14).
 - [ ] M1 : `file-filter.ts` partagé, `lc-file-upload` l'utilise sans changement ; icône `paperclip` ; tokens ; libellé masqué de `lc-form-field` si absent (S ; CA-C5, C10, C15).
 - [ ] M2 : `lc-message-composer` : rectangle, champ, `FormValueControl`, Entrée, envoi, verrou, `sendBlocked`, projections, libellés (M ; CA-C1 à C4, C9, C11, C13, C16).
-- [ ] M3 : pièces jointes, dépôt, refus, animations, sécurité des noms et aperçus (M ; CA-C5 à C8, C15, C17, CA-S1 à S6).
+- [ ] M3 : pièces jointes, dépôt, refus, animations, sécurité des noms et aperçus (M ; CA-C5 à C8, C15, C17, C18, CA-S1 à S6).
 - [ ] M4 : stories (`Playground`, `Animation`), catalogue, README (S ; CA-C12).
 - [ ] M5 (QA) : verdict GO / NO-GO, axe, test novice (CA-C12, C14).
 - [ ] M6 (PR séparée, copro-ticket) : la réponse du demandeur et celle du gestionnaire utilisent le composant ; `reply-form` s'amincit (alertes et compteur restent) ; `photos-status` remplacé par `sendBlocked` ; bouton d'envoi en `send` en note interne aussi (le cadenas reste dans le sélecteur) ; parcours e2e réécrits par la QA, dont la note interne.
 
 ## 12. Risques et questions ouvertes
-- **Questions pour l'utilisateur** : collage d'une image (Ctrl+V) comme pièce jointe.
 - **Dettes** : agrandissement par script tant que `field-sizing` n'est pas dans la cible ; iPad avec clavier : `'auto'` le traite en tactile (Entrée va à la ligne).
 - **Limites** : glisser-déposer absent sur iOS (le trombone sert) ; geste tactile non essayé sur vrai téléphone.
 
