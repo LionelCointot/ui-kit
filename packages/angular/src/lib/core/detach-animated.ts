@@ -4,13 +4,14 @@ import type { OverlayRef } from '@angular/cdk/overlay';
 export const LC_OVERLAY_CLOSING_CLASS = 'lc-overlay--closing';
 
 /**
- * Attend la fin des animations finies de l'élément et de ses descendants (les infinies, spinner ou squelette, sont ignorées ; immédiat sans animation
- * ou sans `getAnimations`). Une animation annulée ne bloque pas l'attente.
+ * Attend la fin des animations finies de l'élément et, par défaut, de ses descendants (les infinies, spinner ou squelette, sont ignorées ; immédiat sans animation
+ * ou sans `getAnimations`). Une animation annulée ne bloque pas l'attente. `{ subtree: false }` ignore les descendants : une section qui se replie
+ * dans une feuille ne retarde pas sa fermeture.
  *
  * @internal Réservé aux points d'entrée du kit.
  */
-export async function lcAnimationsEnd(element: Element): Promise<void> {
-  const animations = typeof element.getAnimations === 'function' ? element.getAnimations({ subtree: true }) : [];
+export async function lcAnimationsEnd(element: Element, options: { readonly subtree?: boolean } = {}): Promise<void> {
+  const animations = typeof element.getAnimations === 'function' ? element.getAnimations({ subtree: options.subtree ?? true }) : [];
   // Une animation infinie (spinner, squelette…) ne finit jamais : l'attendre bloquerait le retrait.
   const finite = animations.filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity);
   await Promise.allSettled(finite.map((animation) => animation.finished));

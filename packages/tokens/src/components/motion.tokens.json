@@ -70,5 +70,30 @@
       "$value": "{sys.easing.standard}",
       "$type": "cubicBezier"
     }
+  },
+  "slide": {
+    "enter-duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    },
+    "exit-duration": {
+      "$value": "{sys.duration.normal}",
+      "$type": "duration"
+    }
+  },
+  "sheet": {
+    "top-gap": {
+      "$value": "{sys.space.10}",
+      "$type": "dimension"
+    },
+    "radius": {
+      "$value": "{sys.radius.lg}",
+      "$type": "dimension"
+    },
+    "dismiss-ratio": {
+      "$description": "Share of its height the sheet must be pulled down to close (unitless number).",
+      "$value": "0.25",
+      "$type": "number"
+    }
   }
 }
