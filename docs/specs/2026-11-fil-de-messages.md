@@ -1,6 +1,6 @@
 # Spec : Fil de messages générique (`lc-message-thread`, PR 2 de la messagerie)
 
-- **Statut** : En revue (2026-11-21), prête pour validation
+- **Statut** : Validée par l'utilisateur (2026-11-21), en réalisation
 - **Auteur** : session principale
 - **Date** : 2026-11-21
 - **ADR liés** : 0009 (cible navigateurs)
@@ -35,6 +35,7 @@
   17. (« oui pour les autres ») Pas de gabarit de contenu de bulle pour l'instant : texte, liens, vignettes et `mention` suffisent à copro-ticket ; un gabarit viendra avec un besoin.
   18. (idem) copro-ticket ajoute l'identifiant de l'auteur à son API (`MessageView.authorId`) et régénère son client, dans la PR d'adoption.
   19. (idem) Dans copro-ticket, le bloc d'état garde ses actions (« Oui, c'est réglé / Non », lien, téléphone) ; son texte d'information passe dans le fil en messages système (« Demande mise en pause par Marc · 09:41 », avec « · motif : … » quand il y en a un).
+  20. Validation (2026-11-21) : « Oui et faut bien faire en sorte que c'est un composant generique et facilement A implémenter » : usage minimal `<lc-message-thread [messages]="messages" />` sans autre réglage (valeurs par défaut sûres, libellés `LC_LABELS`), aucun vocabulaire métier, README avec un exemple de dix lignes au plus, story `Minimal` (CA-T19).
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : nouveau composant, templates, projection de `lc-message-composer` (aucun import entre points d'entrée).
@@ -166,6 +167,7 @@ Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explor
 - [ ] CA-T15 : Ponctuation et longueur : `(https://x.test/a)` → lien sans parenthèses ; `https://en.wikipedia.org/wiki/Foo_(bar)` entier ; `<…>` et guillemets exclus ; deux adresses → deux liens ; `https://` seul → texte ; une adresse de 200 000 caractères est découpée en < 50 ms (motif adverse chronométré) et ne crée aucun défilement horizontal à 360 px ; `<`, `>`, `&`, `"` rendus littéralement.
 - [ ] CA-T16 : Caractères de contrôle et marqueurs bidi retirés d'`authorName` et du texte des messages (DOM, `aria-label`, `title`) ; nom dans `<bdi>` ; un nom en arabe ne déplace pas l'heure (± 1 px) ; initiales sans couper un point de code, repli si le nom est vide ; texte de 100 000 caractères rendu en < 200 ms ; aucun nom ni texte dans la console.
 - [ ] CA-T17 : Liste vide : aucune bulle, `role="log"` présent ; groupe d'un message : en-tête et avatar sur cette bulle ; `sentAt` invalide : bulle sans `<time>`, un avertissement en développement sans le texte ; `id` en double : le premier rendu, avertissement en développement ; message sans texte ni pièce jointe : aucune bulle vide ; 12 pièces jointes à 360 px sans débordement ; ordre de la liste conservé.
+- [ ] CA-T19 : Facilité d'usage : `<lc-message-thread [messages]="messages" />` seul (sans autre entrée ni projection) rend un fil correct, accessible et animé ; la story `Minimal` et l'exemple du README (dix lignes au plus) le montrent ; aucune entrée obligatoire autre que `messages` ; aucun terme métier dans le code, les libellés ni les stories du kit.
 - [ ] CA-T18 : `lc-message` n'est pas modifié : ses 16 tests CA-D3 passent sans changement.
 
 ## 11. Découpage en tâches
@@ -174,7 +176,7 @@ Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explor
 - [ ] F2 : bulle direction A, note interne, vignettes, liens (découpeur pur) (M ; CA-T5, T6, T8, T14, T15).
 - [ ] F3a : arrivée en ressort, FLIP, arrivées multiples (M ; CA-T3, T4, T13).
 - [ ] F3b : défilement selon le conteneur, affichage progressif, compensation (M ; CA-T9, T10).
-- [ ] F4 : stories, catalogue, README (S ; CA-T11, T18).
+- [ ] F4 : stories (`Minimal`, `Playground`, `Animation`), catalogue, README (S ; CA-T11, T18, T19).
 - [ ] F5 (QA) : verdict, novice (CA-T11, T12).
 - [ ] F6 (PR séparée, copro-ticket ; prérequis : kit fusionné, `deps:refresh`) : adoption, messages système d'historique dans le fil.
 
