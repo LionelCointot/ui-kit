@@ -34,7 +34,7 @@ interface Drag {
       <div class="lc-sheet__drag" (pointerdown)="onPointerDown($event)" (pointermove)="onPointerMove($event)" (pointerup)="onPointerUp($event)"
         (pointercancel)="onPointerCancel()" (lostpointercapture)="onPointerCancel()">
         <div class="lc-sheet__grip"><span class="lc-sheet__handle" aria-hidden="true"></span></div>
-        <header class="lc-sheet__header">
+        <header class="lc-sheet__header" [class.lc-sheet__header--text]="!!closeText()">
           @if (closeText(); as text) {
             <button lcButton type="button" fillMode="flat" themeColor="neutral" class="lc-sheet__close" autofocus (click)="open.set(false)">{{ text }}</button>
           }

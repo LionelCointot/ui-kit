@@ -209,4 +209,4 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 11. Boutons du pied du tableau projetés par `ngProjectAs`, montés seulement feuille ouverte.
 12. 9 tokens au lieu de 7 (`sheet-card-width`, `sheet-card-max-height`, décision 22).
 13. Limites confirmées : geste et survol prouvés en Chromium seulement, Safari iOS non essayé.
-14. Décision 23 : « Annuler » est placé avant le titre, aligné à gauche (le titre n'est pas centré comme dans iOS) ; `closeWithoutApplying` retiré de `LC_LABELS`. QA S9 : GO (`ios-motion-browser.mjs all` 105 OK, `motion` 544 OK, `filter-date`, axe 10 cas).
+14. Décision 23 : « Annuler » à gauche, titre centré sur la feuille comme dans iOS (en-tête en grille avec `closeText`) ; `closeWithoutApplying` retiré de `LC_LABELS`. QA S9 : GO (`ios-motion-browser.mjs all` 105 OK, `motion` 544 OK, `filter-date`, axe 10 cas).

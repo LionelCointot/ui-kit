@@ -111,6 +111,21 @@ lc-sheet {
   font-weight: var(--lc-sys-font-weight-semibold);
 }
 
+/* Bouton texte (`closeText`) : comme les feuilles d'iOS, bouton à gauche et titre centré sur la feuille. */
+.lc-sheet__header--text {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
+  padding-inline: var(--lc-sys-space-2);
+}
+
+.lc-sheet__header--text .lc-sheet__close {
+  justify-self: start;
+}
+
+.lc-sheet__header--text .lc-sheet__title {
+  text-align: center;
+}
+
 .lc-sheet__body {
   flex: 1;
   min-block-size: 0;
