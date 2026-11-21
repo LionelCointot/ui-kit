@@ -406,3 +406,25 @@ describe('LcTabsComponent : rangée défilante', () => {
     });
   });
 });
+
+describe('LcTabsComponent, indicateur', () => {
+  it('est masqué à la présentation et sans onglet sélectionné, absent de l\'arbre d\'accessibilité', async () => {
+    @Component({ imports: [LcTabsComponent, LcTabComponent], template: `<lc-tabs><lc-tab id="a" label="A" [disabled]="true">a</lc-tab></lc-tabs>` })
+    class NoSelectionHostComponent {}
+    const fixture = TestBed.createComponent(NoSelectionHostComponent);
+    await fixture.whenStable();
+    const indicator = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.lc-tabs__indicator')!;
+    expect(indicator.hidden).toBe(true);
+    expect(indicator.getAttribute('aria-hidden')).toBe('true');
+    expect(indicator.getAttribute('role')).toBe('presentation');
+    expect((fixture.nativeElement as HTMLElement).querySelector('lc-tabs')!.classList.contains('lc-tabs--ready')).toBe(false);
+  });
+
+  it('pose lc-tabs--ready après la première mesure, indicateur visible', async () => {
+    const fixture = TestBed.createComponent(TabsHostComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('lc-tabs')!.classList.contains('lc-tabs--ready')).toBe(true);
+    expect(element.querySelector<HTMLElement>('.lc-tabs__indicator')!.hidden).toBe(false);
+  });
+});
