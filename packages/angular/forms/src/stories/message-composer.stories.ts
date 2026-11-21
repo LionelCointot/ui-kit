@@ -88,8 +88,9 @@ const fixed = (items: readonly LcFileUploadItem[], attributes = '', value = ''):
 
 /** Every input is bound: change them in the Controls panel (the thumbnails stay fixed). */
 export const Playground: Story = {
-  // `maxRows`, `enterSends` et `maxFiles` n'agissent qu'avec un long texte, le clavier ou une limite atteinte : vérifiés à la main.
-  parameters: { controlsCheck: { stateDependent: ['maxRows', 'enterSends', 'maxFiles'] } },
+  // `value` est une propriété du champ (absente du HTML comparé) ; `maxRows`, `enterSends` et `maxFiles` n'agissent qu'avec un long texte,
+  // le clavier ou une limite atteinte : vérifiés à la main.
+  parameters: { controlsCheck: { stateDependent: ['value', 'maxRows', 'enterSends', 'maxFiles'] } },
   render: (args) => ({
     props: { ...args, items: [DONE, UPLOADING] },
     template: `
