@@ -267,7 +267,7 @@ describe('calendar-panel, mode période', () => {
     expect(el.querySelector('[role=status]')).toBeNull();
   });
 
-  it('les quatre raccourcis du kit, en anglais', () => {
+  it('les cinq raccourcis du kit, en anglais', () => {
     expect(kitDatePresets(LC_LABELS_EN).map((p) => p.label)).toEqual(['Last 7 days', 'Last week', 'Last 30 days', 'This month', 'Last month']);
     expect(kitDatePresets(LC_LABELS_EN)[0].interval(TODAY)).toEqual({ from: '2026-11-13', to: '2026-11-19' });
   });

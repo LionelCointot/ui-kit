@@ -134,7 +134,7 @@ export class LcDateRangeInputComponent implements Omit<FormValueControl<LcDateIn
   // Écriture `unknown` : sous `[formField]`, Signal Forms type `min` et `max` comme la valeur (ici une période) ; seule une date ISO est retenue.
   readonly min = input<string | undefined, unknown>(undefined, { transform: isoOrUndefined });
   readonly max = input<string | undefined, unknown>(undefined, { transform: isoOrUndefined });
-  /** Raccourcis ; par défaut les quatre du kit, `[]` les masque. */
+  /** Raccourcis ; par défaut les cinq du kit, `[]` les masque. */
   readonly presets = input<readonly LcDateIntervalPreset[] | undefined>(undefined);
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly readonly = input(false, { transform: booleanAttribute });
