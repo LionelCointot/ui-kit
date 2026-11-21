@@ -14,6 +14,7 @@ import {
   inject,
   input,
   isDevMode,
+  linkedSignal,
   model,
   output,
   signal,
@@ -146,6 +147,7 @@ const COUNTER_THRESHOLD = 0.9;
       </div>
     }
     <span class="lc-visually-hidden" role="status">{{ statusText() }}</span>
+    <span class="lc-visually-hidden" aria-live="polite">{{ announcement() }}</span>
   `,
   styleUrl: './message-composer.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -237,6 +239,23 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       : this.counterState() === 'full' ? this.labels.composerLimitReached
         : this.counterState() === 'near' ? this.labels.composerLimitNear
           : this.filesFull() ? this.labels.fileUploadLimitReached(this.maxFiles() ?? 0) : '');
+  /** Annonce polie du début, de la fin et de l'échec d'envoi d'une pièce jointe (jamais à chaque pourcentage) ; sans changement, le texte reste. */
+  protected readonly announcement = linkedSignal<readonly LcFileUploadItem[], string>({
+    source: this.items,
+    computation: (items, previous) => {
+      if (!previous) return '';
+      const before = new Map(previous.source.map((item) => [item.id, item.status]));
+      const messages: string[] = [];
+      for (const item of items) {
+        const status = before.get(item.id);
+        const name = announcedName(item.name);
+        if (item.status === 'uploading' && status !== 'uploading') messages.push(this.labels.fileUploadProgress(name));
+        else if (item.status === 'done' && status !== 'done') messages.push(this.labels.fileUploadAnnounceDone(name));
+        else if (item.status === 'error' && status !== 'error') messages.push(`${name} : ${cleanFileName(item.errorMessage ?? '') || this.labels.fileUploadFailed}`);
+      }
+      return messages.length > 0 ? messages.join('. ') : previous.value;
+    },
+  });
   private readonly canAttach = computed(() => this.attachments() && !this.disabled());
   private readonly filesFull = computed(() => {
     const max = this.maxFiles();

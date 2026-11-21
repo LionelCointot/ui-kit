@@ -257,6 +257,28 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
     });
   });
 
+  it('annonce poliment le début, la fin et l\'échec d\'un envoi, sans nom plus long que 80 caractères', async () => {
+    const { host, element, settle } = await setup();
+    const live = () => element.querySelector('[aria-live="polite"]')!.textContent;
+    const name = `${'a'.repeat(120)}.png`;
+    host.items.set([item('1', name, { status: 'pending' })]);
+    await settle();
+    expect(live()).toBe('');
+    host.items.set([item('1', name, { status: 'uploading', progress: 10 })]);
+    await settle();
+    expect(live()).toContain('Envoi de ');
+    host.items.set([item('1', name, { status: 'uploading', progress: 60 })]);
+    await settle();
+    expect(live()).toContain('Envoi de '); // pas de nouvelle annonce par pourcentage
+    host.items.set([item('1', name, { status: 'done' })]);
+    await settle();
+    expect(live()).toContain('envoi terminé');
+    expect(live()!.length).toBeLessThan(120);
+    host.items.set([item('1', name, { status: 'error', errorMessage: 'Réseau' })]);
+    await settle();
+    expect(live()).toContain('Réseau');
+  });
+
   it('n\'écrit ni nom de fichier ni texte dans la console', async () => {
     const { host, box, settle } = await setup();
     const spies = (['log', 'warn', 'error', 'info', 'debug'] as const).map((m) => vi.spyOn(console, m));
