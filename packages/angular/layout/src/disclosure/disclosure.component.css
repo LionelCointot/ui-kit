@@ -88,15 +88,12 @@
   visibility: hidden;
   transition:
     grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
-    visibility 0s linear var(--lc-collapse-duration, var(--lc-sys-duration-move));
+    visibility var(--lc-collapse-duration, var(--lc-sys-duration-move));
 }
 
 :host(.lc-disclosure--expanded) .lc-disclosure__region {
   grid-template-rows: 1fr;
   visibility: visible;
-  transition:
-    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
-    visibility 0s;
 }
 
 /* Le rognage n'a ni padding ni bordure (sinon la ligne ne descendrait pas sous leur hauteur) : le padding est sur le contenu. */

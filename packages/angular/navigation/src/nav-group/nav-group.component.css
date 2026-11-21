@@ -57,15 +57,12 @@
   visibility: hidden;
   transition:
     grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
-    visibility 0s linear var(--lc-collapse-duration, var(--lc-sys-duration-move));
+    visibility var(--lc-collapse-duration, var(--lc-sys-duration-move));
 }
 
 .lc-nav-group__items--open {
   grid-template-rows: 1fr;
   visibility: visible;
-  transition:
-    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
-    visibility 0s;
 }
 
 /* Le rognage n'a ni padding ni bordure (sinon le groupe ne descendrait pas sous leur hauteur) : l'espacement est sur le contenu. */

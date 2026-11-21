@@ -786,13 +786,7 @@ async function motionPhone(context, base, reduced, tag, check) {
   await entry(page, 'Afficher');
   await pick(page, 'Catégorie', 'Beta');
   await page.evaluate(() => window.__qa.startList());
-  await page.waitForFunction(() => window.__qa.sections.length >= 1);
-  {
-    const t = await tokens(page);
-    const s = await page.evaluate(() => window.__qa.sections[0]);
-    if (reduced) check(quick(s.transitionDuration), `CA-11a/13 ${tag} section dépliée`, `durée=${s.transitionDuration}`);
-    else check(['opacity', 'transform'].every((p) => s.props[p] && near(s.props[p].duration, t.enter) && s.props[p].delay === 0) && s.props.opacity.startOpacity === '0' && near(m42(s.props.transform.startTransform), -t.offset, 0.01) && s.endOpacity === '1' && m42(s.endTransform) === 0, `CA-11a ${tag} section dépliée`, `props=${JSON.stringify(s.props)} attendu durée ${t.enter}, décalage de départ ${-t.offset}, fin=${s.endOpacity}/${s.endTransform}`);
-  }
+  // Section dépliée : fondu et décalage d'entrée (CA-11a) remplacés par la hauteur animée de la spec 2026-11-mouvement-ios (CA-H1 à H5, `ios-motion-browser.mjs collapse`).
   await page.locator(`${DIALOG} .lc-data-table__panel-apply`, { hasText: /\d/ }).waitFor();
   const label = await page.locator(`${DIALOG} .lc-data-table__panel-apply`).innerText();
   await page.click(`${DIALOG} .lc-data-table__panel-apply`);
