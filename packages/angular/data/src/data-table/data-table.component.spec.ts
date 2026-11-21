@@ -417,6 +417,7 @@ describe('LcDataTableComponent', () => {
       });
 
       it('CA-P4 : téléphone : rien n\'est émis avant « Afficher N » ; puis { from, to } fixes', async () => {
+        vi.setSystemTime(new Date(2026, 10, 10, 12)); // 04 → 10 nov. : 7 lignes ; « Afficher N » est désactivé à 0 résultat
         await setup({ narrow: true, picker: 'native' });
         await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
         const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
@@ -426,7 +427,7 @@ describe('LcDataTableComponent', () => {
         expect(host.emitted).toHaveLength(0);
         expect(host.query()).toEqual(q({}));
         await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
-        expect(host.emitted).toEqual([q({ date: { from: '2026-11-13', to: '2026-11-19' } })]);
+        expect(host.emitted).toEqual([q({ date: { from: '2026-11-04', to: '2026-11-10' } })]);
       });
 
       it('CA-P4b : date tapée incomplète ou impossible : aucune émission, aucun message du filtre', async () => {
@@ -462,7 +463,10 @@ describe('LcDataTableComponent', () => {
         await click(clearBtn());
         expect(lastEmitted().filters).toEqual({});
         await open('date');
-        expect(rangeInputs().map((i) => i.value)).toEqual(['', '']);
+        expect(rangeInputs().map((i) => i.value)).toEqual(['jj/mm/aaaa', 'jj/mm/aaaa']); // masque du champ vide
+        expect(applyBtn().disabled).toBe(false);
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({}); // aucune date : pas de filtre
       });
     });
 
