@@ -3,7 +3,7 @@ import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vit
 import { LcDataTableComponent, type LcDataColumn, type LcTableQuery } from '@lionelcointot/ui-angular/data';
 
 interface Row { id: number; name: string; cat: string; zone: string; date: string }
-const ROWS: readonly Row[] = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `Demande ${i + 1}`, cat: i % 3 === 0 ? 'Alpha' : 'Beta', zone: i % 2 === 0 ? 'Nord' : 'Sud', date: `2026-11-${String(i + 1).padStart(2, '0')}` }));
+const ROWS: readonly Row[] = Array.from({ length: 14 }, (_, i) => ({ id: i + 1, name: `Demande ${i + 1}`, cat: i % 4 === 0 ? 'Alpha' : 'Beta', zone: i % 2 === 0 ? 'Nord' : 'Sud', date: `2026-11-${String(i + 1).padStart(2, '0')}` }));
 const COLUMNS: readonly LcDataColumn<Row>[] = [
   { key: 'name', label: 'Objet', sortable: true, value: (row) => row.name },
   { key: 'cat', label: 'Catégorie', value: (row) => row.cat, filter: { type: 'multi' } },

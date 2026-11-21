@@ -513,6 +513,75 @@ const MOTION_INIT = () => {
       }
     }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   };
+
+  // --- lc-data-table (T6) ---
+  // Cartes : à chaque insertion de `tr[lcreveal]`, instantané des lignes (transitions suspendues à 0, puis terminées).
+  q.cardSnaps = [];
+  const snapCards = () => {
+    const all = [...document.querySelectorAll('lc-data-table tbody tr:not(.lc-data-table__state)')].map((tr) => ({ tr, list: transitions(tr) }));
+    all.forEach(({ list }) => list.forEach((a) => a.pause()));
+    all.forEach(({ list }) => list.forEach((a) => { a.currentTime = 0; }));
+    q.cardSnaps.push(all.map(({ tr, list }, i) => {
+      const cs = getComputedStyle(tr);
+      return { n: i + 1, reveal: tr.hasAttribute('lcreveal'), props: list.map((a) => a.transitionProperty), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), startOpacity: cs.opacity, cssDelay: cs.transitionDelay, cssDuration: cs.transitionDuration };
+    }));
+    all.forEach(({ list }) => list.forEach((a) => a.finish()));
+  };
+  new MutationObserver((records) => {
+    if (records.some((r) => [...r.addedNodes].some((n) => n.nodeType === 1 && n.matches('tr[lcreveal]')))) snapCards();
+  }).observe(document, { subtree: true, childList: true });
+
+  // Dialogue du téléphone : entrée (à l'attribut `open`) et sortie (à `data-closing`, fondu suspendu pour ne pas dépendre de l'horloge).
+  q.watchDialog = () => {
+    const dialog = document.querySelector('dialog.lc-data-table__panel');
+    const own = () => dialog.getAnimations({ subtree: true }).filter((a) => a instanceof CSSTransition && a.effect.target === dialog);
+    const read = (list) => {
+      list.forEach((a) => a.pause());
+      list.forEach((a) => { a.currentTime = 0; });
+      const cs = getComputedStyle(dialog);
+      const bd = getComputedStyle(dialog, '::backdrop');
+      const info = { open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
+      return info;
+    };
+    q.dlg = { held: [] };
+    q.resetDialog = () => { q.dlg = { held: [] }; };
+    new MutationObserver(() => {
+      if (dialog.open && !q.dlg.enter) {
+        const list = own();
+        q.dlg.enter = read(list);
+        list.forEach((a) => a.finish());
+        q.dlg.enter.endOpacity = getComputedStyle(dialog).opacity;
+        q.dlg.enter.backdropEndOpacity = getComputedStyle(dialog, '::backdrop').opacity;
+      } else if (dialog.hasAttribute('data-closing') && !q.dlg.closing) {
+        q.dlg.held = own();
+        q.dlg.closing = read(q.dlg.held);
+      }
+    }).observe(dialog, { attributes: true, attributeFilter: ['open', 'data-closing'] });
+    q.releaseDialog = async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const stillOpen = { open: dialog.open, closing: dialog.hasAttribute('data-closing') };
+      q.dlg.held.forEach((a) => a.play());
+      return stillOpen;
+    };
+  };
+
+  // Corps de section : entrée quand `hidden` est retiré. Pastilles : entrée à l'insertion, sortie à la suppression.
+  q.sections = [];
+  q.chipsIn = [];
+  q.chipOut = null;
+  new MutationObserver((records) => {
+    for (const r of records) {
+      if (r.type === 'attributes' && r.target.matches?.('.lc-data-table__section-body') && !r.target.hidden) q.sections.push(measure(r.target));
+      for (const n of r.addedNodes) if (n.nodeType === 1 && n.matches('li.lc-data-table__chip')) q.chipsIn.push(measure(n));
+      for (const n of r.removedNodes) {
+        if (n.nodeType !== 1 || !n.matches('li.lc-data-table__chip')) continue;
+        const box = document.querySelector('.lc-data-table__chips');
+        const out = { connected: n.isConnected, own: n.getAnimations().length, neighbours: box.getAnimations({ subtree: true }).length, remaining: box.querySelectorAll('li.lc-data-table__chip').length };
+        q.chipOut = out;
+        requestAnimationFrame(() => requestAnimationFrame(() => { out.neighboursLater = box.getAnimations({ subtree: true }).length; }));
+      }
+    }
+  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
 };
 
 const PANELS = {
@@ -520,7 +589,10 @@ const PANELS = {
   combobox: { pane: '.cdk-overlay-pane.lc-combobox-overlay', open: 'lc-combobox input', host: 'lc-combobox', reopen: 'ArrowDown' },
   date: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-input button[aria-expanded]', host: 'lc-date-input', reopen: 'Enter' },
   range: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-range-input button[aria-expanded]', host: 'lc-date-range-input', reopen: 'Enter' },
+  // Menu de filtre de lc-data-table (T6) : ordinateur seulement, pas de place « middle » dans sa story.
+  filter: { pane: '.cdk-overlay-pane.lc-data-table__overlay', open: '[id$="-funnel-cat"]', host: '[id$="-funnel-cat"]', reopen: 'Enter', table: true },
 };
+const panelStory = (spec, control, place) => (spec.table ? ['qa-motion-data-table--table', `place:${place}`] : ['qa-motion-acceptance--panel', `control:${control};place:${place}`]);
 const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
 /** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
 const m42 = (value) => (value === 'none' ? 0 : parseFloat(value.slice(value.indexOf('(') + 1, -1).split(',')[value.startsWith('matrix3d') ? 13 : 5]));
@@ -533,6 +605,158 @@ async function motionPage(context, base, id, args = '') {
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story${args ? `&args=${args}` : ''}`);
   await page.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
   return { page, errors };
+}
+
+/** lc-data-table à 360 px (spec mouvement, T6) : CA-6 (« Filtres (N) »), CA-10, CA-11, CA-12 et la part de CA-13 (dialogue, cartes, sections, pastilles). */
+async function motionPhone(context, base, reduced, tag, check) {
+  const ID = 'qa-motion-data-table--table';
+  const FILTERS = '[id$="-filters"]';
+  const DIALOG = 'dialog.lc-data-table__panel';
+  const quick = (list) => msList(list).every((ms) => ms <= 0.01);
+  const start = async () => {
+    const { page, errors } = await motionPage(context, base, ID);
+    await page.evaluate(() => window.__qa.watchDialog());
+    await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
+    return { page, errors };
+  };
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-reveal-stagger'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-overlay-offset') }; });
+  const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
+  const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('dialog.lc-data-table__panel').open); };
+  const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const pick = async (page, section, option) => {
+    await page.locator(`${DIALOG} .lc-data-table__section-toggle`, { hasText: section }).click();
+    await page.locator(`${DIALOG} label.lc-column-filter__option`, { hasText: option }).locator('input').check();
+  };
+  const focusOnFilters = (page) => page.waitForFunction(() => document.activeElement?.id.endsWith('-filters'), undefined, { timeout: 3000 }).then(() => true, () => false);
+
+  // CA-12 : cartes (rang 1 à 8 : délai croissant ; 9e et suivantes : rien).
+  const cards = async (page, snap, label, rows) => {
+    const t = await tokens(page);
+    if (reduced) { check(snap.slice(0, 8).every((c) => quick(c.cssDelay) && quick(c.cssDuration)), `CA-12/13 ${tag} ${label}`, `délai=${snap[0].cssDelay} durée=${snap[0].cssDuration}`); return; }
+    const first = snap.slice(0, 8);
+    const ok1 = first.length === Math.min(8, rows) && first.every((c, i) => c.reveal && [...c.props].sort().join('+') === 'opacity+transform' && c.delays.every((d) => near(d, i * t.stagger)) && c.durations.every((d) => near(d, t.reveal)) && c.startOpacity === '0');
+    check(ok1, `CA-12 ${tag} ${label} cartes 1 à ${first.length}`, `délais=${first.map((c) => c.delays[0])} attendu ${first.map((c, i) => i * t.stagger)}, durées=${first[0].durations} attendu ${t.reveal}, opacité de départ=${first.map((c) => c.startOpacity)}`);
+    const rest = snap.slice(8);
+    if (rest.length) check(rest.every((c) => !c.reveal && c.props.length === 0 && msList(c.cssDelay).every((ms) => ms === 0)), `CA-12 ${tag} ${label} cartes 9 et suivantes (${rest.length})`, `transitions=${rest.map((c) => c.props.length)} délais=${rest.map((c) => c.cssDelay)} reveal=${rest.map((c) => c.reveal)}`);
+  };
+
+  // CA-6 : appui sur « Filtres (N) ».
+  const press = async (page, label) => {
+    const box = await page.locator(FILTERS).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    const got = await page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      const list = window.__qa.transitions(el, (a) => a.transitionProperty === 'transform');
+      const durations = list.map((a) => a.effect.getComputedTiming().duration);
+      list.forEach((a) => a.finish());
+      return { durations, scale: parseFloat(getComputedStyle(el).getPropertyValue('--lc-button-press-scale')), a: new DOMMatrix(getComputedStyle(el).transform).a, text: el.textContent.trim(), active: el.matches(':active'), cssDuration: getComputedStyle(el).transitionDuration, pressMs: window.__qa.tokenMs('--lc-sys-duration-fast') };
+    }, FILTERS);
+    await page.mouse.up();
+    if (reduced) check(got.active && quick(got.cssDuration) && got.durations.every((ms) => ms <= 0.01), `CA-6/13 ${tag} ${label} « ${got.text} »`, `durées=${got.cssDuration}`);
+    else check(got.active && got.durations.length > 0 && got.durations.every((ms) => near(ms, got.pressMs)) && near(got.a, got.scale, 0.001), `CA-6 ${tag} ${label} « ${got.text} »`, `échelle=${got.a.toFixed(3)} attendu ${got.scale}, durées=${got.durations} attendu ${got.pressMs}, actif=${got.active}`);
+  };
+
+  // CA-10 : entrée du dialogue.
+  const entry = async (page, label) => {
+    const t = await tokens(page);
+    const e = await page.evaluate(() => window.__qa.dlg.enter);
+    const dy = m42(e.startTransform);
+    if (reduced) check(quick(e.cssDuration) && quick(e.backdropCssDuration) && e.endOpacity === '1', `CA-10/13 ${tag} ${label} entrée`, `durée dialogue=${e.cssDuration} fond=${e.backdropCssDuration} opacité finale=${e.endOpacity}`);
+    else check(['dialog:opacity', 'dialog:transform', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.durations.every((d) => near(d, t.enter)) && e.delays.every((d) => d === 0) && e.startOpacity === '0' && near(dy, -t.offset, 0.01) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée`, `transitions=${e.props} durées=${e.durations} attendu ${t.enter}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${-t.offset}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
+  };
+
+  // CA-10 : sortie (data-closing, puis dialog.open === false après la fin du fondu).
+  const exit = async (page, label, before) => {
+    const t = await tokens(page);
+    await page.waitForFunction(() => window.__qa.dlg.closing);
+    const got = await page.evaluate(async () => ({ closing: window.__qa.dlg.closing, held: await window.__qa.releaseDialog() }));
+    await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open, undefined, { timeout: 5000 });
+    const after = await page.evaluate(() => ({ closingAttr: document.querySelector('dialog.lc-data-table__panel').hasAttribute('data-closing'), query: (window.__emitted ?? []).length }));
+    const c = got.closing;
+    if (reduced) check(c.open && quick(c.cssDuration) && quick(c.backdropCssDuration) && c.props.length === 0, `CA-10/13 ${tag} ${label} sortie sans attente`, `durée dialogue=${c.cssDuration} fond=${c.backdropCssDuration} transitions=${c.props}`);
+    else check(c.open && c.props.includes('dialog:opacity') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.exit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.exit}, fondu en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
+    check(!after.closingAttr, `CA-10 ${tag} ${label} fermé après le fondu`, `open=false, data-closing retiré=${!after.closingAttr}`);
+    check(await focusOnFilters(page), `CA-10 ${tag} ${label} focus rendu au bouton « Filtres »`);
+    return after.query;
+  };
+
+  // Sorties 1 et 2 : croix, Échap (rien n'est appliqué).
+  for (const way of ['croix', 'Échap']) {
+    const { page, errors } = await start();
+    await openPanel(page);
+    await entry(page, way);
+    check(await page.evaluate(() => document.activeElement?.closest('.lc-data-table__panel-head') !== null && document.querySelector('dialog.lc-data-table__panel').open), `CA-10 ${tag} ${way} focus initial dans le dialogue (croix autofocus)`);
+    if (way === 'croix') await page.click(`${DIALOG} .lc-data-table__panel-head button`); else await page.keyboard.press('Escape');
+    const emissions = await exit(page, way);
+    check(emissions === 0, `CA-10 ${tag} ${way} aucun filtre appliqué`, `émissions=${emissions}`);
+    check(errors.length === 0, `erreurs page ${tag} ${way}`, errors.join(' ; '));
+    await page.close();
+  }
+
+  // Sortie 3 (« Afficher N … ") + CA-11 + CA-12 + CA-6, dans un même parcours.
+  const { page, errors } = await start();
+  await cards(page, (await page.evaluate(() => window.__qa.cardSnaps[0])), 'chargement', 14);
+  await press(page, 'sans filtre');
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await tick(page);
+  check(await page.evaluate(() => document.querySelector('tbody').getAnimations({ subtree: true }).length) === 0, `CA-12 ${tag} aucune transition au défilement`);
+  await openPanel(page);
+  await entry(page, 'Afficher');
+  await pick(page, 'Catégorie', 'Beta');
+  await page.waitForFunction(() => window.__qa.sections.length >= 1);
+  {
+    const t = await tokens(page);
+    const s = await page.evaluate(() => window.__qa.sections[0]);
+    if (reduced) check(quick(s.transitionDuration), `CA-11a/13 ${tag} section dépliée`, `durée=${s.transitionDuration}`);
+    else check(['opacity', 'transform'].every((p) => s.props[p] && near(s.props[p].duration, t.enter) && s.props[p].delay === 0) && s.props.opacity.startOpacity === '0' && near(m42(s.props.transform.startTransform), -t.offset, 0.01) && s.endOpacity === '1' && m42(s.endTransform) === 0, `CA-11a ${tag} section dépliée`, `props=${JSON.stringify(s.props)} attendu durée ${t.enter}, décalage de départ ${-t.offset}, fin=${s.endOpacity}/${s.endTransform}`);
+  }
+  await page.locator(`${DIALOG} .lc-data-table__panel-apply`, { hasText: /\d/ }).waitFor();
+  const label = await page.locator(`${DIALOG} .lc-data-table__panel-apply`).innerText();
+  await page.click(`${DIALOG} .lc-data-table__panel-apply`);
+  const emissions = await exit(page, `« ${label.trim()} »`);
+  const filters = await page.evaluate(() => JSON.stringify((window.__emitted ?? []).at(-1)?.filters));
+  check(emissions === 1 && filters === '{"cat":["Beta"]}', `CA-10 ${tag} « Afficher N » : filtres appliqués inchangés`, `émissions=${emissions}, filtres=${filters}`);
+  // Pastille ajoutée.
+  await page.waitForFunction(() => window.__qa.chipsIn.length >= 1);
+  {
+    const t = await tokens(page);
+    const chip = await page.evaluate(() => window.__qa.chipsIn[0]);
+    if (reduced) check(quick(chip.transitionDuration), `CA-11b/13 ${tag} pastille ajoutée`, `durée=${chip.transitionDuration}`);
+    else check(Object.keys(chip.props).join() === 'opacity' && near(chip.props.opacity.duration, t.chip) && chip.props.opacity.delay === 0 && chip.props.opacity.startOpacity === '0' && chip.endOpacity === '1', `CA-11b ${tag} pastille ajoutée`, `props=${JSON.stringify(chip.props)} attendu opacité seule, durée ${t.chip}, fin=${chip.endOpacity}`);
+  }
+  // CA-12 : cascade rejouée après « Afficher N … » (Beta = 10 cartes : 8 animées, 2 sans).
+  await page.waitForFunction(() => window.__qa.cardSnaps.length >= 2);
+  await cards(page, await page.evaluate(() => window.__qa.cardSnaps[1]), 'après « Afficher N »', 10);
+  await press(page, 'avec filtres');
+  // Deuxième filtre : deux pastilles, puis retrait de l'une.
+  await page.evaluate(() => window.__qa.resetDialog());
+  await openPanel(page);
+  await pick(page, 'Zone', 'Nord');
+  await page.locator(`${DIALOG} .lc-data-table__panel-apply`, { hasText: /\d/ }).waitFor();
+  await page.click(`${DIALOG} .lc-data-table__panel-apply`);
+  await page.waitForFunction(() => window.__qa.dlg.closing);
+  await page.evaluate(() => window.__qa.releaseDialog());
+  await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open && document.querySelectorAll('li.lc-data-table__chip').length === 2, undefined, { timeout: 5000 });
+  const snapsBefore = await page.evaluate(() => window.__qa.cardSnaps.length);
+  await page.evaluate(() => { window.__qa.chipOut = null; });
+  await page.locator('.lc-data-table__chip-remove').first().click();
+  await page.waitForFunction(() => window.__qa.chipOut?.neighboursLater !== undefined);
+  const out = await page.evaluate(() => window.__qa.chipOut);
+  check(!out.connected && out.own === 0 && out.neighbours === 0 && out.neighboursLater === 0 && out.remaining === 1, `CA-11c ${tag} pastille retirée`, `dans le DOM=${out.connected}, animations de la pastille=${out.own}, du reste de la zone des pastilles=${out.neighbours} puis ${out.neighboursLater}, pastilles restantes=${out.remaining}`);
+  await page.waitForFunction(() => document.querySelectorAll('lc-data-table tbody tr').length > 0);
+  await tick(page);
+  const snapsAfterChip = await page.evaluate(() => window.__qa.cardSnaps.length);
+  if (snapsAfterChip > snapsBefore) console.log(`INFO ${tag} CA-12 : la cascade des cartes est aussi rejouée au retrait d'une pastille (${snapsAfterChip - snapsBefore} fois) ; écart assumé par le développeur, hors critère`);
+  await page.selectOption('select.lc-data-table__sort-select', 'name:desc');
+  await tick(page);
+  await tick(page);
+  const snapsAfterSort = await page.evaluate(() => window.__qa.cardSnaps.length);
+  if (snapsAfterSort > snapsAfterChip) console.log(`INFO ${tag} CA-12 : la cascade des cartes est aussi rejouée au tri (${snapsAfterSort - snapsAfterChip} fois) ; écart assumé par le développeur, hors critère`);
+  check(errors.length === 0, `erreurs page ${tag} parcours filtre`, errors.join(' ; '));
+  await page.close();
+
+  // Ordinateur : pas de cascade (cartes du téléphone seulement) : vérifié à 1280 px ci-dessous par l'appelant.
 }
 
 async function motion(browser, base) {
@@ -573,6 +797,15 @@ async function motion(browser, base) {
           else check(got.active && got.durations.length > 0 && got.durations.every((ms) => near(ms, got.pressMs)) && near(got.a, got.scale, 0.001) && near(got.d, got.scale, 0.001), `CA-6 ${tag} ${id}`, `échelle=${got.a.toFixed(3)} attendu ${got.scale}, durées=${got.durations} attendu ${got.pressMs}, actif=${got.active}`);
         }
         check(errors.length === 0, `erreurs page ${tag} buttons`, errors.join(' ; '));
+        await page.close();
+      }
+
+      // lc-data-table (T6) : téléphone seulement ici ; le menu de filtre est dans la boucle des panneaux.
+      if (width === 360 && name !== 'forced') await motionPhone(context, base, reduced, tag, check);
+      if (width === 1280 && name === 'normal') {
+        const { page } = await motionPage(context, base, 'qa-motion-data-table--table');
+        const reveals = await page.locator('tr[lcreveal]').count();
+        check(reveals === 0, `CA-12 ${tag} pas de cascade sur ordinateur`, `tr[lcreveal]=${reveals}`);
         await page.close();
       }
 
@@ -620,10 +853,11 @@ async function motion(browser, base) {
 
       // CA-7, CA-8 : panneaux, en haut (descente) puis en bas d'écran (montée).
       for (const [control, spec] of Object.entries(PANELS)) {
+        if (spec.table && width < 768) continue;
         for (const place of ['top', 'bottom']) {
           const above = place === 'bottom';
           const label = `${tag} ${control} ${place}`;
-          const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:${place}`);
+          const { page, errors } = await motionPage(context, base, ...panelStory(spec, control, place));
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
           await page.click(spec.open);
           await page.waitForFunction(() => window.__qa.enter !== null);
@@ -660,7 +894,7 @@ async function motion(browser, base) {
         // CA-8a bis : fermeture pendant l'entrée (animation d'entrée suspendue à 0, relancée à la fermeture) : le fondu d'opacité du conteneur dure quand même `--lc-overlay-exit-duration`.
         {
           const label = `${tag} ${control}`;
-          const { page } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:top`);
+          const { page } = await motionPage(context, base, ...panelStory(spec, control, 'top'));
           await page.evaluate((selector) => window.__qa.watchPane(selector, true), spec.pane);
           await page.click(spec.open);
           await page.waitForFunction(() => window.__qa.enter !== null);
@@ -675,7 +909,7 @@ async function motion(browser, base) {
         // CA-8b : réouverture pendant le fondu (fondu suspendu pour ne pas dépendre de l'horloge).
         {
           const label = `${tag} ${control}`;
-          const { page } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:top`);
+          const { page } = await motionPage(context, base, ...panelStory(spec, control, 'top'));
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
           await page.click(spec.open);
           await page.waitForFunction(() => window.__qa.enter !== null);
@@ -699,6 +933,7 @@ async function motion(browser, base) {
       // CA-7b : retournement après ouverture (vraie bascule : la fenêtre rétrécit, le CDK passe le panneau au-dessus) : aucune nouvelle entrée.
       if (!reduced && width === 1280) {
         for (const [control, spec] of Object.entries(PANELS)) {
+          if (spec.table) continue;
           const { page } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:middle`);
           await page.setViewportSize({ width, height: 1000 });
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
