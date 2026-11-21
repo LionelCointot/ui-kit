@@ -80,6 +80,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 
 ## Outils
 - **graphify** : graphe de connaissances du code dans `graphify-out/` (non versionné), reconstruit automatiquement après chaque commit par les hooks git. Installation sur un nouveau poste : `./scripts/setup.sh`.
+- **graphify est obligatoire** (décision de l'utilisateur, 2026-11-21, pour réduire la consommation de tokens) : `graphify query` (ou `path`, `explain`) avant toute recherche ou lecture de code, pour la session principale et chaque agent ; chaque rapport d'agent cite ses requêtes ; `graphify update .` une fois tout au vert.
 - **impeccable** : son hook vérifie chaque fichier UI modifié. Contexte design dans `DESIGN.md` ; `PRODUCT.md` n'existe pas encore ici.
 - Mise à jour des deux outils : `./scripts/update-tools.sh`.
 
@@ -88,8 +89,8 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
 Rules:
-- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- MANDATORY (user rule, 2026-11-21, goal: fewer tokens): when graphify-out/graph.json exists, run `graphify query "<question>"` (or `path` / `explain`) before ANY grep, search or source-file read for a codebase question, every time, for the main session and every subagent; put this rule in every subagent prompt that explores code, and every subagent report states the graphify queries it ran and what they located. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Run `graphify update .` once the work is green (quality bar passed), not after every intermediate edit.
 - A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
