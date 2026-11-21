@@ -69,13 +69,13 @@
   pointer-events: none;
 }
 
-.lc-tabs--ready .lc-tabs__indicator {
+:host(.lc-tabs--ready) .lc-tabs__indicator {
   transition:
     transform var(--lc-tabs-indicator-duration) var(--lc-tabs-indicator-easing),
     width var(--lc-tabs-indicator-duration) var(--lc-tabs-indicator-easing);
 }
 
-.lc-tabs--ready .lc-tabs__indicator--instant {
+:host(.lc-tabs--ready) .lc-tabs__indicator--instant {
   transition: none;
 }
 
