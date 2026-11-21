@@ -376,6 +376,10 @@
       "slow": {
         "$value": "{ref.duration.slow}",
         "$type": "duration"
+      },
+      "long": {
+        "$value": "{ref.duration.long}",
+        "$type": "duration"
       }
     },
     "easing": {
@@ -628,6 +632,16 @@
           "$type": "dimension",
           "$description": "Indicateur de sélection (onglet actif, élément de navigation actif)."
         }
+      }
+    },
+    "motion": {
+      "stagger": {
+        "$value": "{ref.motion.stagger}",
+        "$type": "duration"
+      },
+      "offset": {
+        "$value": "{sys.space.2}",
+        "$type": "dimension"
       }
     }
   }

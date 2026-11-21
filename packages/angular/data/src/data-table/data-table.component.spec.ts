@@ -698,6 +698,19 @@ describe('LcDataTableComponent', () => {
       expect(document.activeElement).toBe(el.querySelector('[id$="-filters"]'));
     });
 
+    it('spec filtre-période §13 (a) : requête inversée fournie par le code, « Afficher N » ouvre la section en faute, focalise « Du » et n\'émet rien', async () => {
+      await setup({ query: q({ date: { from: '2026-11-10', to: '2026-11-03' } }), narrow: true, picker: 'native' });
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
+      if (toggle.getAttribute('aria-expanded') === 'true') await click(toggle); // le test part d'une section repliée
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+      expect(document.activeElement).toBe(dialog.querySelector('[id$="-panel-date-from"]'));
+      expect(host.emitted).toHaveLength(0);
+    });
+
     it('CA-13 : sous 768 px, la pastille rouvre le panneau sur sa colonne', async () => {
       await setup({ query: q({ city: ['Gap'] }), narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-chip-city"]')!);

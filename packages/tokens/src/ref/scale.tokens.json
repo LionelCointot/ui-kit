@@ -154,6 +154,10 @@
       "slow": {
         "$value": "300ms",
         "$type": "duration"
+      },
+      "long": {
+        "$value": "350ms",
+        "$type": "duration"
       }
     },
     "easing": {
@@ -164,6 +168,12 @@
       "emphasized": {
         "$value": "cubic-bezier(0.3, 0, 0, 1)",
         "$type": "cubicBezier"
+      }
+    },
+    "motion": {
+      "stagger": {
+        "$value": "80ms",
+        "$type": "duration"
       }
     }
   }

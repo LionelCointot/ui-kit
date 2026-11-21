@@ -19,7 +19,7 @@ export const THEME_GROUPS = [
 ];
 
 /** Tokens `sys` hors du builder (spec § 5.2) : z-index, durées, courbes d'animation. */
-const EXCLUDED_ROOTS = new Set(['z', 'duration', 'easing']);
+const EXCLUDED_ROOTS = new Set(['z', 'duration', 'easing', 'motion']);
 const EDITABLE_TYPES = new Set(['color', 'dimension', 'fontFamily', 'number', 'shadow']);
 const SIMPLE_PATHS = new Set(['color.primary', 'color.secondary', 'color.neutral', 'color.surface', 'color.background', 'radius.md', 'font.family.base']);
 const BRAND_COLORS = /^color\.(on-)?(primary|secondary|neutral)(-container)?$/;
