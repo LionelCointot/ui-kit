@@ -428,3 +428,90 @@ describe('LcTabsComponent, indicateur', () => {
     expect(element.querySelector<HTMLElement>('.lc-tabs__indicator')!.hidden).toBe(false);
   });
 });
+
+@Component({
+  imports: [LcTabsComponent, LcTabComponent],
+  template: `
+    <lc-tabs [(selected)]="selected">
+      @for (id of ids(); track id) {
+        <lc-tab [id]="id" [label]="id">x</lc-tab>
+      }
+    </lc-tabs>
+  `,
+})
+class DynamicTabsHostComponent {
+  readonly selected = signal<string | null>('a');
+  readonly ids = signal(['a', 'b', 'c']);
+}
+
+describe('LcTabsComponent : placement de l\'indicateur', () => {
+  const INSTANT = 'lc-tabs__indicator--instant';
+  beforeEach(() => {
+    FakeResizeObserver.instances = [];
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    const index = (el: HTMLElement) => Array.from(el.parentElement!.querySelectorAll(':scope > .lc-tabs__tab')).indexOf(el);
+    vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return this.classList.contains('lc-tabs__tab') ? index(this) * 100 : 0; });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.classList.contains('lc-tabs__tab') ? 80 + index(this) : 0; });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  async function setupDynamic() {
+    const fixture = TestBed.createComponent(DynamicTabsHostComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const indicator = element.querySelector<HTMLElement>('.lc-tabs__indicator')!;
+    const tabs = () => Array.from(element.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    return { fixture, indicator, tabs };
+  }
+
+  it('pose transform et width de l\'onglet sélectionné, et glisse (sans --instant) après un clic', async () => {
+    const { fixture, indicator, tabs } = await setupDynamic();
+    expect(indicator.style.transform).toBe('translateX(0px)');
+    expect(indicator.style.width).toBe('80px');
+    tabs()[2].click();
+    await fixture.whenStable();
+    expect(indicator.style.transform).toBe('translateX(200px)');
+    expect(indicator.style.width).toBe('82px');
+    expect(indicator.classList.contains(INSTANT)).toBe(false);
+  });
+
+  it('pose --instant après un rappel du ResizeObserver, le retire à la sélection suivante', async () => {
+    const { fixture, indicator, tabs } = await setupDynamic();
+    FakeResizeObserver.instances.at(-1)!.trigger();
+    expect(indicator.classList.contains(INSTANT)).toBe(true);
+    tabs()[1].click();
+    await fixture.whenStable();
+    expect(indicator.classList.contains(INSTANT)).toBe(false);
+    expect(indicator.style.transform).toBe('translateX(100px)');
+  });
+
+  it('suit offsetLeft aussi en RTL (direction sans effet sur la mesure)', async () => {
+    mockLayout({ rtl: true });
+    const { fixture, indicator, tabs } = await setupDynamic();
+    tabs()[1].click();
+    await fixture.whenStable();
+    expect(indicator.style.transform).toBe('translateX(100px)');
+  });
+
+  it('ajout d\'onglet ou focus clavier sans changement de sélection : --instant, pas de glissement', async () => {
+    const { fixture, indicator, tabs } = await setupDynamic();
+    tabs()[0].click();
+    await fixture.whenStable();
+    fixture.componentInstance.ids.set(['z', 'a', 'b', 'c']);
+    await fixture.whenStable();
+    expect(indicator.style.transform).toBe('translateX(100px)');
+    expect(indicator.classList.contains(INSTANT)).toBe(true);
+  });
+
+  it('retrait de l\'onglet sélectionné : l\'indicateur suit le premier onglet actif', async () => {
+    const { fixture, indicator } = await setupDynamic();
+    fixture.componentInstance.ids.set(['b', 'c']);
+    await fixture.whenStable();
+    expect(indicator.hidden).toBe(false);
+    expect(indicator.style.transform).toBe('translateX(0px)');
+    expect(indicator.style.width).toBe('80px');
+  });
+});

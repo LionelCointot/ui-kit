@@ -57,6 +57,7 @@ export class LcTabsComponent {
   protected readonly fadeRight = signal(false);
   /** Vrai après la première mesure de l'indicateur : avant, il se pose sans transition. */
   protected readonly ready = signal(false);
+  private placedId: string | null = null;
   protected readonly visited = signal<ReadonlySet<string>>(new Set());
 
   /** Onglet affiché : `selected` s'il existe et n'est pas désactivé, sinon le premier onglet actif. */
@@ -99,14 +100,19 @@ export class LcTabsComponent {
     this.fadeRight.set(max - hiddenLeft > 1);
   }
 
-  /** Place le trait sous l'onglet sélectionné ; masqué sans sélection. `instant` coupe la transition. */
-  private placeIndicator(instant: boolean): void {
+  /**
+   * Place le trait sous l'onglet sélectionné ; masqué sans sélection. Seul un changement d'onglet sélectionné
+   * glisse : une remesure (`resized`) ou une même sélection (ajout d'onglet, focus) pose le trait sans transition.
+   */
+  private placeIndicator(resized: boolean): void {
     const indicator = this.indicator().nativeElement;
-    const index = this.tabs().findIndex((tab) => tab.id() === this.current());
-    const button = this.buttons()[index]?.nativeElement;
+    const id = this.current();
+    const button = this.buttons()[this.tabs().findIndex((tab) => tab.id() === id)]?.nativeElement;
     indicator.hidden = !button;
     if (!button) return;
-    indicator.classList.toggle('lc-tabs__indicator--instant', instant);
+    // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
+    indicator.classList.toggle('lc-tabs__indicator--instant', resized || id === this.placedId);
+    this.placedId = id;
     indicator.style.transform = `translateX(${button.offsetLeft}px)`;
     indicator.style.width = `${button.offsetWidth}px`;
     this.ready.set(true);
