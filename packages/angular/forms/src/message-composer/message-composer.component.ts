@@ -193,6 +193,8 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   readonly attachments = input(true, { transform: booleanAttribute });
   readonly items = input<readonly LcFileUploadItem[]>([]);
   readonly accept = input('');
+  /** Remplace la liste des types déduite de `accept` dans le message de refus par type. */
+  readonly acceptLabel = input<string>();
   /** Nombre maximal de pièces jointes ; `null` : sans limite. */
   readonly maxFiles = input<number | null>(10);
   readonly showSize = input(true, { transform: booleanAttribute });
@@ -291,12 +293,18 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       };
     });
   });
+  private readonly acceptedText = computed(() => {
+    const l = this.labels;
+    return this.acceptLabel()?.trim() || acceptedFilesText(this.accept(), { images: l.composerAcceptImages, videos: l.composerAcceptVideos, audio: l.composerAcceptAudio, pdf: l.composerAcceptPdf });
+  });
   /** Un message par raison de refus, avec les noms des fichiers concernés. */
   protected readonly refusalMessages = computed(() => {
     const refused = this.refusals();
     return (['type', 'count'] as const satisfies readonly LcFileRejectionReason[]).flatMap((reason) => {
-      const names = refused.filter((r) => r.reason === reason).map((r) => announcedName(r.file.name));
-      return names.length > 0 ? [this.labels.composerRejected(names.join(', '), reason)] : [];
+      const names = refused.filter((r) => r.reason === reason).map((r) => announcedName(r.file.name)).join(', ');
+      if (!names) return [];
+      const accepted = reason === 'type' ? this.acceptedText() : '';
+      return [accepted ? this.labels.composerRejectedType(names, accepted) : this.labels.composerRejected(names, reason)];
     });
   });
   protected readonly counterText = computed(() => this.labels.composerCount(this.value().length, this.maxLength() ?? 0));

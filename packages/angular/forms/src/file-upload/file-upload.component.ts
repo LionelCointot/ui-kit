@@ -47,10 +47,7 @@ export interface LcFileUploadItem {
 
 export type { LcFileRejectionReason };
 
-export interface LcFileUploadRejection {
-  readonly file: File;
-  readonly reason: LcFileRejectionReason;
-}
+export type LcFileUploadRejection = LcFileRefusal;
 
 interface RowView {
   readonly item: LcFileUploadItem;

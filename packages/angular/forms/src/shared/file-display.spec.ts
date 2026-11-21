@@ -1,4 +1,4 @@
-import { announcedName, cleanFileName, fileSizeText, isSafePreviewUrl } from './file-display';
+import { acceptedFilesText, announcedName, cleanFileName, fileSizeText, isSafePreviewUrl } from './file-display';
 
 const BASE = 'https://app.example/page';
 
@@ -44,5 +44,18 @@ describe('file-display', () => {
     expect(fileSizeText(2048, units, fmt)).toBe('2\u00A0Ko');
     expect(fileSizeText(999_999, units, fmt)).toBe('1\u00A0Mo');
     expect(fileSizeText(Number.NaN, units, fmt)).toBe('0\u00A0o');
+  });
+
+  describe('acceptedFilesText', () => {
+    const names = { images: 'images', videos: 'vidéos', audio: 'fichiers audio', pdf: 'PDF' };
+    it.each([
+      ['image/*,.pdf', 'images, PDF'],
+      ['video/*, audio/*', 'vidéos, fichiers audio'],
+      ['application/pdf,.PDF', 'PDF'],
+      ['.docx,.xlsx', 'DOCX, XLSX'],
+      ['text/csv, image/*', 'CSV, images'],
+      ['image/*,image/*,.docx,.DOCX', 'images, DOCX'],
+      ['', ''],
+    ])('%s -> %s', (accept, expected) => expect(acceptedFilesText(accept, names)).toBe(expected));
   });
 });

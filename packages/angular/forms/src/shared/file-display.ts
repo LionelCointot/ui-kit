@@ -1,5 +1,5 @@
 /** Plafond d'un nom de fichier dans un nom accessible ou une annonce. */
-export const MAX_ANNOUNCED_NAME = 80;
+const MAX_ANNOUNCED_NAME = 80;
 
 // Caractères de contrôle (C0, DEL, C1), marqueurs bidirectionnels (ALM, LRM, RLM, LRE à RLO, LRI à PDI) et invisibles (ZWSP à ZWJ, WJ, BOM, LS, PS).
 const UNSAFE_CHARS = /[\u0000-\u001F\u007F-\u009F\u061C\u200B-\u200F\u2028-\u202E\u2060\u2066-\u2069\uFEFF]/g;
@@ -41,4 +41,16 @@ export function fileSizeText(bytes: number, units: readonly string[], formatNumb
     shown = Number(value.toFixed(value >= 100 ? 0 : 1)); // décimale nulle omise : « 2 Mo », pas « 2,0 Mo »
   }
   return `${formatNumber(shown)}\u00A0${units[unit]}`; // espace insécable : le nombre et l'unité restent ensemble
+}
+
+/** Liste lisible des types de `accept` (« images, PDF, DOCX »), dans l'ordre, sans doublon ; vide si `accept` est vide. */
+export function acceptedFilesText(accept: string, names: { images: string; videos: string; audio: string; pdf: string }): string {
+  const kinds = accept.split(',').map((token) => token.trim().toLowerCase()).filter(Boolean).map((token) => {
+    if (token === 'image/*') return names.images;
+    if (token === 'video/*') return names.videos;
+    if (token === 'audio/*') return names.audio;
+    if (token === '.pdf' || token === 'application/pdf') return names.pdf;
+    return (token.startsWith('.') ? token.slice(1) : token.slice(token.indexOf('/') + 1)).toUpperCase();
+  });
+  return [...new Set(kinds)].join(', ');
 }
