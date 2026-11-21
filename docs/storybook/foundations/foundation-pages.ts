@@ -274,8 +274,8 @@ const MOTION_VALUES = [
 ].map(({ key, use }) => ({ key, cssVar: cssVarOf(key), value: light[key], use }));
 
 const MOTION_CURVES = [
-  { name: 'standard', use: 'Starts gently, slows down smoothly: for fades and things appearing.' },
-  { name: 'spring', use: 'Starts fast, then settles without going past its target: for things that move to a new place.' },
+  { name: 'standard', use: 'A fixed curve that eases in and out: for fades and things appearing.' },
+  { name: 'spring', use: 'A physical spring that settles without going past its target; with its longer duration it reads as a glide: for things that move to a new place.' },
 ].map(({ name, use }) => ({ name, cssVar: cssVarOf(`easing.${name}`), value: light[`easing.${name}`], use }));
 
 const MOTION_OFF_CSS = `:root {
@@ -312,7 +312,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     </div>
 
     <h2>Curves</h2>
-    <p class="lead">A curve says how fast something goes at each moment. Both curves below go from 0 to 1 in the same time; the dot marks half of the time.</p>
+    <p class="lead">A curve says how fast something goes at each moment. Both curves below go from 0 to 1 in the same time; the dot marks half of the time. They are close: what makes a move feel different from a fade is mostly its longer duration (500ms instead of 200ms).</p>
     <div class="curves">
       <figure class="both">
         <span class="axis">progress ↑</span>
@@ -383,6 +383,8 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     h3 { display: flex; align-items: center; justify-content: space-between; gap: var(--lc-sys-space-2); font-size: var(--lc-sys-font-size-sm); font-weight: var(--lc-sys-font-weight-medium); color: var(--lc-sys-color-on-surface-muted); margin: 0 0 var(--lc-sys-space-2); }
     .scroll { overflow-x: auto; }
     .nowrap, code { white-space: nowrap; }
+    pre { overflow-x: auto; }
+    pre code { white-space: pre; }
     td:last-child { min-width: 16rem; }
     pre { margin: 0; padding: var(--lc-sys-space-3) var(--lc-sys-space-4); overflow-x: auto; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
     .curves { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-6); }
