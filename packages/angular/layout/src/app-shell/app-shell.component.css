@@ -77,13 +77,13 @@
   box-shadow: var(--lc-sys-shadow-4);
   visibility: hidden;
   transform: translateX(-100%);
-  transition: transform var(--lc-slide-exit-duration) var(--lc-sys-easing-standard), visibility 0s linear var(--lc-slide-exit-duration);
+  transition: transform var(--lc-slide-exit-duration) var(--lc-sys-easing-standard), visibility var(--lc-slide-exit-duration) linear;
 }
 
 .lc-shell__nav--drawer.lc-shell__nav--open {
   visibility: visible;
   transform: none;
-  transition: transform var(--lc-slide-enter-duration) var(--lc-sys-easing-standard), visibility 0s;
+  transition: transform var(--lc-slide-enter-duration) var(--lc-sys-easing-standard), visibility var(--lc-slide-enter-duration) linear;
 }
 
 .lc-shell__backdrop {

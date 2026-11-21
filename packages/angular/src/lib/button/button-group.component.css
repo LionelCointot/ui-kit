@@ -21,7 +21,11 @@ lc-button-group.lc-button-group--attached > .lc-button:not(:last-child) {
   border-end-end-radius: 0;
 }
 
-lc-button-group.lc-button-group--attached > .lc-button:hover,
 lc-button-group.lc-button-group--attached > .lc-button:focus-visible {
   z-index: 1;
+}
+@media (hover: hover) {
+  lc-button-group.lc-button-group--attached > .lc-button:hover {
+    z-index: 1;
+  }
 }

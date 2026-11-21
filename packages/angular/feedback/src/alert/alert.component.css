@@ -74,8 +74,10 @@
   cursor: pointer;
 }
 
-.lc-alert__close:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+@media (hover: hover) {
+  .lc-alert__close:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
 }
 
 .lc-alert__close:focus-visible {

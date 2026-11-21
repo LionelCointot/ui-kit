@@ -34,8 +34,10 @@
   cursor: pointer;
 }
 
-.lc-column-filter__option:hover {
-  background: var(--lc-sys-color-surface-sunken);
+@media (hover: hover) {
+  .lc-column-filter__option:hover {
+    background: var(--lc-sys-color-surface-sunken);
+  }
 }
 
 .lc-column-filter__option--all {

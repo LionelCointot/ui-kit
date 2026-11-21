@@ -3,11 +3,11 @@ import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, Subject, of, throwError } from 'rxjs';
 import { LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
 import { LcDataTableComponent } from './data-table.component';
 import * as model from './data-table-model';
-import { LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcTableQuery, lcLocalSource } from './data-table-model';
+import { LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcPage, LcTableQuery, lcLocalSource } from './data-table-model';
 
 interface Row { id: number; name: string; state: string; city: string; date: string; urgent: boolean }
 
@@ -1044,6 +1044,35 @@ describe('LcDataTableComponent', () => {
         expect(slides[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
         // Lignes mesurées relativement au bloc : seul leur déplacement propre compte (7 lignes ajoutées en fondu, 3 conservées), sans le décalage de 40 px du bloc.
         expect(calls.filter((call) => 'transform' in call.keyframes && call.row !== slides[0].row).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
+      });
+
+      it('retrait d\'une pastille, réponse du serveur après la fin du glissement : le bloc ne porte plus rien, la différence de liste n\'est pas décalée', async () => {
+        const local = lcLocalSource(ROWS, COLUMNS);
+        const pending = new Subject<LcPage<Row>>();
+        let calledOnce = false;
+        const source: LcDataSource<Row> = {
+          rows: (query) => (calledOnce ? pending : ((calledOnce = true), local.rows(query))),
+          distinct: (column, query) => local.distinct(column, query),
+        };
+        await setup({ source, query: q({ state: ['Nouvelle', 'Close', 'Qualifiée'] }), chips: 'always' });
+        stubLayout();
+        tokens();
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+          const base = document.querySelector('.lc-data-table__chip') ? 60 : 20;
+          return { top: this.classList.contains('lc-data-table__scroll') ? base : [...document.querySelectorAll('tbody tr')].indexOf(this) * 40 + base } as DOMRect;
+        });
+        el.querySelector<HTMLButtonElement>('.lc-data-table__chip-remove')!.click();
+        for (let i = 0; i < 3; i++) { // la requête reste en attente : `whenStable` ne reviendrait pas
+          fixture.detectChanges();
+          await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        }
+        const slide = calls.find((call) => call.row.classList.contains('lc-data-table__scroll'))!;
+        slide.finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        calls.length = 0;
+        pending.next({ rows: [...ROWS], total: ROWS.length }); // mêmes lignes, aux mêmes places
+        await stable();
+        expect(calls).toHaveLength(0);
       });
 
       it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {

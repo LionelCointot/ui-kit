@@ -125,14 +125,22 @@
   transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
 }
 
-:host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:hover::-webkit-slider-thumb,
 :host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:active::-webkit-slider-thumb {
   transform: scale(1.1);
 }
+@media (hover: hover) {
+  :host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+}
 
-:host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:hover::-moz-range-thumb,
 :host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:active::-moz-range-thumb {
   transform: scale(1.1);
+}
+@media (hover: hover) {
+  :host(:not(.lc-slider--disabled):not(.lc-slider--readonly)) .lc-slider__input:hover::-moz-range-thumb {
+    transform: scale(1.1);
+  }
 }
 
 .lc-slider__value {

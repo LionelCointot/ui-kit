@@ -268,8 +268,9 @@ async function collapse() {
 const phoneReduced = 'phoneReduced', deskReduced = 'deskReduced';
 
 // ---------- pastilles ----------
+// 360 px : la rangée se resserre (la hauteur change, le bloc glisse) ; 1 280 px : les deux pastilles tiennent sur une ligne, rien ne bouge (aucune animation parasite).
 async function chips() {
-  for (const reduced of [false, true]) await withCtx(reduced ? 'deskReduced' : 'desk', async (c) => {
+  for (const [ctx, moves, reduced] of [['phone', true, false], ['desk', false, false], ['phoneReduced', true, true], ['deskReduced', false, true]]) await withCtx(ctx, async (c) => {
     const page = await open(c, 'data-data-table--always-chips');
     const n = await page.locator('.lc-data-table__chip-remove').count();
     if (!n) { check('CA-H4 story avec pastilles', false, 'aucune pastille'); return; }
@@ -277,14 +278,17 @@ async function chips() {
       const sc = document.querySelector('.lc-data-table__scroll'); const li = document.querySelector('.lc-data-table__chip'); const top0 = sc.getBoundingClientRect().top;
       const fast = Q.ms('--lc-sys-duration-fast'); li.querySelector('.lc-data-table__chip-remove').click(); await Q.raf();
       const out = { leaving: li.hasAttribute('data-leaving') || li.isConnected === false, pe: li.isConnected ? getComputedStyle(li).pointerEvents : 'none', chipAnims: li.isConnected ? Q.anims(li).map((x) => x.t.duration) : [], fast, reduced: Q.reduced(document.body) };
-      const own = sc.getAnimations().filter((a) => a.effect.getComputedTiming().duration > 0.01); out.own = own.length;
-      if (own.length) { Q.at(sc, 0); out.dy0 = Q.y(sc); }
-      document.getAnimations().forEach((a) => a.finish()); await Q.raf(); await Q.settle(); out.shift = top0 - sc.getBoundingClientRect().top; out.top0 = top0; return out;
+      const live = (a) => a.effect.getComputedTiming().duration > 0.01;
+      const own = sc.getAnimations().filter(live); out.own = own.length;
+      out.stray = document.getAnimations().filter((a) => live(a) && a.effect.target !== sc && !a.effect.target.closest('.lc-data-table__chip, tbody tr, .lc-data-table__funnel')).length; out.strayWho = document.getAnimations().filter((a) => live(a) && a.effect.target !== sc && !a.effect.target.closest('.lc-data-table__chip, tbody tr, .lc-data-table__funnel')).map((a) => `${a.transitionProperty ?? a.animationName}@${a.effect.target.tagName}.${a.effect.target.className}`); // hors bloc, pastille, lignes (elles bougent si le filtre retiré les change) et entonnoir (sa couleur change)
+      Q.at(sc, 0); out.dy0 = Q.y(sc); // 1er pas de l'animation du bloc
+      document.getAnimations().forEach((a) => a.finish()); await Q.raf(); await Q.settle(); out.shift = top0 - sc.getBoundingClientRect().top; return out;
     });
-    if (reduced) check('CA-R1 pastille : aucune animation > 0,01 ms, retrait immédiat', r.reduced && r.own === 0, JSON.stringify(r));
+    if (reduced) check(`CA-R1 ${ctx} pastille : aucune animation > 0,01 ms, retrait immédiat`, r.reduced && r.own === 0 && r.stray === 0, JSON.stringify(r));
     else {
-      check('CA-H4 fondu de la pastille en duration-fast, non cliquable pendant le fondu', r.pe === 'none' && r.chipAnims.some((d) => near(d, r.fast, 0.5)), JSON.stringify({ pe: r.pe, anims: r.chipAnims, fast: r.fast }));
-      check('CA-H4 la liste porte une seule animation de glissement, 1er pas = position d’avant (± 1 px)', r.own === 1 && r.shift > 1 && near(r.dy0, r.shift, 1), JSON.stringify({ own: r.own, dy0: r.dy0, shift: r.shift }));
+      check(`CA-H4 ${ctx} fondu de la pastille en duration-fast, non cliquable pendant le fondu`, r.pe === 'none' && r.chipAnims.some((d) => near(d, r.fast, 0.5)), JSON.stringify({ pe: r.pe, anims: r.chipAnims, fast: r.fast }));
+      if (moves) check(`CA-H4 ${ctx} la liste porte une seule animation de glissement, 1er pas = position d’avant (± 1 px)`, r.own === 1 && r.stray === 0 && r.shift > 1 && near(r.dy0, r.shift, 1), JSON.stringify({ own: r.own, stray: r.stray, dy0: r.dy0, shift: r.shift, who: r.strayWho }));
+      else check(`CA-H4 ${ctx} rangée de même hauteur : aucun glissement du bloc, aucune autre animation que pastille, lignes et couleur de l’entonnoir`, r.own === 0 && r.stray === 0 && near(r.shift, 0, 1), JSON.stringify({ own: r.own, stray: r.stray, shift: r.shift, who: r.strayWho }));
     }
     await page.close();
   });

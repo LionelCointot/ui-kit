@@ -306,8 +306,10 @@ export class LcDataTableComponent<T> {
     afterNextRender(() => {
       const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
       const delta = from - scroll.getBoundingClientRect().top;
+      if (!move || Math.abs(delta) < MOVE_THRESHOLD_PX) return;
       this.slideDelta = delta;
-      if (move && Math.abs(delta) >= MOVE_THRESHOLD_PX) scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move);
+      // Le bloc ne porte plus rien une fois le glissement fini : sans différence de liste pour la consommer, la valeur serait périmée.
+      scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move).finished.catch(() => undefined).then(() => (this.slideDelta = 0));
     }, { injector: this.injector });
   }
 

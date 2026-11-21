@@ -48,8 +48,10 @@ button.lc-stepper__step {
   cursor: pointer;
 }
 
-button.lc-stepper__step:hover .lc-stepper__name {
-  text-decoration: underline;
+@media (hover: hover) {
+  button.lc-stepper__step:hover .lc-stepper__name {
+    text-decoration: underline;
+  }
 }
 
 button.lc-stepper__step:focus-visible {

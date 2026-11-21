@@ -621,7 +621,7 @@ const MOTION_INIT = () => {
   /** Instantané « avant » (éléments, positions), puis enregistrement de chaque animation de ligne à sa première image. */
   q.startList = () => {
     if (q.list) q.list.stop = true;
-    const rec = (q.list = { stop: false, idle: 0, before: new Map(), els: new Map(), anims: [], cardSnapsBefore: q.cardSnaps.length });
+    const rec = (q.list = { stop: false, idle: 0, before: new Map(), els: new Map(), anims: [], block: [], cardSnapsBefore: q.cardSnaps.length });
     document.querySelectorAll(ROWS).forEach((tr) => { rec.before.set(rowKey(tr), tr.getBoundingClientRect().top); rec.els.set(rowKey(tr), tr); });
     const seen = new WeakSet();
     const tick = () => {
@@ -638,6 +638,7 @@ const MOTION_INIT = () => {
           rec.anims.push({ key: rowKey(tr), kind: a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'css' : 'waapi', props: Object.keys(kf[0] ?? {}).filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)), first: kf[0], last: kf.at(-1), duration: t.duration, delay: t.delay, easing: t.easing, fill: t.fill, leaving: tr.hasAttribute('data-leaving'), connected: tr.isConnected, leavingConnected: document.querySelectorAll('tr[data-leaving]').length });
         }
       }
+      for (const a of document.querySelector('.lc-data-table__scroll')?.getAnimations() ?? []) if (!seen.has(a)) { seen.add(a); rec.block.push({ first: a.effect.getKeyframes()[0]?.transform, duration: a.effect.getTiming().duration }); }
       rec.idle = running === 0 && !document.querySelector('tr[data-leaving]') ? rec.idle + 1 : 0;
       requestAnimationFrame(tick);
     };
@@ -655,6 +656,7 @@ const MOTION_INIT = () => {
       added: [...after.keys()].filter((k) => !r.before.has(k)),
       order: [...after.keys()],
       anims: r.anims,
+      block: r.block,
       cascades: q.cardSnaps.length - r.cardSnapsBefore,
       move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-overlay-exit-duration'), enter: q.tokenMs('--lc-overlay-enter-duration'),
     };
@@ -1065,7 +1067,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   const near1 = (a, b) => Math.abs(a - b) <= 1.5;
   const translateY = (t) => parseFloat(t?.match(/translateY\((-?[\d.]+)px\)/)?.[1] ?? 'NaN');
 
-  const analyse = (r, label, { expectKept, expectRemoved, expectAdded, strict = false }) => {
+  const analyse = (r, label, { expectKept, expectRemoved, expectAdded, strict = false, blockStart = false }) => {
     const moved = r.kept.filter((k) => Math.abs(k.from - k.to) >= 0.5);
     const waapi = r.anims.filter((a) => a.kind === 'waapi');
     check(r.kept.length === expectKept && r.kept.every((k) => k.same), `CA-20 ${tag} ${label} lignes conservées : même élément DOM (${r.kept.length})`, `conservées=${r.kept.length} attendu ${expectKept}, éléments identiques=${r.kept.filter((k) => k.same).length}`);
@@ -1079,7 +1081,9 @@ async function motionList(context, base, reduced, tag, phone, check) {
     const last = (key) => waapi.filter((a) => a.key === key && a.props.includes('transform')).at(-1);
     const bad = moved.filter((k) => {
       const a = last(k.key);
+      if (!a && blockStart) return false; // le bloc porte tout le déplacement de cette ligne : départ vérifié plus bas
       if (!a || !(a.last.transform === 'none' && near(a.duration, r.move) && a.delay === 0 && sameEase(a.easing, r.moveEase))) return true;
+      if (blockStart) return false; // départ vérifié plus bas (bloc + ligne)
       const start = k.to + translateY(a.first.transform);
       // Marge : 10 % du trajet (une glissade due au décalage de la barre de filtres peut dépasser de quelques pixels).
       const slack = Math.max(1.5, 0.1 * Math.abs(k.from - k.to));
@@ -1087,6 +1091,12 @@ async function motionList(context, base, reduced, tag, phone, check) {
       return !inside || (strict && !near1(translateY(a.first.transform), k.from - k.to));
     });
     check(moved.length > 0 && bad.length === 0, `CA-20 ${tag} ${label} conservées : glissement vers la nouvelle place (${r.move} ms, courbe du token), sans sortir de la zone`, `déplacées=${moved.length}, non conformes=${bad.map((k) => `${k.key} (de ${k.from} à ${k.to}, animations ${JSON.stringify(waapi.filter((a) => a.key === k.key).map((a) => [a.first.transform, a.duration]))})`)}`);
+    // Retrait de pastille : le bloc de la liste glisse (une seule animation) et les lignes portent le reste ; ensemble, la position visuelle de départ de chaque ligne conservée est son ancienne place (± 1 px).
+    if (blockStart) {
+      const blockY = r.block.length ? translateY(r.block[0].first) : 0;
+      const off = r.kept.map((k) => { const a = last(k.key); return { key: k.key, d: k.to + blockY + (a ? translateY(a.first.transform) : 0) - k.from }; });
+      check(r.block.length <= 1 && off.every((o) => near1(o.d, 0)), `CA-20 ${tag} ${label} bloc + ligne : départ visuel de chaque ligne conservée = ancienne position (± 1 px)`, `animations du bloc=${r.block.length} (départ ${blockY}), écarts=${JSON.stringify(off.filter((o) => !near1(o.d, 0)))}`);
+    }
     const still = r.kept.filter((k) => Math.abs(k.from - k.to) < 0.5);
     if (strict) check(still.every((k) => !last(k.key)), `CA-20 ${tag} ${label} pas de glissement pour une ligne qui n'a pas bougé`, `lignes immobiles animées=${still.filter((k) => last(k.key)).map((k) => k.key)}`);
     const moveEase = waapi.find((a) => a.props.includes('transform'));
@@ -1120,7 +1130,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   if (phone) await page.locator('.lc-data-table__chip-remove').first().click();
   else await page.getByRole('button', { name: 'Effacer les filtres' }).click();
   await idle(`window.__qa.rowKeys().length === 14`);
-  analyse(await report(), 'retrait de pastille', { expectKept: 10, expectRemoved: 0, expectAdded: 4 });
+  analyse(await report(), 'retrait de pastille', { expectKept: 10, expectRemoved: 0, expectAdded: 4, blockStart: true });
 
   // 3. Tri : toutes les lignes conservées, certaines changent de place.
   await page.evaluate(() => window.__qa.frames(40));

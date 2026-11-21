@@ -127,8 +127,10 @@ lc-data-table {
   inset-inline: 0;
 }
 
-.lc-data-table__chip button:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+@media (hover: hover) {
+  .lc-data-table__chip button:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
 }
 
 .lc-data-table__chip button:focus-visible {
@@ -201,8 +203,10 @@ lc-data-table {
   vertical-align: middle;
 }
 
-.lc-data-table__table tbody tr:not(.lc-data-table__state):hover td {
-  background: var(--lc-sys-color-surface-sunken);
+@media (hover: hover) {
+  .lc-data-table__table tbody tr:not(.lc-data-table__state):hover td {
+    background: var(--lc-sys-color-surface-sunken);
+  }
 }
 
 .lc-data-table__cell--start { text-align: start; }
@@ -237,10 +241,12 @@ lc-data-table {
   cursor: pointer;
 }
 
-.lc-data-table__th-head--sortable:hover,
+@media (hover: hover) {
+  .lc-data-table__th-head--sortable:hover,
 .lc-data-table__th-head--sortable:hover + .lc-data-table__sort,
 .lc-data-table__sort:hover {
-  text-decoration: underline;
+    text-decoration: underline;
+  }
 }
 
 .lc-data-table__sort {
@@ -288,9 +294,11 @@ lc-data-table {
   inset: calc((var(--lc-button-hit-size, 44px) - var(--lc-sys-space-6)) / -2) calc(var(--lc-sys-space-1) * -1);
 }
 
-.lc-data-table__funnel:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
-  color: var(--lc-sys-color-on-surface);
+@media (hover: hover) {
+  .lc-data-table__funnel:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+    color: var(--lc-sys-color-on-surface);
+  }
 }
 
 .lc-data-table__funnel[aria-expanded='true'] {
@@ -306,9 +314,11 @@ lc-data-table {
   color: var(--lc-sys-color-on-primary);
 }
 
-.lc-data-table__funnel--on:hover {
-  background: color-mix(in srgb, var(--lc-sys-color-on-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-sys-color-primary));
-  color: var(--lc-sys-color-on-primary);
+@media (hover: hover) {
+  .lc-data-table__funnel--on:hover {
+    background: color-mix(in srgb, var(--lc-sys-color-on-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-sys-color-primary));
+    color: var(--lc-sys-color-on-primary);
+  }
 }
 
 .lc-data-table__funnel--on svg path {
@@ -325,8 +335,10 @@ lc-data-table {
   padding: var(--lc-sys-space-4);
 }
 
-.lc-data-table__state:hover td {
-  background: transparent;
+@media (hover: hover) {
+  .lc-data-table__state:hover td {
+    background: transparent;
+  }
 }
 
 .lc-data-table__empty {
@@ -445,8 +457,10 @@ lc-data-table {
     text-align: center;
   }
 
-  .lc-data-table__table tbody tr:hover td {
-    background: transparent;
+  @media (hover: hover) {
+    .lc-data-table__table tbody tr:hover td {
+      background: transparent;
+    }
   }
 }
 
