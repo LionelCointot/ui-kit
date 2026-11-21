@@ -30,8 +30,10 @@
   opacity: 1;
 }
 
-.lc-input:hover:not(:disabled):not([readonly]) {
-  border-color: var(--lc-sys-color-on-surface-muted);
+@media (hover: hover) {
+  .lc-input:hover:not(:disabled):not([readonly]) {
+    border-color: var(--lc-sys-color-on-surface-muted);
+  }
 }
 
 .lc-input:focus {
@@ -103,8 +105,10 @@ textarea.lc-input.lc-input--auto-resize {
   cursor: pointer;
 }
 
-.lc-select:hover:not(:disabled) {
-  border-color: var(--lc-sys-color-on-surface-muted);
+@media (hover: hover) {
+  .lc-select:hover:not(:disabled) {
+    border-color: var(--lc-sys-color-on-surface-muted);
+  }
 }
 
 .lc-select:focus {
@@ -192,6 +196,30 @@ lc-form-field [lcSuffix] {
   background: var(--lc-sys-color-backdrop);
 }
 
+/* Fonds du dialogue et du tiroir : durée et courbe du kit à la place des 400 ms du CDK ; le fond s'éteint quand le CDK retire `cdk-overlay-backdrop-showing`. */
+.cdk-overlay-backdrop:is(.lc-dialog-backdrop, .lc-drawer-backdrop) {
+  transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+/* Dialogue : entrée en fondu et léger zoom sur le contenu du panneau (le CDK pose `panelClass` après un premier calcul de style : pas de `@starting-style`),
+   sortie en fondu (`lc-overlay--closing`, posée par LcDialogRef.close). */
+.lc-dialog-panel > * {
+  animation: lc-dialog-enter var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+@keyframes lc-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(var(--lc-dialog-enter-scale));
+  }
+}
+
+.lc-dialog-panel.lc-overlay--closing {
+  opacity: 0;
+  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
+  pointer-events: none;
+}
+
 .lc-dialog-panel {
   width: calc(100vw - 2 * var(--lc-sys-space-4));
   max-height: calc(100dvh - 2 * var(--lc-sys-space-4));
@@ -230,11 +258,25 @@ lc-form-field [lcSuffix] {
   block-size: 100dvh;
   max-block-size: 100dvh;
   max-inline-size: 100vw;
-  animation: lc-drawer-in-end var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-.lc-drawer-panel--start {
+/* Entrée en glissant de toute sa largeur sur le contenu du panneau ; sortie en glissant (`lc-overlay--closing`, posée par LcDialogRef.close). */
+.lc-drawer-panel > * {
+  animation: lc-drawer-in-end var(--lc-slide-enter-duration, var(--lc-sys-duration-move)) var(--lc-overlay-easing);
+}
+
+.lc-drawer-panel--start > * {
   animation-name: lc-drawer-in-start;
+}
+
+.lc-drawer-panel.lc-overlay--closing {
+  transform: translateX(100%);
+  transition: transform var(--lc-slide-exit-duration, var(--lc-sys-duration-normal)) var(--lc-overlay-easing);
+  pointer-events: none;
+}
+
+.lc-drawer-panel--start.lc-overlay--closing {
+  transform: translateX(-100%);
 }
 
 .lc-drawer-panel--small {
@@ -261,20 +303,24 @@ lc-form-field [lcSuffix] {
 
 @keyframes lc-drawer-in-end {
   from {
-    opacity: 0;
-    transform: translateX(var(--lc-sys-space-8));
+    transform: translateX(100%);
   }
 }
 
 @keyframes lc-drawer-in-start {
   from {
-    opacity: 0;
-    transform: translateX(calc(-1 * var(--lc-sys-space-8)));
+    transform: translateX(-100%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-drawer-panel {
+  .cdk-overlay-backdrop:is(.lc-dialog-backdrop, .lc-drawer-backdrop),
+  .lc-dialog-panel.lc-overlay--closing,
+  .lc-drawer-panel.lc-overlay--closing {
+    transition: none;
+  }
+
+  :is(.lc-dialog-panel, .lc-drawer-panel) > * {
     animation: none;
   }
 }
@@ -475,6 +521,14 @@ lc-form-field [lcSuffix] {
 /* Hauteur fixe : ligne des jours + 6 semaines, pour ne pas sauter d'un mois à l'autre. */
 .lc-calendar__month {
   block-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
+  animation: lc-calendar-fade var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+/* La grille est recréée à chaque mois, année ou niveau affiché (`track` par clé) : le fondu se rejoue. */
+@keyframes lc-calendar-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 .lc-calendar__month,
@@ -535,9 +589,11 @@ lc-form-field [lcSuffix] {
   text-overflow: ellipsis;
 }
 
-.lc-calendar__nav:hover:not(:disabled),
-.lc-calendar__title:hover:not(.lc-calendar__title--text) {
-  background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+@media (hover: hover) {
+  .lc-calendar__nav:hover:not(:disabled),
+  .lc-calendar__title:hover:not(.lc-calendar__title--text) {
+    background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+  }
 }
 
 .lc-calendar__nav:disabled {
@@ -590,8 +646,10 @@ lc-form-field [lcSuffix] {
   transition: background var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
 }
 
-.lc-calendar__day:hover:not([aria-disabled='true'])::before {
-  background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+@media (hover: hover) {
+  .lc-calendar__day:hover:not([aria-disabled='true'])::before {
+    background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+  }
 }
 
 .lc-calendar__day[aria-selected='true'] {
@@ -729,8 +787,10 @@ lc-form-field [lcSuffix] {
   transition: background var(--lc-calendar-duration, var(--lc-sys-duration-fast)) var(--lc-calendar-easing, var(--lc-sys-easing-standard));
 }
 
-.lc-calendar__preset:hover:not(:disabled) {
-  background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+@media (hover: hover) {
+  .lc-calendar__preset:hover:not(:disabled) {
+    background: var(--lc-calendar-day-hover-bg, var(--lc-sys-color-surface-sunken));
+  }
 }
 
 .lc-calendar__preset:disabled {
@@ -785,12 +845,20 @@ lc-form-field [lcSuffix] {
   font-weight: normal;
 }
 
-.lc-calendar__day[data-range]::before,
-.lc-calendar__day[data-range]:hover:not([aria-disabled='true'])::before {
+.lc-calendar__day[data-range]::before {
   box-sizing: border-box;
   inset: var(--lc-sys-space-1) 0;
   border-radius: 0;
   background: var(--lc-calendar-range-bg, var(--lc-sys-color-primary-container));
+}
+
+@media (hover: hover) {
+  .lc-calendar__day[data-range]:hover:not([aria-disabled='true'])::before {
+    box-sizing: border-box;
+    inset: var(--lc-sys-space-1) 0;
+    border-radius: 0;
+    background: var(--lc-calendar-range-bg, var(--lc-sys-color-primary-container));
+  }
 }
 
 .lc-calendar__day[data-range]:not([data-range~='left'])::before {
@@ -804,17 +872,30 @@ lc-form-field [lcSuffix] {
 }
 
 .lc-calendar__day[data-range~='disk'],
-.lc-calendar__day[data-range~='disk']::before,
-.lc-calendar__day[data-range~='disk']:hover:not([aria-disabled='true'])::before {
+.lc-calendar__day[data-range~='disk']::before {
   color: var(--lc-calendar-selected-text, var(--lc-sys-color-on-primary));
   font-weight: var(--lc-sys-font-weight-semibold);
 }
 
-.lc-calendar__day[data-range~='disk']::before,
-.lc-calendar__day[data-range~='disk']:hover:not([aria-disabled='true'])::before {
+@media (hover: hover) {
+  .lc-calendar__day[data-range~='disk']:hover:not([aria-disabled='true'])::before {
+    color: var(--lc-calendar-selected-text, var(--lc-sys-color-on-primary));
+    font-weight: var(--lc-sys-font-weight-semibold);
+  }
+}
+
+.lc-calendar__day[data-range~='disk']::before {
   inset: var(--lc-sys-space-1);
   border-radius: var(--lc-sys-radius-full);
   background: var(--lc-calendar-selected-bg, var(--lc-sys-color-primary));
+}
+
+@media (hover: hover) {
+  .lc-calendar__day[data-range~='disk']:hover:not([aria-disabled='true'])::before {
+    inset: var(--lc-sys-space-1);
+    border-radius: var(--lc-sys-radius-full);
+    background: var(--lc-calendar-selected-bg, var(--lc-sys-color-primary));
+  }
 }
 
 .lc-calendar__day[data-range~='disk'][data-range~='right'],
@@ -834,15 +915,26 @@ lc-form-field [lcSuffix] {
 }
 
 .lc-calendar__day[data-range~='hollow'],
-.lc-calendar__day[data-range~='hollow']::before,
-.lc-calendar__day[data-range~='hollow']:hover:not([aria-disabled='true'])::before {
+.lc-calendar__day[data-range~='hollow']::before {
   color: var(--lc-calendar-range-text, var(--lc-sys-color-on-primary-container));
 }
 
-.lc-calendar__day[data-range~='hollow']::before,
-.lc-calendar__day[data-range~='hollow']:hover:not([aria-disabled='true'])::before {
+@media (hover: hover) {
+  .lc-calendar__day[data-range~='hollow']:hover:not([aria-disabled='true'])::before {
+    color: var(--lc-calendar-range-text, var(--lc-sys-color-on-primary-container));
+  }
+}
+
+.lc-calendar__day[data-range~='hollow']::before {
   border: var(--lc-sys-border-width-thick) solid var(--lc-calendar-range-preview-edge, var(--lc-sys-color-primary));
   background: var(--lc-calendar-background, var(--lc-sys-color-surface-raised));
+}
+
+@media (hover: hover) {
+  .lc-calendar__day[data-range~='hollow']:hover:not([aria-disabled='true'])::before {
+    border: var(--lc-sys-border-width-thick) solid var(--lc-calendar-range-preview-edge, var(--lc-sys-color-primary));
+    background: var(--lc-calendar-background, var(--lc-sys-color-surface-raised));
+  }
 }
 
 /* Contraste forcé : les fonds ne sont pas rendus, le jour choisi, aujourd'hui et le focus gardent une marque en couleurs système. */
@@ -911,6 +1003,10 @@ lc-form-field [lcSuffix] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .lc-calendar__month {
+    animation: none;
+  }
+
   .lc-calendar__nav,
   .lc-calendar__title,
   .lc-calendar__day::before {

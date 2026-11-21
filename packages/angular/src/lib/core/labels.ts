@@ -240,7 +240,6 @@ export interface LcDataTableLabels {
   readonly dateOrderError: string;
   readonly filters: (active: number) => string;
   readonly filtersButtonLabel: (active: number) => string;
-  readonly closeWithoutApplying: string;
   readonly all: string;
   readonly activeFilters: string;
   readonly noFilter: string;
@@ -305,7 +304,6 @@ const DATA_TABLE_FR: LcDataTableLabels = {
   dateOrderError: 'La date de fin est avant la date de début.',
   filters: (active) => (active ? `Filtres (${active})` : 'Filtres'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filtres' : `Filtres, ${active} ${active > 1 ? 'actifs' : 'actif'}`),
-  closeWithoutApplying: 'Fermer sans appliquer',
   all: 'Tout',
   activeFilters: 'Filtres actifs',
   noFilter: 'Aucun filtre. Touchez « Filtres » pour filtrer.',
@@ -370,7 +368,6 @@ const DATA_TABLE_EN: LcDataTableLabels = {
   dateOrderError: 'The end date is before the start date.',
   filters: (active) => (active ? `Filters (${active})` : 'Filters'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filters' : `Filters, ${active} active`),
-  closeWithoutApplying: 'Close without applying',
   all: 'All',
   activeFilters: 'Active filters',
   noFilter: 'No filter. Tap “Filters” to filter.',

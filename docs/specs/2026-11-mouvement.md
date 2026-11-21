@@ -72,8 +72,8 @@ Le kit change d'état d'un coup : l'onglet ou l'élément de navigation actif sa
 
 ## 3. Hors périmètre (non-objectifs)
 - Dévoilement au défilement, View Transitions (document ou élément), transitions de page, ripple (décisions 2, 8, 11, 17).
-- Animation des dialogues (`lc-dialog`), sauf le panneau de filtres du téléphone (décisions 17 et 19).
-- Superpositions autres que les panneaux déroulants : `lcTooltip`, `lc-toggletip`, `lc-drawer` (qui garde son entrée actuelle) restent inchangés (validé, Q5).
+- Animation des dialogues (`lc-dialog`), sauf le panneau de filtres du téléphone (décisions 17 et 19). *Révisé le 2026-11-21 par `2026-11-mouvement-ios.md` : dialogue animé, panneau de filtres devenu `lc-sheet`.*
+- Superpositions autres que les panneaux déroulants : `lcTooltip`, `lc-toggletip`, `lc-drawer` (qui garde son entrée actuelle) restent inchangés (validé, Q5). *Révisé le 2026-11-21 par `2026-11-mouvement-ios.md` : `lc-drawer` glisse à l'entrée et à la sortie.*
 - Animation de hauteur (sections dépliables, `lc-disclosure`) : `interpolate-size` hors cible (décision 20).
 - Glissement des pastilles voisines au retrait, animation au chargement de résultats supplémentaires (décisions 22, 23).
 - Changement de la cible navigateurs (reste Baseline 2024, ADR 0009) et `animate.enter` / `animate.leave` d'Angular (section 8).

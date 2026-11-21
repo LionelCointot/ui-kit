@@ -37,6 +37,8 @@ interface Cell {
 
 interface Panel {
   readonly id: string;
+  /** Change avec ce qui est affiché (mois, année, page, niveau) : la grille est recréée et son fondu rejoué. */
+  readonly key: string;
   readonly title: string;
   /** Titre-bouton (monte d'un niveau) ; faux au niveau des années. */
   readonly up: boolean;
@@ -125,7 +127,7 @@ const MONDAY = '2026-11-02';
             }
           </div>
           <div class="lc-calendar__row">
-            @for (month of panels(); track month.id) {
+            @for (month of panels(); track month.key) {
               <div class="lc-calendar__month" [class.lc-calendar__month--full]="months() === 2 && level() !== 'day'">
                 <table class="lc-calendar__grid" [class.lc-calendar__grid--wide]="!month.head" role="grid" [attr.aria-labelledby]="month.id" (keydown)="onKeydown($event)">
                   @if (month.head) {
@@ -300,19 +302,19 @@ export class LcCalendarPanelComponent {
         const first = addMonths(this.shown(), index);
         const rows = monthGrid(first).map((week) => week.map((iso) => (iso ? this.cell(iso, 'day') : null)));
         const title = this.titleFormat.format(isoToLocalDate(first)!);
-        return { id: id(index), title, up: true, titleName: this.labels.dateChooseMonthOf(title), head: true, rows };
+        return { id: id(index), key: `day-${first}`, title, up: true, titleName: this.labels.dateChooseMonthOf(title), head: true, rows };
       });
     }
     // Une seule grille de douze cellules, 4 colonnes sur 3 lignes, quel que soit le nombre de mois.
     if (level === 'month') {
       const year = yearOf(this.active());
       const cells = Array.from({ length: 12 }, (_, month) => this.cell(`${pad(year)}-${String(month + 1).padStart(2, '0')}-01`, 'month'));
-      return [{ id: id(0), title: String(year), up: true, titleName: this.labels.dateChooseYearOf(String(year)), head: false, rows: rowsOfFour(cells) }];
+      return [{ id: id(0), key: `month-${year}`, title: String(year), up: true, titleName: this.labels.dateChooseYearOf(String(year)), head: false, rows: rowsOfFour(cells) }];
     }
     const years = yearPage(this.pageBase());
     const title = this.labels.dateYearsRange(years[0], years[11]);
     const cells = years.map((year) => this.cell(`${pad(year)}-01-01`, 'year'));
-    return [{ id: id(0), title, up: false, titleName: title, head: false, rows: rowsOfFour(cells) }];
+    return [{ id: id(0), key: `year-${years[0]}`, title, up: false, titleName: title, head: false, rows: rowsOfFour(cells) }];
   });
 
   protected readonly navLabels = computed(() => {

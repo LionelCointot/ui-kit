@@ -63,7 +63,7 @@
 
 .lc-disclosure__chevron {
   flex: none;
-  transition: transform var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+  transition: transform var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard);
 }
 
 :host(.lc-disclosure--expanded) .lc-disclosure__chevron {
@@ -81,29 +81,37 @@
   display: none;
 }
 
+/* Hauteur animée : 0fr -> 1fr ; `visibility` ne passe à hidden qu'à la fin du repli. Le padding est porté par le petit-enfant. */
 .lc-disclosure__region {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
+    visibility var(--lc-collapse-duration, var(--lc-sys-duration-move));
+}
+
+:host(.lc-disclosure--expanded) .lc-disclosure__region {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+
+/* Le rognage n'a ni padding ni bordure (sinon la ligne ne descendrait pas sous leur hauteur) : le padding est sur le contenu. */
+.lc-disclosure__region-clip {
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.lc-disclosure__region-body {
   padding-inline: var(--lc-sys-space-2);
   padding-block-end: var(--lc-sys-space-3);
-  animation: lc-disclosure-open var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
-}
-
-.lc-disclosure__region[hidden] {
-  display: none;
-}
-
-@keyframes lc-disclosure-open {
-  from {
-    opacity: 0;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-disclosure__chevron {
+  .lc-disclosure__chevron,
+  .lc-disclosure__region,
+  :host(.lc-disclosure--expanded) .lc-disclosure__region {
     transition: none;
-  }
-
-  .lc-disclosure__region {
-    animation: none;
   }
 }
 

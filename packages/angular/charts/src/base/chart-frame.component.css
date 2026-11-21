@@ -74,8 +74,10 @@ button.lc-chart-frame__legend-item {
   font-variant-numeric: var(--lc-sys-font-numeric-tabular);
 }
 
-button.lc-chart-frame__legend-item:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+@media (hover: hover) {
+  button.lc-chart-frame__legend-item:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
 }
 
 button.lc-chart-frame__legend-item:focus-visible,

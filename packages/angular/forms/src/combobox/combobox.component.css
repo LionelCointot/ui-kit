@@ -27,8 +27,10 @@
   transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
 }
 
-:host(:not(.lc-combobox--disabled):not(.lc-combobox--readonly)) .lc-combobox__frame:hover {
-  --_border: var(--lc-sys-color-on-surface-muted);
+@media (hover: hover) {
+  :host(:not(.lc-combobox--disabled):not(.lc-combobox--readonly)) .lc-combobox__frame:hover {
+    --_border: var(--lc-sys-color-on-surface-muted);
+  }
 }
 
 .lc-combobox__frame:focus-within {

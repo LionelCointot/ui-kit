@@ -42,8 +42,10 @@
     transform var(--lc-button-press-duration, var(--lc-sys-duration-fast)) var(--lc-sys-easing-standard);
 }
 
-:host(:hover:not(:disabled):not([aria-disabled='true'])) {
-  background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--_bg));
+@media (hover: hover) {
+  :host(:hover:not(:disabled):not([aria-disabled='true'])) {
+    background: color-mix(in srgb, var(--_fg) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--_bg));
+  }
 }
 
 :host(:active:not(:disabled):not([aria-disabled='true'])) {

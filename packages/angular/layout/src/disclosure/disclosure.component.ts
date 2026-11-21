@@ -68,14 +68,18 @@ export class LcDisclosureGroupDirective {
       <div class="lc-disclosure__actions"><ng-content select="[lcDisclosureActions]" /></div>
     </div>
     <div class="lc-disclosure__region" role="group" [id]="regionId" [attr.aria-labelledby]="summaryId"
-      [hidden]="!expanded()" [attr.inert]="expanded() ? null : ''">
-      @if (rendered()) {
-        @if (lazyContent(); as lazyTemplate) {
-          <ng-container *ngTemplateOutlet="lazyTemplate.template" />
-        } @else {
-          <ng-content />
-        }
-      }
+      [attr.inert]="expanded() ? null : ''">
+      <div class="lc-disclosure__region-clip">
+        <div class="lc-disclosure__region-body">
+          @if (rendered()) {
+            @if (lazyContent(); as lazyTemplate) {
+              <ng-container *ngTemplateOutlet="lazyTemplate.template" />
+            } @else {
+              <ng-content />
+            }
+          }
+        </div>
+      </div>
     </div>
   `,
   styleUrl: './disclosure.component.css',

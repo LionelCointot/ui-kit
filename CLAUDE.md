@@ -24,7 +24,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Générer le client d'API depuis l'OpenAPI : N/A (bibliothèque sans back)
 
 ## Documentation
-- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md`, `2026-11-selecteur-de-date.md`, `2026-11-vitrine-storybook.md` (chacune se termine par ses écarts constatés à l'implémentation)
+- Specs : `docs/specs/2026-11-socle-tokens-themes.md`, `2026-11-catalogue-composants.md`, `2026-11-graphiques.md`, `2026-11-theme-builder.md`, `2026-11-geographie-curseur-combobox.md`, `2026-11-composants-dashboard.md`, `2026-11-selecteur-de-date.md`, `2026-11-vitrine-storybook.md`, `2026-11-mouvement.md`, `2026-11-filtre-periode-tableau.md`, `2026-11-mouvement-ios.md` (chacune se termine par ses écarts constatés à l'implémentation)
 - ADR : `docs/adr/0001` (tokens) à `0007` (données géographiques françaises : `geo`, aucune donnée embarquée, vie privée et CSP dans `packages/angular/geo/README.md`) ; `0008` (champ de date : calendrier du kit sur pointeur fin, sélecteur du système sinon, jeton `LC_DATE_PICKER`) ; `0009` (cible navigateurs Baseline 2024, CDK par défaut, primitives natives admises sous conditions)
 - Architecture transverse du produit : https://github.com/LionelCointot/finance-hub/blob/main/docs/architecture.md
 - Direction visuelle : `DESIGN.md` (système visuel de référence des projets consommateurs) ; `PRODUCT.md` pas encore créé (`/impeccable init`)

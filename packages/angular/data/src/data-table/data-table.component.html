@@ -32,7 +32,7 @@
     @if (chipViews().length) {
       <ul class="lc-data-table__chip-list">
         @for (chip of chipViews(); track chip.key) {
-          <li class="lc-data-table__chip">
+          <li class="lc-data-table__chip" (animate.leave)="fadeOutChip($event)">
             <button type="button" class="lc-data-table__chip-edit" [id]="uid + '-chip-' + chip.key"
               [attr.aria-label]="text.editFilter(chip.column.label, chip.summary)" (click)="editChip(chip.column)">
               <span class="lc-data-table__chip-key">{{ chip.label }} :</span><span class="lc-data-table__chip-value">{{ chip.shortSummary }}</span>
@@ -170,15 +170,9 @@
   }
 </ng-template>
 
-<!-- Panneau des filtres (téléphone) : dialogue modal plein écran, rien n'est appliqué avant « Afficher » -->
-<dialog #panel class="lc-data-table__panel" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()" (cancel)="onPanelCancel($event)">
+<!-- Panneau des filtres (téléphone) : feuille modale du bas, rien n'est appliqué avant « Afficher » ; le contenu reste monté jusqu'à `closed` (fin de la sortie) -->
+<lc-sheet [(open)]="panelVisible" [title]="text.filters(0)" [closeText]="labels.cancel" (closed)="onPanelClosed()">
   @if (panelOpen()) {
-    <div class="lc-data-table__panel-head">
-      <h2 class="lc-data-table__panel-title" [id]="uid + '-panel-title'">{{ text.filters(0) }}</h2>
-      <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" [attr.aria-label]="text.closeWithoutApplying" autofocus (click)="closePanel()">
-        <lc-icon name="x" />
-      </button>
-    </div>
     <div class="lc-data-table__panel-body">
       @for (section of panelSections(); track section.column.key) {
         <section class="lc-data-table__section">
@@ -191,23 +185,31 @@
               <lc-icon name="chevron-down" />
             </button>
           </h3>
-          <div class="lc-data-table__section-body" [id]="uid + '-section-' + section.column.key" [hidden]="!section.open">
-            @if (section.open) {
-              <lc-column-filter lcNativeDatePicker [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
-                [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
-                [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
-                (valuesLoaded)="rememberLabels(section.column.key, $event)" />
-            }
+          <div class="lc-data-table__section-body" [class.lc-data-table__section-body--open]="section.open"
+            [id]="uid + '-section-' + section.column.key" [attr.inert]="section.open ? null : ''">
+            <div class="lc-data-table__section-clip">
+              <div class="lc-data-table__section-content">
+                @if (section.rendered) {
+                  <lc-column-filter lcNativeDatePicker [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
+                    [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
+                    [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
+                    (valuesLoaded)="rememberLabels(section.column.key, $event)" />
+                }
+              </div>
+            </div>
           </div>
         </section>
       }
     </div>
-    <div class="lc-data-table__panel-foot">
+    <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
+  }
+  <!-- `ngProjectAs` : la projection ciblée ne traverse pas un `@if` ; les boutons n'existent que feuille montée. -->
+  <ng-container ngProjectAs="[lcSheetFooter]">
+    @if (panelOpen()) {
       <button lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
       <button lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
         {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
       </button>
-    </div>
-    <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
-  }
-</dialog>
+    }
+  </ng-container>
+</lc-sheet>

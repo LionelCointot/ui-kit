@@ -50,9 +50,11 @@
   cursor: pointer;
 }
 
-.lc-tabs__tab:hover:not(:disabled) {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
-  color: var(--lc-sys-color-on-surface);
+@media (hover: hover) {
+  .lc-tabs__tab:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+    color: var(--lc-sys-color-on-surface);
+  }
 }
 
 .lc-tabs__tab[aria-selected='true'] {
@@ -96,6 +98,23 @@
 
 .lc-tabs__panel[hidden] {
   display: none;
+}
+
+/* Le panneau qui s'affiche apparaît en fondu pendant que le trait glisse (`hidden` → affiché : le départ vient de `@starting-style`). */
+.lc-tabs__panel {
+  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+@starting-style {
+  .lc-tabs__panel {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-tabs__panel {
+    transition: none;
+  }
 }
 
 @media (forced-colors: active) {

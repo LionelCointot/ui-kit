@@ -152,8 +152,10 @@ tfoot td {
   font-weight: var(--lc-sys-font-weight-bold);
 }
 
-tbody tr:not(.lc-table__group):hover td {
-  background: color-mix(in srgb, var(--lc-sys-color-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-table-row-background, var(--lc-sys-color-surface-raised)));
+@media (hover: hover) {
+  tbody tr:not(.lc-table__group):hover td {
+    background: color-mix(in srgb, var(--lc-sys-color-primary) calc(var(--lc-sys-state-hover-opacity) * 100%), var(--lc-table-row-background, var(--lc-sys-color-surface-raised)));
+  }
 }
 
 /* Colonne de cases : la zone de frappe fait 44 px (le libellé enveloppe la case). */
@@ -215,9 +217,11 @@ tbody tr:not(.lc-table__group):hover td {
   cursor: pointer;
 }
 
-.lc-table__sort:hover,
-.lc-table__toggle:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+@media (hover: hover) {
+  .lc-table__sort:hover,
+  .lc-table__toggle:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
 }
 
 .lc-table__sort:focus-visible,

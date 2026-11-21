@@ -5,7 +5,6 @@
 .lc-nav-group__group {
   display: flex;
   flex-direction: column;
-  gap: var(--lc-sys-space-1);
 }
 
 .lc-nav-group__title {
@@ -33,8 +32,10 @@
   cursor: pointer;
 }
 
-.lc-nav-group__toggle:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+@media (hover: hover) {
+  .lc-nav-group__toggle:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
 }
 
 .lc-nav-group__toggle:focus-visible {
@@ -42,14 +43,53 @@
   outline-offset: var(--lc-sys-focus-ring-offset);
 }
 
+.lc-nav-group__chevron {
+  flex: none;
+  transition: transform var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard);
+}
+
+.lc-nav-group__toggle[aria-expanded='true'] .lc-nav-group__chevron {
+  transform: rotate(90deg);
+}
+
+/* Hauteur animée : 0fr -> 1fr ; `visibility` ne passe à hidden qu'à la fin du repli. Espacement porté par le petit-enfant. */
 .lc-nav-group__items {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
+    visibility var(--lc-collapse-duration, var(--lc-sys-duration-move));
+}
+
+.lc-nav-group__items--open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+
+/* Le rognage n'a ni padding ni bordure (sinon le groupe ne descendrait pas sous leur hauteur) : l'espacement est sur le contenu. */
+.lc-nav-group__items-clip {
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.lc-nav-group__items-body {
   display: flex;
   flex-direction: column;
   gap: var(--lc-sys-space-1);
+  padding-block-start: var(--lc-sys-space-1);
 }
 
-.lc-nav-group__items[hidden] {
-  display: none;
+@media (prefers-reduced-motion: reduce) {
+  .lc-nav-group__chevron,
+  .lc-nav-group__items,
+  .lc-nav-group__items--open {
+    transition: none;
+  }
+}
+
+:host(.lc-nav-group--list-collapsed) .lc-nav-group__items-body {
+  padding-block-start: 0;
 }
 
 /* Mode réduit : le titre reste dans l'arbre d'accessibilité, un séparateur fin le remplace. */

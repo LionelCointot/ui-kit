@@ -433,8 +433,8 @@ async function filterDate(browser, base) {
   {
     const { page, context } = await open(360);
     await page.click('[id$="-filters"]');
-    await page.waitForSelector('dialog.lc-data-table__panel[open]');
-    await page.locator('dialog.lc-data-table__panel .lc-data-table__section-toggle', { hasText: 'Reçue le' }).click();
+    await page.waitForSelector('lc-sheet dialog[open]');
+    await page.locator('lc-sheet dialog .lc-data-table__section-toggle', { hasText: 'Reçue le' }).click();
     await page.waitForSelector('dialog lc-date-range-input input');
     const types = await page.locator('dialog lc-date-range-input input').evaluateAll((nodes) => nodes.map((n) => n.type));
     check('CA-P10b 360 px, pointeur fin : champs natifs', types.length === 2 && types.every((t) => t === 'date'), JSON.stringify(types));
@@ -538,14 +538,14 @@ const MOTION_INIT = () => {
 
   // Dialogue du téléphone : entrée (à l'attribut `open`) et sortie (à `data-closing`, fondu suspendu pour ne pas dépendre de l'horloge).
   q.watchDialog = () => {
-    const dialog = document.querySelector('dialog.lc-data-table__panel');
+    const dialog = document.querySelector('lc-sheet dialog');
     const own = () => dialog.getAnimations({ subtree: true }).filter((a) => a instanceof CSSTransition && a.effect.target === dialog);
     const read = (list) => {
       list.forEach((a) => a.pause());
       list.forEach((a) => { a.currentTime = 0; });
       const cs = getComputedStyle(dialog);
       const bd = getComputedStyle(dialog, '::backdrop');
-      const info = { open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
+      const info = { height: dialog.offsetHeight, open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
       return info;
     };
     q.dlg = { held: [] };
@@ -570,15 +570,13 @@ const MOTION_INIT = () => {
     };
   };
 
-  // Corps de section : entrée quand `hidden` est retiré. Pastilles : entrée à l'insertion, sortie à la suppression.
-  q.sections = [];
+  // Pastilles : entrée à l'insertion, sortie à la suppression.
   q.chipsIn = [];
   q.chipOut = null;
   // Voisines = les autres pastilles (le survol d'un bouton qui glisse sous le pointeur n'est pas une transition de pastille).
   const chipAnims = (box) => [...box.querySelectorAll('li.lc-data-table__chip')].flatMap((li) => li.getAnimations({ subtree: true }));
   new MutationObserver((records) => {
     for (const r of records) {
-      if (r.type === 'attributes' && r.target.matches?.('.lc-data-table__section-body') && !r.target.hidden) q.sections.push(measure(r.target));
       for (const n of r.addedNodes) if (n.nodeType === 1 && n.matches('li.lc-data-table__chip')) q.chipsIn.push(measure(n));
       for (const n of r.removedNodes) {
         if (n.nodeType !== 1 || !n.matches('li.lc-data-table__chip')) continue;
@@ -588,7 +586,7 @@ const MOTION_INIT = () => {
         requestAnimationFrame(() => requestAnimationFrame(() => { out.neighboursLater = chipAnims(box).length; out.laterWhich = box.getAnimations({ subtree: true }).map((a) => `${a.transitionProperty ?? a.animationName}@${a.effect.target.className}`); }));
       }
     }
-  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
+  }).observe(document, { subtree: true, childList: true });
 
   // --- Indicateurs (T4, T5) ---
   q.frames = (n = 2) => new Promise((resolve) => { const step = (left) => (left <= 0 ? resolve() : requestAnimationFrame(() => step(left - 1))); step(n); });
@@ -621,7 +619,7 @@ const MOTION_INIT = () => {
   /** Instantané « avant » (éléments, positions), puis enregistrement de chaque animation de ligne à sa première image. */
   q.startList = () => {
     if (q.list) q.list.stop = true;
-    const rec = (q.list = { stop: false, idle: 0, before: new Map(), els: new Map(), anims: [], cardSnapsBefore: q.cardSnaps.length });
+    const rec = (q.list = { stop: false, idle: 0, before: new Map(), els: new Map(), anims: [], block: [], cardSnapsBefore: q.cardSnaps.length });
     document.querySelectorAll(ROWS).forEach((tr) => { rec.before.set(rowKey(tr), tr.getBoundingClientRect().top); rec.els.set(rowKey(tr), tr); });
     const seen = new WeakSet();
     const tick = () => {
@@ -638,6 +636,7 @@ const MOTION_INIT = () => {
           rec.anims.push({ key: rowKey(tr), kind: a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'css' : 'waapi', props: Object.keys(kf[0] ?? {}).filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)), first: kf[0], last: kf.at(-1), duration: t.duration, delay: t.delay, easing: t.easing, fill: t.fill, leaving: tr.hasAttribute('data-leaving'), connected: tr.isConnected, leavingConnected: document.querySelectorAll('tr[data-leaving]').length });
         }
       }
+      for (const a of document.querySelector('.lc-data-table__scroll')?.getAnimations() ?? []) if (!seen.has(a)) { seen.add(a); rec.block.push({ first: a.effect.getKeyframes()[0]?.transform, duration: a.effect.getTiming().duration }); }
       rec.idle = running === 0 && !document.querySelector('tr[data-leaving]') ? rec.idle + 1 : 0;
       requestAnimationFrame(tick);
     };
@@ -655,6 +654,7 @@ const MOTION_INIT = () => {
       added: [...after.keys()].filter((k) => !r.before.has(k)),
       order: [...after.keys()],
       anims: r.anims,
+      block: r.block,
       cascades: q.cardSnaps.length - r.cardSnapsBefore,
       move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-overlay-exit-duration'), enter: q.tokenMs('--lc-overlay-enter-duration'),
     };
@@ -688,7 +688,7 @@ async function motionPage(context, base, id, args = '', hash = '') {
 async function motionPhone(context, base, reduced, tag, check) {
   const ID = 'qa-motion-data-table--table';
   const FILTERS = 'button[id$="-filters"]';
-  const DIALOG = 'dialog.lc-data-table__panel';
+  const DIALOG = 'lc-sheet dialog';
   const quick = (list) => msList(list).every((ms) => ms <= 0.01);
   const start = async () => {
     const { page, errors } = await motionPage(context, base, ID);
@@ -696,9 +696,9 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
     return { page, errors };
   };
-  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-reveal-stagger'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-overlay-offset') }; });
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-reveal-stagger'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-overlay-offset') }; });
   const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
-  const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('dialog.lc-data-table__panel').open); };
+  const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('lc-sheet dialog').open); };
   const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   const pick = async (page, section, option) => {
     await page.locator(`${DIALOG} .lc-data-table__section-toggle`, { hasText: section }).click();
@@ -741,7 +741,7 @@ async function motionPhone(context, base, reduced, tag, check) {
     const e = await page.evaluate(() => window.__qa.dlg.enter);
     const dy = m42(e.startTransform);
     if (reduced) check(quick(e.cssDuration) && quick(e.backdropCssDuration) && e.endOpacity === '1', `CA-10/13 ${tag} ${label} entrée`, `durée dialogue=${e.cssDuration} fond=${e.backdropCssDuration} opacité finale=${e.endOpacity}`);
-    else check(['dialog:opacity', 'dialog:transform', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.durations.every((d) => near(d, t.enter)) && e.delays.every((d) => d === 0) && e.startOpacity === '0' && near(dy, -t.offset, 0.01) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée`, `transitions=${e.props} durées=${e.durations} attendu ${t.enter}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${-t.offset}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
+    else check(['dialog:transform', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.props.every((p, i) => near(e.durations[i], p.endsWith('transform') ? t.slideEnter : t.enter)) && e.delays.every((d) => d === 0) && near(dy, e.height, 1) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée (feuille : translateY(100%) → 0, fond en fondu)`, `transitions=${e.props} durées=${e.durations} attendu ${t.slideEnter} (feuille) et ${t.enter} (fond), décalageY=${dy} attendu ${e.height}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
   };
 
   // CA-10 : sortie (data-closing, puis dialog.open === false après la fin du fondu).
@@ -749,14 +749,14 @@ async function motionPhone(context, base, reduced, tag, check) {
     const t = await tokens(page);
     await page.waitForFunction(() => window.__qa.dlg.closing);
     const got = await page.evaluate(async () => ({ closing: window.__qa.dlg.closing, held: await window.__qa.releaseDialog() }));
-    await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open, undefined, { timeout: 5000 });
-    const after = await page.evaluate(() => ({ closingAttr: document.querySelector('dialog.lc-data-table__panel').hasAttribute('data-closing'), query: (window.__emitted ?? []).length }));
+    await page.waitForFunction(() => !document.querySelector('lc-sheet dialog').open, undefined, { timeout: 5000 });
+    const after = await page.evaluate(() => ({ closingAttr: document.querySelector('lc-sheet dialog').hasAttribute('data-closing'), query: (window.__emitted ?? []).length }));
     const c = got.closing;
     if (reduced) {
       check(c.open && quick(c.cssDuration) && c.durations.every((d) => d <= 0.01), `CA-10/13 ${tag} ${label} sortie sans attente (dialogue)`, `durée dialogue=${c.cssDuration} transitions=${c.props} durées=${c.durations}`);
       check(quick(c.backdropCssDuration), `CA-13 ${tag} ${label} durée calculée du fond (::backdrop) ≤ 0,01 ms`, `durée du fond=${c.backdropCssDuration} (aucune transition ne joue : ${c.props.includes('::backdrop:opacity') ? 'si, une joue' : 'transition-property: none'})`);
     }
-    else check(c.open && c.props.includes('dialog:opacity') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.exit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.exit}, fondu en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
+    else check(c.open && c.props.includes('dialog:transform') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.slideExit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.slideExit}, descente en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
     check(!after.closingAttr, `CA-10 ${tag} ${label} fermé après le fondu`, `open=false, data-closing retiré=${!after.closingAttr}`);
     check(await focusOnFilters(page), `CA-10 ${tag} ${label} focus rendu au bouton « Filtres »`);
     return after.query;
@@ -767,8 +767,8 @@ async function motionPhone(context, base, reduced, tag, check) {
     const { page, errors } = await start();
     await openPanel(page);
     await entry(page, way);
-    check(await page.evaluate(() => document.activeElement?.closest('.lc-data-table__panel-head') !== null && document.querySelector('dialog.lc-data-table__panel').open), `CA-10 ${tag} ${way} focus initial dans le dialogue (croix autofocus)`);
-    if (way === 'croix') await page.click(`${DIALOG} .lc-data-table__panel-head button`); else await page.keyboard.press('Escape');
+    check(await page.evaluate(() => document.activeElement?.closest('.lc-sheet__header') !== null && document.querySelector('lc-sheet dialog').open), `CA-10 ${tag} ${way} focus initial dans le dialogue (croix autofocus)`);
+    if (way === 'croix') await page.click(`${DIALOG} .lc-sheet__close`); else await page.keyboard.press('Escape');
     const emissions = await exit(page, way);
     check(emissions === 0, `CA-10 ${tag} ${way} aucun filtre appliqué`, `émissions=${emissions}`);
     check(errors.length === 0, `erreurs page ${tag} ${way}`, errors.join(' ; '));
@@ -786,13 +786,7 @@ async function motionPhone(context, base, reduced, tag, check) {
   await entry(page, 'Afficher');
   await pick(page, 'Catégorie', 'Beta');
   await page.evaluate(() => window.__qa.startList());
-  await page.waitForFunction(() => window.__qa.sections.length >= 1);
-  {
-    const t = await tokens(page);
-    const s = await page.evaluate(() => window.__qa.sections[0]);
-    if (reduced) check(quick(s.transitionDuration), `CA-11a/13 ${tag} section dépliée`, `durée=${s.transitionDuration}`);
-    else check(['opacity', 'transform'].every((p) => s.props[p] && near(s.props[p].duration, t.enter) && s.props[p].delay === 0) && s.props.opacity.startOpacity === '0' && near(m42(s.props.transform.startTransform), -t.offset, 0.01) && s.endOpacity === '1' && m42(s.endTransform) === 0, `CA-11a ${tag} section dépliée`, `props=${JSON.stringify(s.props)} attendu durée ${t.enter}, décalage de départ ${-t.offset}, fin=${s.endOpacity}/${s.endTransform}`);
-  }
+  // Section dépliée : hauteur animée de la spec 2026-11-mouvement-ios (CA-H1 à H5, `ios-motion-browser.mjs collapse`).
   await page.locator(`${DIALOG} .lc-data-table__panel-apply`, { hasText: /\d/ }).waitFor();
   const label = await page.locator(`${DIALOG} .lc-data-table__panel-apply`).innerText();
   await page.click(`${DIALOG} .lc-data-table__panel-apply`);
@@ -822,7 +816,7 @@ async function motionPhone(context, base, reduced, tag, check) {
   await page.click(`${DIALOG} .lc-data-table__panel-apply`);
   await page.waitForFunction(() => window.__qa.dlg.closing);
   await page.evaluate(() => window.__qa.releaseDialog());
-  await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open && document.querySelectorAll('li.lc-data-table__chip').length === 2, undefined, { timeout: 5000 });
+  await page.waitForFunction(() => !document.querySelector('lc-sheet dialog').open && document.querySelectorAll('li.lc-data-table__chip').length === 2, undefined, { timeout: 5000 });
   const snapsBefore = await page.evaluate(() => window.__qa.cardSnaps.length);
   await page.evaluate(() => { window.__qa.chipOut = null; });
   await page.locator('.lc-data-table__chip-remove').first().click();
@@ -1057,10 +1051,10 @@ async function motionList(context, base, reduced, tag, phone, check) {
   const beta = async () => {
     if (phone) {
       await page.click('button[id$="-filters"]');
-      await page.waitForFunction(() => document.querySelector('dialog.lc-data-table__panel')?.open);
-      await page.locator('dialog.lc-data-table__panel .lc-data-table__section-toggle', { hasText: 'Catégorie' }).click();
-      await page.locator('dialog.lc-data-table__panel label.lc-column-filter__option', { hasText: 'Beta' }).locator('input').check();
-      await page.locator('dialog.lc-data-table__panel .lc-data-table__panel-apply', { hasText: /\d/ }).click();
+      await page.waitForFunction(() => document.querySelector('lc-sheet dialog')?.open);
+      await page.locator('lc-sheet dialog .lc-data-table__section-toggle', { hasText: 'Catégorie' }).click();
+      await page.locator('lc-sheet dialog label.lc-column-filter__option', { hasText: 'Beta' }).locator('input').check();
+      await page.locator('lc-sheet dialog .lc-data-table__panel-apply', { hasText: /\d/ }).click();
     } else {
       await page.click('[id$="-funnel-cat"]');
       await page.locator('.lc-data-table__overlay label.lc-column-filter__option', { hasText: 'Beta' }).locator('input').check();
@@ -1071,7 +1065,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   const near1 = (a, b) => Math.abs(a - b) <= 1.5;
   const translateY = (t) => parseFloat(t?.match(/translateY\((-?[\d.]+)px\)/)?.[1] ?? 'NaN');
 
-  const analyse = (r, label, { expectKept, expectRemoved, expectAdded, strict = false }) => {
+  const analyse = (r, label, { expectKept, expectRemoved, expectAdded, strict = false, blockStart = false }) => {
     const moved = r.kept.filter((k) => Math.abs(k.from - k.to) >= 0.5);
     const waapi = r.anims.filter((a) => a.kind === 'waapi');
     check(r.kept.length === expectKept && r.kept.every((k) => k.same), `CA-20 ${tag} ${label} lignes conservées : même élément DOM (${r.kept.length})`, `conservées=${r.kept.length} attendu ${expectKept}, éléments identiques=${r.kept.filter((k) => k.same).length}`);
@@ -1085,7 +1079,9 @@ async function motionList(context, base, reduced, tag, phone, check) {
     const last = (key) => waapi.filter((a) => a.key === key && a.props.includes('transform')).at(-1);
     const bad = moved.filter((k) => {
       const a = last(k.key);
+      if (!a && blockStart) return false; // le bloc porte tout le déplacement de cette ligne : départ vérifié plus bas
       if (!a || !(a.last.transform === 'none' && near(a.duration, r.move) && a.delay === 0 && sameEase(a.easing, r.moveEase))) return true;
+      if (blockStart) return false; // départ vérifié plus bas (bloc + ligne)
       const start = k.to + translateY(a.first.transform);
       // Marge : 10 % du trajet (une glissade due au décalage de la barre de filtres peut dépasser de quelques pixels).
       const slack = Math.max(1.5, 0.1 * Math.abs(k.from - k.to));
@@ -1093,6 +1089,12 @@ async function motionList(context, base, reduced, tag, phone, check) {
       return !inside || (strict && !near1(translateY(a.first.transform), k.from - k.to));
     });
     check(moved.length > 0 && bad.length === 0, `CA-20 ${tag} ${label} conservées : glissement vers la nouvelle place (${r.move} ms, courbe du token), sans sortir de la zone`, `déplacées=${moved.length}, non conformes=${bad.map((k) => `${k.key} (de ${k.from} à ${k.to}, animations ${JSON.stringify(waapi.filter((a) => a.key === k.key).map((a) => [a.first.transform, a.duration]))})`)}`);
+    // Retrait de pastille : le bloc de la liste glisse (une seule animation) et les lignes portent le reste ; ensemble, la position visuelle de départ de chaque ligne conservée est son ancienne place (± 1 px).
+    if (blockStart) {
+      const blockY = r.block.length ? translateY(r.block[0].first) : 0;
+      const off = r.kept.map((k) => { const a = last(k.key); return { key: k.key, d: k.to + blockY + (a ? translateY(a.first.transform) : 0) - k.from }; });
+      check(r.block.length <= 1 && off.every((o) => near1(o.d, 0)), `CA-20 ${tag} ${label} bloc + ligne : départ visuel de chaque ligne conservée = ancienne position (± 1 px)`, `animations du bloc=${r.block.length} (départ ${blockY}), écarts=${JSON.stringify(off.filter((o) => !near1(o.d, 0)))}`);
+    }
     const still = r.kept.filter((k) => Math.abs(k.from - k.to) < 0.5);
     if (strict) check(still.every((k) => !last(k.key)), `CA-20 ${tag} ${label} pas de glissement pour une ligne qui n'a pas bougé`, `lignes immobiles animées=${still.filter((k) => last(k.key)).map((k) => k.key)}`);
     const moveEase = waapi.find((a) => a.props.includes('transform'));
@@ -1126,7 +1128,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   if (phone) await page.locator('.lc-data-table__chip-remove').first().click();
   else await page.getByRole('button', { name: 'Effacer les filtres' }).click();
   await idle(`window.__qa.rowKeys().length === 14`);
-  analyse(await report(), 'retrait de pastille', { expectKept: 10, expectRemoved: 0, expectAdded: 4 });
+  analyse(await report(), 'retrait de pastille', { expectKept: 10, expectRemoved: 0, expectAdded: 4, blockStart: true });
 
   // 3. Tri : toutes les lignes conservées, certaines changent de place.
   await page.evaluate(() => window.__qa.frames(40));

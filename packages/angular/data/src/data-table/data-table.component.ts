@@ -10,10 +10,10 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
   LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate,
-  lcAnimationsEnd, lcDetachAnimated, lcUniqueId,
+  lcDetachAnimated, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
-import { LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
+import { LcSheetComponent, LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
 import { LcCellDirective } from '../table/cell.directive';
 import { LC_TABLE_MAX_ROWS, LcSort, columnAlign, nextSort } from '../table/table-model';
 import { LcColumnFilterComponent, LcNativeDatePickerDirective } from './column-filter.component';
@@ -73,7 +73,7 @@ interface ChipView<T> {
   selector: 'lc-data-table',
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
-    LcEmptyStateComponent, LcTooltipDirective, LcColumnFilterComponent,
+    LcEmptyStateComponent, LcSheetComponent, LcTooltipDirective, LcColumnFilterComponent,
     LcNativeDatePickerDirective,
   ],
   templateUrl: './data-table.component.html',
@@ -197,9 +197,13 @@ export class LcDataTableComponent<T> {
   });
 
   // ---------- Panneau (téléphone) ----------
-  private readonly panel = viewChild.required<ElementRef<HTMLDialogElement>>('panel');
+  /** Contenu monté : de l'ouverture jusqu'à `closed` (fin de la sortie de la feuille). */
   protected readonly panelOpen = signal(false);
+  /** État ouvert de la feuille : faux dès l'intention de fermer, la sortie joue encore. */
+  protected readonly panelVisible = signal(false);
   protected readonly panelSection = signal<string | null>(null);
+  /** Sections dépliées au moins une fois depuis l'ouverture : leur filtre reste rendu pendant le repli animé. */
+  private readonly panelOpened = signal<ReadonlySet<string>>(new Set());
   protected readonly panelDraft = signal<Readonly<Record<string, LcFilterValue>>>({});
   protected readonly panelQuery = computed<LcTableQuery>(() => {
     const filters: Record<string, LcFilterValue> = {};
@@ -218,7 +222,8 @@ export class LcDataTableComponent<T> {
   protected readonly panelSections = computed(() => this.filterColumns().map((column) => {
     const value = this.panelDraft()[column.key];
     const active = isFilterActive(value);
-    return { column, open: this.panelSection() === column.key, active, summary: active ? this.summary(column, value) : this.text.all };
+    const open = this.panelSection() === column.key;
+    return { column, open, rendered: open || this.panelOpened().has(column.key), active, summary: active ? this.summary(column, value) : this.text.all };
   }));
 
   /** Début de l'annonce faite quand la page demandée arrive (« Filtre État appliqué. ») ; le nombre de lignes la complète. */
@@ -232,7 +237,6 @@ export class LcDataTableComponent<T> {
   private leaving = 0;
   /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
   private readonly hidden = new WeakSet<Element>();
-  private closeToken = 0;
 
   constructor() {
     // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : positions actuelles, puis glissement après le rendu.
@@ -280,6 +284,30 @@ export class LcDataTableComponent<T> {
     });
   }
 
+  /** Fondu de sortie d'une pastille (`animate.leave`) : elle sort du flux à sa place, la rangée se resserre aussitôt et sa hauteur finale est connue. */
+  protected fadeOutChip({ target, animationComplete }: AnimationCallbackEvent): void {
+    const timing = this.timing('--lc-sys-duration-fast', '--lc-overlay-easing');
+    if (!timing) return animationComplete();
+    const chip = target as HTMLElement;
+    const { offsetLeft, offsetTop, offsetWidth } = chip;
+    chip.setAttribute('data-leaving', '');
+    Object.assign(chip.style, { left: `${offsetLeft}px`, top: `${offsetTop}px`, width: `${offsetWidth}px` });
+    chip.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(animationComplete);
+  }
+
+  /** Applique un changement qui déplace le bloc de la liste (rangée de pastilles qui se resserre) : le bloc entier glisse d'un trait de sa place d'avant à sa place d'après. */
+  private slideList(change: () => void): void {
+    const scroll = this.host.querySelector<HTMLElement>('.lc-data-table__scroll');
+    const from = scroll?.getBoundingClientRect().top;
+    change();
+    if (!scroll || from === undefined) return;
+    afterNextRender(() => {
+      const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
+      const delta = from - scroll.getBoundingClientRect().top;
+      if (move && Math.abs(delta) >= MOVE_THRESHOLD_PX) scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move);
+    }, { injector: this.injector });
+  }
+
   /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
   private timing(duration: string, easing: string): KeyframeAnimationOptions | null {
     if (typeof this.host.animate !== 'function' || (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches)) return null;
@@ -290,7 +318,7 @@ export class LcDataTableComponent<T> {
     return { duration: ms, easing: style.getPropertyValue(easing).trim() || undefined };
   }
 
-  /** Position verticale de chaque ligne (hors lignes en fondu de sortie) : visible par défaut ; `layout` annule d'abord animations et décalages posés, pour lire la mise en page. */
+  /** Position verticale de chaque ligne (hors lignes en fondu de sortie), glissement du bloc de la liste (`slideList`) compris : il part déjà de l'ancienne place, le départ de la ligne s'en déduit donc tel quel. `layout` annule d'abord animations et décalages posés des lignes, pour lire la mise en page. */
   private rowTops(layout = false): Map<Element, number> {
     const rows = [...this.host.querySelectorAll<HTMLElement>('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
     if (layout) {
@@ -426,7 +454,7 @@ export class LcDataTableComponent<T> {
 
   // ---------- Résumé, pastilles ----------
   protected clearAll(): void {
-    this.setQuery({ ...this.query(), filters: {} }, this.text.announceAllCleared);
+    this.slideList(() => this.setQuery({ ...this.query(), filters: {} }, this.text.announceAllCleared));
     const first = this.filterColumns()[0];
     this.focusLater(this.narrow() || !first ? `${this.uid}-filters` : `${this.uid}-funnel-${first.key}`);
   }
@@ -445,7 +473,7 @@ export class LcDataTableComponent<T> {
     const index = keys.indexOf(key);
     const next = keys[index + 1] ?? keys[index - 1];
     const column = this.columns().find((candidate) => candidate.key === key);
-    this.setQuery(withFilter(this.query(), key, undefined), this.text.announceRemoved(column?.label ?? key));
+    this.slideList(() => this.setQuery(withFilter(this.query(), key, undefined), this.text.announceRemoved(column?.label ?? key)));
     this.focusLater(next ? `${this.uid}-chip-${next}` : `${this.uid}-filters`);
   }
 
@@ -453,36 +481,13 @@ export class LcDataTableComponent<T> {
   protected openPanel(section: string | null = null): void {
     this.closeMenu(false);
     this.panelDraft.set({ ...this.query().filters });
-    this.panelSection.set(section);
+    this.panelOpened.set(new Set());
+    this.showSection(section);
     this.panelOpen.set(true);
-    this.panel().nativeElement.removeAttribute('data-closing'); // réouverture pendant le fondu de sortie : annule la fermeture
-    // Une fois le contenu rendu : `showModal()` donne le focus au contrôle `autofocus`.
-    afterNextRender(() => {
-      const dialog = this.panel().nativeElement;
-      if (!dialog.open) dialog.showModal?.();
-    }, { injector: this.injector });
+    this.panelVisible.set(true); // réouverture pendant la sortie comprise : la feuille repart de sa position
   }
 
-  /** Fermeture en fondu : `data-closing`, attente de la fin des animations, puis `close()`. Rouvrir pendant le fondu annule la fermeture. */
-  protected async closePanel(): Promise<void> {
-    const dialog = this.panel().nativeElement;
-    if (dialog.hasAttribute('data-closing')) return;
-    const token = ++this.closeToken;
-    dialog.setAttribute('data-closing', '');
-    await lcAnimationsEnd(dialog);
-    if (token !== this.closeToken || !dialog.hasAttribute('data-closing')) return; // rouvert (puis refermé) pendant l'attente : une autre attente décide
-    dialog.removeAttribute('data-closing');
-    dialog.close?.();
-    this.onPanelClosed();
-  }
-
-  /** Échap : la fermeture native est remplacée par la fermeture en fondu. */
-  protected onPanelCancel(event: Event): void {
-    event.preventDefault();
-    void this.closePanel();
-  }
-
-  /** Fermeture par Échap (événement `close` du dialogue natif) ou par la croix : rien n'est appliqué. */
+  /** Fin de la sortie de la feuille (croix, Échap, geste, « Afficher » : rien n'est appliqué ici) : le contenu est démonté. */
   protected onPanelClosed(): void {
     if (!this.panelOpen()) return;
     this.panelOpen.set(false);
@@ -491,7 +496,12 @@ export class LcDataTableComponent<T> {
   }
 
   protected toggleSection(key: string): void {
-    this.panelSection.update((open) => (open === key ? null : key));
+    this.showSection(this.panelSection() === key ? null : key);
+  }
+
+  private showSection(key: string | null): void {
+    this.panelSection.set(key);
+    if (key) this.panelOpened.update((opened) => new Set(opened).add(key));
   }
 
   protected setDraft(key: string, value: LcFilterValue | undefined): void {
@@ -512,12 +522,12 @@ export class LcDataTableComponent<T> {
     const inverted = this.filterColumns().find((column) => column.filter?.type === 'dateRange'
       && isDateRangeInverted(this.panelDraft()[column.key] as LcDateRange | undefined));
     if (inverted) {
-      this.panelSection.set(inverted.key);
+      this.showSection(inverted.key);
       this.focusLater(`${this.uid}-panel-${inverted.key}-from`);
       return;
     }
     this.setQuery({ ...this.query(), filters: this.panelQuery().filters }, this.text.announceFiltersApplied);
-    void this.closePanel();
+    this.panelVisible.set(false);
   }
 
   // ---------- Outils ----------
