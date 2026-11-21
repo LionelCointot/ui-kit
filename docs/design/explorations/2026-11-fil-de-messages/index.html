@@ -718,6 +718,16 @@ section.state{margin-top:var(--lc-sys-space-8)}
 .dC .day{justify-content:flex-start}.dC .day::before{display:none}
 .dC .them .mid{margin-top:var(--lc-sys-space-3)}
 @media (forced-colors:active){.bub{border:1px solid CanvasText}.dC .them .col{border-inline-start-color:CanvasText}.pill{border:1px solid ButtonText}}
+
+/* ===== A retenue (PR 2) : sans « Envoi… », sans « Messages précédents », sans pastille ===== */
+.ret{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--lc-sys-space-5)}
+@media (max-width:1000px){.ret{grid-template-columns:minmax(0,1fr)}}
+.ra{background:var(--lc-sys-color-background);color:var(--lc-sys-color-on-surface);padding:var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-lg)}
+.ra .thr{block-size:auto;overflow:visible}
+.ra .wrap{border-radius:var(--lc-sys-radius-lg) var(--lc-sys-radius-lg) 0 0}
+.ra .sys time{font-variant-numeric:tabular-nums}
+.ra .ph{border-color:var(--lc-sys-color-border-strong)}
+@media (forced-colors:active){.ra .bub{border:1px solid CanvasText}.ra .ph{border-color:ButtonText}}
 </style>
 </head>
 <body>
@@ -741,6 +751,12 @@ section.state{margin-top:var(--lc-sys-space-8)}
  </div>
 </div>
 <div class="dirs" id="dirs"></div>
+
+<section class="state" id="a-retenue">
+ <h2>A retenue : périmètre de la PR 2</h2>
+ <p class="muted">Direction A, sans état « Envoi… / Non envoyé », sans « Messages précédents » (les anciens messages se révèlent en remontant), sans dépôt sur le fil, sans pastille. Clair et sombre côte à côte (valeurs d'exemple). Messages système : « mise en pause » et « résolue ». « Simuler une réception » joue le ressort.</p>
+ <div class="ret" id="ret"></div>
+</section>
 
 <section class="state">
  <h2>Jetons proposés et classe de l'application</h2>
@@ -871,6 +887,57 @@ const defs = [
 $('#dirs').append(...defs.map(([d, l]) => mount(d, l)));
 document.querySelectorAll('.thr').forEach(t => { t.scrollTop = t.scrollHeight; });
 $('#all').addEventListener('change', (e) => { document.body.classList.toggle('full', e.target.checked); });
+
+/* ---- A retenue ---- */
+const seedR = () => [
+  { id: ++uid, day: '18 nov.' },
+  { id: ++uid, who: 'me', t: '09:12', text: 'Bonjour, il y a une fuite d\'eau dans la cave, près du compteur.' },
+  { id: ++uid, who: 'me', t: '09:12', text: 'Voici deux photos :', photos: [0, 1] },
+  { id: ++uid, who: 'marc', t: '09:40', text: 'Bonjour Madame Martin, merci pour votre signalement.' },
+  { id: ++uid, who: 'marc', t: '09:41', text: 'Je préviens le plombier. Suivi : https://exemple.fr/suivi/1234' },
+  { id: ++uid, sys: 'Demande mise en pause par Marc', t: '09:41' },
+  { id: ++uid, who: 'marc', t: '09:45', note: true, text: 'Vérifier le contrat d\'entretien avant d\'envoyer l\'artisan.' },
+  { id: ++uid, day: 'Aujourd\'hui' },
+  { id: ++uid, who: 'cam', t: '08:30', text: 'Le plombier passera jeudi entre 9 h et 11 h.' },
+  { id: ++uid, who: 'cam', t: '08:31', text: 'Pensez à laisser l\'accès à la cave.' },
+  { id: ++uid, who: 'cam', t: '08:52', text: 'Il vous appellera 15 minutes avant son arrivée.' },
+  { id: ++uid, who: 'me', t: '09:05', text: 'Parfait, je serai là. Merci !' },
+  { id: ++uid, sys: 'Demande résolue par Camille', t: '16:05' },
+];
+function buildR(msgs, newId) {
+  const nodes = [];
+  for (const g of groups(msgs)) {
+    if (g.day) { nodes.push(h('p', { class: 'day', 'data-k': 'd' + g.id }, h('span', {}, g.day))); continue; }
+    if (g.sys) { nodes.push(h('p', { class: 'sys', 'data-k': 's' + g.id }, g.sys + ' · ', h('time', {}, g.t))); continue; }
+    const p = people[g.who], me = g.who === 'me';
+    const kids = [h('p', { class: 'hd', 'data-k': 'h' + g.first }, h('b', {}, p.name), h('time', {}, g.items[0].t), g.note ? h('span', {}, icon('lock'), ' Note interne') : null)];
+    g.items.forEach((m, i) => {
+      if (i && mins(m.t) - mins(g.items[i - 1].t) >= 5) kids.push(h('p', { class: 'mid', 'data-k': 'm' + m.id }, h('time', {}, m.t)));
+      kids.push(h('div', { class: 'bub' + (m.id === newId ? ' new' : ''), 'data-k': 'b' + m.id },
+        m.photos ? [h('div', {}, rich(m.text)), h('div', { class: 'thumbs' }, m.photos.map(n => h('button', { class: 'ph', type: 'button', 'aria-label': 'Ouvrir la photo ' + (n + 1) + ' (nouvel onglet)' }, h('img', { src: photo(n), alt: 'Photo de la cave ' + (n + 1), width: 96, height: 72 }))))] : rich(m.text)));
+    });
+    const av = me ? null : h('span', { class: 'av ' + p.tone, 'aria-hidden': 'true', 'data-k': 'a' + g.first }, p.ini);
+    nodes.push(h('div', { class: 'grp ' + (me ? 'me ' : 'them ') + (g.note ? 'note-interne ' : '') + p.tone }, av, h('div', { class: 'col' }, kids)));
+  }
+  return nodes; }
+function mountR(theme, title) {
+  const msgs = seedR();
+  const thr = h('div', { class: 'thr', role: 'log', 'aria-label': 'Échanges de la demande', tabindex: '0' }, h('div', { class: 'inner' }));
+  const ta = h('textarea', { rows: 1, 'aria-label': 'Votre message', placeholder: 'Écrivez votre message…' });
+  const form = h('form', { class: 'mc' }, h('button', { class: 'clip', type: 'button', 'aria-label': 'Joindre un fichier' }, icon('clip')), ta, h('button', { type: 'submit', 'aria-label': 'Envoyer' }, icon('send')));
+  const recv = h('button', { class: 'btn recv', type: 'button' }, 'Simuler une réception');
+  const root = h('div', { class: 'ra dA', 'data-theme': theme }, h('h3', {}, title), h('div', { class: 'wrap' }, thr), form, recv);
+  const inner = $('.inner', thr);
+  const render = (newId) => {
+    const before = new Map([...inner.querySelectorAll('[data-k]')].map(e => [e.dataset.k, e.getBoundingClientRect().top]));
+    inner.replaceChildren(...buildR(msgs, newId));
+    if (newId && !matchMedia('(prefers-reduced-motion: reduce)').matches) inner.querySelectorAll('[data-k]').forEach(e => { const b = before.get(e.dataset.k); if (b == null) return;
+      const dy = b - e.getBoundingClientRect().top; if (dy) e.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(0.2, 0, 0, 1)' }); }); };
+  const add = (m) => { msgs.push({ id: ++uid, ...m }); render(uid); };
+  form.addEventListener('submit', (e) => { e.preventDefault(); add({ who: 'me', t: '16:06', text: ta.value.trim() || 'Merci beaucoup !' }); ta.value = ''; });
+  recv.addEventListener('click', () => add({ who: 'cam', t: '16:07', text: 'Je reste disponible si besoin.' }));
+  render(null); return root; }
+$('#ret').append(mountR('default', 'Thème clair'), mountR('dark', 'Thème sombre'));
 const params = new URLSearchParams(location.search);
 if (params.has('tout')) { $('#all').checked = true; document.body.classList.add('full'); }
 if (params.get('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
