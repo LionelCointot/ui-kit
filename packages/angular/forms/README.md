@@ -27,7 +27,7 @@ glisser-déposer. Contrôle de formulaire (`FormValueControl<string>`) : libell�
   (`LcFileUploadItem` : `id`, `name`, `size`, `status`, `progress`, `previewUrl`…) à jour, et retire un item sur `remove`.
   Le composant ne crée ni ne révoque d'adresse d'objet.
 - **Refus** : le composant affiche lui-même le message (nom et raison, un par raison) sous le rectangle et secoue le rectangle ;
-  il émet aussi `rejected`. L'application n'a pas à répéter le message. Raisons : `type` (hors `accept`), `count` (au-delà de `maxFiles`, 10 par défaut ;
+  il émet aussi `rejected`. L'application n'a pas à répéter le message. Raisons : `type` (hors `accept` ; le message liste les types acceptés, déduits de `accept` : « images, PDF, DOCX », ou le texte de `acceptLabel`), `count` (au-delà de `maxFiles`, 10 par défaut ;
   `null` : sans limite).
 - Apparence : une classe de l'application sur l'hôte redéfinit `--lc-message-composer-border-style|width|color` et `--lc-message-composer-background` (dimensions des vignettes : `-thumb-width`, `-thumb-preview-height`, `-remove-size`)
   (exemple : la note interne de la vitrine, bordure en pointillés).

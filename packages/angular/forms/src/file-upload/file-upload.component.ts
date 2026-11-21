@@ -19,7 +19,7 @@ import {
 import { DOCUMENT } from '@angular/common';
 import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { fileSizeText } from '../shared/file-display';
-import { dragHasFiles, dragLeftZone, filterFiles, type LcFileRejectionReason } from '../shared/file-filter';
+import { dragHasFiles, dragLeftZone, filterFiles, type LcFileRefusal, type LcFileRejectionReason } from '../shared/file-filter';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
 /** État d'un fichier, fourni par l'application : en attente, en cours d'envoi, terminé, en erreur. */

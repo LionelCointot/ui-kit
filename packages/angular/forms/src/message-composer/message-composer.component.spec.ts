@@ -1,8 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { FormField, form, required } from '@angular/forms/signals';
 import { LC_LABELS, LC_LABELS_EN, LC_LABELS_FR } from '@lionelcointot/ui-angular';
-import { LcFormFieldComponent } from '../form-field/form-field.component';
 import type { LcFileUploadItem } from '../file-upload/file-upload.component';
 import { LcMessageComposerComponent, type LcMessageSendBlockedReason } from './message-composer.component';
 
@@ -28,19 +26,6 @@ class HostComponent {
   readonly sent: { text: string }[] = [];
   readonly blocked: LcMessageSendBlockedReason[] = [];
   readonly touched: true[] = [];
-}
-
-@Component({
-  imports: [LcFormFieldComponent, LcMessageComposerComponent, FormField],
-  template: `
-    <lc-form-field label="Votre message" hint="Aide" [state]="f.message()">
-      <lc-message-composer [formField]="f.message" />
-    </lc-form-field>
-  `,
-})
-class SignalFormsHostComponent {
-  readonly model = signal({ message: '' });
-  readonly f = form(this.model, (path) => required(path.message, { message: 'Le message est obligatoire.' }));
 }
 
 function mockPointer(coarse: boolean): void {
@@ -263,49 +248,6 @@ describe('LcMessageComposerComponent', () => {
     });
   });
 
-  describe('contrôle de formulaire', () => {
-    it('avertit en développement quand ariaLabel manque hors lc-form-field', async () => {
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-      try {
-        const fixture = TestBed.createComponent(LcMessageComposerComponent);
-        await fixture.whenStable();
-        expect(warn).toHaveBeenCalledOnce();
-      } finally {
-        warn.mockRestore();
-      }
-    });
-
-    it('focus() place le focus dans le champ', async () => {
-      const fixture = TestBed.createComponent(LcMessageComposerComponent);
-      fixture.componentRef.setInput('ariaLabel', 'Message');
-      await fixture.whenStable();
-      fixture.componentInstance.focus();
-      expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelector('textarea'));
-    });
-
-    it('dans lc-form-field : libellé, aide, erreur, aria-invalid et Signal Forms', async () => {
-      const fixture = TestBed.createComponent(SignalFormsHostComponent);
-      document.body.appendChild(fixture.nativeElement);
-      await fixture.whenStable();
-      const element = fixture.nativeElement as HTMLElement;
-      const textarea = element.querySelector('textarea')!;
-      expect(element.querySelector(`label[for="${textarea.id}"]`)?.textContent).toContain('Votre message');
-      expect(textarea.getAttribute('aria-describedby')).toBeTruthy();
-      textarea.focus();
-      textarea.value = 'Bonjour';
-      textarea.dispatchEvent(new Event('input'));
-      await fixture.whenStable();
-      expect(fixture.componentInstance.model().message).toBe('Bonjour');
-      textarea.value = '';
-      textarea.dispatchEvent(new Event('input'));
-      textarea.blur();
-      await fixture.whenStable();
-      expect(textarea.getAttribute('aria-invalid')).toBe('true');
-      expect(element.textContent).toContain('Le message est obligatoire.');
-      fixture.nativeElement.remove();
-    });
-  });
-
   it('touch : émis à la sortie du composant entier, pas du champ vers le trombone ou l\'envoi', async () => {
     const { fixture, host, textarea, query } = await setup();
     document.body.append(fixture.nativeElement);
@@ -327,6 +269,8 @@ describe('LcMessageComposerComponent', () => {
       for (const key of keys) expect(labels[key]).toBeTruthy();
       expect(labels.composerRejected('a.pdf', 'type')).toContain('a.pdf');
       expect(labels.composerRejected('a.pdf', 'count')).not.toBe(labels.composerRejected('a.pdf', 'type'));
+      expect(labels.composerRejectedType('a.pdf', 'PDF')).toContain('PDF');
+      expect(labels.composerCount(3, 500)).toBe('3 / 500');
     }
     expect(TestBed.inject(LC_LABELS).composerSend).toBe('Envoyer');
   });

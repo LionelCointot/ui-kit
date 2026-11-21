@@ -57,12 +57,13 @@ const meta: Meta<LcMessageComposerComponent> = {
   args: {
     value: '', placeholder: 'Écrivez votre message…', ariaLabel: 'Votre message', disabled: false, readonly: false, sending: false,
     maxLength: 500, minRows: 1, maxRows: 7, enterSends: 'auto', sendIcon: 'send', sendLabel: 'Envoyer', attachIcon: 'paperclip',
-    attachments: true, accept: 'image/*,.pdf', maxFiles: 10, showSize: true,
+    attachments: true, accept: 'image/*,.pdf', acceptLabel: '', maxFiles: 10, showSize: true,
   },
   argTypes: {
     enterSends: { control: 'select', options: ['auto', true, false] },
     maxLength: { control: 'number' },
     maxFiles: { control: 'number' },
+    acceptLabel: { control: 'text', description: "Remplace la liste des types déduite de `accept` dans le message de refus ; vide : liste déduite." },
     items: { control: false },
     send: { action: 'send' },
     sendBlocked: { action: 'sendBlocked' },
@@ -97,7 +98,7 @@ export const Playground: Story = {
       <div style="max-width:36rem">
         <lc-message-composer [value]="value" [placeholder]="placeholder" [ariaLabel]="ariaLabel" [disabled]="disabled" [readonly]="readonly"
           [sending]="sending" [maxLength]="maxLength" [minRows]="minRows" [maxRows]="maxRows" [enterSends]="enterSends"
-          [sendIcon]="sendIcon" [sendLabel]="sendLabel" [attachIcon]="attachIcon" [attachments]="attachments" [accept]="accept"
+          [sendIcon]="sendIcon" [sendLabel]="sendLabel" [attachIcon]="attachIcon" [attachments]="attachments" [accept]="accept" [acceptLabel]="acceptLabel || undefined"
           [maxFiles]="maxFiles" [showSize]="showSize" [items]="items"
           (valueChange)="valueChange($event)" (send)="send($event)" (sendBlocked)="sendBlocked($event)" (filesAdded)="filesAdded($event)"
           (rejected)="rejected($event)" (remove)="remove($event)" (retry)="retry($event)" (touch)="touch()" />

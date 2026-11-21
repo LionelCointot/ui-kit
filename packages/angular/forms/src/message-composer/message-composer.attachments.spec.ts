@@ -8,7 +8,7 @@ import { LcMessageComposerComponent } from './message-composer.component';
   imports: [LcMessageComposerComponent],
   template: `
     <lc-message-composer [(value)]="text" ariaLabel="Message" [items]="items()" [attachments]="attachments()"
-      [disabled]="disabled()" [accept]="accept()" [maxFiles]="maxFiles()"
+      [disabled]="disabled()" [accept]="accept()" [acceptLabel]="acceptLabel()" [maxFiles]="maxFiles()"
       (filesAdded)="added.push($event)" (rejected)="refused.push($event)" (remove)="removed.push($event)" (retry)="retried.push($event)" />
   `,
 })
@@ -18,6 +18,7 @@ class HostComponent {
   readonly attachments = signal(true);
   readonly disabled = signal(false);
   readonly accept = signal('image/*,.pdf');
+  readonly acceptLabel = signal<string | undefined>(undefined);
   readonly maxFiles = signal<number | null>(10);
   readonly added: File[][] = [];
   readonly refused: LcFileRefusal[][] = [];
@@ -237,6 +238,19 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
       expect(alert.querySelector('script')).toBeNull();
       expect(host.refused[0].map((r) => r.reason).sort()).toEqual(['count', 'type']);
       expect(box.classList.contains('lc-message-composer__box--shake')).toBe(true);
+    });
+
+    it('le refus par type dit quels fichiers sont acceptés, ou reprend acceptLabel', async () => {
+      const { host, element, box, settle } = await setup();
+      const refuse = async () => {
+        box.dispatchEvent(dragEvent('drop', [new File(['x'], 'x.txt', { type: 'text/plain' })]));
+        await settle();
+        return element.querySelector('[role="alert"]')!.textContent!;
+      };
+      expect(await refuse()).toContain("x.txt n'est pas accepté. Fichiers acceptés : images, PDF.");
+      host.acceptLabel.set('Photos');
+      await settle();
+      expect(await refuse()).toContain('Fichiers acceptés : Photos.');
     });
 
     it('disparaît à la saisie, au retrait et au prochain ajout', async () => {
