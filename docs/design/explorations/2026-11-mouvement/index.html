@@ -71,17 +71,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .casc .col{--dist:8px}
 .casc .cards{margin-top:.75rem}
 .casc .tag{font-size:.875rem;font-weight:500;color:var(--on-primary-container);background:var(--primary-container);border-radius:var(--r-md);padding:0 .5rem;white-space:nowrap}
-/* Section Déplacement : ressorts amortis, 48 points échantillonnés à pas égal sur [0, 1].
-   x(t) = 1 - e^(-ζωt) (cos ωd·t + (ζω/ωd) sin ωd·t), ωd = ω√(1-ζ²) ; ζ = 1 : x(t) = 1 - (1 + ωt) e^(-ωt).
-   A : ζ = 1, ω = 9 (0 % de dépassement) · B : ζ = 0,78, ω = 8 (2,0 %) · C : ζ = 0,55, ω = 10 (12,6 %). ω choisi pour que le ressort ait fini à 350 ms. */
+/* Section Déplacement : les courbes (ressorts amortis) et les durées sont calculées en JS, voir « Lois ». */
 .dep{margin-top:2rem}
-.dep .col{--dur:350ms}
-.dep .col[data-s=a]{--spring:linear(0, 0.016, 0.055, 0.11, 0.173, 0.241, 0.31, 0.378, 0.442, 0.503, 0.559, 0.611, 0.657, 0.7, 0.737, 0.771, 0.801, 0.827, 0.85, 0.871, 0.888, 0.904, 0.917, 0.929, 0.939, 0.948, 0.955, 0.962, 0.967, 0.972, 0.976, 0.98, 0.983, 0.985, 0.987, 0.989, 0.991, 0.992, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.998, 0.999, 1)}
-.dep .col[data-s=b]{--spring:linear(0, 0.013, 0.047, 0.096, 0.156, 0.223, 0.294, 0.365, 0.436, 0.505, 0.569, 0.63, 0.685, 0.736, 0.781, 0.822, 0.857, 0.888, 0.915, 0.937, 0.956, 0.972, 0.984, 0.995, 1.003, 1.009, 1.013, 1.016, 1.018, 1.02, 1.02, 1.02, 1.019, 1.018, 1.017, 1.016, 1.014, 1.013, 1.011, 1.01, 1.009, 1.008, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1)}
-.dep .col[data-s=c]{--spring:linear(0, 0.02, 0.074, 0.152, 0.248, 0.353, 0.461, 0.568, 0.67, 0.763, 0.847, 0.92, 0.98, 1.029, 1.067, 1.095, 1.113, 1.123, 1.126, 1.124, 1.117, 1.108, 1.096, 1.083, 1.069, 1.055, 1.042, 1.031, 1.02, 1.011, 1.003, 0.997, 0.992, 0.988, 0.986, 0.985, 0.984, 0.984, 0.985, 0.986, 0.988, 0.989, 0.991, 0.993, 0.995, 0.996, 0.997, 0.999, 1)}
-.dep .tabs .bar,.dep .nav .bg{transition:transform var(--dur) var(--spring)}
 .dep .tag{font-size:.875rem;font-weight:500;color:var(--on-primary-container);background:var(--primary-container);border-radius:var(--r-md);padding:0 .5rem;white-space:nowrap}
-.dep .rows{display:grid;gap:.5rem;margin:.75rem 0 0;padding:0;list-style:none;min-height:calc(6*44px + 5*.5rem);align-content:start}
+.dep .rows{display:grid;gap:.5rem;margin:.75rem 0 0;padding:0;list-style:none;min-height:calc(6*44px + 5*.5rem);align-content:start;position:relative}
 .dep .rows li{background:var(--sunken);border:1px solid var(--border);border-radius:var(--r-lg);padding:0 .75rem;min-height:44px;display:flex;align-items:center}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
@@ -102,7 +95,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 </section>
 <section class="dep" aria-labelledby="dep-t">
 <h2 id="dep-t">Déplacement</h2>
-<p>Seuls les déplacements prennent un ressort, sur la même durée de 350 ms ; les fondus gardent <code>cubic-bezier(0.2, 0, 0, 1)</code>. Cliquez sur Filtrer, sur un onglet ou sur un élément de navigation, ou rejouez.</p>
+<p>Seuls les déplacements prennent un ressort ; les fondus gardent <code>cubic-bezier(0.2, 0, 0, 1)</code>. La durée dépend de la distance parcourue pour B et C. Cliquez sur Filtrer, sur un onglet ou sur un élément de navigation, ou rejouez.</p>
 <div class="grid" id="dep"></div>
 </section>
 </main>
@@ -208,64 +201,89 @@ CASC.forEach(c=>{
  r.onclick=replay;replay();
  players.push({replay,init(){}});
 });
+/* Lois. Ressort amorti : x(t) = 1 - e^(-ζωt)(cos ωd·t + (ζω/ωd) sin ωd·t), ωd = ω√(1-ζ²) ; ζ = 1 : x(t) = 1 - (1+ωt)e^(-ωt).
+   ω = 8/ζ (ζω = 8 : le ressort a fini à 0,3 % près en fin de durée), 56 points à pas égal sur [0, 1] -> linear().
+   Dépassement = e^(-πζ/√(1-ζ²)) : ζ 0,9 -> 0,15 % ; ζ 0,8 -> 1,5 %.
+   Durée B et C : clamp(300, 250 + distance en px, 550) ms. A : 500 ms fixe.
+   C : ζ 0,8 jusqu'à 195 px (dépassement <= 3 px), ζ 1 au-delà ; au-delà de 3 rangs la ligne s'efface sur place puis réapparaît. */
+const clamp=(a,x,b)=>Math.min(b,Math.max(a,x)),PITCH=52,FADE='cubic-bezier(0.2,0,0,1)';
+const curves=new Map();
+const spring=z=>{if(!curves.has(z)){const w=8/z,wd=w*Math.sqrt(1-z*z),
+ g=t=>z>=1?1-(1+w*t)*Math.exp(-w*t):1-Math.exp(-z*w*t)*(Math.cos(wd*t)+z*w/wd*Math.sin(wd*t)),p=[];
+ for(let i=0;i<=56;i++)p.push(i===56?1:+g(i/56).toFixed(4));curves.set(z,`linear(${p.join(', ')})`)}return curves.get(z)};
+const byDist=d=>clamp(300,250+d,550);
+const LAWS={a:{ms:()=>500,z:()=>1},b:{ms:byDist,z:()=>0.9},
+ c:{ms:byDist,z:d=>d<=195?0.8:1,seq:true,clip:true,cut:3}};
 const DEP=[
- {k:'a',n:'A. Ressort doux',v:'sans dépassement · 350 ms'},
- {k:'b',n:'B. Ressort vif',v:'dépassement 2 % · 350 ms',rec:true},
- {k:'c',n:'C. Rebond visible',v:'dépassement 12 % · 350 ms'}];
-const ROWS0=['Facture de mars','Devis plomberie','Contrat d\u2019assurance','Relevé bancaire','Taxe foncière','Bail signé'],
- ROWS1=['Bail signé','Facture de mars','Avis d\u2019imposition','Taxe foncière','Contrat d\u2019assurance'];
+ {k:'a',n:'A. Façon Apple',v:'sans rebond · 500 ms fixe'},
+ {k:'b',n:'B. Façon Material',v:'amortissement 0,9 · 300 à 550 ms selon la distance'},
+ {k:'c',n:'C. Kit : doux et contenu',v:'comme B · rebond de 3 px au plus · liste contenue',rec:true}];
+const ROWS0=['Facture de mars','Devis plomberie','Contrat d’assurance','Relevé bancaire','Taxe foncière','Bail signé'],
+ ROWS1=['Bail signé','Facture de mars','Avis d’imposition','Taxe foncière','Contrat d’assurance'];
 DEP.forEach(c=>{
+ const L=LAWS[c.k],T=d=>rm.matches?0:L.ms(d),EZ=d=>spring(L.z(d)),FD=()=>rm.matches?0:150;
  const col=mk('section','',document.getElementById('dep'));col.className='col';col.dataset.s=c.k;
  const h=mk('header','',col),w=mk('div','',h),t=mk('h2',c.n,w);
  if(c.rec){t.append(' ');mk('span','Recommandé',t).className='tag'}
  mk('p',c.v,w).className='vals';
  const r=mk('button','Rejouer',h);r.type='button';r.className='btn outline';
- const spring=()=>getComputedStyle(col).getPropertyValue('--spring').trim(),T=()=>rm.matches?0:350;
  // Liste
  mk('h3','Liste filtrée',col);
  const fb=mk('button','Filtrer',col);fb.type='button';fb.className='btn';
  const ul=mk('ul','',col);ul.className='rows';
  const items=new Map(),li=k=>items.get(k)||items.set(k,mk('li',k)).get(k);
- let cur=ROWS0,busy=false;
+ let cur=ROWS0,busy=false,run=0;
  const show=keys=>{ul.replaceChildren(...keys.map(li));cur=keys};
  const filter=async to=>{
-  busy=true;const out=cur.filter(k=>!to.includes(k)).map(li);
-  const fo=out.map(e=>e.animate({opacity:[1,0]},{duration:rm.matches?0:150,easing:'cubic-bezier(0.2,0,0,1)',fill:'forwards'}));
-  await Promise.all(fo.map(a=>a.finished));
-  const first=new Map(cur.map(li).map(e=>[e,e.getBoundingClientRect().top]));
-  out.forEach((e,i)=>{e.remove();fo[i].cancel()});
-  ul.append(...to.map(li));
+  const id=++run;busy=true;if(L.clip)ul.style.overflow='clip';
+  const out=cur.filter(k=>!to.includes(k)).map(li),first=new Map(cur.map(li).map(e=>[e,e.getBoundingClientRect().top])),anims=[];
+  const fadeOut=e=>e.animate({opacity:[1,0]},{duration:FD(),easing:FADE,fill:'forwards'});
+  if(L.seq){ // C : les lignes retirées s'effacent sur place, puis les autres se resserrent
+   const fo=out.map(fadeOut);await Promise.allSettled(fo.map(a=>a.finished));if(id!==run)return;
+   out.forEach((e,i)=>{e.remove();fo[i].cancel()});
+  }else{ // A, B : sorties du flux, elles s'effacent pendant que les autres glissent
+   const top=ul.getBoundingClientRect().top;
+   out.forEach(e=>{e.style.cssText=`position:absolute;left:0;right:0;margin:0;top:${first.get(e)-top}px`;
+    const a=fadeOut(e);anims.push(a);a.finished.then(()=>{e.remove();a.cancel()},()=>{})});
+  }
+  const next=to.map(li);ul.append(...next);
   // FLIP : les lignes conservées glissent (ressort), les nouvelles apparaissent en fondu (courbe habituelle).
-  to.map(li).forEach(e=>{
-   if(first.has(e)){const dy=first.get(e)-e.getBoundingClientRect().top;
-    if(dy)e.animate({transform:[`translateY(${dy}px)`,'none']},{duration:T(),easing:spring()})}
-   else e.animate({opacity:[0,1]},{duration:rm.matches?0:150,delay:rm.matches?0:100,easing:'cubic-bezier(0.2,0,0,1)',fill:'backwards'})});
-  cur=to;busy=false;fb.textContent=to===ROWS1?'Rétablir':'Filtrer';
+  next.forEach(e=>{
+   if(!first.has(e)){anims.push(e.animate({opacity:[0,1]},{duration:FD(),delay:rm.matches?0:100,easing:FADE,fill:'backwards'}));return}
+   const dy=first.get(e)-e.getBoundingClientRect().top,d=Math.abs(dy);if(!dy)return;
+   if(L.cut&&d/PITCH>L.cut){const o=`translateY(${dy}px)`;
+    anims.push(e.animate([{transform:o,opacity:1},{transform:o,opacity:0,offset:.5},{transform:'none',opacity:0,offset:.5},{transform:'none',opacity:1}],{duration:rm.matches?0:300,easing:FADE}))}
+   else anims.push(e.animate({transform:[`translateY(${dy}px)`,'none']},{duration:T(d),easing:EZ(d)}));
+  });
+  await Promise.allSettled(anims.map(a=>a.finished));if(id!==run)return;
+  ul.style.overflow='';cur=to;busy=false;fb.textContent=to===ROWS1?'Rétablir':'Filtrer';
  };
  fb.onclick=()=>{if(!busy)filter(cur===ROWS1?ROWS0:ROWS1)};
- // Onglets
- mk('h3','Trait d\u2019onglets',col);
+ // Onglets et navigation : même loi que la colonne, selon la distance parcourue
+ let snap=false,tabX=0,navI=0;
+ const move=(el,d)=>el.style.transition=snap?'none':`transform ${T(d)}ms ${EZ(d)}`;
+ mk('h3','Trait d’onglets',col);
  const tabs=mk('div','',col);tabs.className='tabs';tabs.setAttribute('role','group');tabs.setAttribute('aria-label','Onglets de démonstration');
  const bar=mk('span','',tabs);bar.className='bar';bar.setAttribute('aria-hidden','true');
  const tb=TABS.map(x=>mk('button',x,tabs));tb.forEach(b=>b.type='button');
  const selTab=i=>{tb.forEach((b,j)=>j===i?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current'));
-  bar.style.transform=`translateX(${tb[i].offsetLeft}px) scaleX(${tb[i].offsetWidth})`};
+  const x=tb[i].offsetLeft;move(bar,Math.abs(x-tabX));tabX=x;bar.style.transform=`translateX(${x}px) scaleX(${tb[i].offsetWidth})`};
  tb.forEach((b,i)=>b.onclick=()=>selTab(i));
- // Nav
  mk('h3','Fond de navigation',col);
  const nav=mk('div','',col);nav.className='nav';nav.setAttribute('role','group');nav.setAttribute('aria-label','Navigation de démonstration');
  const bg=mk('span','',nav);bg.className='bg';bg.setAttribute('aria-hidden','true');
  const nb=NAV.map(x=>mk('button',x,nav));nb.forEach(b=>b.type='button');
  const selNav=i=>{nb.forEach((b,j)=>j===i?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current'));
-  bg.style.transform=`translateY(${i*44}px)`};
+  move(bg,Math.abs(i-navI)*44);navI=i;bg.style.transform=`translateY(${i*44}px)`};
  nb.forEach((b,i)=>b.onclick=()=>selNav(i));
- const still=f=>{bar.style.transition=bg.style.transition='none';f();reflow(bar);bar.style.transition=bg.style.transition=''};
- const reset=()=>{items.forEach(e=>e.getAnimations().forEach(a=>a.cancel()));show(ROWS0);fb.textContent='Filtrer';busy=false;still(()=>{selTab(0);selNav(0)})};
- const replay=async()=>{reset();await wait(150);selTab(2);selNav(3);filter(ROWS1)};
+ const still=f=>{snap=true;f();reflow(bar);reflow(bg);snap=false};
+ const reset=()=>{run++;items.forEach(e=>{e.getAnimations().forEach(a=>a.cancel());e.style.cssText=''});ul.style.overflow='';
+  show(ROWS0);fb.textContent='Filtrer';busy=false;still(()=>{selTab(0);selNav(0)})};
  const wait=ms=>new Promise(r=>setTimeout(r,rm.matches?0:ms));
+ const replay=async()=>{reset();await wait(150);selTab(2);selNav(3);filter(ROWS1)};
  r.onclick=replay;
  show(ROWS0);
- players.push({replay,init:()=>still(()=>selTab(tb.findIndex(b=>b.hasAttribute('aria-current')))||selNav(nb.findIndex(b=>b.hasAttribute('aria-current'))))});
+ players.push({replay,init:()=>still(()=>{selTab(tb.findIndex(b=>b.hasAttribute('aria-current')));selNav(nb.findIndex(b=>b.hasAttribute('aria-current')))})});
  still(()=>{selTab(0);selNav(0)});
 });
 players.forEach(p=>p.init());
