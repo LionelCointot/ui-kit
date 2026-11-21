@@ -616,19 +616,41 @@ pre{font-family:var(--lc-sys-font-family-mono);font-size:.8125rem;background:var
 .mc--a .mc-send{border-radius:var(--lc-sys-radius-full)}
 .mc--a .mc-files{padding:var(--lc-sys-space-1) var(--lc-sys-space-1) var(--lc-sys-space-2)}
 /* ===== Direction B : barre d'outils basse (type Slack) ===== */
-.mc--b .mc-box{--_r:var(--lc-sys-radius-lg);grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"files files" "text text" "left send";padding:0 var(--lc-sys-space-1) var(--lc-sys-space-1)}
-.mc--b .mc-text{padding:var(--lc-sys-space-3) var(--lc-sys-space-3) var(--lc-sys-space-1);min-height:3.5rem;align-self:stretch}
-@media (pointer:fine){.mc--b .mc{--_btn:var(--lc-sys-control-height-sm)}.mc--b{--_btn:var(--lc-sys-control-height-sm)}}
-.mc--b .mc-send{border-radius:var(--lc-sys-radius-md);align-self:center;padding:0 var(--lc-sys-space-2)}
-.mc--b .mc-files{padding:var(--lc-sys-space-3) var(--lc-sys-space-3) 0}
-.mc--b .mc-file{flex-direction:column;align-items:stretch;width:7rem;padding:0;gap:0}
-.mc--b .mc-prev{width:100%;height:4.5rem;border-radius:0}
-.mc--b .mc-meta{padding:var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-2)}
-.mc--b .mc-name{max-width:100%}
-.mc--b .mc-st{white-space:normal;flex-wrap:wrap}
-.mc--b .mc-x{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:var(--lc-sys-radius-full);background:var(--lc-sys-color-surface-raised);box-shadow:var(--lc-sys-shadow-1)}
-.mc--b .mc-x::after{content:"";position:absolute;inset:-8px}
-.mc--b .mc-bar{bottom:auto;top:calc(4.5rem - 3px)}
+:is(.mc--b,.mc--bf) .mc-box{--_r:var(--lc-sys-radius-lg);grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"files files" "text text" "left send";padding:0 var(--lc-sys-space-1) var(--lc-sys-space-1)}
+:is(.mc--b,.mc--bf) .mc-text{padding:var(--lc-sys-space-3) var(--lc-sys-space-3) var(--lc-sys-space-1);min-height:3.5rem;align-self:stretch}
+@media (pointer:fine){:is(.mc--b,.mc--bf) .mc{--_btn:var(--lc-sys-control-height-sm)}.mc--b{--_btn:var(--lc-sys-control-height-sm)}}
+:is(.mc--b,.mc--bf) .mc-send{border-radius:var(--lc-sys-radius-md);align-self:center;padding:0 var(--lc-sys-space-2)}
+:is(.mc--b,.mc--bf) .mc-files{padding:var(--lc-sys-space-3) var(--lc-sys-space-3) 0}
+:is(.mc--b,.mc--bf) .mc-file{flex-direction:column;align-items:stretch;width:7rem;padding:0;gap:0}
+:is(.mc--b,.mc--bf) .mc-prev{width:100%;height:4.5rem;border-radius:0}
+:is(.mc--b,.mc--bf) .mc-meta{padding:var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-2)}
+:is(.mc--b,.mc--bf) .mc-name{max-width:100%}
+:is(.mc--b,.mc--bf) .mc-st{white-space:normal;flex-wrap:wrap}
+:is(.mc--b,.mc--bf) .mc-x{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:var(--lc-sys-radius-full);background:var(--lc-sys-color-surface-raised);box-shadow:var(--lc-sys-shadow-1)}
+:is(.mc--b,.mc--bf) .mc-x::after{content:"";position:absolute;inset:-8px}
+:is(.mc--b,.mc--bf) .mc-bar{bottom:auto;top:calc(4.5rem - 3px)}
+/* ===== B retenue : envoi = icône send du kit, sans contour ni fond, couleur principale ===== */
+.mc--bf{--_btn:var(--lc-sys-control-height-md)}
+.mc--bf .mc-send{background:transparent;color:var(--lc-message-composer-send-color,var(--lc-sys-color-primary));border-radius:var(--lc-sys-radius-md);padding:0;align-self:center;transition:background-color var(--lc-sys-duration-fast)}
+.mc--bf .mc-send:hover{background:color-mix(in srgb,currentColor calc(var(--lc-sys-state-hover-opacity) * 100%),transparent)}
+.mc--bf .mc-send:active{background:color-mix(in srgb,currentColor calc(var(--lc-sys-state-pressed-opacity) * 100%),transparent)}
+.mc--bf .mc-send[aria-disabled=true]{opacity:1}
+.mc--bf .mc-actions:empty{display:none}
+.mc--bf .mc-sep{display:none}
+.mc--bf .mc-actions:not(:empty){margin-inline-start:var(--lc-sys-space-1)}
+.mc--bf .mc-actions:not(:empty)::before{content:"";width:1px;align-self:stretch;margin-block:var(--lc-sys-space-2);margin-inline-end:var(--lc-sys-space-1);background:var(--_sep)}
+/* Note interne de l'application : les 4 jetons de la spec seulement */
+.note-min{--lc-message-composer-border-style:dashed;--lc-message-composer-border-width:2px;--lc-message-composer-border-color:var(--lc-sys-color-on-warning-container);--lc-message-composer-background:var(--lc-sys-color-warning-container)}
+.bgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--lc-sys-space-8) var(--lc-sys-space-6);margin-top:var(--lc-sys-space-3)}
+@media (max-width:960px){.bgrid{grid-template-columns:minmax(0,1fr)}}
+.bcell>.tag{margin-bottom:var(--lc-sys-space-2)}
+@media (forced-colors:active){
+  .mc-box{border-color:CanvasText}
+  .mc--bf .mc-send{color:ButtonText}
+  .mc--bf .mc-send:hover,.mc--bf .mc-send:focus-visible{outline:2px solid Highlight}
+  .mc-drop{background:Canvas;color:CanvasText;outline-color:Highlight}
+  .mc-bar i{background:Highlight}
+}
 /* ===== Direction C : cellules bordées, séparateurs nets ===== */
 .mc--c .mc-box{--_r:var(--lc-sys-radius-md);--_bc:var(--lc-message-composer-border-color,var(--lc-sys-color-border-strong));grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"files files files" "left text send"}
 .mc--c .mc-files{padding:var(--lc-sys-space-2);border-bottom:1px solid var(--_sep);flex-direction:column;gap:var(--lc-sys-space-1)}
@@ -671,6 +693,7 @@ pre{font-family:var(--lc-sys-font-family-mono);font-size:.8125rem;background:var
  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
  <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></symbol>
  <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
+ <symbol id="i-sendkit" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol>
  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
 </svg>
@@ -682,6 +705,12 @@ pre{font-family:var(--lc-sys-font-family-mono);font-size:.8125rem;background:var
  </div>
  <button class="theme" id="theme" type="button">Thème sombre</button>
 </div>
+
+<section class="state" id="b-retenue">
+ <h2>B retenue : envoi par l'icône <code>send</code>, sans contour ni fond</h2>
+ <p class="muted">Choix de l'utilisateur : la direction B, avec l'icône d'envoi actuelle du kit (<code>send</code>, celle de copro-ticket) en bouton sans contour ni fond, en couleur principale, à la manière de WhatsApp. L'icône est remplaçable : la note interne met <code>lock</code>. Le bouton n'est jamais grisé. Cibles de 44 px partout. L'icône sourire des essais précédents est retirée : l'emplacement d'actions libres existe mais reste vide ici. La note interne n'utilise que les quatre jetons de la spec. Largeur réelle de cette section : celle de la fenêtre (captures à 1 280 et 360 px).</p>
+ <div class="bgrid" id="bgrid"></div>
+</section>
 
 <section class="state" id="live">
  <h2>0. Essayez-les</h2>
@@ -721,7 +750,7 @@ pre{font-family:var(--lc-sys-font-family-mono);font-size:.8125rem;background:var
    <li><b>Pour :</b> zones très lisibles, vignettes en liste (noms longs, erreurs explicites).</li>
    <li><b>Contre :</b> aspect « formulaire », moins chaleureux pour une conversation ; filets multiples, plus lourd visuellement.</li></ul></div>
  </div>
- <p style="margin-top:var(--lc-sys-space-4)"><b>Recommandation : A avec zéro ou une action</b> (cas du demandeur), car l'utilisateur écrit surtout une phrase et envoie, souvent sur téléphone ; c'est la plus proche du « petit rectangle » demandé. Choisir B dès que l'application met une action ou plus sur téléphone, comme le montre la capture à 360 px (le kit peut basculer par un simple modificateur, le balisage est le même). C seulement si l'écran voisin est un formulaire dense.</p>
+ <p style="margin-top:var(--lc-sys-space-4)"><b>Choix de l'utilisateur : B (voir la section « B retenue » en haut).</b> Recommandation initiale : A avec zéro ou une action</b> (cas du demandeur), car l'utilisateur écrit surtout une phrase et envoie, souvent sur téléphone ; c'est la plus proche du « petit rectangle » demandé. Choisir B dès que l'application met une action ou plus sur téléphone, comme le montre la capture à 360 px (le kit peut basculer par un simple modificateur, le balisage est le même). C seulement si l'écran voisin est un formulaire dense.</p>
  <p class="muted">Contrainte Baseline 2024 : l'agrandissement du champ se fait par script (<code>field-sizing: content</code> n'est pas dans la cible). Police du champ à 16 px minimum (évite le zoom automatique sur iOS).</p>
 </section>
 </main>
@@ -734,7 +763,7 @@ let uid=0;
 
 function composer(host,dir,o={}){
   const id='mc'+(++uid);
-  const root=document.createElement('div');root.className=`mc mc--${dir}`+(o.note?' note-interne':'');
+  const root=document.createElement('div');root.className=`mc mc--${dir}`+(o.note?(dir==='bf'?' note-min':' note-interne'):'');
   root.innerHTML=`
    ${o.head?`<div class="mc-head"><fieldset class="mc-seg"><legend class="sr">Visibilité du message</legend>
      <label>${ico('lock','sm')}<input type="radio" name="${id}" value="note" ${o.note?'checked':''}>Note interne</label>
@@ -744,15 +773,15 @@ function composer(host,dir,o={}){
      <textarea class="mc-text" rows="1" placeholder="Écrivez votre message…" aria-label="Message"></textarea>
      <div class="mc-left"><button type="button" class="mc-btn mc-clip" aria-label="Joindre un fichier">${ico('clip')}</button>
        <span class="mc-sep" aria-hidden="true"></span>
-       <div class="mc-actions">${o.actions===false?'':`<button type="button" class="mc-btn" aria-label="Insérer un émoji (action libre d'exemple)">${ico('smile')}</button>`}</div></div>
-     <button type="button" class="mc-send" aria-label="Envoyer le message" aria-disabled="true">${ico('send')}</button>
+       <div class="mc-actions">${o.actions===false||dir==='bf'?'':`<button type="button" class="mc-btn" aria-label="Insérer un émoji (action libre d'exemple)">${ico('smile')}</button>`}</div></div>
+     <button type="button" class="mc-send" aria-label="Envoyer le message" aria-disabled="true">${ico(dir==='bf'?'sendkit':'send')}</button>
      <div class="mc-drop" aria-hidden="true">${ico('upload')}Déposez vos fichiers ici</div>
      <input type="file" multiple hidden accept="image/*,application/pdf">
    </div>
-   <div class="mc-foot"><div class="mc-live" role="alert"></div><div class="mc-help"><span class="mc-hint-fine">Entrée pour envoyer, Maj+Entrée pour aller à la ligne.</span><span class="mc-hint-coarse">Touchez la flèche pour envoyer.</span></div></div>`;
+   <div class="mc-foot"><div class="mc-live" role="alert"></div><div class="mc-help"><span class="mc-hint-fine">Entrée pour envoyer, Maj+Entrée pour aller à la ligne.</span><span class="mc-hint-coarse">${dir==='bf'?'Touchez l\'icône d\'envoi pour envoyer.':'Touchez la flèche pour envoyer.'}</span></div></div>`;
   host.append(root);
   const $=s=>root.querySelector(s),box=$('.mc-box'),ta=$('.mc-text'),list=$('.mc-files'),send=$('.mc-send'),live=$('.mc-live'),help=$('.mc-help'),pick=$('input[type=file]');
-  let files=[],sending=!!o.sending,drag=0;
+  let files=[],sending=!!o.sending,drag=0,note=!!o.note;const bf=dir==='bf';
   const grow=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight+(ta.offsetHeight-ta.clientHeight),176)+'px'};
   const canSend=()=>!sending&&(ta.value.trim()||files.some(f=>!f.error&&f.p==null));
   function render(){
@@ -771,9 +800,10 @@ function composer(host,dir,o={}){
       const r=li.querySelector('.mc-retry');if(r)r.onclick=()=>{f.error=false;f.p=0;run(f);render()};
       list.append(li);
     });
-    send.setAttribute('aria-disabled',canSend()?'false':'true');
+    send.setAttribute('aria-disabled',bf?(sending?'true':'false'):(canSend()?'false':'true'));
+    send.setAttribute('aria-label',bf&&note?'Envoyer la note interne':'Envoyer le message');
     send.setAttribute('aria-busy',sending?'true':'false');
-    send.innerHTML=sending?`<svg class="ico mc-spin" aria-hidden="true"><use href="#i-loader"/></svg><span class="sr">Envoi en cours</span>`:ico('send');
+    send.innerHTML=sending?`<svg class="ico mc-spin" aria-hidden="true"><use href="#i-loader"/></svg><span class="sr">Envoi en cours</span>`:ico(bf?(note?'lock':'sendkit'):'send');
     grow();
   }
   function run(f){f.t=setInterval(()=>{f.p+=f.fail&&f.p>=65?0:12;if(f.fail&&f.p>=65){f.error=true;clearInterval(f.t)}else if(f.p>=100){f.p=null;clearInterval(f.t)}render()},350)}
@@ -795,9 +825,9 @@ function composer(host,dir,o={}){
   box.addEventListener('drop',e=>{e.preventDefault();drag=0;box.classList.remove('is-dragover');add([...e.dataTransfer.files])});
   ta.addEventListener('input',()=>{render()});
   ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&matchMedia('(pointer:fine)').matches){e.preventDefault();go()}});
-  function go(){if(!canSend())return;sending=true;render();setTimeout(()=>{sending=false;ta.value='';files=[];render();ta.focus()},1400)}
+  function go(){if(!canSend()){ta.focus();return}sending=true;render();setTimeout(()=>{sending=false;ta.value='';files=[];render();ta.focus()},1400)}
   send.onclick=go;
-  root.querySelectorAll('.mc-seg input').forEach(r=>r.onchange=()=>root.classList.toggle('note-interne',r.value==='note'));
+  root.querySelectorAll('.mc-seg input').forEach(r=>r.onchange=()=>{note=r.value==='note';root.classList.toggle(bf?'note-min':'note-interne',note);render()});
   if(o.text)ta.value=o.text;
   (o.files||[]).forEach(f=>files.push(f));
   if(o.drag)box.classList.add('is-dragover');
@@ -817,6 +847,13 @@ row('t-drop',{drag:true,text:'Je joins le devis.'});
 row('t-send',{sending:true,text:"Merci, c'est noté pour jeudi."});
 row('t-note',{head:true,note:true,text:'À vérifier avec le syndic avant de répondre.',files:[{name:'rapport-visite.pdf',size:890000}]});
 row('t-refuse',{refuse:'« virus.exe » n\'est pas accepté. Formats admis : images et PDF.',text:''});
+const LONG="Bonjour,\nSuite à notre échange de ce matin, voici le détail.\n1. Le plombier passera jeudi entre 9 h et 11 h.\n2. Merci de prévoir l'accès à la cave.\n3. Prévenez le gardien de l'immeuble B.\n4. La coupure d'eau durera environ deux heures.\n5. Les photos de la fuite sont jointes.\n6. Le devis arrive demain par courrier.\n7. Je reste joignable au bureau jusqu'à 17 h.\n8. Pensez à relever le compteur avant son passage.\nCordialement.";
+[['0. Essayez-la (déposez un fichier, tapez, envoyez)',{head:true}],['1. Vide',{}],['2. Texte long (7 lignes puis défilement)',{text:LONG}],
+ ['3. Deux vignettes : une en cours, une en erreur',()=>({text:'Voici les photos de la fuite.',files:[{name:'facade-fuite-escalier-B.jpg',size:2400000,p:62,url:IMG()},{name:'devis-plomberie.pdf',size:480000,p:40,error:true}]})],
+ ['4. Survol d\'un fichier',{drag:true,text:'Je joins le devis.'}],['5. Envoi en cours',{sending:true,text:"Merci, c'est noté pour jeudi."}],
+ ['6. Note interne (icône lock, pointillés)',{head:true,note:true,text:'À vérifier avec le syndic avant de répondre.',files:[{name:'rapport-visite.pdf',size:890000}]}],
+ ['7. Refus d\'un fichier',{refuse:'« virus.exe » n\'est pas accepté. Formats admis : images et PDF.'}]
+].forEach(([l,o])=>{const w=document.createElement('div');w.className='bcell';w.innerHTML=`<div class="tag">${l}</div>`;document.getElementById('bgrid').append(w);composer(w,'bf',typeof o==='function'?o():o)});
 const th=document.getElementById('theme');th.onclick=()=>{const d=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=d?'default':'dark';th.textContent=d?'Thème sombre':'Thème clair'};
 </script>
 </body>
