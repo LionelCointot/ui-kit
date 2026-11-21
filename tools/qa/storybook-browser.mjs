@@ -473,7 +473,24 @@ const MOTION_INIT = () => {
   };
   q.measure = measure;
   q.transitions = transitions;
-  q.watchPane = (selector) => {
+  // Entrée des panneaux CDK : CSSAnimation `lc-overlay-enter` sur le contenu du panneau (premier enfant) ; fondu de sortie : CSSTransition d'opacité sur le conteneur.
+  q.starts = 0;
+  document.addEventListener('animationstart', (e) => { if (e.animationName === 'lc-overlay-enter') q.starts += 1; }, true);
+  const enterAnims = (pane) => (pane.firstElementChild?.getAnimations() ?? []).filter((a) => a instanceof CSSAnimation && a.animationName === 'lc-overlay-enter');
+  q.enterAnims = enterAnims;
+  const measureEnter = (pane, keepPaused) => {
+    const content = pane.firstElementChild;
+    const list = enterAnims(pane);
+    list.forEach((a) => a.pause());
+    list.forEach((a) => { a.currentTime = 0; });
+    const cs = getComputedStyle(content);
+    const info = { className: pane.className, count: list.length, durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, cssDuration: cs.animationDuration, cssDelay: cs.animationDelay };
+    if (!keepPaused) list.forEach((a) => a.finish());
+    const end = getComputedStyle(content);
+    Object.assign(info, { endOpacity: end.opacity, endTransform: end.transform });
+    return info;
+  };
+  q.watchPane = (selector, keepEnterPaused = false) => {
     new MutationObserver(() => {
       const pane = document.querySelector(selector);
       if (!pane) return;
@@ -481,16 +498,18 @@ const MOTION_INIT = () => {
         q.pane = pane;
         q.classAtAttach = pane.className;
         requestAnimationFrame(() => {
-          q.enter = measure(pane);
+          q.enter = measureEnter(pane, keepEnterPaused);
           q.enterRect = pane.getBoundingClientRect().toJSON();
           q.aboveAtEnter = pane.classList.contains('lc-overlay--above');
+          q.startsAtEnter = q.starts;
         });
       } else if (pane.classList.contains('lc-overlay--closing') && !q.closing) {
         const list = transitions(pane);
-        q.closing = { connected: pane.isConnected, props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
+        q.closing = { connected: pane.isConnected, enterStillRunning: enterAnims(pane).length > 0, props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
         if (q.hold) list.forEach((a) => a.pause());
+        if (keepEnterPaused) enterAnims(pane).forEach((a) => a.play());
       } else if (q.enter && !q.closing && !q.flip && pane.classList.contains('lc-overlay--above') !== q.aboveAtEnter) {
-        q.flip = { above: pane.classList.contains('lc-overlay--above'), entering: transitions(pane, (a) => ['opacity', 'transform'].includes(a.transitionProperty)).map((a) => a.transitionProperty) };
+        q.flip = { above: pane.classList.contains('lc-overlay--above'), entering: enterAnims(pane).length };
       }
     }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   };
@@ -614,14 +633,13 @@ async function motion(browser, base) {
           }, spec.host);
           const e = got.enter;
           if (reduced) {
-            check(msList(e.transitionDuration).every((ms) => ms <= 0.01) && msList(e.transitionDelay).every((ms) => ms <= 0.01) && e.endOpacity === '1', `CA-7/13 ${label} entrée`, `durée=${e.transitionDuration} délai=${e.transitionDelay} opacité finale=${e.endOpacity}`);
+            check(e.count === 0 || (msList(e.cssDuration).every((ms) => ms <= 0.01) && msList(e.cssDelay).every((ms) => ms <= 0.01)), `CA-7/13 ${label} entrée`, `animation=${e.cssDuration} délai=${e.cssDelay} opacité finale=${e.endOpacity}`);
           } else {
-            const p = e.props;
-            const m = (k) => ({ m42: m42(p[k]?.startTransform ?? 'none') });
             const sign = above ? 1 : -1;
             const placed = above ? got.rect.bottom <= got.hostRect.top + 1 : got.rect.top >= got.hostRect.bottom - 1;
-            const ok = !!p.opacity && !!p.transform && near(p.opacity.duration, got.enterMs) && near(p.transform.duration, got.enterMs) && p.opacity.startOpacity === '0' && e.endOpacity === '1' && near(m('transform').m42, sign * got.offset, 0.01) && m42(e.endTransform) === 0 && e.className.includes('lc-overlay--above') === above && placed;
-            check(ok, `CA-7 ${label} entrée`, `props=${Object.keys(p)} durées=${p.opacity?.duration}/${p.transform?.duration} attendu ${got.enterMs}, départ opacité=${p.opacity?.startOpacity} décalageY=${m('transform').m42} attendu ${sign * got.offset}, fin=${e.endOpacity}/${e.endTransform}, classe à l'attache="${got.classAtAttach}", placé ${above ? 'au-dessus' : 'au-dessous'}=${placed}`);
+            const dy = m42(e.startTransform);
+            const ok = e.count === 1 && near(e.durations[0], got.enterMs) && e.delays[0] === 0 && e.startOpacity === '0' && e.endOpacity === '1' && near(dy, sign * got.offset, 0.01) && m42(e.endTransform) === 0 && e.className.includes('lc-overlay--above') === above && placed;
+            check(ok, `CA-7 ${label} entrée`, `animations lc-overlay-enter=${e.count} durée=${e.durations} attendu ${got.enterMs}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${sign * got.offset}, fin=${e.endOpacity}/${e.endTransform}, classe à l'attache="${got.classAtAttach}", placé ${above ? 'au-dessus' : 'au-dessous'}=${placed}`);
           }
           // CA-8a et 8c : fermeture au clavier.
           await page.keyboard.press('Escape');
@@ -635,6 +653,21 @@ async function motion(browser, base) {
           await page.close();
         }
         if (reduced) continue;
+
+        // CA-8a bis : fermeture pendant l'entrée (animation d'entrée suspendue à 0, relancée à la fermeture) : le fondu d'opacité du conteneur dure quand même `--lc-overlay-exit-duration`.
+        {
+          const label = `${tag} ${control}`;
+          const { page } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:top`);
+          await page.evaluate((selector) => window.__qa.watchPane(selector, true), spec.pane);
+          await page.click(spec.open);
+          await page.waitForFunction(() => window.__qa.enter !== null);
+          await page.keyboard.press('Escape');
+          await page.waitForFunction(() => window.__qa.closing !== null);
+          await page.waitForFunction(() => !window.__qa.pane.isConnected, undefined, { timeout: 5000 });
+          const r = await page.evaluate(() => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMs('--lc-overlay-exit-duration') }));
+          check(r.closing.enterStillRunning && r.closing.props.some(([prop, ms]) => prop === 'opacity' && near(ms, r.exitMs)), `CA-8a ${label} fermeture pendant l'entrée`, `entrée en cours=${r.closing.enterStillRunning}, transitions=${JSON.stringify(r.closing.props)} attendu opacity ${r.exitMs}, retiré du DOM=oui`);
+          await page.close();
+        }
 
         // CA-8b : réouverture pendant le fondu (fondu suspendu pour ne pas dépendre de l'horloge).
         {
@@ -670,7 +703,8 @@ async function motion(browser, base) {
           await page.waitForFunction(() => window.__qa.enter !== null);
           await page.setViewportSize({ width, height: 480 });
           const flipped = await page.waitForFunction(() => window.__qa.flip, undefined, { timeout: 3000 }).then((h) => h.jsonValue()).catch(() => null);
-          check(flipped !== null && flipped.above && flipped.entering.length === 0, `CA-7b ${tag} ${control} retournement`, flipped === null ? 'le panneau ne s\'est pas retourné (classe lc-overlay--above non posée)' : `au-dessus=${flipped.above}, transitions opacity/transform démarrées=${JSON.stringify(flipped.entering)}`);
+          const restarts = flipped === null ? -1 : await page.evaluate(async () => { await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); return window.__qa.starts - window.__qa.startsAtEnter; });
+          check(flipped !== null && flipped.above && flipped.entering === 0 && restarts === 0, `CA-7b ${tag} ${control} retournement`, flipped === null ? 'le panneau ne s\'est pas retourné (classe lc-overlay--above non posée)' : `au-dessus=${flipped.above}, animations lc-overlay-enter en cours=${flipped.entering}, démarrées depuis l'entrée=${restarts}`);
           await page.close();
         }
       }

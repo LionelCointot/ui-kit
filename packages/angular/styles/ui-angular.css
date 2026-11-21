@@ -373,11 +373,11 @@ lc-form-field [lcSuffix] {
   }
 }
 
-/* Panneaux CDK (menu, liste du combobox, calendriers) : entrée et sortie sur le conteneur `.cdk-overlay-pane`.
-   Entrée en animation (le CDK pose `panelClass` après un premier calcul de style : `@starting-style` ne jouerait jamais). `lc-overlay--above`
-   (position « au-dessus » du CDK) inverse le sens ; changer le signe ne relance pas l'animation. `lc-overlay--closing` (posée par
-   lcDetachAnimated) coupe l'animation et fond le panneau depuis son état courant. */
-:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay) {
+/* Panneaux CDK (menu, liste du combobox, calendriers). Entrée en animation sur le contenu du conteneur `.cdk-overlay-pane` (le CDK pose
+   `panelClass` après un premier calcul de style : `@starting-style` ne jouerait jamais ; et une animation sur le conteneur empêcherait
+   la transition de sortie pendant l'entrée). `lc-overlay--above` (position « au-dessus » du CDK, sur le conteneur) inverse le sens par
+   héritage ; changer le signe ne relance pas l'animation. `lc-overlay--closing` (posée par lcDetachAnimated) fond le conteneur. */
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay) > * {
   animation: lc-overlay-enter var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
 }
 
@@ -393,16 +393,17 @@ lc-form-field [lcSuffix] {
 }
 
 :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay).lc-overlay--closing {
-  animation: none;
   opacity: 0;
   transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
   pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay),
-  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay).lc-overlay--closing {
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay) > * {
     animation: none;
+  }
+
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay).lc-overlay--closing {
     transition: none;
   }
 }
