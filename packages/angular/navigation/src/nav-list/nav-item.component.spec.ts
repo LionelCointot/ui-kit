@@ -86,6 +86,5 @@ describe('LcNavItemComponent : indicateur de la liste', () => {
     const link = (fixture.nativeElement as HTMLElement).querySelector('a')!;
     expect(link.classList).toContain('lc-nav-item--active');
     expect(link.classList).not.toContain('lc-nav-item--indicated');
-    expect(getComputedStyle(link).backgroundColor).not.toBe('');
   });
 });

@@ -3,6 +3,7 @@
 //   node tools/qa/storybook-browser.mjs perf                      temps de rendu des 2 000 lignes de lc-tree-table (CA-K3.5)
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
+//   node tools/qa/storybook-browser.mjs motion                    mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
 import { createServer } from 'node:http';
@@ -440,6 +441,245 @@ async function filterDate(browser, base) {
   return failures;
 }
 
+/** Mouvement (spec 2026-11-mouvement, section 9) : CA-6, CA-7, CA-7b, CA-8, CA-9 et la part de CA-13 qui les concerne. Stories `QA/Motion/Acceptance`. */
+const MOTION_INIT = () => {
+  const q = (window.__qa = { pane: null, enter: null, closing: null, flip: null, hold: false, reveal: null });
+  const rootStyle = () => getComputedStyle(document.documentElement);
+  const toMs = (value) => { const v = value.trim(); if (!/^-?[\d.]+m?s$/.test(v)) throw new Error(`durée illisible : "${v}"`); return v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000; };
+  q.tokenMs = (name) => toMs(rootStyle().getPropertyValue(name));
+  q.tokenPx = (name) => {
+    const probe = Object.assign(document.createElement('div'), {});
+    probe.style.cssText = `position:absolute;width:var(${name})`;
+    document.body.append(probe);
+    const px = parseFloat(getComputedStyle(probe).width);
+    probe.remove();
+    return px;
+  };
+  const transitions = (el, filter = () => true) => el.getAnimations().filter((a) => a instanceof CSSTransition && filter(a));
+  const measure = (el) => {
+    const list = transitions(el);
+    const info = { className: el.className, props: {} };
+    list.forEach((a) => a.pause());
+    list.forEach((a) => { a.currentTime = 0; });
+    list.forEach((a) => {
+      const timing = a.effect.getComputedTiming();
+      const cs = getComputedStyle(el);
+      info.props[a.transitionProperty] = { duration: timing.duration, delay: timing.delay, startOpacity: cs.opacity, startTransform: cs.transform };
+    });
+    list.forEach((a) => a.finish());
+    const cs = getComputedStyle(el);
+    Object.assign(info, { endOpacity: cs.opacity, endTransform: cs.transform, transitionDuration: cs.transitionDuration, transitionDelay: cs.transitionDelay });
+    return info;
+  };
+  q.measure = measure;
+  q.transitions = transitions;
+  q.watchPane = (selector) => {
+    new MutationObserver(() => {
+      const pane = document.querySelector(selector);
+      if (!pane) return;
+      if (!q.pane) {
+        q.pane = pane;
+        q.classAtAttach = pane.className;
+        requestAnimationFrame(() => {
+          q.enter = measure(pane);
+          q.enterRect = pane.getBoundingClientRect().toJSON();
+          q.aboveAtEnter = pane.classList.contains('lc-overlay--above');
+        });
+      } else if (pane.classList.contains('lc-overlay--closing') && !q.closing) {
+        const list = transitions(pane);
+        q.closing = { connected: pane.isConnected, props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
+        if (q.hold) list.forEach((a) => a.pause());
+      } else if (q.enter && !q.closing && !q.flip && pane.classList.contains('lc-overlay--above') !== q.aboveAtEnter) {
+        q.flip = { above: pane.classList.contains('lc-overlay--above'), entering: transitions(pane, (a) => ['opacity', 'transform'].includes(a.transitionProperty)).map((a) => a.transitionProperty) };
+      }
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  };
+};
+
+const PANELS = {
+  menu: { pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'click' },
+  combobox: { pane: '.cdk-overlay-pane.lc-combobox-overlay', open: 'lc-combobox input', host: 'lc-combobox', reopen: 'ArrowDown' },
+  date: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-input button[aria-expanded]', host: 'lc-date-input', reopen: 'click' },
+  range: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-range-input button[aria-expanded]', host: 'lc-date-range-input', reopen: 'click' },
+};
+const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
+/** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
+const m42 = (value) => (value === 'none' ? 0 : parseFloat(value.slice(value.indexOf('(') + 1, -1).split(',')[value.startsWith('matrix3d') ? 13 : 5]));
+const near = (a, b, eps = 0.05) => Math.abs(a - b) <= eps;
+
+async function motionPage(context, base, id, args = '') {
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(`${base}/iframe.html?id=${id}&viewMode=story${args ? `&args=${args}` : ''}`);
+  await page.waitForSelector('#storybook-root > *', { timeout: 20000 });
+  return { page, errors };
+}
+
+async function motion(browser, base) {
+  let failures = 0;
+  const check = (ok, label, detail = '') => {
+    if (!ok) failures += 1;
+    console.log(`${ok ? 'OK ' : 'KO '} ${label}${detail ? ` ${detail}` : ''}`);
+  };
+  const contexts = [['normal', {}], ['reduced', { reducedMotion: 'reduce' }], ['forced', { forcedColors: 'active' }]];
+  const sizes = [[1280, 720], [360, 640]];
+  for (const [name, options] of contexts) {
+    const reduced = name === 'reduced';
+    for (const [width, height] of sizes) {
+      const context = await browser.newContext({ viewport: { width, height }, ...options });
+      await context.addInitScript(MOTION_INIT);
+      const tag = `${name} ${width}px`;
+
+      // CA-6 : appui du bouton.
+      {
+        const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--buttons');
+        for (const id of ['solid', 'outline', 'flat', 'icon', 'disabled']) {
+          const box = await page.locator(`#${id}`).boundingBox();
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          await page.mouse.down();
+          const got = await page.evaluate((id) => {
+            const el = document.getElementById(id);
+            const list = window.__qa.transitions(el, (a) => a.transitionProperty === 'transform');
+            const durations = list.map((a) => a.effect.getComputedTiming().duration);
+            list.forEach((a) => a.finish());
+            const scale = parseFloat(getComputedStyle(el).getPropertyValue('--lc-button-press-scale'));
+            const matrix = new DOMMatrix(getComputedStyle(el).transform);
+            const pressMs = window.__qa.tokenMs('--lc-button-press-duration' in getComputedStyle(el) ? '--lc-button-press-duration' : '--lc-sys-duration-fast');
+            return { durations, scale, a: matrix.a, d: matrix.d, raw: getComputedStyle(el).transform, pressMs, active: el.matches(':active'), cssDuration: getComputedStyle(el).transitionDuration };
+          }, id);
+          await page.mouse.up();
+          if (id === 'disabled') check(got.raw === 'none' && got.durations.length === 0, `CA-6 ${tag} ${id}`, `transform=${got.raw}, transitions transform=${got.durations.length}`);
+          else if (reduced) check(got.active && msList(got.cssDuration).every((ms) => ms <= 0.01) && got.durations.every((ms) => ms <= 0.01), `CA-6/13 ${tag} ${id}`, `durées=${got.cssDuration}, a=${got.a}`);
+          else check(got.active && got.durations.length > 0 && got.durations.every((ms) => near(ms, got.pressMs)) && near(got.a, got.scale, 0.001) && near(got.d, got.scale, 0.001), `CA-6 ${tag} ${id}`, `échelle=${got.a.toFixed(3)} attendu ${got.scale}, durées=${got.durations} attendu ${got.pressMs}, actif=${got.active}`);
+        }
+        check(errors.length === 0, `erreurs page ${tag} buttons`, errors.join(' ; '));
+        await page.close();
+      }
+
+      // CA-9 : lcReveal.
+      {
+        const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--reveal');
+        await page.evaluate(() => {
+          const q = window.__qa;
+          new MutationObserver(() => {
+            if (q.reveal || !document.querySelector('li[lcreveal]')) return;
+            q.reveal = 'pending';
+            requestAnimationFrame(() => {
+              const items = [...document.querySelectorAll('li[lcreveal]')];
+              const all = items.map((li) => ({ li, list: q.transitions(li) }));
+              all.forEach(({ list }) => list.forEach((a) => a.pause()));
+              all.forEach(({ list }) => list.forEach((a) => { a.currentTime = 0; }));
+              q.reveal = all.map(({ li, list }) => {
+                const cs = getComputedStyle(li);
+                return { index: li.dataset.index, props: list.map((a) => a.transitionProperty), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), startOpacity: cs.opacity, startTransform: cs.transform, cssDelay: cs.transitionDelay, cssDuration: cs.transitionDuration };
+              });
+              all.forEach(({ list }) => list.forEach((a) => a.finish()));
+            });
+          }).observe(document.body, { subtree: true, childList: true });
+        });
+        await page.click('#toggle');
+        await page.waitForFunction(() => Array.isArray(window.__qa.reveal));
+        const rows = await page.evaluate(() => window.__qa.reveal);
+        const staggerMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-stagger'));
+        const durationMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-duration'));
+        const offset = await page.evaluate(() => window.__qa.tokenPx('--lc-sys-motion-offset'));
+        const expected = { 0: 0, 3: 3, 7: 7, 12: 7, '-1': 0, '1.5': 0 };
+        for (const row of rows) {
+          const rank = expected[row.index];
+          if (reduced) {
+            check(msList(row.cssDelay).every((ms) => ms <= 0.01) && msList(row.cssDuration).every((ms) => ms <= 0.01), `CA-9/13 ${tag} index ${row.index}`, `délai=${row.cssDelay} durée=${row.cssDuration}`);
+            continue;
+          }
+          const props = [...row.props].sort().join('+');
+          const ok = props === 'opacity+transform' && row.delays.every((d) => near(d, rank * staggerMs)) && row.durations.every((d) => near(d, durationMs)) && row.startOpacity === '0' && near(m42(row.startTransform), -offset);
+          check(ok, `CA-9 ${tag} index ${row.index}`, `props=${props} délais=${row.delays} attendu ${rank * staggerMs} (${rank}×${staggerMs}), durées=${row.durations} attendu ${durationMs}, départ opacité=${row.startOpacity} transform=${row.startTransform}`);
+        }
+        check(errors.length === 0, `erreurs page ${tag} reveal`, errors.join(' ; '));
+        await page.close();
+      }
+
+      // CA-7, CA-8 : panneaux, en haut (descente) puis en bas d'écran (montée).
+      for (const [control, spec] of Object.entries(PANELS)) {
+        for (const place of ['top', 'bottom']) {
+          const above = place === 'bottom';
+          const label = `${tag} ${control} ${place}`;
+          const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:${place}`);
+          await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
+          await page.click(spec.open);
+          await page.waitForFunction(() => window.__qa.enter !== null);
+          const got = await page.evaluate((host) => {
+            const q = window.__qa;
+            return { enter: q.enter, rect: q.enterRect, classAtAttach: q.classAtAttach, hostRect: document.querySelector(host).getBoundingClientRect().toJSON(), enterMs: q.tokenMs('--lc-overlay-enter-duration'), offset: q.tokenPx('--lc-sys-motion-offset') };
+          }, spec.host);
+          const e = got.enter;
+          if (reduced) {
+            check(msList(e.transitionDuration).every((ms) => ms <= 0.01) && msList(e.transitionDelay).every((ms) => ms <= 0.01) && e.endOpacity === '1', `CA-7/13 ${label} entrée`, `durée=${e.transitionDuration} délai=${e.transitionDelay} opacité finale=${e.endOpacity}`);
+          } else {
+            const p = e.props;
+            const m = (k) => ({ m42: m42(p[k]?.startTransform ?? 'none') });
+            const sign = above ? 1 : -1;
+            const placed = above ? got.rect.bottom <= got.hostRect.top + 1 : got.rect.top >= got.hostRect.bottom - 1;
+            const ok = !!p.opacity && !!p.transform && near(p.opacity.duration, got.enterMs) && near(p.transform.duration, got.enterMs) && p.opacity.startOpacity === '0' && e.endOpacity === '1' && near(m('transform').m42, sign * got.offset, 0.01) && m42(e.endTransform) === 0 && e.className.includes('lc-overlay--above') === above && placed;
+            check(ok, `CA-7 ${label} entrée`, `props=${Object.keys(p)} durées=${p.opacity?.duration}/${p.transform?.duration} attendu ${got.enterMs}, départ opacité=${p.opacity?.startOpacity} décalageY=${m('transform').m42} attendu ${sign * got.offset}, fin=${e.endOpacity}/${e.endTransform}, classe à l'attache="${got.classAtAttach}", placé ${above ? 'au-dessus' : 'au-dessous'}=${placed}`);
+          }
+          // CA-8a et 8c : fermeture au clavier.
+          await page.keyboard.press('Escape');
+          await page.waitForFunction(() => window.__qa.closing !== null);
+          await page.waitForFunction(() => !window.__qa.pane.isConnected, undefined, { timeout: 5000 });
+          const closed = await page.evaluate((s) => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMs('--lc-overlay-exit-duration'), focused: document.activeElement?.matches(s) ?? false, active: document.activeElement?.outerHTML.slice(0, 80) }), spec.open);
+          const c = closed.closing;
+          if (reduced) check(c.connected && msList(c.transitionDuration).every((ms) => ms <= 0.01) && closed.focused, `CA-8/13 ${label} fermeture`, `durée=${c.transitionDuration} focus déclencheur=${closed.focused}`);
+          else check(c.connected && c.props.some(([prop, ms]) => prop === 'opacity' && near(ms, closed.exitMs)) && closed.focused, `CA-8a/8c ${label} fermeture`, `classe posée, présent=${c.connected}, transitions=${JSON.stringify(c.props)} attendu opacity ${closed.exitMs}, retiré du DOM=oui, focus déclencheur=${closed.focused} (${closed.active})`);
+          check(errors.length === 0, `erreurs page ${label}`, errors.join(' ; '));
+          await page.close();
+        }
+        if (reduced) continue;
+
+        // CA-8b : réouverture pendant le fondu (fondu suspendu pour ne pas dépendre de l'horloge).
+        {
+          const label = `${tag} ${control}`;
+          const { page } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:top`);
+          await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
+          await page.click(spec.open);
+          await page.waitForFunction(() => window.__qa.enter !== null);
+          await page.evaluate(() => { window.__qa.hold = true; });
+          await page.keyboard.press('Escape');
+          await page.waitForFunction(() => window.__qa.closing !== null);
+          if (spec.reopen === 'click') await page.click(spec.open);
+          else await page.keyboard.press(spec.reopen);
+          const got = await page.evaluate(async () => {
+            const pane = window.__qa.pane;
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            pane.getAnimations().forEach((a) => { if (a.playState === 'paused') a.play(); });
+            await Promise.allSettled(pane.getAnimations().map((a) => a.finished));
+            return { connected: pane.isConnected, closingClass: pane.classList.contains('lc-overlay--closing'), opacity: getComputedStyle(pane).opacity };
+          });
+          check(got.connected && !got.closingClass && got.opacity === '1', `CA-8b ${label} réouverture pendant le fondu`, `présent=${got.connected} classe closing=${got.closingClass} opacité=${got.opacity}`);
+          await page.close();
+        }
+      }
+
+      // CA-7b : retournement après ouverture (vraie bascule : la fenêtre rétrécit, le CDK passe le panneau au-dessus) : aucune nouvelle entrée.
+      if (!reduced && width === 1280) {
+        for (const [control, spec] of Object.entries(PANELS)) {
+          const { page } = await motionPage(context, base, 'qa-motion-acceptance--panel', `control:${control};place:middle`);
+          await page.setViewportSize({ width, height: 1000 });
+          await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
+          await page.click(spec.open);
+          await page.waitForFunction(() => window.__qa.enter !== null);
+          await page.setViewportSize({ width, height: 480 });
+          const flipped = await page.waitForFunction(() => window.__qa.flip, undefined, { timeout: 3000 }).then((h) => h.jsonValue()).catch(() => null);
+          check(flipped !== null && flipped.above && flipped.entering.length === 0, `CA-7b ${tag} ${control} retournement`, flipped === null ? 'le panneau ne s\'est pas retourné (classe lc-overlay--above non posée)' : `au-dessus=${flipped.above}, transitions opacity/transform démarrées=${JSON.stringify(flipped.entering)}`);
+          await page.close();
+        }
+      }
+      await context.close();
+    }
+  }
+  return failures;
+}
+
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -458,10 +698,12 @@ try {
     failures = await filterDate(browser, base);
   } else if (mode === 'treegrid') {
     failures = await treegrid(browser, base);
+  } else if (mode === 'motion') {
+    failures = await motion(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | dom | treegrid | filter-date');
+    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {
