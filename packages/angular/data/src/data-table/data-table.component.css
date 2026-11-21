@@ -464,8 +464,7 @@ lc-data-table {
   padding: var(--lc-sys-space-3) var(--lc-sys-space-4) var(--lc-sys-space-2);
 }
 
-.lc-data-table__menu-title,
-.lc-data-table__panel-title {
+.lc-data-table__menu-title {
   margin: 0;
   font-size: var(--lc-sys-font-size-md);
   font-weight: var(--lc-sys-font-weight-semibold);
@@ -481,8 +480,7 @@ lc-data-table {
   padding: var(--lc-sys-space-1) var(--lc-sys-space-4) var(--lc-sys-space-4);
 }
 
-.lc-data-table__menu-foot,
-.lc-data-table__panel-foot {
+.lc-data-table__menu-foot {
   display: flex;
   justify-content: flex-end;
   gap: var(--lc-sys-space-2);
@@ -490,89 +488,15 @@ lc-data-table {
   border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }
 
-/* ---------- Panneau plein écran (téléphone) ---------- */
-.lc-data-table__panel {
-  inline-size: 100%;
-  max-inline-size: none;
-  block-size: 100%;
-  max-block-size: none;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: var(--lc-sys-color-background);
-  color: var(--lc-sys-color-on-surface);
-}
-
-.lc-data-table__panel[open] {
-  display: flex;
-  flex-direction: column;
-  transition:
-    opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing),
-    transform var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
-}
-
 /* Ligne en fondu de sortie (`animate.leave`) : plus cliquable, elle disparaît avant que les suivantes ne comblent la place. */
 .lc-data-table__table tbody tr[data-leaving] {
   pointer-events: none;
 }
 
-/* Entrée : fondu et descente (@starting-style joue à l'ouverture du dialogue). Sortie : `data-closing` (posé avant `close()`) fond le panneau. */
-@starting-style {
-  .lc-data-table__panel[open] {
-    opacity: 0;
-    transform: translateY(calc(-1 * var(--lc-overlay-offset)));
-  }
-}
-
-.lc-data-table__panel[open][data-closing] {
-  opacity: 0;
-  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
-}
-
-.lc-data-table__panel:focus {
-  outline: none;
-}
-
-.lc-data-table__panel::backdrop {
-  background: var(--lc-sys-color-background);
-  transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
-}
-
-@starting-style {
-  .lc-data-table__panel[open]::backdrop {
-    opacity: 0;
-  }
-}
-
-.lc-data-table__panel[data-closing]::backdrop {
-  opacity: 0;
-  transition-duration: var(--lc-overlay-exit-duration);
-}
-
-.lc-data-table__panel-head {
-  display: flex;
-  align-items: center;
-  gap: var(--lc-sys-space-2);
-  padding: var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-1) var(--lc-sys-space-4);
-  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
-  background: var(--lc-sys-color-surface-raised);
-}
-
-.lc-data-table__panel-title {
-  flex: 1;
-  font-size: var(--lc-sys-font-size-lg);
-}
-
+/* ---------- Panneau des filtres (téléphone) : contenu de `lc-sheet` ---------- */
 .lc-data-table__panel-body {
-  flex: 1;
-  overflow-y: auto;
   padding: 0 var(--lc-sys-space-4);
   --lc-column-filter-list-max-height: none;
-}
-
-.lc-data-table__panel-foot {
-  justify-content: stretch;
-  background: var(--lc-sys-color-surface-raised);
 }
 
 .lc-data-table__panel-apply {
@@ -660,9 +584,6 @@ lc-data-table {
 @media (prefers-reduced-motion: reduce) {
   .lc-data-table__funnel,
   .lc-data-table__section-toggle > lc-icon,
-  .lc-data-table__panel[open],
-  .lc-data-table__panel::backdrop,
-  .lc-data-table__panel[data-closing]::backdrop,
   .lc-data-table__section-body,
   .lc-data-table__chip {
     transition: none;

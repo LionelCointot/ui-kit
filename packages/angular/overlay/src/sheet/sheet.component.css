@@ -1,0 +1,190 @@
+lc-sheet {
+  display: contents;
+}
+
+.lc-sheet__dialog {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: calc(100dvh - var(--lc-sheet-top-gap, var(--lc-sys-space-10)) - env(safe-area-inset-top));
+  max-block-size: none;
+  margin: auto 0 0;
+  padding: 0;
+  overflow: hidden;
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-block-end: 0;
+  border-start-start-radius: var(--lc-sheet-radius, var(--lc-sys-radius-lg));
+  border-start-end-radius: var(--lc-sheet-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-sys-color-background);
+  color: var(--lc-sys-color-on-surface);
+  font-family: var(--lc-sys-font-family-base);
+}
+
+.lc-sheet__dialog:focus {
+  outline: none;
+}
+
+.lc-sheet__dialog[open] {
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--lc-slide-enter-duration) var(--lc-overlay-easing);
+}
+
+/* Entrée : la feuille monte du bas (@starting-style joue à l'ouverture du dialogue). */
+@starting-style {
+  .lc-sheet__dialog[open] {
+    transform: translateY(100%);
+  }
+}
+
+/* Sortie : `data-closing` (posé avant `close()`) la fait descendre ; retour d'un tirage trop court : même durée. */
+.lc-sheet__dialog[open][data-closing] {
+  transform: translateY(100%);
+  transition-duration: var(--lc-slide-exit-duration);
+}
+
+.lc-sheet__dialog[open][data-returning] {
+  transition-duration: var(--lc-slide-exit-duration);
+}
+
+/* Pendant le tirage, la feuille suit le doigt (transform écrit en ligne) sans transition. */
+.lc-sheet__dialog[open][data-dragging] {
+  transition: none;
+}
+
+.lc-sheet__dialog::backdrop {
+  background: var(--lc-sys-color-backdrop);
+  opacity: calc(1 - var(--lc-sheet-progress, 0));
+  transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+}
+
+@starting-style {
+  .lc-sheet__dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.lc-sheet__dialog[data-closing]::backdrop {
+  opacity: 0;
+  transition-duration: var(--lc-slide-exit-duration);
+}
+
+.lc-sheet__dialog[data-dragging]::backdrop {
+  transition: none;
+}
+
+/* Zone de geste : bande de la poignée et en-tête (la croix est exclue par le code). */
+.lc-sheet__drag {
+  flex: none;
+  touch-action: none;
+  background: var(--lc-sys-color-surface-raised);
+}
+
+.lc-sheet__grip {
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  block-size: var(--lc-sys-space-6);
+  padding-block-start: var(--lc-sys-space-2);
+}
+
+.lc-sheet__handle {
+  inline-size: calc(var(--lc-sys-space-8) + var(--lc-sys-space-1));
+  block-size: calc(var(--lc-sys-space-1) + var(--lc-sys-border-width-thin));
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-border-strong);
+}
+
+.lc-sheet__header {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-1) var(--lc-sys-space-2) var(--lc-sys-space-1) var(--lc-sys-space-4);
+  border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+}
+
+.lc-sheet__title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--lc-sys-font-size-lg);
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+.lc-sheet__body {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lc-sheet__footer {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  gap: var(--lc-sys-space-2);
+  padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
+  border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  background: var(--lc-sys-color-surface-raised);
+}
+
+.lc-sheet__footer:empty {
+  display: none;
+}
+
+/* Grand écran : carte centrée (fiche d'iPad), sans poignée ni geste ; entrée et sortie en translation et fondu. */
+@media (min-width: 48em) {
+  .lc-sheet__dialog {
+    inline-size: min(var(--lc-sheet-card-width, 35rem), 100% - 2 * var(--lc-sys-space-6));
+    block-size: auto;
+    max-block-size: var(--lc-sheet-card-max-height, 80dvh);
+    margin: auto;
+    border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+    border-radius: var(--lc-sheet-radius, var(--lc-sys-radius-lg));
+    box-shadow: var(--lc-sys-shadow-3);
+  }
+
+  .lc-sheet__dialog[open] {
+    transition-property: transform, opacity;
+  }
+
+  @starting-style {
+    .lc-sheet__dialog[open] {
+      transform: translateY(50dvh);
+      opacity: 0;
+    }
+  }
+
+  .lc-sheet__dialog[open][data-closing] {
+    transform: translateY(50dvh);
+    opacity: 0;
+  }
+
+  .lc-sheet__grip {
+    display: none;
+  }
+
+  .lc-sheet__drag {
+    touch-action: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-sheet__dialog[open],
+  .lc-sheet__dialog[open][data-closing],
+  .lc-sheet__dialog[open][data-returning],
+  .lc-sheet__dialog::backdrop,
+  .lc-sheet__dialog[data-closing]::backdrop {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-sheet__dialog {
+    border-color: CanvasText;
+  }
+
+  .lc-sheet__handle {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}

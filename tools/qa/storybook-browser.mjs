@@ -433,8 +433,8 @@ async function filterDate(browser, base) {
   {
     const { page, context } = await open(360);
     await page.click('[id$="-filters"]');
-    await page.waitForSelector('dialog.lc-data-table__panel[open]');
-    await page.locator('dialog.lc-data-table__panel .lc-data-table__section-toggle', { hasText: 'Reçue le' }).click();
+    await page.waitForSelector('lc-sheet dialog[open]');
+    await page.locator('lc-sheet dialog .lc-data-table__section-toggle', { hasText: 'Reçue le' }).click();
     await page.waitForSelector('dialog lc-date-range-input input');
     const types = await page.locator('dialog lc-date-range-input input').evaluateAll((nodes) => nodes.map((n) => n.type));
     check('CA-P10b 360 px, pointeur fin : champs natifs', types.length === 2 && types.every((t) => t === 'date'), JSON.stringify(types));
@@ -538,14 +538,14 @@ const MOTION_INIT = () => {
 
   // Dialogue du téléphone : entrée (à l'attribut `open`) et sortie (à `data-closing`, fondu suspendu pour ne pas dépendre de l'horloge).
   q.watchDialog = () => {
-    const dialog = document.querySelector('dialog.lc-data-table__panel');
+    const dialog = document.querySelector('lc-sheet dialog');
     const own = () => dialog.getAnimations({ subtree: true }).filter((a) => a instanceof CSSTransition && a.effect.target === dialog);
     const read = (list) => {
       list.forEach((a) => a.pause());
       list.forEach((a) => { a.currentTime = 0; });
       const cs = getComputedStyle(dialog);
       const bd = getComputedStyle(dialog, '::backdrop');
-      const info = { open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
+      const info = { height: dialog.offsetHeight, open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
       return info;
     };
     q.dlg = { held: [] };
@@ -688,7 +688,7 @@ async function motionPage(context, base, id, args = '', hash = '') {
 async function motionPhone(context, base, reduced, tag, check) {
   const ID = 'qa-motion-data-table--table';
   const FILTERS = 'button[id$="-filters"]';
-  const DIALOG = 'dialog.lc-data-table__panel';
+  const DIALOG = 'lc-sheet dialog';
   const quick = (list) => msList(list).every((ms) => ms <= 0.01);
   const start = async () => {
     const { page, errors } = await motionPage(context, base, ID);
@@ -696,9 +696,9 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
     return { page, errors };
   };
-  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-reveal-stagger'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-overlay-offset') }; });
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-reveal-stagger'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-overlay-offset') }; });
   const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
-  const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('dialog.lc-data-table__panel').open); };
+  const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('lc-sheet dialog').open); };
   const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   const pick = async (page, section, option) => {
     await page.locator(`${DIALOG} .lc-data-table__section-toggle`, { hasText: section }).click();
@@ -741,7 +741,7 @@ async function motionPhone(context, base, reduced, tag, check) {
     const e = await page.evaluate(() => window.__qa.dlg.enter);
     const dy = m42(e.startTransform);
     if (reduced) check(quick(e.cssDuration) && quick(e.backdropCssDuration) && e.endOpacity === '1', `CA-10/13 ${tag} ${label} entrée`, `durée dialogue=${e.cssDuration} fond=${e.backdropCssDuration} opacité finale=${e.endOpacity}`);
-    else check(['dialog:opacity', 'dialog:transform', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.durations.every((d) => near(d, t.enter)) && e.delays.every((d) => d === 0) && e.startOpacity === '0' && near(dy, -t.offset, 0.01) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée`, `transitions=${e.props} durées=${e.durations} attendu ${t.enter}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${-t.offset}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
+    else check(['dialog:transform', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.props.every((p, i) => near(e.durations[i], p.endsWith('transform') ? t.slideEnter : t.enter)) && e.delays.every((d) => d === 0) && near(dy, e.height, 1) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée (feuille : translateY(100%) → 0, fond en fondu)`, `transitions=${e.props} durées=${e.durations} attendu ${t.slideEnter} (feuille) et ${t.enter} (fond), décalageY=${dy} attendu ${e.height}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
   };
 
   // CA-10 : sortie (data-closing, puis dialog.open === false après la fin du fondu).
@@ -749,14 +749,14 @@ async function motionPhone(context, base, reduced, tag, check) {
     const t = await tokens(page);
     await page.waitForFunction(() => window.__qa.dlg.closing);
     const got = await page.evaluate(async () => ({ closing: window.__qa.dlg.closing, held: await window.__qa.releaseDialog() }));
-    await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open, undefined, { timeout: 5000 });
-    const after = await page.evaluate(() => ({ closingAttr: document.querySelector('dialog.lc-data-table__panel').hasAttribute('data-closing'), query: (window.__emitted ?? []).length }));
+    await page.waitForFunction(() => !document.querySelector('lc-sheet dialog').open, undefined, { timeout: 5000 });
+    const after = await page.evaluate(() => ({ closingAttr: document.querySelector('lc-sheet dialog').hasAttribute('data-closing'), query: (window.__emitted ?? []).length }));
     const c = got.closing;
     if (reduced) {
       check(c.open && quick(c.cssDuration) && c.durations.every((d) => d <= 0.01), `CA-10/13 ${tag} ${label} sortie sans attente (dialogue)`, `durée dialogue=${c.cssDuration} transitions=${c.props} durées=${c.durations}`);
       check(quick(c.backdropCssDuration), `CA-13 ${tag} ${label} durée calculée du fond (::backdrop) ≤ 0,01 ms`, `durée du fond=${c.backdropCssDuration} (aucune transition ne joue : ${c.props.includes('::backdrop:opacity') ? 'si, une joue' : 'transition-property: none'})`);
     }
-    else check(c.open && c.props.includes('dialog:opacity') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.exit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.exit}, fondu en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
+    else check(c.open && c.props.includes('dialog:transform') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.slideExit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.slideExit}, descente en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
     check(!after.closingAttr, `CA-10 ${tag} ${label} fermé après le fondu`, `open=false, data-closing retiré=${!after.closingAttr}`);
     check(await focusOnFilters(page), `CA-10 ${tag} ${label} focus rendu au bouton « Filtres »`);
     return after.query;
@@ -767,8 +767,8 @@ async function motionPhone(context, base, reduced, tag, check) {
     const { page, errors } = await start();
     await openPanel(page);
     await entry(page, way);
-    check(await page.evaluate(() => document.activeElement?.closest('.lc-data-table__panel-head') !== null && document.querySelector('dialog.lc-data-table__panel').open), `CA-10 ${tag} ${way} focus initial dans le dialogue (croix autofocus)`);
-    if (way === 'croix') await page.click(`${DIALOG} .lc-data-table__panel-head button`); else await page.keyboard.press('Escape');
+    check(await page.evaluate(() => document.activeElement?.closest('.lc-sheet__header') !== null && document.querySelector('lc-sheet dialog').open), `CA-10 ${tag} ${way} focus initial dans le dialogue (croix autofocus)`);
+    if (way === 'croix') await page.click(`${DIALOG} .lc-sheet__close`); else await page.keyboard.press('Escape');
     const emissions = await exit(page, way);
     check(emissions === 0, `CA-10 ${tag} ${way} aucun filtre appliqué`, `émissions=${emissions}`);
     check(errors.length === 0, `erreurs page ${tag} ${way}`, errors.join(' ; '));
@@ -822,7 +822,7 @@ async function motionPhone(context, base, reduced, tag, check) {
   await page.click(`${DIALOG} .lc-data-table__panel-apply`);
   await page.waitForFunction(() => window.__qa.dlg.closing);
   await page.evaluate(() => window.__qa.releaseDialog());
-  await page.waitForFunction(() => !document.querySelector('dialog.lc-data-table__panel').open && document.querySelectorAll('li.lc-data-table__chip').length === 2, undefined, { timeout: 5000 });
+  await page.waitForFunction(() => !document.querySelector('lc-sheet dialog').open && document.querySelectorAll('li.lc-data-table__chip').length === 2, undefined, { timeout: 5000 });
   const snapsBefore = await page.evaluate(() => window.__qa.cardSnaps.length);
   await page.evaluate(() => { window.__qa.chipOut = null; });
   await page.locator('.lc-data-table__chip-remove').first().click();
@@ -1057,10 +1057,10 @@ async function motionList(context, base, reduced, tag, phone, check) {
   const beta = async () => {
     if (phone) {
       await page.click('button[id$="-filters"]');
-      await page.waitForFunction(() => document.querySelector('dialog.lc-data-table__panel')?.open);
-      await page.locator('dialog.lc-data-table__panel .lc-data-table__section-toggle', { hasText: 'Catégorie' }).click();
-      await page.locator('dialog.lc-data-table__panel label.lc-column-filter__option', { hasText: 'Beta' }).locator('input').check();
-      await page.locator('dialog.lc-data-table__panel .lc-data-table__panel-apply', { hasText: /\d/ }).click();
+      await page.waitForFunction(() => document.querySelector('lc-sheet dialog')?.open);
+      await page.locator('lc-sheet dialog .lc-data-table__section-toggle', { hasText: 'Catégorie' }).click();
+      await page.locator('lc-sheet dialog label.lc-column-filter__option', { hasText: 'Beta' }).locator('input').check();
+      await page.locator('lc-sheet dialog .lc-data-table__panel-apply', { hasText: /\d/ }).click();
     } else {
       await page.click('[id$="-funnel-cat"]');
       await page.locator('.lc-data-table__overlay label.lc-column-filter__option', { hasText: 'Beta' }).locator('input').check();

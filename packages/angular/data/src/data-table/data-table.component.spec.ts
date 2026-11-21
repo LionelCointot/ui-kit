@@ -421,7 +421,7 @@ describe('LcDataTableComponent', () => {
         vi.setSystemTime(new Date(2026, 10, 10, 12)); // 04 → 10 nov. : 7 lignes ; « Afficher N » est désactivé à 0 résultat
         await setup({ narrow: true, picker: 'native' });
         await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-        const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+        const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
         const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
         await click(toggle);
         await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-date-range-input__shortcuts button')].find((b) => /7 derniers jours/.test(b.textContent!))!);
@@ -436,7 +436,7 @@ describe('LcDataTableComponent', () => {
         window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia; // pointeur fin et survol : en `auto`, le kit choisirait son calendrier
         try {
           await setup({ narrow: true }); // pas de LC_DATE_PICKER fourni
-          const dialog = () => el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+          const dialog = () => el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
           const openSection = async () => {
             await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
             const toggle = [...dialog().querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
@@ -658,7 +658,7 @@ describe('LcDataTableComponent', () => {
     it('CA-15 : rien n\'est appliqué avant « Afficher N » ; le nombre suit les choix', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!;
       expect(toggle.getAttribute('aria-expanded')).toBe('false');
       await click(toggle);
@@ -673,22 +673,20 @@ describe('LcDataTableComponent', () => {
       expect(host.emitted).toEqual([q({ state: ['Close'] })]);
     });
 
-    it('panneau : le premier contrôle porte autofocus, le dialogue n\'est pas focalisé à la main, Échap n\'est pas doublé', async () => {
+    it('panneau : le premier contrôle (croix) porte autofocus, le dialogue n\'est pas focalisé à la main ; la croix s\'appelle « Fermer sans appliquer »', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       expect(dialog.querySelector('button')!.hasAttribute('autofocus')).toBe(true);
       expect(dialog.hasAttribute('tabindex')).toBe(false);
-      const close = vi.fn();
-      dialog.close = close;
-      await key(dialog, 'Escape'); // le navigateur ferme seul : pas de second chemin de fermeture
-      expect(close).not.toHaveBeenCalled();
+      expect(dialog.querySelector('.lc-sheet__close')!.getAttribute('aria-label')).toBe('Fermer sans appliquer');
+      expect(el.querySelector('dialog.lc-data-table__panel')).toBeNull();
     });
 
     it('CA-15 : Échap ferme sans appliquer et rend le focus au bouton Filtres', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__section-toggle')!);
       await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
       await click(boxes(dialog)[1]);
@@ -702,7 +700,7 @@ describe('LcDataTableComponent', () => {
     it('spec filtre-période §13 (a) : requête inversée fournie par le code, « Afficher N » ouvre la section en faute, focalise « Du » et n\'émet rien', async () => {
       await setup({ query: q({ date: { from: '2026-11-10', to: '2026-11-03' } }), narrow: true, picker: 'native' });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       dialog.setAttribute('open', ''); // jsdom n'a pas `showModal()` : sans `open`, le dialogue n'est pas rendu et `focus()` est sans effet
       const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
       if (toggle.getAttribute('aria-expanded') === 'true') await click(toggle); // le test part d'une section repliée
@@ -716,7 +714,7 @@ describe('LcDataTableComponent', () => {
     it('CA-13 : sous 768 px, la pastille rouvre le panneau sur sa colonne', async () => {
       await setup({ query: q({ city: ['Gap'] }), narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-chip-city"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Ville'))!;
       expect(toggle.getAttribute('aria-expanded')).toBe('true');
     });
@@ -731,7 +729,7 @@ describe('LcDataTableComponent', () => {
     };
     const openPanel = async () => {
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       dialog.close = vi.fn();
       return dialog;
     };
@@ -741,7 +739,7 @@ describe('LcDataTableComponent', () => {
       await setup({ narrow: true });
       const dialog = await openPanel();
       const finish = animate(dialog);
-      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
       expect(dialog.hasAttribute('data-closing')).toBe(true);
       expect(dialog.close).not.toHaveBeenCalled();
       finish();
@@ -759,6 +757,7 @@ describe('LcDataTableComponent', () => {
       const cancel = new Event('cancel', { cancelable: true });
       dialog.dispatchEvent(cancel);
       expect(cancel.defaultPrevented).toBe(true);
+      await stable(); // la feuille pose `data-closing` à son prochain passage de détection de changements
       expect(dialog.hasAttribute('data-closing')).toBe(true);
       finish();
       await stable();
@@ -778,7 +777,7 @@ describe('LcDataTableComponent', () => {
       await setup({ narrow: true });
       const dialog = await openPanel();
       const finish = animate(dialog);
-      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
       expect(dialog.hasAttribute('data-closing')).toBe(true);
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
       expect(dialog.hasAttribute('data-closing')).toBe(false);
@@ -995,10 +994,10 @@ describe('LcDataTableComponent', () => {
       await setup({ narrow: true });
       const dialog = await openPanel();
       const finishFirst = animate(dialog);
-      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!); // rouvre pendant le fondu
       const finishSecond = animate(dialog);
-      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-head button')!);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
       expect(dialog.hasAttribute('data-closing')).toBe(true);
       finishFirst();
       await stable();

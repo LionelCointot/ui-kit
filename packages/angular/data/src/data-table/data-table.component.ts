@@ -10,10 +10,10 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
   LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate,
-  lcAnimationsEnd, lcDetachAnimated, lcUniqueId,
+  lcDetachAnimated, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
-import { LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
+import { LcSheetComponent, LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
 import { LcCellDirective } from '../table/cell.directive';
 import { LC_TABLE_MAX_ROWS, LcSort, columnAlign, nextSort } from '../table/table-model';
 import { LcColumnFilterComponent, LcNativeDatePickerDirective } from './column-filter.component';
@@ -73,7 +73,7 @@ interface ChipView<T> {
   selector: 'lc-data-table',
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
-    LcEmptyStateComponent, LcTooltipDirective, LcColumnFilterComponent,
+    LcEmptyStateComponent, LcSheetComponent, LcTooltipDirective, LcColumnFilterComponent,
     LcNativeDatePickerDirective,
   ],
   templateUrl: './data-table.component.html',
@@ -197,8 +197,10 @@ export class LcDataTableComponent<T> {
   });
 
   // ---------- Panneau (téléphone) ----------
-  private readonly panel = viewChild.required<ElementRef<HTMLDialogElement>>('panel');
+  /** Contenu monté : de l'ouverture jusqu'à `closed` (fin de la sortie de la feuille). */
   protected readonly panelOpen = signal(false);
+  /** État ouvert de la feuille : faux dès l'intention de fermer, la sortie joue encore. */
+  protected readonly panelVisible = signal(false);
   protected readonly panelSection = signal<string | null>(null);
   protected readonly panelDraft = signal<Readonly<Record<string, LcFilterValue>>>({});
   protected readonly panelQuery = computed<LcTableQuery>(() => {
@@ -232,7 +234,6 @@ export class LcDataTableComponent<T> {
   private leaving = 0;
   /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
   private readonly hidden = new WeakSet<Element>();
-  private closeToken = 0;
 
   constructor() {
     // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : positions actuelles, puis glissement après le rendu.
@@ -455,34 +456,10 @@ export class LcDataTableComponent<T> {
     this.panelDraft.set({ ...this.query().filters });
     this.panelSection.set(section);
     this.panelOpen.set(true);
-    this.panel().nativeElement.removeAttribute('data-closing'); // réouverture pendant le fondu de sortie : annule la fermeture
-    // Une fois le contenu rendu : `showModal()` donne le focus au contrôle `autofocus`.
-    afterNextRender(() => {
-      const dialog = this.panel().nativeElement;
-      if (!dialog.open) dialog.showModal?.();
-    }, { injector: this.injector });
+    this.panelVisible.set(true); // réouverture pendant la sortie comprise : la feuille repart de sa position
   }
 
-  /** Fermeture en fondu : `data-closing`, attente de la fin des animations, puis `close()`. Rouvrir pendant le fondu annule la fermeture. */
-  protected async closePanel(): Promise<void> {
-    const dialog = this.panel().nativeElement;
-    if (dialog.hasAttribute('data-closing')) return;
-    const token = ++this.closeToken;
-    dialog.setAttribute('data-closing', '');
-    await lcAnimationsEnd(dialog);
-    if (token !== this.closeToken || !dialog.hasAttribute('data-closing')) return; // rouvert (puis refermé) pendant l'attente : une autre attente décide
-    dialog.removeAttribute('data-closing');
-    dialog.close?.();
-    this.onPanelClosed();
-  }
-
-  /** Échap : la fermeture native est remplacée par la fermeture en fondu. */
-  protected onPanelCancel(event: Event): void {
-    event.preventDefault();
-    void this.closePanel();
-  }
-
-  /** Fermeture par Échap (événement `close` du dialogue natif) ou par la croix : rien n'est appliqué. */
+  /** Fin de la sortie de la feuille (croix, Échap, geste, « Afficher » : rien n'est appliqué ici) : le contenu est démonté. */
   protected onPanelClosed(): void {
     if (!this.panelOpen()) return;
     this.panelOpen.set(false);
@@ -517,7 +494,7 @@ export class LcDataTableComponent<T> {
       return;
     }
     this.setQuery({ ...this.query(), filters: this.panelQuery().filters }, this.text.announceFiltersApplied);
-    void this.closePanel();
+    this.panelVisible.set(false);
   }
 
   // ---------- Outils ----------

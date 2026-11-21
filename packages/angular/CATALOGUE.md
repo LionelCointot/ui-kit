@@ -142,6 +142,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `[lcTooltip]` | LcTooltipDirective | directive | lcTooltip (requis), lcTooltipPosition | – |
 | `lc-dialog` | LcDialogComponent | composant | title (requis), hideClose | – |
 | `lc-drawer` | LcDrawerComponent | composant | title (requis), hideClose | – |
+| `lc-sheet` | LcSheetComponent | composant | open (model), title (requis), closeLabel | closed |
 | `lc-toggletip` | LcToggletipComponent | composant | – | – |
 | `lc-tooltip-panel` | LcTooltipPanelComponent | composant | – | – |
 

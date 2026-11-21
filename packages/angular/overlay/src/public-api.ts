@@ -1,5 +1,5 @@
 /*
- * API publique du point d'entrée @lionelcointot/ui-angular/overlay : dialogues, tiroirs latéraux (CDK Dialog), info-bulles et info-bulles ouvertes au clic.
+ * API publique du point d'entrée @lionelcointot/ui-angular/overlay : dialogues, tiroirs latéraux (CDK Dialog), feuilles du bas (<dialog> natif), info-bulles et info-bulles ouvertes au clic.
  */
 export { LC_DIALOG_DATA, LcDialogRef } from './dialog/dialog-ref';
 export * from './dialog/dialog.service';
@@ -12,3 +12,4 @@ export type { LcDrawerSide, LcDrawerSize } from './drawer/drawer-ref';
 export * from './drawer/drawer.service';
 export * from './drawer/drawer.component';
 export * from './drawer/drawer-initial-focus.directive';
+export * from './sheet/sheet.component';

@@ -170,15 +170,9 @@
   }
 </ng-template>
 
-<!-- Panneau des filtres (téléphone) : dialogue modal plein écran, rien n'est appliqué avant « Afficher » -->
-<dialog #panel class="lc-data-table__panel" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()" (cancel)="onPanelCancel($event)">
+<!-- Panneau des filtres (téléphone) : feuille modale du bas, rien n'est appliqué avant « Afficher » ; le contenu reste monté jusqu'à `closed` (fin de la sortie) -->
+<lc-sheet [(open)]="panelVisible" [title]="text.filters(0)" [closeLabel]="text.closeWithoutApplying" (closed)="onPanelClosed()">
   @if (panelOpen()) {
-    <div class="lc-data-table__panel-head">
-      <h2 class="lc-data-table__panel-title" [id]="uid + '-panel-title'">{{ text.filters(0) }}</h2>
-      <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" [attr.aria-label]="text.closeWithoutApplying" autofocus (click)="closePanel()">
-        <lc-icon name="x" />
-      </button>
-    </div>
     <div class="lc-data-table__panel-body">
       @for (section of panelSections(); track section.column.key) {
         <section class="lc-data-table__section">
@@ -202,12 +196,10 @@
         </section>
       }
     </div>
-    <div class="lc-data-table__panel-foot">
-      <button lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
-      <button lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
-        {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
-      </button>
-    </div>
     <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
+    <button lcSheetFooter lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
+    <button lcSheetFooter lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
+      {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
+    </button>
   }
-</dialog>
+</lc-sheet>

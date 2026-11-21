@@ -94,6 +94,16 @@
       "$description": "Share of its height the sheet must be pulled down to close (unitless number).",
       "$value": "0.25",
       "$type": "number"
+    },
+    "card-width": {
+      "$description": "Width of the centred card the sheet becomes on wide screens.",
+      "$value": "35rem",
+      "$type": "dimension"
+    },
+    "card-max-height": {
+      "$description": "Maximum height of that card; the body scrolls beyond it.",
+      "$value": "80dvh",
+      "$type": "dimension"
     }
   }
 }
