@@ -707,6 +707,7 @@ describe('LcDataTableComponent', () => {
       expect(toggle.getAttribute('aria-expanded')).toBe('false');
       await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
       expect(toggle.getAttribute('aria-expanded')).toBe('true');
+      const f = dialog.querySelector<HTMLInputElement>('[id$="-panel-date-from"]')!; const before = [f.closest('[hidden]')?.tagName, document.activeElement?.tagName, dialog.open, f.disabled, f.type]; f.focus(); expect('DBG' + JSON.stringify(before) + (document.activeElement === f)).toBe('');
       expect(document.activeElement).toBe(dialog.querySelector('[id$="-panel-date-from"]'));
       expect(host.emitted).toHaveLength(0);
     });
