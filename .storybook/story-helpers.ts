@@ -64,18 +64,24 @@ interface Replay {
   play?: (later: (ms: number, step: () => void) => void, root: HTMLElement) => void;
   /** Delay before `play` (default 250 ms: enough for the first measurement of the reinserted demo). */
   wait?: number;
+  /** Cancels the pending steps when the demo is destroyed; without it (a `render` function has none), steps are skipped once `root` leaves the page. */
+  destroyRef?: DestroyRef;
 }
 
 /** "Rejouer" state of a demo: `keys()` changes at every `replay(root)`, so `@for (key of keys(); track key)` reinserts the demo. */
-export function replayable({ reset, play, wait = 250 }: Replay = {}) {
+export function replayable({ reset, play, wait = 250, destroyRef }: Replay = {}) {
   const run = signal(0);
   let timers: ReturnType<typeof setTimeout>[] = [];
-  const later = (ms: number, step: () => void) => void timers.push(setTimeout(step, ms));
+  const cancel = () => {
+    timers.forEach(clearTimeout);
+    timers = [];
+  };
+  destroyRef?.onDestroy(cancel);
   return {
     keys: computed(() => [run()]),
     replay: (root: HTMLElement) => {
-      timers.forEach(clearTimeout);
-      timers = [];
+      cancel();
+      const later = (ms: number, step: () => void) => void timers.push(setTimeout(() => root.isConnected && step(), ms));
       reset?.();
       run.update((n) => n + 1);
       if (play) later(wait, () => play(later, root));

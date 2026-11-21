@@ -910,7 +910,8 @@ async function motionIndicators(context, base, name, tag, width, check) {
         const list = ind.getAnimations().filter((a) => a instanceof CSSTransition && a.transitionProperty === 'transform');
         list.forEach((a) => a.pause()); list.forEach((a) => { a.currentTime = 0; });
         const startX = x();
-        list.forEach((a) => a.finish());
+        // `width` anime aussi (même durée) : tout terminer avant de mesurer l'arrivée.
+        ind.getAnimations().forEach((a) => a.finish());
         return { x0, x1, mid, startX, count: list.length, rect: q.rect(ind), tab: q.rect(j) };
       });
       check(r.count > 0 && r.startX > r.x0 + 0.5 && r.startX < r.x1 - 0.5 && r.mid > r.x0 + 0.5 && r.mid < r.x1 - 0.5, `CA-2b ${tag} la seconde transition part de la position courante`, `départ=${r.x0.toFixed(1)}, arrivée de la première=${r.x1.toFixed(1)}, position à mi-course=${r.mid.toFixed(1)}, départ de la seconde=${r.startX.toFixed(1)}`);

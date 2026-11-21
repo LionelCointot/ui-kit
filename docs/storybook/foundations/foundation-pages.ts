@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, signal, viewChild, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { StoryMotionNoticeComponent, pressButton, prefersReducedMotion, replayable, tokenMs } from '@lc/storybook';
 import { LcButtonComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
 import { baseValues, contrastRatio, cssVarOf } from '@lionelcointot/ui-tokens/theme';
@@ -267,93 +267,143 @@ export class DocElevationComponent {
 const MOTION_VALUES = [
   { key: 'duration.fast', use: 'Button press, closing fades' },
   { key: 'duration.normal', use: 'Panels and menus opening' },
-  { key: 'duration.long', use: 'Cascade of lcReveal, per element' },
-  { key: 'duration.move', use: 'Moves: list rows, tab and nav indicators' },
-  { key: 'motion.stagger', use: 'Gap between two elements of a cascade' },
-  { key: 'motion.offset', use: 'Distance travelled by an entrance' },
+  { key: 'duration.long', use: 'Each item of a list appearing one after another (`lcReveal` directive)' },
+  { key: 'duration.move', use: 'Things moving to a new place: list rows, tab and nav indicators' },
+  { key: 'motion.stagger', use: 'Delay between two items of such a list' },
+  { key: 'motion.offset', use: 'How far an element travels when it appears' },
 ].map(({ key, use }) => ({ key, cssVar: cssVarOf(key), value: light[key], use }));
 
 const MOTION_CURVES = [
-  { name: 'standard', use: 'Fades and entrances' },
-  { name: 'spring', use: 'Moves: critically damped spring, no overshoot' },
+  { name: 'standard', use: 'Starts gently, slows down smoothly: for fades and things appearing.' },
+  { name: 'spring', use: 'Starts fast, then settles without going past its target: for things that move to a new place.' },
 ].map(({ name, use }) => ({ name, cssVar: cssVarOf(`easing.${name}`), value: light[`easing.${name}`], use }));
 
+const MOTION_OFF_CSS = `:root {
+  --lc-sys-duration-fast: 0ms;
+  --lc-sys-duration-normal: 0ms;
+  --lc-sys-duration-long: 0ms;
+  --lc-sys-duration-move: 0ms;
+  --lc-sys-motion-stagger: 0ms;
+}`;
+
+interface CurveTrace { path: string; mid: number }
 const CURVE_SAMPLES = 60;
 const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
 
-/** Durées, courbes, distance et petites démos du mouvement, avec « Rejouer ». */
+/** Durées, courbes, distance et petites démos du mouvement, chacune avec son « Rejouer ». */
 @Component({
   selector: 'lc-doc-motion',
   imports: [LcButtonComponent, LcRevealDirective, StoryMotionNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2>Motion</h2>
-    <p class="lead">Every animation in the kit reads these <code>--lc-sys-*</code> tokens, so a theme changes the feel of all components at once;
-      set them to <code>0ms</code> to switch motion off. Only <code>opacity</code> and <code>transform</code> move, and nothing blocks an action.
-      The system setting "reduce motion" turns everything off.</p>
+    <p class="lead">Every animation in the kit reads the <code>--lc-sys-*</code> tokens below, so a theme changes the feel of all components at once.</p>
     <lc-story-motion-notice />
 
     <h2>Durations and distance</h2>
-    <table>
-      <tbody>
-        @for (row of values; track row.key) {
-          <tr><td><code>{{ row.cssVar }}</code></td><td class="muted">{{ row.value }}</td><td class="muted">{{ row.use }}</td></tr>
-        }
-      </tbody>
-    </table>
+    <div class="scroll">
+      <table>
+        <tbody>
+          @for (row of values; track row.key) {
+            <tr><td class="nowrap"><code>{{ row.cssVar }}</code></td><td class="muted nowrap">{{ row.value }}</td><td class="muted">{{ row.use }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
     <h2>Curves</h2>
+    <p class="lead">A curve says how fast something goes at each moment. Both curves below go from 0 to 1 in the same time; the dot marks half of the time.</p>
     <div class="curves">
+      <figure class="both">
+        <span class="axis">progress ↑</span>
+        <svg viewBox="-4 -4 108 108" role="img" aria-label="Both curves on the same graph: standard and spring">
+          <path class="axes" d="M0 0 V100 H100" />
+          <path class="halfway" d="M50 0 V100" />
+          @for (curve of curves; track curve.name) {
+            <path [class]="'trace ' + curve.name" [attr.d]="traces()[curve.name]?.path" />
+            <circle [class]="'dot ' + curve.name" cx="50" [attr.cy]="traces()[curve.name]?.mid" r="3" />
+          }
+        </svg>
+        <span class="axis end">time →</span>
+        <figcaption>
+          @for (curve of curves; track curve.name) { <span><i [class]="'key ' + curve.name"></i>{{ curve.name }}</span> }
+        </figcaption>
+      </figure>
       @for (curve of curves; track curve.name) {
         <figure>
+          <span class="axis">progress ↑</span>
           <svg viewBox="-4 -4 108 108" role="img" [attr.aria-label]="'Curve ' + curve.name + ': progress over time'">
             <path class="axes" d="M0 0 V100 H100" />
-            <path class="trace" [attr.d]="paths()[curve.name]" />
+            <path class="halfway" d="M50 0 V100" />
+            <path [class]="'trace ' + curve.name" [attr.d]="traces()[curve.name]?.path" />
+            <circle [class]="'dot ' + curve.name" cx="50" [attr.cy]="traces()[curve.name]?.mid" r="3" />
           </svg>
-          <figcaption><code>{{ curve.cssVar }}</code><span class="muted">{{ curve.use }}</span></figcaption>
+          <span class="axis end">time →</span>
+          <figcaption><strong>{{ curve.name }}</strong><span>{{ curve.use }}</span><code>{{ curve.cssVar }}</code></figcaption>
         </figure>
       }
     </div>
     <span #probe class="probe"></span>
 
     <h2>Demos</h2>
-    <p><button lcButton fillMode="outline" size="small" (click)="replay()">Rejouer</button></p>
     <div class="demos">
       <section>
-        <h3>Panel appears</h3>
-        @for (key of demo.keys(); track key) { <div class="panel">Renommer<br />Dupliquer<br />Supprimer</div> }
+        <h3>Panel appears <button lcButton fillMode="outline" size="small" (click)="panel.replay(host)">Rejouer</button></h3>
+        @for (key of panel.keys(); track key) { <div class="panel">Renommer<br />Dupliquer<br />Supprimer</div> }
       </section>
       <section>
-        <h3>Cascade of 4 rows</h3>
-        @for (key of demo.keys(); track key) {
+        <h3>Cascade of 4 rows <button lcButton fillMode="outline" size="small" (click)="cascadeDemo.replay(host)">Rejouer</button></h3>
+        @for (key of cascadeDemo.keys(); track key) {
           @for (row of cascade; track row) { <div lcReveal [lcRevealIndex]="row" class="row">Ligne {{ row + 1 }}</div> }
         }
       </section>
       <section>
-        <h3>Button press</h3>
+        <h3>Button press <button lcButton fillMode="outline" size="small" (click)="playPress()">Rejouer</button></h3>
         <button lcButton #press>Enregistrer</button>
       </section>
       <section>
-        <h3>List reorders</h3>
+        <h3>List reorders <button lcButton fillMode="outline" size="small" (click)="reverseList()">Rejouer</button></h3>
         <ul>
           @for (item of items(); track item) { <li #row [attr.data-id]="item" class="row">{{ item }}</li> }
         </ul>
       </section>
     </div>
+
+    <h2>Turning motion off</h2>
+    <h3>For people using an app</h3>
+    <p class="lead">Turn on the system accessibility setting "Reduce motion". Every animation stops by itself: nothing to configure.</p>
+    <h3>For developers and themes</h3>
+    <p class="lead">Set the durations to <code>0ms</code> in your theme stylesheet or in the global styles of your application.
+      The curves and the distance do not need to change.</p>
+    <pre><code>{{ offCss }}</code></pre>
   `,
   styles: [
     PAGE_STYLES,
     `
-    h3 { font-size: var(--lc-sys-font-size-sm); font-weight: var(--lc-sys-font-weight-medium); color: var(--lc-sys-color-on-surface-muted); margin: 0 0 var(--lc-sys-space-2); }
+    h3 { display: flex; align-items: center; justify-content: space-between; gap: var(--lc-sys-space-2); font-size: var(--lc-sys-font-size-sm); font-weight: var(--lc-sys-font-weight-medium); color: var(--lc-sys-color-on-surface-muted); margin: 0 0 var(--lc-sys-space-2); }
+    .scroll { overflow-x: auto; }
+    .nowrap, code { white-space: nowrap; }
+    td:last-child { min-width: 16rem; }
+    pre { margin: 0; padding: var(--lc-sys-space-3) var(--lc-sys-space-4); overflow-x: auto; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
     .curves { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-6); }
-    figure { margin: 0; width: 14rem; }
+    figure { margin: 0; width: 14rem; max-width: 100%; }
+    figure.both { width: 18rem; }
     figcaption { display: grid; gap: var(--lc-sys-space-1); margin-top: var(--lc-sys-space-2); font-size: var(--lc-sys-font-size-sm); }
+    figure.both figcaption { display: flex; gap: var(--lc-sys-space-4); }
+    .axis { display: block; font-size: var(--lc-sys-font-size-xs); color: var(--lc-sys-color-on-surface-muted); }
+    .axis.end { text-align: end; }
     svg { display: block; width: 100%; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
     svg path { fill: none; vector-effect: non-scaling-stroke; }
     .axes { stroke: var(--lc-sys-color-border-strong); stroke-width: 1; }
-    .trace { stroke: var(--lc-sys-color-primary); stroke-width: 2; }
+    .halfway { stroke: var(--lc-sys-color-border); stroke-width: 1; stroke-dasharray: 4 4; }
+    .trace { stroke-width: 2; }
+    .trace.standard { stroke: var(--lc-sys-color-primary); }
+    .trace.spring { stroke: var(--lc-sys-color-highlight); }
+    .dot.standard, .key.standard { fill: var(--lc-sys-color-primary); background: var(--lc-sys-color-primary); }
+    .dot.spring, .key.spring { fill: var(--lc-sys-color-highlight); background: var(--lc-sys-color-highlight); }
+    .key { display: inline-block; width: var(--lc-sys-space-3); height: var(--lc-sys-space-3); border-radius: var(--lc-sys-radius-full); margin-inline-end: var(--lc-sys-space-1); }
     .probe { position: absolute; visibility: hidden; }
-    .demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: var(--lc-sys-space-6); align-items: start; }
+    .demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: var(--lc-sys-space-6); align-items: start; }
     ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--lc-sys-space-2); }
     .row, .panel { padding: var(--lc-sys-space-2) var(--lc-sys-space-3); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); border-radius: var(--lc-sys-radius-md); background: var(--lc-sys-color-surface-raised); }
     .demos section > .row + .row { margin-top: var(--lc-sys-space-2); }
@@ -365,44 +415,44 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
 })
 export class DocMotionComponent {
   private readonly injector = inject(Injector);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly probe = viewChild.required<ElementRef<HTMLElement>>('probe');
   private readonly press = viewChild.required('press', { read: ElementRef });
   private readonly rows = viewChildren<ElementRef<HTMLElement>>('row');
   protected readonly values = MOTION_VALUES;
   protected readonly curves = MOTION_CURVES;
+  protected readonly offCss = MOTION_OFF_CSS;
   protected readonly cascade = [0, 1, 2, 3];
   protected readonly items = signal(LIST_ITEMS);
-  protected readonly paths = signal<Record<string, string>>({});
-  protected readonly demo = replayable();
+  protected readonly traces = signal<Record<string, CurveTrace>>({});
+  protected readonly panel = replayable({ destroyRef: inject(DestroyRef) });
+  protected readonly cascadeDemo = replayable({ destroyRef: inject(DestroyRef) });
 
   constructor() {
     // Each curve is sampled from the browser itself (a paused animation of opacity), so any `cubic-bezier()` or `linear()` value is drawn as it runs.
     afterNextRender(() => {
       const probe = this.probe().nativeElement;
-      const paths: Record<string, string> = {};
+      const traces: Record<string, CurveTrace> = {};
       for (const { name, value } of MOTION_CURVES) {
         const animation = probe.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1000, easing: value, fill: 'both' });
         animation.pause();
-        const points = Array.from({ length: CURVE_SAMPLES + 1 }, (_, i) => {
+        const ys = Array.from({ length: CURVE_SAMPLES + 1 }, (_, i) => {
           animation.currentTime = (i / CURVE_SAMPLES) * 1000;
-          return `${((i / CURVE_SAMPLES) * 100).toFixed(1)} ${(100 - Number(getComputedStyle(probe).opacity) * 100).toFixed(1)}`;
+          return 100 - Number(getComputedStyle(probe).opacity) * 100;
         });
         animation.cancel();
-        paths[name] = `M${points.join(' L')}`;
+        traces[name] = { path: `M${ys.map((y, i) => `${((i / CURVE_SAMPLES) * 100).toFixed(1)} ${y.toFixed(1)}`).join(' L')}`, mid: ys[CURVE_SAMPLES / 2] };
       }
-      this.paths.set(paths);
+      this.traces.set(traces);
     });
   }
 
-  protected replay(): void {
-    this.demo.replay(this.host.nativeElement);
+  protected playPress(): void {
     pressButton(this.press().nativeElement);
-    this.reverseList();
   }
 
   /** FLIP: rows are measured, the order is reversed, then each row travels from its old place with the move duration and the spring. */
-  private reverseList(): void {
+  protected reverseList(): void {
     const before = new Map(this.rows().map(({ nativeElement: row }) => [row.dataset['id'], row.getBoundingClientRect().top]));
     this.items.update((list) => [...list].reverse());
     afterNextRender(
