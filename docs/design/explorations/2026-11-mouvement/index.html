@@ -66,6 +66,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cards{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}
 .cards li{background:var(--sunken);border:1px solid var(--border);border-radius:var(--r-lg);padding:.5rem .75rem}
 .cards.play li{animation:down var(--dur) var(--ease) backwards;animation-delay:calc(var(--i) * var(--stagger))}
+/* Section Cascade */
+.casc{margin-top:2rem}
+.casc .col{--dist:8px}
+.casc .cards{margin-top:.75rem}
+.casc .tag{font-size:.875rem;font-weight:500;color:var(--on-primary-container);background:var(--primary-container);border-radius:var(--r-md);padding:0 .5rem;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
 }
@@ -78,6 +83,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 <p>Les trois colonnes ont la même courbe de mouvement (<code>cubic-bezier(0.2, 0, 0, 1)</code>) et le même décalage entre cartes (50 ms). Elles ne diffèrent que par la durée et la distance de descente. Cliquez dans chaque colonne, ou rejouez.</p>
 <div class="top"><button class="btn" id="all" type="button">Tout rejouer</button></div>
 <div class="grid" id="grid"></div>
+<section class="casc" aria-labelledby="casc-t">
+<h2 id="casc-t">Cascade</h2>
+<p>Réglage Standard pour le reste. Trois façons d'allonger la cascade de cartes : même courbe, descente de 8 px.</p>
+<div class="grid" id="casc"></div>
+</section>
 </main>
 
 <template id="tpl">
@@ -164,6 +174,23 @@ SETS.forEach(s=>{const p=build(s);players.push(p);grid.append(p.col)});
 // Les mesures des onglets ne sont fiables qu'une fois la colonne dans la page.
 players.forEach(p=>p.init());
 addEventListener('resize',()=>players.forEach(p=>p.init()));
+const CASC=[
+ {n:'A. Carte plus lente',d:350,g:50},
+ {n:'B. Écart plus grand',d:200,g:90},
+ {n:'C. Les deux',d:350,g:80,rec:true}];
+CASC.forEach(c=>{
+ const col=mk('section','',document.getElementById('casc'));col.className='col';
+ col.style.setProperty('--dur',c.d+'ms');col.style.setProperty('--stagger',c.g+'ms');
+ const h=mk('header','',col),w=mk('div','',h),t=mk('h2',c.n,w);
+ if(c.rec){const g=mk('span','Recommandé',t);g.className='tag';t.append(' ');t.append(g)}
+ mk('p',`${c.d} ms par carte · écart ${c.g} ms`,w).className='vals';
+ const r=mk('button','Rejouer',h);r.type='button';r.className='btn outline';
+ const ul=mk('ul','',col);ul.className='cards';
+ CARDS.forEach((x,i)=>{mk('li',x,ul).style.setProperty('--i',i)});
+ const replay=()=>{ul.classList.remove('play');reflow(ul);ul.classList.add('play')};
+ r.onclick=replay;replay();
+ players.push({replay,init(){}});
+});
 document.getElementById('all').onclick=()=>players.forEach(p=>p.replay());
 </script>
 </body>
