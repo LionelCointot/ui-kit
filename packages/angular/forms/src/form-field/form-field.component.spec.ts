@@ -129,6 +129,23 @@ describe('LcFormFieldComponent', () => {
     expect(element.querySelector('.lc-form-field__errors')).toBeNull();
   });
 
+  describe('labelHidden', () => {
+    it('masque le libellé visuellement et le garde comme nom accessible', async () => {
+      @Component({ imports: [LcFormFieldComponent, LcInputDirective], template: '<lc-form-field label="Message" [labelHidden]="hidden()"><input lcInput /></lc-form-field>' })
+      class HiddenHostComponent { readonly hidden = signal(true); }
+      const fixture = TestBed.createComponent(HiddenHostComponent);
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+      const label = element.querySelector('label')!;
+      expect(label.classList.contains('lc-visually-hidden')).toBe(true);
+      expect(label.getAttribute('for')).toBe(element.querySelector('input')!.id);
+      expect(label.textContent).toContain('Message');
+      fixture.componentInstance.hidden.set(false);
+      await fixture.whenStable();
+      expect(label.classList.contains('lc-visually-hidden')).toBe(false);
+    });
+  });
+
   describe('hintPlacement', () => {
     async function setupPlacement(init?: (host: HintPlacementHostComponent) => void) {
       const fixture = TestBed.createComponent(HintPlacementHostComponent);

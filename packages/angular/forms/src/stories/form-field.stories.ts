@@ -50,7 +50,7 @@ const meta: Meta<LcFormFieldComponent> = {
   title: 'Forms/Form field',
   component: LcFormFieldComponent,
   decorators: [moduleMetadata({ imports: [FormsDemoComponent, LcFormFieldComponent, LcInputDirective] })],
-  args: { label: 'Nom du projet', hint: 'Visible dans la liste des projets', hintPlacement: 'below', required: false, layout: 'stacked', errors: [] },
+  args: { label: 'Nom du projet', hint: 'Visible dans la liste des projets', hintPlacement: 'below', labelHidden: false, required: false, layout: 'stacked', errors: [] },
   argTypes: {
     hintPlacement: { control: 'inline-radio', options: ['below', 'above'] },
     layout: { control: 'inline-radio', options: ['stacked', 'inline'] },
@@ -67,7 +67,7 @@ export const Playground: Story = {
     props: args,
     template: `
       <div style="max-width:28rem">
-        <lc-form-field [label]="label" [hint]="hint" [hintPlacement]="hintPlacement" [required]="required" [layout]="layout" [errors]="errors">
+        <lc-form-field [label]="label" [hint]="hint" [hintPlacement]="hintPlacement" [labelHidden]="labelHidden" [required]="required" [layout]="layout" [errors]="errors">
           <input lcInput type="text" />
         </lc-form-field>
       </div>`,
@@ -82,6 +82,19 @@ export const HintAbove: Story = {
       <div style="max-width:28rem">
         <lc-form-field label="Nom du projet" hint="Visible dans la liste des projets" hintPlacement="above">
           <input lcInput type="text" />
+        </lc-form-field>
+      </div>`,
+  }),
+};
+
+/** `labelHidden`: the label stays the accessible name of the control but is not drawn (for a control that carries its own visual cue). */
+export const LabelHidden: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `
+      <div style="max-width:28rem">
+        <lc-form-field label="Rechercher" hint="Le libellé est lu par les lecteurs d'écran" labelHidden>
+          <input lcInput type="search" placeholder="Rechercher" />
         </lc-form-field>
       </div>`,
   }),
