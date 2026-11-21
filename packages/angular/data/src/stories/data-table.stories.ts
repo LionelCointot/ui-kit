@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { Observable, delay, of, throwError } from 'rxjs';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent, localDateToIso } from '@lionelcointot/ui-angular';
 import { LcStatusBadgeComponent, type LcStatusBadgeKind } from '@lionelcointot/ui-angular/feedback';
 import { LcCellDirective, LcDataTableComponent, LcDataColumn, LcDataSource, LcTableQuery, lcLocalSource } from '@lionelcointot/ui-angular/data';
@@ -143,7 +143,7 @@ const props = (source: LcDataSource<Ticket> | readonly Ticket[], initial: LcTabl
 const meta: Meta<LcDataTableComponent<Ticket>> = {
   title: 'Data/Data table',
   component: LcDataTableComponent,
-  decorators: [moduleMetadata({ imports: [LcDataTableComponent, LcCellDirective, LcStatusBadgeComponent, LcButtonComponent, LcIconComponent] })],
+  decorators: [moduleMetadata({ imports: [LcDataTableComponent, LcCellDirective, LcStatusBadgeComponent, LcButtonComponent, LcIconComponent, StoryMotionNoticeComponent] })],
   args: { caption: 'File des demandes', captionHidden: true, chips: 'auto', emptyMessage: 'Aucune demande ne correspond aux filtres.' },
   argTypes: {
     chips: { control: 'inline-radio', options: ['auto', 'always', 'never'] },
@@ -197,4 +197,73 @@ export const LoadingValues: Story = {
 export const AlwaysChips: Story = {
   parameters: fixedExample,
   render: () => ({ props: props(TICKETS, PHONE), template: template(fixedBindings('always')) }),
+};
+
+const ANIMATION_CODE = `import { Component, signal } from '@angular/core';
+import { LcDataTableComponent, type LcDataColumn, type LcTableQuery } from '@lionelcointot/ui-angular/data';
+
+interface Task { id: number; title: string; state: string }
+
+@Component({
+  selector: 'app-example',
+  imports: [LcDataTableComponent],
+  template: \`
+    <lc-data-table caption="Tâches" [source]="tasks" [columns]="columns" [trackBy]="trackBy" [(query)]="query" />\`,
+})
+export class ExampleComponent {
+  readonly tasks: Task[] = [
+    { id: 1, title: 'Rédiger le compte rendu', state: 'En cours' },
+    { id: 2, title: 'Relire le contrat', state: 'Terminée' },
+    { id: 3, title: 'Préparer la réunion', state: 'En cours' },
+  ];
+  readonly columns: LcDataColumn<Task>[] = [
+    { key: 'title', label: 'Tâche', value: (task) => task.title },
+    { key: 'state', label: 'État', value: (task) => task.state, filter: { type: 'multi' } },
+  ];
+  readonly trackBy = (task: Task) => task.id;
+  readonly query = signal<LcTableQuery>({ filters: {}, sort: null });
+}`;
+
+/** Props of the `Animation` stories: "Rejouer" shows the table again unfiltered (cascade), then applies a filter and removes it (the list difference moves). */
+const animationProps = () => {
+  const current = signal<LcTableQuery>(query({}));
+  return {
+    ...props(TICKETS),
+    query: current,
+    ...replayable({
+      reset: () => current.set(query({})),
+      play: (later) => {
+        later(1500, () => current.set(query({ state: ['encours', 'qualifie'] })));
+        later(3500, () => current.set(query({})));
+      },
+    }),
+  };
+};
+
+const animationTemplate = () => `
+  <lc-story-motion-notice />
+  <div #root>
+    <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+    @for (key of keys(); track key) { ${template(fixedBindings())} }
+  </div>`;
+
+/**
+ * At 360 px (phone viewport in the Canvas tab): the cards cascade on first display, then a filter is applied and removed:
+ * kept cards slide to their new place with a spring, added cards fade in, removed cards fade out and the others close the gap.
+ * The filter panel fades in and out as well. "Rejouer" starts again.
+ */
+export const Animation: Story = {
+  parameters: {
+    ...fixedExample,
+    docs: { source: { code: ANIMATION_CODE } },
+    viewport: { options: { phone360: { name: 'Phone 360', styles: { width: '360px', height: '740px' } } } },
+  },
+  globals: { viewport: { value: 'phone360', isRotated: false } },
+  render: () => ({ props: animationProps(), template: animationTemplate() }),
+};
+
+/** On a wide screen: rows slide, appear and disappear when the filter changes; no cascade replays. "Rejouer" starts again. */
+export const AnimationDesktop: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({ props: animationProps(), template: animationTemplate() }),
 };

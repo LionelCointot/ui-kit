@@ -1,5 +1,5 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { commonArgTypes, fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, commonArgTypes, fixedExample, pressButton, replayable } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 
 /**
@@ -11,7 +11,7 @@ import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 const meta: Meta<LcButtonComponent> = {
   title: 'Buttons/Button',
   component: LcButtonComponent,
-  decorators: [moduleMetadata({ imports: [LcButtonComponent, LcIconComponent] })],
+  decorators: [moduleMetadata({ imports: [LcButtonComponent, LcIconComponent, StoryMotionNoticeComponent] })],
   args: { themeColor: 'primary', fillMode: 'solid', size: 'medium', rounded: 'medium', loading: false, iconOnly: false, fullWidth: false },
   argTypes: { ...commonArgTypes, pressed: { control: 'select', options: [undefined, false, true] } },
 };
@@ -107,5 +107,45 @@ export const States: Story = {
       <button lcButton iconOnly fillMode="outline" aria-label="Ajouter"><lc-icon name="plus" /></button>
       <button lcButton><lc-icon name="save" /> Enregistrer</button>
       <a lcButton href="#" fillMode="outline">Lien-bouton</a></div>`,
+  }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcButtonComponent, LcIconComponent],
+  template: \`
+    <button lcButton>Enregistrer</button>
+    <button lcButton fillMode="outline">Annuler</button>
+    <button lcButton fillMode="flat">Ignorer</button>
+    <button lcButton iconOnly aria-label="Ajouter"><lc-icon name="plus" /></button>\`,
+})
+export class ExampleComponent {}`;
+
+/** Every button sinks slightly while pressed (scale `--lc-button-press-scale`); a disabled one does not. "Rejouer" presses them in turn. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({
+    props: {
+      ...replayable({
+        wait: 0,
+        play: (later, root) =>
+          root.querySelectorAll<HTMLElement>('[data-press]').forEach((button, index) => later(index * 500, () => pressButton(button))),
+      }),
+    },
+    template: `
+      <lc-story-motion-notice />
+      <div #root>
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+        <div style="display:flex;gap:var(--lc-sys-space-3);flex-wrap:wrap;align-items:center">
+          <button lcButton data-press>Enregistrer</button>
+          <button lcButton fillMode="outline" data-press>Annuler</button>
+          <button lcButton fillMode="flat" data-press>Ignorer</button>
+          <button lcButton iconOnly aria-label="Ajouter" data-press><lc-icon name="plus" /></button>
+          <button lcButton disabled>Indisponible</button>
+        </div>
+      </div>`,
   }),
 };

@@ -1,5 +1,7 @@
+import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcTabComponent, LcTabContentDirective, LcTabsComponent } from '@lionelcointot/ui-angular/navigation';
 
 /**
@@ -11,7 +13,7 @@ import { LcTabComponent, LcTabContentDirective, LcTabsComponent } from '@lionelc
 const meta: Meta<LcTabsComponent> = {
   title: 'Navigation/Tabs',
   component: LcTabsComponent,
-  decorators: [moduleMetadata({ imports: [LcTabsComponent, LcTabComponent, LcTabContentDirective] })],
+  decorators: [moduleMetadata({ imports: [LcTabsComponent, LcTabComponent, LcTabContentDirective, LcButtonComponent, StoryMotionNoticeComponent] })],
   argTypes: { activation: { control: 'inline-radio', options: ['automatic', 'manual'] }, selected: { control: 'select', options: [null, 'synthese', 'donnees', 'graphiques'] } },
   args: { ariaLabel: 'Résultats', activation: 'automatic', selected: null },
 };
@@ -58,4 +60,47 @@ export const ManyTabsActiveAtEnd360px: Story = {
     props: { ariaLabel: 'Résultats', activation: 'automatic' },
     template: `<div style="inline-size:360px;max-inline-size:100%"><lc-tabs [ariaLabel]="ariaLabel" [activation]="activation" selected="parametres">${MANY}</lc-tabs></div>`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcTabComponent, LcTabsComponent } from '@lionelcointot/ui-angular/navigation';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcTabsComponent, LcTabComponent],
+  template: \`
+    <lc-tabs ariaLabel="Résultats" [(selected)]="selected">
+      <lc-tab id="synthese" label="Synthèse"><p>Synthèse du projet</p></lc-tab>
+      <lc-tab id="donnees" label="Données"><p>Tableau</p></lc-tab>
+      <lc-tab id="graphiques" label="Graphiques"><p>Courbes</p></lc-tab>
+    </lc-tabs>\`,
+})
+export class ExampleComponent {
+  selected: string | null = 'synthese';
+}`;
+
+/** The underline slides to the newly selected tab. "Rejouer" shows the first tab again without transition, then selects the last one. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => {
+    const selected = signal<string | null>('synthese');
+    return {
+      props: {
+        selected,
+        ...replayable({ reset: () => selected.set('synthese'), play: () => selected.set('graphiques') }),
+      },
+      template: `
+        <lc-story-motion-notice />
+        <div #root>
+          <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+          @for (key of keys(); track key) {
+            <lc-tabs ariaLabel="Résultats" [(selected)]="selected">
+              <lc-tab id="synthese" label="Synthèse"><p>Synthèse du projet</p></lc-tab>
+              <lc-tab id="donnees" label="Données"><p>Tableau</p></lc-tab>
+              <lc-tab id="graphiques" label="Graphiques"><p>Courbes</p></lc-tab>
+            </lc-tabs>
+          }
+        </div>`,
+    };
+  },
 };
