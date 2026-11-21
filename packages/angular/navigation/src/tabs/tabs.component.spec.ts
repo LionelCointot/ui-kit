@@ -456,6 +456,10 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    // `mockLayout` pose ces trois-là : sans ce nettoyage, ils fuient vers les autres fichiers de test.
+    delete (Element.prototype as { scrollBy?: unknown }).scrollBy;
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    delete (document.defaultView as { matchMedia?: unknown }).matchMedia;
   });
 
   async function setupDynamic() {
