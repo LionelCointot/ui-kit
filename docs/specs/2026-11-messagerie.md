@@ -1,6 +1,6 @@
 # Spec : Messagerie générique (zone de saisie, puis fil de messages)
 
-- **Statut** : En revue (2026-11-21), prête pour validation
+- **Statut** : Validée par l'utilisateur (2026-11-21), en réalisation
 - **Auteur** : session principale
 - **Date** : 2026-11-21
 - **ADR liés** : 0009 (cible navigateurs, CDK par défaut)
