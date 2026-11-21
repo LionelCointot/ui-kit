@@ -4,6 +4,7 @@
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
 //   node tools/qa/storybook-browser.mjs motion                    mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px
+//   node tools/qa/storybook-browser.mjs stories-motion           stories de mouvement : ouverture sans erreur, « Rejouer », bandeau de réduction (CA-16a à CA-16c)
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
 import { createServer } from 'node:http';
@@ -24,13 +25,14 @@ function serve() {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost');
     const file = path.join(storybookDir, path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, ''));
+    let body;
     try {
-      response.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' });
-      response.end(await readFile(file));
+      body = await readFile(file);
     } catch {
-      response.writeHead(404);
-      response.end();
+      response.writeHead(404).end();
+      return;
     }
+    response.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' }).end(body);
   });
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
@@ -1339,6 +1341,49 @@ async function motion(browser, base) {
   return failures;
 }
 
+/** Stories de mouvement (spec 2026-11-mouvement, T7) : CA-16a (ouverture sans erreur), CA-16b (« Rejouer » relance une animation), CA-16c (bandeau selon `prefers-reduced-motion`). */
+const MOTION_STORIES = ['foundations-motion--motion', 'foundations-elevation--elevation', 'buttons-button--animation', 'navigation-tabs--animation', 'navigation-nav-group--animation', 'navigation-menu--animation', 'forms-combobox--animation', 'forms-date-input--animation', 'layout-reveal--playground', 'layout-reveal--animation', 'data-data-table--animation', 'data-data-table--animation-desktop'];
+const NOTICE = 'Les animations sont réduites par votre système : rien ne bouge dans cette démo.';
+
+async function storiesMotion(browser, base) {
+  let failures = 0;
+  const check = (label, ok, detail = '') => { console.log(`${ok ? 'OK  ' : 'KO  '} ${label}${ok ? '' : ` ${detail}`}`); if (!ok) failures++; };
+  const poll = (page, fn, arg, timeout = 8000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true, () => false);
+  for (const id of MOTION_STORIES) {
+    for (const reducedMotion of ['no-preference', 'reduce']) {
+      const wide = id.endsWith('desktop') || !id.startsWith('data-');
+      const context = await browser.newContext({ viewport: { width: wide ? 1280 : 360, height: 800 }, reducedMotion });
+      const page = await context.newPage();
+      const errors = [];
+      page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+      page.on('console', (message) => message.type() === 'error' && errors.push(`console: ${message.text()}`));
+      await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
+      await page.waitForSelector('#storybook-root > *, #storybook-docs', { timeout: 20000 }).catch((error) => errors.push(`rendu : ${error.message.split('\n')[0]}`));
+      await page.waitForTimeout(400);
+      const tag = `${id} [${reducedMotion}]`;
+      const notice = await page.locator(`text=${NOTICE}`).count();
+      // CA-16c : le bandeau accompagne les démos animées ; Elevation n'en a pas (aucune animation)
+      if (!id.includes('elevation')) check(`CA-16c ${tag} bandeau ${reducedMotion === 'reduce' ? 'présent' : 'absent'}`, notice === (reducedMotion === 'reduce' ? 1 : 0), `(${notice})`);
+      else console.log(`INFO ${tag} bandeau : ${notice}`);
+      if (reducedMotion === 'no-preference') {
+        const buttons = page.getByRole('button', { name: 'Rejouer' });
+        const count = await buttons.count();
+        console.log(`INFO ${id} : ${count} bouton(s) « Rejouer »`);
+        for (let n = 0; n < count; n++) {
+          await poll(page, () => document.getAnimations().length === 0, null, 12000); // l'animation d'entrée est finie : le clic seul peut relancer
+          const before = await page.evaluate(() => document.getAnimations().length);
+          await buttons.nth(n).click();
+          const started = await poll(page, () => document.getAnimations().length > 0, null);
+          check(`CA-16b ${id} « Rejouer » n°${n + 1}/${count} relance une animation (avant : ${before})`, started);
+        }
+      }
+      check(`CA-16a ${tag} sans erreur de page ni de console`, errors.length === 0, errors.join(' | '));
+      await context.close();
+    }
+  }
+  return failures;
+}
+
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -1359,10 +1404,12 @@ try {
     failures = await treegrid(browser, base);
   } else if (mode === 'motion') {
     failures = await motion(browser, base);
+  } else if (mode === 'stories-motion') {
+    failures = await storiesMotion(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | dom | treegrid | filter-date');
+    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | stories-motion | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {

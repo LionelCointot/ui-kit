@@ -267,7 +267,7 @@ export class DocElevationComponent {
 const MOTION_VALUES = [
   { key: 'duration.fast', use: 'Button press, closing fades' },
   { key: 'duration.normal', use: 'Panels and menus opening' },
-  { key: 'duration.long', use: 'Each item of a list appearing one after another (`lcReveal` directive)' },
+  { key: 'duration.long', use: 'Each item of a list appearing one after another (lcReveal directive)' },
   { key: 'duration.move', use: 'Things moving to a new place: list rows, tab and nav indicators' },
   { key: 'motion.stagger', use: 'Delay between two items of such a list' },
   { key: 'motion.offset', use: 'How far an element travels when it appears' },
@@ -371,9 +371,9 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
 
     <h2>Turning motion off</h2>
     <h3>For people using an app</h3>
-    <p class="lead">Turn on the system accessibility setting "Reduce motion". Every animation stops by itself: nothing to configure.</p>
+    <p class="lead">The kit already follows the system accessibility setting: when it is on, every animation stops by itself, with nothing to configure. Where to find it: iPhone and iPad, Settings › Accessibility › Motion › Reduce Motion; Mac, System Settings › Accessibility › Display › Reduce motion; Windows, Settings › Accessibility › Visual effects › Animation effects (off); Android, Settings › Accessibility › Remove animations.</p>
     <h3>For developers and themes</h3>
-    <p class="lead">Set the durations to <code>0ms</code> in your theme stylesheet or in the global styles of your application.
+    <p class="lead">Only if your product wants motion off for everyone, whatever the system setting: set the durations to <code>0ms</code> in your theme file or in the global stylesheet of your application (the file listed under <code>styles</code> in <code>angular.json</code>, often <code>src/styles.css</code>).
       The curves and the distance do not need to change.</p>
     <pre><code>{{ offCss }}</code></pre>
   `,
@@ -386,6 +386,12 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     pre { overflow-x: auto; }
     pre code { white-space: pre; }
     td:last-child { min-width: 16rem; }
+    @media (max-width: 40rem) {
+      .scroll table, .scroll tbody, .scroll tr, .scroll td { display: block; }
+      .scroll tr { padding-block: var(--lc-sys-space-2); border-bottom: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); }
+      .scroll td { border: 0; padding: 0; min-width: 0; }
+      .scroll td:last-child { white-space: normal; }
+    }
     pre { margin: 0; padding: var(--lc-sys-space-3) var(--lc-sys-space-4); overflow-x: auto; background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-md); }
     .curves { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-6); }
     figure { margin: 0; width: 14rem; max-width: 100%; }
