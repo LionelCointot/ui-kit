@@ -1,6 +1,6 @@
 # Spec : ressenti iOS (feuille de filtres du téléphone, hauteurs et sorties animées)
 
-- **Statut** : Implémentée (2026-11-21)
+- **Statut** : Implémentée (2026-11-21), complément S9 en cours
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
 - **ADR liés** : [0009 Cible navigateurs](../adr/0009-cible-navigateurs-et-primitives-natives.md) (Baseline 2024, inchangée)
@@ -42,6 +42,7 @@
   20. **Composant générique `lc-sheet`** (ADR 0009, sans nouvel ADR ; point d'entrée `overlay`, à côté de `lc-dialog` et `lc-drawer`) : feuille déclarative `<lc-sheet [(open)] title>` (en-tête avec titre et croix, corps qui défile, pied optionnel par projection), sur `<dialog>` natif modal (ADR 0009 : primitive native admise pour un nouveau composant, avec test en navigateur réel) ; porte tout le comportement des décisions 1 à 10. Le panneau des filtres de `lc-data-table` sur téléphone l'utilise à la place de son `<dialog>` (import `data` → `overlay` déjà autorisé). `lc-drawer` n'est pas modifié pour cela.
   21. Réponses du 2026-11-21 : **Q1** dépliages en 500 ms (`duration-move`) ; **Q2** le fond s'éclaircit avec la distance du geste ; **Q3** marge haute de 40 px (`sys.space.10`) ; **Q4** contrôle statique permanent sur `:hover` gardé.
   22. **`lc-sheet` sur grand écran** (choix A de la maquette `bureau.html`, réponse « Oui la A ») : au-delà de la largeur du téléphone, la feuille devient une carte centrée comme les fiches de l'iPad : largeur `--lc-sheet-card-width` (35 rem), hauteur selon le contenu jusqu'à `--lc-sheet-card-max-height` (80 dvh, puis le corps défile), quatre coins arrondis, ombre `elevation-overlay`. Entrée : montée vers le centre et fondu en `--lc-slide-enter-duration` ; sortie : descente et fondu en `--lc-slide-exit-duration`. Pas de poignée ni de geste ; fermeture par la croix, Échap ou **un clic sur le fond** (sur grand écran seulement ; jamais au téléphone). Les filtres de `lc-data-table` sur bureau restent les menus par colonne.
+  23. **« Annuler » au lieu du ✕ dans la feuille des filtres** (test novice : le ✕ ne dit pas s'il garde ou annule ; réponse de l'utilisateur, 2026-11-21 : « Ha non annuler. Donc la A ») : `lc-sheet` prend une entrée optionnelle `closeText` ; si elle est fournie, la fermeture est un bouton texte (`fillMode="flat"`) placé en tête de l'en-tête, avant le titre, comme dans les feuilles d'iOS, dont le nom accessible est le texte visible ; sinon le ✕ reste (défaut). `lc-data-table` passe `LC_LABELS.cancel` (« Annuler »). Même chemin de fermeture, rien n'est appliqué. Libellé `closeWithoutApplying` retiré s'il n'a plus d'usage.
 - **Taille** : Fonctionnalité
 - **Angles ouverts** :
   - [x] Architecture : nouvelle technique partagée d'animation de hauteur (feuille globale), geste au pointeur dans `lc-data-table`, `lcDetachAnimated` étendu au tiroir et au dialogue.
@@ -136,7 +137,8 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 - Non-régression : suites existantes, `motion`, `stories-motion`, `filter-date`.
 
 ## 10. Critères d'acceptation
-- [x] CA-S0 : `lc-sheet` est exporté par `@lionelcointot/ui-angular/overlay`, documenté (story `Overlays/Sheet` avec `Playground` et `Animation`, catalogue) et utilisable hors du tableau, avec un test en navigateur réel (ADR 0009 : ouverture, Échap animé, réouverture pendant la descente, focus rendu, fond attendu par la fermeture) et la limite de la *top layer* écrite ; `closed` est émis une seule fois, à la fin de la sortie ; `lc-data-table` n'a plus de `<dialog>` propre, la croix garde son nom « Fermer sans appliquer » et utilise `lc-sheet` ; aucun import nouveau entre points d'entrée hors exceptions de `CLAUDE.md`.
+- [x] CA-S0 : `lc-sheet` est exporté par `@lionelcointot/ui-angular/overlay`, documenté (story `Overlays/Sheet` avec `Playground` et `Animation`, catalogue) et utilisable hors du tableau, avec un test en navigateur réel (ADR 0009 : ouverture, Échap animé, réouverture pendant la descente, focus rendu, fond attendu par la fermeture) et la limite de la *top layer* écrite ; `closed` est émis une seule fois, à la fin de la sortie ; `lc-data-table` n'a plus de `<dialog>` propre, la fermeture est le bouton texte « Annuler » (décision 23) et utilise `lc-sheet` ; aucun import nouveau entre points d'entrée hors exceptions de `CLAUDE.md`.
+- [ ] CA-S9 : Avec `closeText`, l'en-tête de `lc-sheet` commence par un bouton texte de ce libellé (sans icône, nom accessible = texte visible, `autofocus`), suivi du titre ; un clic ferme par le chemin unique (rien n'est appliqué dans le tableau, focus rendu à « Filtres ») ; sans `closeText`, le ✕ est inchangé. Dans `lc-data-table` à 360 px, le bouton lit « Annuler » (anglais : « Cancel »).
 - [x] CA-S8 : À 1 280 px, `lc-sheet` s'affiche en carte centrée (largeur `--lc-sheet-card-width` ± 1 px, centre horizontal et vertical ± 1 px pour un contenu court, quatre coins arrondis), sans poignée ; un contenu plus haut que `--lc-sheet-card-max-height` fait défiler le corps ; entrée et sortie en translation et fondu aux durées `--lc-slide-*` ; un clic sur le fond ferme (même chemin, `closed` émis), alors qu'à 360 px il ne ferme pas.
 - [x] CA-S1 : À 360 px, « Filtres (N) » ouvre une feuille ancrée en bas, coins supérieurs arrondis, poignée, haut à `--lc-sheet-top-gap` (± 1 px) ; entrée `translateY` de 100 % à 0 en `--lc-slide-enter-duration` ; fond `--lc-sys-color-backdrop` en fondu ; le tableau reste visible au-dessus.
 - [x] CA-S2 : Les trois fermetures (croix, Échap, « Afficher N … ») posent `data-closing`, font descendre la feuille en `--lc-slide-exit-duration` puis `dialog.open === false` ; filtres émis comme aujourd'hui ; focus sur le bouton « Filtres ».
@@ -161,7 +163,7 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 - [x] CA-F1 : `forced-colors: active` : poignée visible (couleur système), bordure de la feuille, coins arrondis conservés.
 - [x] CA-R1 : Sous `prefers-reduced-motion: reduce`, pour la feuille, la section, `lc-disclosure`, `lc-nav-group`, les chevrons, la pastille, le tiroir, le dialogue, leurs fonds, l'onglet, la grille du calendrier et la nav de l'app-shell : aucune animation de plus de 0,01 ms pendant ni après l'action ; l'état final est atteint tout de suite.
 - [x] CA-R2 : `packages/tokens/lib/motion.static.test.mjs` corrigé (chemin réel `packages/angular/styles/ui-angular.css`) et étendu aux fichiers touchés : aucune valeur en dur ; suite Vitest verte ; modes `motion`, `stories-motion`, `filter-date` verts ; axe sans erreur (feuille ouverte, section dépliée, tiroir, dialogue, à 360 px) ; stories `Animation` mises à jour et sans erreur.
-- [x] CA-R3 (manuel) : test `novice-user` sur captures de la feuille à 360 px. Résultat HÉSITANT : le ✕ ferme-t-il en gardant ou en annulant, poignée non comprise, capture grand écran tirée de la démo technique ; décision de l'utilisateur (2026-11-21) : le ✕ est gardé, aucun changement.
+- [x] CA-R3 (manuel) : test `novice-user` sur captures de la feuille à 360 px. Résultat HÉSITANT : le ✕ ferme-t-il en gardant ou en annulant, poignée non comprise, capture grand écran tirée de la démo technique ; décision de l'utilisateur (2026-11-21) : « Annuler » en texte (décision 23).
 
 ## 11. Tâches
 - [x] S1 : hauteur animée dans `lc-disclosure`, `lc-nav-group` et les sections du panneau, chevrons (M ; CA-H1 à H3, H5).
@@ -170,6 +172,7 @@ Brief de `ui-ux-designer` (2026-11-21) et maquette `docs/design/explorations/202
 - [x] S3 : retrait des pastilles (S ; CA-H4).
 - [x] S4 : `LcDialogRef.close` asynchrone, tiroir, dialogue, fonds (M ; CA-O1 à O3).
 - [x] S5 : onglets, calendrier, app-shell (S ; CA-T1, C1, A1).
+- [ ] S9 : entrée `closeText` de `lc-sheet`, « Annuler » dans `lc-data-table`, story, catalogue (S ; CA-S0, CA-S9).
 - [x] S8 : survol sous `@media (hover: hover)` dans les 23 fichiers, sans changer les styles (S ; CA-V1, CA-V2).
 - [x] S6 (QA) : contrôles navigateur, réduction, `forced-colors`, axe, stories, contrôle statique corrigé (CA-R1, R2, F1, V1, V2) ; S7 : test novice (CA-R3) ; mise à jour des décisions révisées dans `2026-11-mouvement.md` et `catalogue:build`.
 
