@@ -120,6 +120,112 @@ describe('LcSheetComponent', () => {
     expect(host.closed).toHaveBeenCalledOnce();
   });
 
+  describe('corps défilant', () => {
+    class FakeResizeObserver {
+      static instances: FakeResizeObserver[] = [];
+      readonly observe = vi.fn();
+      readonly disconnect = vi.fn();
+      constructor(private readonly callback: () => void) { FakeResizeObserver.instances.push(this); }
+      trigger(): void { this.callback(); }
+    }
+    const body = () => dialog.querySelector<HTMLElement>('.lc-sheet__body')!;
+    const measure = (scrollHeight: number, clientHeight: number) => {
+      Object.defineProperty(body(), 'scrollHeight', { value: scrollHeight, configurable: true });
+      Object.defineProperty(body(), 'clientHeight', { value: clientHeight, configurable: true });
+      FakeResizeObserver.instances.forEach((observer) => observer.trigger());
+    };
+
+    beforeEach(async () => {
+      FakeResizeObserver.instances = [];
+      vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+      // Le composant du `beforeEach` parent existe déjà : on en recrée un avec l'observateur simulé.
+      fixture = TestBed.createComponent(HostComponent);
+      host = fixture.componentInstance;
+      dialog = fixture.nativeElement.querySelector('dialog');
+      await stable();
+    });
+
+    it('qui déborde : arrêt de tabulation et nom accessible (titre)', async () => {
+      measure(500, 200);
+      await stable();
+      expect(body().getAttribute('tabindex')).toBe('0');
+      expect(body().getAttribute('role')).toBe('region');
+      expect(body().getAttribute('aria-labelledby')).toBe(dialog.querySelector('.lc-sheet__title')!.id);
+    });
+
+    it('qui ne déborde pas : aucun arrêt de tabulation en plus', async () => {
+      measure(200, 200);
+      await stable();
+      expect(body().hasAttribute('tabindex')).toBe(false);
+      expect(body().hasAttribute('aria-labelledby')).toBe(false);
+      measure(500, 200);
+      await stable();
+      measure(200, 200);
+      await stable();
+      expect(body().hasAttribute('tabindex')).toBe(false);
+    });
+
+    it('se déconnecte à la destruction', async () => {
+      fixture.destroy();
+      expect(FakeResizeObserver.instances.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
+    });
+  });
+
+  describe('fond, carte et destruction', () => {
+    const pointer = (type: string, target: Element) => {
+      const event = Object.defineProperty(new Event(type, { bubbles: true }), 'isPrimary', { value: true });
+      target.dispatchEvent(event);
+    };
+    const card = () => vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 48em)' }));
+
+    it('carte : appui et clic sur le fond ferment', async () => {
+      card();
+      await openSheet();
+      pointer('pointerdown', dialog);
+      dialog.click();
+      await stable();
+      expect(host.open()).toBe(false);
+    });
+
+    it('carte : sélection commencée dans le corps et relâchée sur le fond ne ferme pas', async () => {
+      card();
+      await openSheet();
+      pointer('pointerdown', dialog.querySelector('.lc-sheet__body')!);
+      dialog.click();
+      await stable();
+      expect(host.open()).toBe(true);
+    });
+
+    it('téléphone : appui et clic sur le fond ne ferment pas', async () => {
+      vi.stubGlobal('matchMedia', () => ({ matches: false }));
+      await openSheet();
+      pointer('pointerdown', dialog);
+      dialog.click();
+      await stable();
+      expect(host.open()).toBe(true);
+    });
+
+    it('carte : le geste ne démarre pas', async () => {
+      card();
+      await openSheet();
+      const zone = dialog.querySelector<HTMLElement>('.lc-sheet__drag')!;
+      pointer('pointerdown', zone);
+      expect(dialog.hasAttribute('data-dragging')).toBe(false);
+    });
+
+    it('détruite pendant sa sortie : closed n\'est pas émis', async () => {
+      await openSheet();
+      animate();
+      host.open.set(false);
+      await stable();
+      fixture.destroy();
+      finish();
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(dialog.close).not.toHaveBeenCalled(); // la sortie finit sans toucher à un composant détruit
+      expect(host.closed).not.toHaveBeenCalled();
+    });
+  });
+
   describe('geste', () => {
     const pointer = (type: string, clientY: number, timeStamp: number) =>
       Object.defineProperties(new Event(type, { bubbles: true }), {

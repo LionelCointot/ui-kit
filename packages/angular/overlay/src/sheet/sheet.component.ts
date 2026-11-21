@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, ViewEncapsulation, afterNextRender, effect, inject, input, model, output, untracked, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, ViewEncapsulation, afterNextRender, effect, inject, input, model, output, signal, untracked, viewChild } from '@angular/core';
 import { LC_LABELS, LcButtonComponent, LcIconComponent, lcAnimationsEnd, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcSheetSample, SHEET_DEFAULT_DISMISS_RATIO, SHEET_FLICK_WINDOW_MS, sheetShouldDismiss } from './sheet-gesture';
 
@@ -30,7 +30,7 @@ interface Drag {
   selector: 'lc-sheet',
   imports: [LcButtonComponent, LcIconComponent],
   template: `
-    <dialog #dialog class="lc-sheet__dialog" [attr.aria-labelledby]="titleId" (cancel)="onCancel($event)" (close)="onNativeClose()" (click)="onDialogClick($event)" (transitionend)="onTransitionEnd($event)">
+    <dialog #dialog class="lc-sheet__dialog" [attr.aria-labelledby]="titleId" (cancel)="onCancel($event)" (close)="onNativeClose()" (pointerdown)="downTarget = $event.target" (click)="onDialogClick($event)" (transitionend)="onTransitionEnd($event)">
       <div class="lc-sheet__drag" (pointerdown)="onPointerDown($event)" (pointermove)="onPointerMove($event)" (pointerup)="onPointerUp($event)"
         (pointercancel)="onPointerCancel()" (lostpointercapture)="onPointerCancel()">
         <div class="lc-sheet__grip"><span class="lc-sheet__handle" aria-hidden="true"></span></div>
@@ -40,7 +40,7 @@ interface Drag {
             [attr.aria-label]="closeLabel() ?? labels.close" (click)="open.set(false)"><lc-icon name="x" /></button>
         </header>
       </div>
-      <div class="lc-sheet__body"><ng-content /></div>
+      <div #body class="lc-sheet__body" [attr.tabindex]="scrolls() ? 0 : null" [attr.role]="scrolls() ? 'region' : null" [attr.aria-labelledby]="scrolls() ? titleId : null"><ng-content /></div>
       <footer class="lc-sheet__footer"><ng-content select="[lcSheetFooter]" /></footer>
     </dialog>
   `,
@@ -53,6 +53,12 @@ export class LcSheetComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly injector = inject(Injector);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly body = viewChild.required<ElementRef<HTMLElement>>('body');
+  private destroyed = false;
+  /** Cible du dernier `pointerdown` dans le dialogue : un clic ne ferme que s'il a commencé sur le fond aussi. */
+  protected downTarget: EventTarget | null = null;
+  /** Le corps défile : il devient un arrêt de tabulation nommé (axe `scrollable-region-focusable`), sinon rien en plus. */
+  protected readonly scrolls = signal(false);
 
   /** Open state (two-way). */
   readonly open = model(false);
@@ -70,6 +76,17 @@ export class LcSheetComponent {
   private drag: Drag | undefined;
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
+    destroyRef.onDestroy(() => (this.destroyed = true));
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const body = this.body().nativeElement;
+      const observer = new ResizeObserver(() => this.scrolls.set(body.scrollHeight > body.clientHeight));
+      observer.observe(body);
+      // shortcut: les enfants présents au premier rendu seulement ; un enfant ajouté plus tard ne relance pas la mesure avant un redimensionnement.
+      Array.from(body.children).forEach((child) => observer.observe(child));
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
     effect(() => {
       if (this.open()) untracked(() => this.show());
       else untracked(() => void this.hide());
@@ -98,7 +115,7 @@ export class LcSheetComponent {
     dialog.removeAttribute('data-returning');
     dialog.setAttribute('data-closing', '');
     await lcAnimationsEnd(dialog, { subtree: false });
-    if (token !== this.token) return; // rouverte pendant la sortie
+    if (token !== this.token || this.destroyed) return; // rouverte pendant la sortie, ou détruite
     this.finish(dialog);
   }
 
@@ -126,7 +143,10 @@ export class LcSheetComponent {
 
   /** Clic sur le fond (la cible est le `<dialog>` lui-même) : ferme en carte seulement, jamais au téléphone. */
   protected onDialogClick(event: MouseEvent): void {
-    if (event.target === this.dialog().nativeElement && isCard()) this.open.set(false);
+    const dialog = this.dialog().nativeElement;
+    const pressed = this.downTarget;
+    this.downTarget = null;
+    if (event.target === dialog && pressed === dialog && isCard()) this.open.set(false);
   }
 
   protected onTransitionEnd(event: TransitionEvent): void {

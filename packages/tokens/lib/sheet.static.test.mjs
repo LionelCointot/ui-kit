@@ -36,3 +36,10 @@ test('CA-R2 / spec 5.2 : jetons de composant du mouvement iOS', () => {
   for (const [k, v] of Object.entries(refs)) assert.equal(k.split('.').reduce((o, p) => o?.[p], tk)?.$value, v, k);
   for (const k of ['sheet.card-width', 'sheet.card-max-height']) assert.ok(k.split('.').reduce((o, p) => o?.[p], tk)?.$value, k);
 });
+
+test('lc-sheet : la rupture « carte » du TypeScript est celle du @media du CSS', () => {
+  const ts = read('overlay/src/sheet/sheet.component.ts').match(/const CARD = '\((min-width: [^)]+)\)'/)?.[1];
+  const css = read('overlay/src/sheet/sheet.component.css').match(/@media \((min-width: [^)]+)\)/)?.[1];
+  assert.ok(ts, 'CARD introuvable dans le TypeScript');
+  assert.equal(css, ts);
+});
