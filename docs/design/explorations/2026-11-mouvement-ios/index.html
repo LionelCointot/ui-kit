@@ -90,6 +90,34 @@ label.opt input { inline-size: 20px; block-size: 20px; }
   .sheet { border: 1px solid CanvasText; }
   .sheet__handle { forced-color-adjust: none; background: CanvasText; }
 }
+
+/* ---- Comparer ---- */
+.compare { padding: var(--lc-sys-space-4); max-inline-size: 60rem; margin-inline: auto; border-block-start: 1px solid var(--lc-sys-color-border); }
+.compare h2 { font-size: 1.25rem; margin: var(--lc-sys-space-4) 0 var(--lc-sys-space-2); }
+.compare h3.q { font-size: 1.0625rem; margin: var(--lc-sys-space-6) 0 var(--lc-sys-space-1); }
+.compare p.note { margin: 0 0 var(--lc-sys-space-3); color: var(--lc-sys-color-on-surface-muted); }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: var(--lc-sys-space-4); align-items: start; margin-block-start: var(--lc-sys-space-3); }
+.cmp--wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); }
+.cmp__col { min-inline-size: 0; }
+.cmp__col > strong { display: block; margin-block-end: var(--lc-sys-space-2); }
+.cmp__list { background: var(--lc-sys-color-surface-raised); border: 1px solid var(--lc-sys-color-border); border-radius: var(--lc-sys-radius-lg); padding: 0 var(--lc-sys-space-4); }
+.pf { position: relative; inline-size: 280px; block-size: 500px; overflow: hidden; border: 6px solid #1a1a19; border-radius: 28px; background: var(--lc-sys-color-background); margin-inline: auto; }
+.pf--full { inline-size: 360px; block-size: 640px; border-width: 0; border-radius: 0; outline: 1px solid var(--lc-sys-color-border-strong); }
+.pf__page { padding: var(--lc-sys-space-3); }
+.pf__page b { display: block; margin-block-end: var(--lc-sys-space-2); }
+.pf__row { padding: var(--lc-sys-space-2) var(--lc-sys-space-3); border-block-end: 1px solid var(--lc-sys-color-border); background: var(--lc-sys-color-surface-raised); font-size: .875rem; }
+.pf__scrim { position: absolute; inset: 0; background: var(--lc-sys-color-backdrop); }
+.pf__sheet { position: absolute; inset-inline: 0; inset-block-end: 0; display: flex; flex-direction: column; background: var(--lc-sys-color-background);
+  border-start-start-radius: var(--lc-sheet-radius); border-start-end-radius: var(--lc-sheet-radius); overflow: hidden; }
+.pf__sheet .sheet__body { flex: 1; }
+.pf .sheet__head { min-block-size: 44px; }
+.pf--anim .pf__sheet { transition: transform var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); }
+.pf--anim .pf__scrim { transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); }
+.pf--enter .pf__sheet { transition: transform var(--lc-sheet-enter-duration) var(--lc-sys-easing-standard); }
+.pf--enter .pf__scrim { transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); }
+.pf--drag .pf__sheet, .pf--drag .pf__scrim { transition: none; }
+@media (max-width: 400px) { .pf--full { zoom: .85; } }
+@media (prefers-reduced-motion: reduce) { .pf--anim .pf__sheet, .pf--anim .pf__scrim, .pf--enter .pf__sheet, .pf--enter .pf__scrim { transition: none; } }
 </style>
 </head>
 <body>
@@ -109,6 +137,26 @@ label.opt input { inline-size: 20px; block-size: 20px; }
   </button>
   <div class="collapse" id="dis-body"><div><p>Chevron à droite qui tourne de 90 degrés vers le bas (lc-disclosure, lc-nav-group).</p></div></div>
 </main>
+
+<section class="compare" aria-labelledby="cmp-t">
+  <h2 id="cmp-t">Comparer</h2>
+  <p class="note">Valeurs d'exemple. Trois choix à trancher à l'œil ; « Rejouer » relance chaque comparaison.</p>
+
+  <h3 class="q">Q1. Durée des dépliages</h3>
+  <p class="note">Même courbe, même technique. Les sections 1 puis 2 se déplient, les voisines glissent.</p>
+  <button class="btn" type="button" id="q1-replay">Rejouer</button>
+  <div class="cmp" id="q1"></div>
+
+  <h3 class="q">Q2. Fond pendant le geste</h3>
+  <p class="note">Tirez la poignée vers le bas à la souris, puis lâchez (plus d'un quart : fermeture).</p>
+  <button class="btn" type="button" id="q2-replay">Rejouer</button>
+  <div class="cmp" id="q2"></div>
+
+  <h3 class="q">Q3. Marge haute</h3>
+  <p class="note">Feuille ouverte au-dessus d'un tableau : combien de tableau reste visible.</p>
+  <button class="btn" type="button" id="q3-replay">Rejouer</button>
+  <div class="cmp cmp--wide" id="q3"></div>
+</section>
 
 <dialog class="sheet" id="sheet" aria-labelledby="t">
   <div class="sheet__grab" id="grab">
@@ -190,6 +238,92 @@ document.querySelectorAll('[aria-controls]').forEach(b => b.addEventListener('cl
   b.setAttribute('aria-expanded', String(open));
   document.getElementById(b.getAttribute('aria-controls')).classList.toggle('open', open);
 }));
+
+// ---- Comparer (DOM construit sans innerHTML) ----
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const NS = 'http://www.w3.org/2000/svg';
+const icon = d => { const v = document.createElementNS(NS, 'svg'); v.setAttribute('viewBox', '0 0 24 24'); const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); v.append(p); return v; };
+let uid = 0;
+function setOpen(b, open) { b.setAttribute('aria-expanded', String(open)); document.getElementById(b.getAttribute('aria-controls')).classList.toggle('open', open); }
+function section(title, items) {
+  const sec = el('div', 'sec'), h = el('h3'), b = el('button', 'sec__toggle'), c = el('div', 'collapse'), w = el('div'), inner = el('div', 'sec__inner');
+  b.type = 'button'; c.id = 'c' + (uid++); b.setAttribute('aria-controls', c.id); b.setAttribute('aria-expanded', 'false');
+  const chev = el('i', 'chev chev--180'); chev.append(icon('m6 9 6 6 6-6'));
+  b.append(el('span', null, title), chev); h.append(b);
+  items.forEach(t => { const l = el('label', 'opt'), cb = el('input'); cb.type = 'checkbox'; l.append(cb, t); inner.append(l); });
+  w.append(inner); c.append(w); sec.append(h, c);
+  b.addEventListener('click', () => setOpen(b, b.getAttribute('aria-expanded') !== 'true'));
+  return { sec, b };
+}
+const SECTIONS = [['Statut', ['Reçue', 'En cours', 'Terminée']], ['Reçue le', ['Cette semaine', 'Ce mois-ci', 'Plus ancienne']], ['Copropriété', ['Résidence des Tilleuls', 'Le Clos Fleuri']]];
+const timers = new Set(); const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
+
+// Q1
+const q1 = document.getElementById('q1'), q1cols = [];
+[500, 350].forEach((ms, i) => {
+  const col = el('div', 'cmp__col'), list = el('div', 'cmp__list'); list.style.setProperty('--lc-collapse-duration', ms + 'ms');
+  const secs = SECTIONS.map(([t, it]) => section(t, it)); secs.forEach(x => list.append(x.sec));
+  col.append(el('strong', null, (i ? 'B' : 'A') + ' : ' + ms + ' ms'), list); q1.append(col); q1cols.push({ secs, ms });
+});
+function playQ1() {
+  timers.forEach(clearTimeout); timers.clear();
+  q1cols.forEach(c => c.secs.forEach(x => setOpen(x.b, false)));
+  later(() => q1cols.forEach(c => setOpen(c.secs[0].b, true)), 700);
+  later(() => q1cols.forEach(c => setOpen(c.secs[1].b, true)), 700 + 500 + 500);
+}
+document.getElementById('q1-replay').onclick = playQ1;
+
+// Q2
+const q2 = document.getElementById('q2'), q2phones = [];
+function page(frame, rows) { const pg = el('div', 'pf__page'); pg.append(el('b', null, 'Demandes')); rows.forEach(r => pg.append(el('div', 'pf__row', r))); frame.append(pg); }
+const ROWS = ['D-1042 · Fuite au 3e étage', 'D-1041 · Ascenseur en panne', 'D-1039 · Porte de garage', 'D-1037 · Lumière du hall', 'D-1034 · Interphone', 'D-1030 · Boîtes aux lettres', 'D-1029 · Local vélos', 'D-1027 · Digicode'];
+[true, false].forEach(fade => {
+  const col = el('div', 'cmp__col'), frame = el('div', 'pf pf--anim'), scrim = el('div', 'pf__scrim'), sheet = el('div', 'pf__sheet');
+  page(frame, ROWS);
+  const grab = el('div', 'sheet__grab'), strip = el('div', 'sheet__strip'), head = el('div', 'sheet__head');
+  strip.append(el('span', 'sheet__handle')); head.append(el('h2', null, 'Filtres')); grab.append(strip, head);
+  const body = el('div', 'sheet__body'); body.append(el('p', null, 'Tirez la poignée vers le bas.'));
+  sheet.style.blockSize = '440px'; sheet.append(grab, body); frame.append(scrim, sheet);
+  col.append(el('strong', null, fade ? 'A : le fond s’éclaircit avec la distance' : 'B : le fond reste fixe jusqu’au lâcher'), frame); q2.append(col);
+  const ph = { frame, sheet, scrim, fade }; q2phones.push(ph);
+  let d = null;
+  grab.addEventListener('pointerdown', e => { grab.setPointerCapture(e.pointerId); d = { y0: e.clientY, dy: 0, s: [[e.timeStamp, e.clientY]] }; frame.classList.add('pf--drag'); frame.classList.remove('pf--enter'); frame.classList.add('pf--anim'); });
+  grab.addEventListener('pointermove', e => { if (!d) return; d.dy = Math.max(0, e.clientY - d.y0); d.s.push([e.timeStamp, e.clientY]);
+    sheet.style.transform = `translateY(${d.dy}px)`; if (fade) scrim.style.opacity = String(1 - Math.min(1, d.dy / 440)); });
+  const end = (e, cancelled) => { if (!d) return; const x = d; d = null; frame.classList.remove('pf--drag');
+    const f = x.s.filter(a => e.timeStamp - a[0] <= 100)[0] || x.s[0], v = (e.clientY - f[1]) / Math.max(1, e.timeStamp - f[0]);
+    const close = !cancelled && (x.dy > 440 * 0.25 || (v > 0.5 && x.dy >= 16));
+    sheet.style.transform = close ? 'translateY(100%)' : 'translateY(0)'; scrim.style.opacity = close ? '0' : '1'; };
+  grab.addEventListener('pointerup', e => end(e, false)); grab.addEventListener('pointercancel', e => end(e, true));
+});
+function playQ2() {
+  q2phones.forEach(({ frame, sheet, scrim }) => {
+    frame.classList.remove('pf--anim'); frame.classList.remove('pf--enter');
+    sheet.style.transform = 'translateY(100%)'; scrim.style.opacity = '0'; void sheet.offsetHeight;
+    frame.classList.add('pf--enter'); sheet.style.transform = 'translateY(0)'; scrim.style.opacity = '1';
+  });
+}
+document.getElementById('q2-replay').onclick = playQ2;
+
+// Q3
+const q3 = document.getElementById('q3'), q3phones = [];
+[32, 40].forEach((gap, i) => {
+  const col = el('div', 'cmp__col'), frame = el('div', 'pf pf--full'), scrim = el('div', 'pf__scrim'), sheet = el('div', 'pf__sheet');
+  page(frame, ROWS.concat(ROWS));
+  const grab = el('div', 'sheet__grab'), strip = el('div', 'sheet__strip'), head = el('div', 'sheet__head');
+  strip.append(el('span', 'sheet__handle')); head.append(el('h2', null, 'Filtres')); grab.append(strip, head);
+  const body = el('div', 'sheet__body'); SECTIONS.forEach(([t, it]) => body.append(section(t, it).sec));
+  sheet.style.blockSize = `calc(100% - ${gap}px)`; sheet.append(grab, body); frame.append(scrim, sheet);
+  col.append(el('strong', null, (i ? 'B' : 'A') + ' : marge de ' + gap + ' px'), frame); q3.append(col); q3phones.push({ frame, sheet, scrim });
+});
+function playQ3() {
+  q3phones.forEach(({ frame, sheet, scrim }) => {
+    frame.classList.remove('pf--enter'); sheet.style.transform = 'translateY(100%)'; scrim.style.opacity = '0'; void sheet.offsetHeight;
+    frame.classList.add('pf--enter'); sheet.style.transform = 'translateY(0)'; scrim.style.opacity = '1';
+  });
+}
+document.getElementById('q3-replay').onclick = playQ3;
+playQ1(); playQ2(); playQ3();
 </script>
 </body>
 </html>
