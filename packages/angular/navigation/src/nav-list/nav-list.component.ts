@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, booleanAttribute, inject, input, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, booleanAttribute, inject, input, signal, untracked, viewChild } from '@angular/core';
 
 /**
  * Liste de navigation : conteneur d'éléments `a[lcNavItem]`. À placer dans un `<nav>` (par exemple
@@ -22,21 +22,19 @@ export class LcNavListComponent {
   protected readonly ready = signal(false);
   private readonly activeItem = signal<HTMLElement | null>(null);
   private readonly indicator = viewChild.required<ElementRef<HTMLElement>>('indicator');
+  private placedItem: HTMLElement | null = null;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     // Changement d'élément actif : l'indicateur glisse. Bascule `collapsed` : nouvelle mesure sans glissement.
-    afterRenderEffect(() => {
-      this.activeItem();
-      this.place(false);
-    });
+    afterRenderEffect(() => this.place(this.activeItem(), false));
     afterRenderEffect(() => {
       this.collapsed();
-      this.place(true);
+      this.place(untracked(() => this.activeItem()), true);
     });
     afterRenderEffect((onCleanup) => {
       // Dépliage ou repli d'un groupe : la liste change de taille, l'indicateur se remesure sans glisser.
-      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.place(true));
+      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.place(untracked(() => this.activeItem()), true));
       observer?.observe(this.host.nativeElement);
       onCleanup(() => observer?.disconnect());
     });
@@ -48,20 +46,22 @@ export class LcNavListComponent {
     else if (this.activeItem() === item) this.activeItem.set(null);
   }
 
-  /** Place l'indicateur sous l'élément actif ; masqué sans élément actif visible. `instant` coupe le glissement. */
-  private place(instant: boolean): void {
+  /** Place l'indicateur sous `item` ; masqué sans élément visible. Sans glissement si `instant`, à la réapparition ou pour le même élément. */
+  private place(item: HTMLElement | null, instant: boolean): void {
     const indicator = this.indicator().nativeElement;
-    const item = this.activeItem();
     const box = item?.getBoundingClientRect();
     const visible = !!box && (box.width > 0 || box.height > 0);
     const wasHidden = indicator.classList.contains('lc-nav-list__indicator--hidden');
     indicator.classList.toggle('lc-nav-list__indicator--hidden', !visible);
     if (visible) {
       const host = this.host.nativeElement;
-      indicator.classList.toggle('lc-nav-list__indicator--instant', instant || wasHidden);
+      // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
+      indicator.classList.toggle('lc-nav-list__indicator--instant', instant || wasHidden || item === this.placedItem);
+      // `scrollTop` : la position est relative au contenu de la liste, qui peut défiler.
       indicator.style.transform = `translateY(${box.top - host.getBoundingClientRect().top + host.scrollTop}px)`;
       indicator.style.height = `${box.height}px`;
     }
+    this.placedItem = visible ? item : null;
     this.ready.set(true);
   }
 }
