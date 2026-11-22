@@ -50,14 +50,19 @@ class InternalNoteDemoComponent {
  *
  * Import: `import { LcMessageComposerComponent } from '@lionelcointot/ui-angular/forms';`
  */
-const meta: Meta<LcMessageComposerComponent> = {
+/** Playground arguments: the flat controls that feed the `attachments` object. */
+type PlaygroundArgs = Omit<LcMessageComposerComponent, 'attachments'> & {
+  attachments: boolean; attachIcon: string; accept: string; acceptLabel: string; maxFiles: number | null; showSize: boolean;
+};
+
+const meta: Meta<PlaygroundArgs> = {
   title: 'Forms/Message composer',
   component: LcMessageComposerComponent,
   decorators: [moduleMetadata({ imports: [LcMessageComposerComponent, LcFormFieldComponent, LcButtonComponent, LcIconComponent, StoryMotionNoticeComponent, InternalNoteDemoComponent] })],
   args: {
     value: '', placeholder: 'Écrivez votre message…', ariaLabel: 'Votre message', disabled: false, readonly: false, sending: false,
-    maxLength: 500, minRows: 1, maxRows: 7, enterSends: 'auto', sendIcon: 'send', sendLabel: 'Envoyer', attachIcon: 'paperclip',
-    attachments: true, accept: 'image/*,.pdf', acceptLabel: '', maxFiles: 10, showSize: true,
+    maxLength: 500, minRows: 1, maxRows: 7, enterSends: 'auto', sendIcon: 'send', sendLabel: 'Envoyer', attachments: true,
+    attachIcon: 'paperclip', accept: 'image/*,.pdf', acceptLabel: '', maxFiles: 10, showSize: true,
   },
   argTypes: {
     enterSends: { control: 'select', options: ['auto', true, false] },
@@ -76,7 +81,7 @@ const meta: Meta<LcMessageComposerComponent> = {
   },
 };
 export default meta;
-type Story = StoryObj<LcMessageComposerComponent>;
+type Story = StoryObj<PlaygroundArgs>;
 
 /** Fixed composer in a 36 rem column; `attributes` are plain template attributes. */
 const fixed = (items: readonly LcFileUploadItem[], attributes = '', value = ''): Story => ({
@@ -93,13 +98,18 @@ export const Playground: Story = {
   // le clavier ou une limite atteinte : vérifiés à la main.
   parameters: { controlsCheck: { stateDependent: ['value', 'maxRows', 'enterSends', 'maxFiles', 'acceptLabel'] } },
   render: (args) => ({
-    props: { ...args, items: [DONE, UPLOADING] },
+    // Flat controls rebuilt into the `attachments` object, like a consumer would write it.
+    props: {
+      ...args, items: [DONE, UPLOADING],
+      attachmentSettings: args.attachments
+        ? { icon: args.attachIcon, accept: args.accept, acceptLabel: args.acceptLabel || undefined, maxFiles: args.maxFiles, showSize: args.showSize }
+        : false,
+    },
     template: `
       <div style="max-width:36rem">
         <lc-message-composer [value]="value" [placeholder]="placeholder" [ariaLabel]="ariaLabel" [disabled]="disabled" [readonly]="readonly"
           [sending]="sending" [maxLength]="maxLength" [minRows]="minRows" [maxRows]="maxRows" [enterSends]="enterSends"
-          [sendIcon]="sendIcon" [sendLabel]="sendLabel" [attachIcon]="attachIcon" [attachments]="attachments" [accept]="accept" [acceptLabel]="acceptLabel || undefined"
-          [maxFiles]="maxFiles" [showSize]="showSize" [items]="items"
+          [sendIcon]="sendIcon" [sendLabel]="sendLabel" [attachments]="attachmentSettings" [items]="items"
           (valueChange)="valueChange($event)" (send)="send($event)" (sendBlocked)="sendBlocked($event)" (filesAdded)="filesAdded($event)"
           (rejected)="rejected($event)" (remove)="remove($event)" (retry)="retry($event)" (touch)="touch()" />
       </div>`,
@@ -147,7 +157,7 @@ import { LcMessageComposerComponent, type LcFileUploadItem } from '@lionelcointo
   selector: 'app-example',
   imports: [LcMessageComposerComponent],
   template: \`
-    <lc-message-composer ariaLabel="Votre message" accept="image/*" [items]="items()"
+    <lc-message-composer ariaLabel="Votre message" [attachments]="{ accept: 'image/*' }" [items]="items()"
       (filesAdded)="add($event)" (rejected)="onRejected($event)" />
   \`,
 })
@@ -190,7 +200,7 @@ export const Animation: Story = {
         <div #root style="max-width:36rem">
           <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
           @for (key of keys(); track key) {
-            <lc-message-composer ariaLabel="Votre message" accept="image/*" [items]="items()" />
+            <lc-message-composer ariaLabel="Votre message" [attachments]="{ accept: 'image/*' }" [items]="items()" />
           }
         </div>`,
     };

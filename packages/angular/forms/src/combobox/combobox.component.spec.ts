@@ -2,7 +2,7 @@ import { ConnectedPosition, FlexibleConnectedPositionStrategy } from '@angular/c
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LcComboboxOptionDirective } from './combobox-option.directive';
-import { LcComboboxComponent } from './combobox.component';
+import { LcComboboxComponent, LcComboboxSearchSettings } from './combobox.component';
 import { LcHighlightComponent } from './highlight.component';
 
 interface Department {
@@ -21,7 +21,7 @@ const DEPARTMENTS: readonly Department[] = [
 @Component({
   imports: [LcComboboxComponent],
   template: `
-    <lc-combobox ariaLabel="Département" [options]="options" [displayWith]="display" [trackBy]="key" [filterKeys]="keys"
+    <lc-combobox ariaLabel="Département" [options]="options" [displayWith]="display" [trackBy]="key" [searchSettings]="{ keys }"
       [(value)]="value" [clearable]="clearable()" [readonly]="readonly()" (selectionChange)="changes.push($event)" />
     <button id="other" type="button">autre</button>
   `,
@@ -323,5 +323,63 @@ describe('LcComboboxComponent (gabarit d\'option)', () => {
     expect(option.querySelector('.code')?.textContent).toBe('69');
     expect(option.querySelector('mark')?.textContent).toBe('Rhô');
     fixture.destroy();
+  });
+});
+
+@Component({
+  imports: [LcComboboxComponent],
+  template: `<lc-combobox ariaLabel="Département" [options]="options" [displayWith]="display" [trackBy]="key" [searchSettings]="settings()" />`,
+})
+class ComboboxSettingsHostComponent {
+  readonly options: readonly Department[] = DEPARTMENTS;
+  readonly settings = signal<LcComboboxSearchSettings<Department>>({});
+  readonly display = (d: Department) => d.name;
+  readonly key = (d: Department) => d.code;
+}
+
+describe('LcComboboxComponent searchSettings', () => {
+  let fixture: ComponentFixture<ComboboxSettingsHostComponent>;
+  let input: HTMLInputElement;
+  const labels = () => Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).map((o) => o.textContent?.trim());
+
+  async function setup(settings: LcComboboxSearchSettings<Department>): Promise<void> {
+    fixture = TestBed.createComponent(ComboboxSettingsHostComponent);
+    fixture.componentInstance.settings.set(settings);
+    await fixture.whenStable();
+    input = (fixture.nativeElement as HTMLElement).querySelector('input')!;
+  }
+  async function type(text: string): Promise<void> {
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+  }
+
+  it('applies the defaults when the object is empty (opens on focus, no minimum)', async () => {
+    await setup({});
+    input.dispatchEvent(new Event('focus'));
+    await fixture.whenStable();
+    expect(labels()).toHaveLength(DEPARTMENTS.length);
+  });
+
+  it('merges partial settings with the defaults: maxResults caps the list, openOnFocus stays on', async () => {
+    await setup({ maxResults: 2 });
+    input.dispatchEvent(new Event('focus'));
+    await fixture.whenStable();
+    expect(labels()).toHaveLength(2);
+  });
+
+  it('minChars withholds proposals until enough characters are typed', async () => {
+    await setup({ minChars: 3 });
+    await type('ra');
+    expect(labels()).toEqual([]);
+    await type('rho');
+    expect(labels()).toEqual(['Rhône']);
+  });
+
+  it('openOnFocus: false keeps the panel closed on focus', async () => {
+    await setup({ openOnFocus: false });
+    input.dispatchEvent(new Event('focus'));
+    await fixture.whenStable();
+    expect(document.querySelector('.lc-combobox-panel')).toBeNull();
   });
 });

@@ -17,7 +17,7 @@ const MAX_POSTAL_CODES = 3;
   selector: 'lc-commune-input',
   imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent],
   template: `
-    <lc-combobox [search]="searchFn()" [displayWith]="display" [trackBy]="trackBy" [(value)]="value" [debounceMs]="debounceMs()"
+    <lc-combobox [search]="searchFn()" [displayWith]="display" [trackBy]="trackBy" [(value)]="value" [searchSettings]="searchSettings()"
       (selectionChange)="selectionChange.emit($event)" (touch)="touch.emit()"
       [inputId]="inputId()" [ariaLabel]="ariaLabel()" [placeholder]="placeholder()" [size]="size()" [fillMode]="fillMode()"
       [rounded]="rounded()" [disabled]="disabled() || unavailable()" [readonly]="readonly()" [invalid]="invalid()"
@@ -44,6 +44,7 @@ export class LcCommuneInputComponent extends LcGeoFieldBase<LcCommune, LcCommune
 
   /** Anti-rebond de la recherche, en millisecondes (défaut 200). */
   readonly debounceMs = input(200);
+  protected readonly searchSettings = computed(() => ({ debounceMs: this.debounceMs() }));
 
   /** Indice de type pour le gabarit d'option. */
   protected readonly communeHint: LcCommune | null = null;

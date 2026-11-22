@@ -67,10 +67,26 @@ interface RetryEntry extends EntryBase {
 /** Fonction de recherche asynchrone : doit honorer `signal` (annulation) et renvoyer la liste complète des propositions. */
 export type LcComboboxSearch<T> = (text: string, signal: AbortSignal) => Promise<readonly T[]>;
 
+/** Réglages de la recherche d'un `lc-combobox` ; chaque champ absent prend son défaut. */
+export interface LcComboboxSearchSettings<T> {
+  /** Textes comparés au texte saisi en mode local (défaut : `displayWith`). */
+  readonly keys?: (item: T) => readonly string[];
+  /** Caractères saisis avant de chercher ou d'afficher des propositions (défaut : 0 en local, 2 en asynchrone). */
+  readonly minChars?: number;
+  /** Anti-rebond de la recherche asynchrone, en millisecondes (défaut : 200). */
+  readonly debounceMs?: number;
+  /** Nombre maximal de propositions affichées en mode local (défaut : 50). */
+  readonly maxResults?: number;
+  /** Ouvre la liste à la prise de focus (défaut : oui en local, non en asynchrone). */
+  readonly openOnFocus?: boolean;
+}
+
 type SearchStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 const ANNOUNCE_DELAY_MS = 500;
 const ASYNC_MIN_LENGTH = 2;
+const DEFAULT_DEBOUNCE_MS = 200;
+const DEFAULT_MAX_RESULTS = 50;
 
 /** Erreur « trop de requêtes » : reconnue par `status === 429` ou `kind === 'rate-limited'` (sans dépendre d'un type précis). */
 function isRateLimited(error: unknown): boolean {
@@ -87,7 +103,7 @@ const NO_STYLES = { setActiveStyles: () => undefined, setInactiveStyles: () => u
  * (`role="listbox"`). La focalisation reste dans le champ (`aria-activedescendant`) ; le clavier vient de
  * `ActiveDescendantKeyManager`. Implémente `FormValueControl<T | null>` (Signal Forms) et `[(value)]`.
  *
- * Mode local : `options` filtrées en mémoire (`filterKeys`, `lcFilterOptions`).
+ * Mode local : `options` filtrées en mémoire (`searchSettings.keys`, `lcFilterOptions`).
  *
  * @example
  * <lc-combobox [options]="cities" [displayWith]="cityName" [trackBy]="cityId" [(value)]="city" ariaLabel="Ville" />
@@ -186,16 +202,8 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
   readonly displayWith = input.required<(item: T) => string>();
   /** Clé stable d'un élément : égalité de valeur et identifiants d'options (obligatoire). */
   readonly trackBy = input.required<(item: T) => string>();
-  /** Textes comparés au texte saisi en mode local (défaut : `displayWith`). */
-  readonly filterKeys = input<((item: T) => readonly string[]) | undefined>(undefined);
-  /** Caractères saisis avant de chercher ou d'afficher des propositions (défaut : 0 en local, 2 en asynchrone). */
-  readonly minLength = input<number | undefined>(undefined);
-  /** Anti-rebond de la recherche asynchrone, en millisecondes. */
-  readonly debounceMs = input(200);
-  /** Nombre maximal de propositions affichées en mode local. */
-  readonly maxResults = input(50);
-  /** Ouvre la liste à la prise de focus (défaut : oui en local, non en asynchrone). */
-  readonly openOnFocus = input<boolean | undefined>(undefined);
+  /** Réglages de la recherche (voir `LcComboboxSearchSettings`) ; les valeurs absentes prennent le défaut du mode. */
+  readonly searchSettings = input<LcComboboxSearchSettings<T>>({});
   /** Identifiants supplémentaires ajoutés à `aria-describedby` (aide fournie par un composant parent). */
   readonly extraDescribedBy = input<string | null>(null);
   /** Bouton « Effacer ». */
@@ -256,23 +264,30 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
     },
   });
 
-  private readonly keys = computed(() => {
-    const filterKeys = this.filterKeys();
-    const displayWith = this.displayWith();
-    return filterKeys ?? ((item: T) => [displayWith(item)]);
-  });
-
   private readonly mode = computed<'local' | 'async' | 'none'>(() =>
     this.options() !== null ? 'local' : this.search() !== null ? 'async' : 'none');
-  protected readonly minLengthResolved = computed(() => this.minLength() ?? (this.mode() === 'async' ? ASYNC_MIN_LENGTH : 0));
-  protected readonly openOnFocusResolved = computed(() => this.openOnFocus() ?? this.mode() !== 'async');
+  /** Réglages fusionnés avec les défauts (ceux du mode pour `minChars` et `openOnFocus`). */
+  private readonly settings = computed(() => {
+    const given = this.searchSettings();
+    const displayWith = this.displayWith();
+    const async = this.mode() === 'async';
+    return {
+      keys: given.keys ?? ((item: T) => [displayWith(item)]),
+      minChars: given.minChars ?? (async ? ASYNC_MIN_LENGTH : 0),
+      debounceMs: given.debounceMs ?? DEFAULT_DEBOUNCE_MS,
+      maxResults: given.maxResults ?? DEFAULT_MAX_RESULTS,
+      openOnFocus: given.openOnFocus ?? !async,
+    };
+  });
+  protected readonly minLengthResolved = computed(() => this.settings().minChars);
+  protected readonly openOnFocusResolved = computed(() => this.settings().openOnFocus);
   private readonly belowMinLength = computed(() => this.query().trim().length < this.minLengthResolved());
 
   private readonly items = computed<readonly T[]>(() => {
     if (this.belowMinLength()) return [];
     return this.mode() === 'async'
       ? this.remoteItems()
-      : lcFilterOptions(this.options() ?? [], this.query(), this.keys(), this.maxResults());
+      : lcFilterOptions(this.options() ?? [], this.query(), this.settings().keys, this.settings().maxResults);
   });
 
   protected readonly entries = computed<readonly ComboboxEntry<T>[]>(() => {
@@ -562,7 +577,7 @@ export class LcComboboxComponent<T> implements FormValueControl<T | null>, LcFor
         this.searchFailed.emit(error);
       }
     };
-    const delay = immediate ? 0 : this.debounceMs();
+    const delay = immediate ? 0 : this.settings().debounceMs;
     if (delay > 0) this.debounceTimer = setTimeout(() => void execute(), delay);
     else void execute();
   }

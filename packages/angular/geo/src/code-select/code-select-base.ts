@@ -1,6 +1,6 @@
 import { DestroyRef, Directive, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
 import { lcUniqueId } from '@lionelcointot/ui-angular';
-import { lcFilterOptions } from '@lionelcointot/ui-angular/forms';
+import { LcComboboxSearchSettings, lcFilterOptions } from '@lionelcointot/ui-angular/forms';
 import { LcGeoDataSource } from '../geo-data-source';
 import { LcGeoFieldBase } from '../geo-field-base';
 
@@ -31,6 +31,8 @@ export abstract class LcCodeSelectBase<T extends LcCodedItem> extends LcGeoField
 
   /** Textes comparés au texte saisi. */
   protected readonly filterKeys = (item: T): readonly string[] => [item.code, item.name, `${item.code} ${item.name}`];
+  /** Liste locale : tout s'affiche dès le focus, sans anti-rebond. */
+  protected readonly searchSettings: LcComboboxSearchSettings<T> = { keys: this.filterKeys, minChars: 0, debounceMs: 0, openOnFocus: true };
   protected readonly trackBy = (item: T): string => item.code;
   /** Texte du champ : « 69 – Rhône », ou le code seul quand le libellé est inconnu. */
   protected readonly display = (item: T): string => (item.name ? `${item.code} – ${item.name}` : item.code);

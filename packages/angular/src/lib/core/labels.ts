@@ -123,6 +123,8 @@ export interface LcLabels {
   /** Résumé lu par les technologies d'assistance pour un graphique. */
   readonly chartSummary: (info: LcChartSummaryInfo) => string;
   readonly themeBuilder: LcThemeBuilderLabels;
+  /** Bascule de thème (`lc-theme-toggle`). */
+  readonly themeToggle: LcThemeToggleLabels;
   /** Tableau filtrable (`lc-data-table`). Pour nommer les lignes (« demandes »), remplacer `rows`, `rowNoun`, `showRows`, `noResultsTitle`. */
   readonly dataTable: LcDataTableLabels;
   /** Champ de date à zones : lettres d'une zone vide, noms des zones, aide et annonces. */
@@ -381,6 +383,14 @@ const DATA_TABLE_EN: LcDataTableLabels = {
   announceFiltersApplied: 'Filters applied.',
   announceDraftCleared: 'All choices cleared.',
 };
+
+/** Textes de `lc-theme-toggle` : nom du groupe et des trois choix. */
+export interface LcThemeToggleLabels {
+  readonly group: string;
+  readonly light: string;
+  readonly dark: string;
+  readonly system: string;
+}
 
 /** Textes d'exemple de l'aperçu du theme builder. */
 export interface LcThemePreviewSamples {
@@ -713,6 +723,7 @@ export const LC_LABELS_FR: LcLabels = {
   chartAnnotation: 'Point annoté',
   chartSummary: summaryFr,
   themeBuilder: THEME_BUILDER_FR,
+  themeToggle: { group: 'Thème', light: 'Thème clair', dark: 'Thème sombre', system: 'Thème du système' },
   dataTable: DATA_TABLE_FR,
   dateZoneDay: 'jj',
   dateZoneMonth: 'mm',
@@ -951,6 +962,7 @@ export const LC_LABELS_EN: LcLabels = {
   chartAnnotation: 'Annotated point',
   chartSummary: summaryEn,
   themeBuilder: THEME_BUILDER_EN,
+  themeToggle: { group: 'Theme', light: 'Light theme', dark: 'Dark theme', system: 'System theme' },
   dataTable: DATA_TABLE_EN,
   dateZoneDay: 'dd',
   dateZoneMonth: 'mm',

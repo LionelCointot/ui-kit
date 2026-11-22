@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcFormFieldComponent } from '../form-field/form-field.component';
 import type { LcFileUploadItem } from '../file-upload/file-upload.component';
@@ -48,8 +48,8 @@ declare global {
     } @else if (variant() === 'field') {
       <lc-form-field label="Votre message" hint="Aide du champ" [errors]="s().errors">
         <lc-message-composer [(value)]="text" placeholder="Écrivez votre message…" [class.qa-note]="s().note"
-          [sending]="s().sending" [disabled]="s().disabled" [attachments]="s().attachments" [enterSends]="s().enterSends"
-          [maxLength]="s().maxLength" [maxFiles]="s().maxFiles" [accept]="s().accept" [minRows]="s().minRows" [maxRows]="s().maxRows"
+          [sending]="s().sending" [disabled]="s().disabled" [attachments]="attach()" [enterSends]="s().enterSends"
+          [maxLength]="s().maxLength" [minRows]="s().minRows" [maxRows]="s().maxRows"
           [items]="s().items" [sendLabel]="s().sendLabel"
           (send)="log('send', $event)" (sendBlocked)="log('sendBlocked', $event)" (filesAdded)="logFiles('filesAdded', $event)"
           (rejected)="log('rejected', $event)" (remove)="log('remove', $event)" (retry)="log('retry', $event)">
@@ -58,7 +58,7 @@ declare global {
         </lc-message-composer>
       </lc-form-field>
     } @else {
-      <lc-message-composer [(value)]="text" [ariaLabel]="s().ariaLabel" [attachments]="s().attachments" [disabled]="s().disabled"
+      <lc-message-composer [(value)]="text" [ariaLabel]="s().ariaLabel" [attachments]="attach()" [disabled]="s().disabled"
         [items]="s().items" (send)="log('send', $event)" (sendBlocked)="log('sendBlocked', $event)" />
     }
     <p id="qa-after">Après</p>
@@ -67,6 +67,7 @@ declare global {
 class ComposerQaComponent {
   readonly variant = input<'field' | 'bare'>('field');
   protected readonly s = signal<QaState>({ ...DEFAULTS });
+  protected readonly attach = computed(() => (this.s().attachments ? { maxFiles: this.s().maxFiles, accept: this.s().accept } : false));
   protected readonly text = signal('');
   protected readonly alive = signal(true);
 

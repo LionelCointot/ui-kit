@@ -14,6 +14,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-icon` | LcIconComponent | composant | name (requis), size, label | – |
 | `lc-skeleton` | LcSkeletonComponent | composant | shape, lines, width, height | – |
 | `lc-spinner` | LcSpinnerComponent | composant | size, label | – |
+| `lc-theme-toggle` | LcThemeToggleComponent | composant | size, fillMode | – |
 | `lcDate` | LcDatePipe | pipe | – | – |
 | `lcMoney` | LcMoneyPipe | pipe | – | – |
 | `lcMonths` | LcMonthsPipe | pipe | – | – |
@@ -71,13 +72,13 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `input[type=checkbox][lcCheckbox]` | LcCheckboxDirective | directive | id, indeterminate, invalid, touched, errors | – |
 | `input[type=radio][lcRadio]` | LcRadioDirective | directive | – | – |
 | `lc-choice-card` | LcChoiceCardComponent | composant | title (requis), description | – |
-| `lc-combobox` | LcComboboxComponent | composant | value (model), options, search, displayWith (requis), trackBy (requis), filterKeys, minLength, debounceMs, maxResults, openOnFocus, extraDescribedBy, clearable, placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors | selectionChange, searchFailed, touch |
+| `lc-combobox` | LcComboboxComponent | composant | value (model), options, search, displayWith (requis), trackBy (requis), searchSettings, extraDescribedBy, clearable, placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors | selectionChange, searchFailed, touch |
 | `lc-date-input` | LcDateInputComponent | composant | value (model), min, max, disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, inputId, ariaLabel | touch |
 | `lc-date-range-input` | LcDateRangeInputComponent | composant | value (model), min, max, presets, disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, inputId, ariaLabel | touch |
 | `lc-file-upload` | LcFileUploadComponent | composant | items, accept, multiple, maxFiles, disabled, showSize, chooseIcon, errorPlaceholderIcon, fullWidthMobile, removeLabelVisible, ariaLabel, id | filesAdded, rejected, remove, retry |
 | `lc-form-field` | LcFormFieldComponent | composant | label (requis), hint, hintPlacement, errors, required, state, layout, labelHidden | – |
 | `lc-list-editor` | LcListEditorComponent | composant | items, savedItems, minActive, maxLength, isDuplicate, addLabel, addButtonLabel, addError, emptyText, listLabel, disabled, busy, ariaLabel, id | add, rename, move, toggle |
-| `lc-message-composer` | LcMessageComposerComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, maxLength, placeholder, inputId, ariaLabel, sending, minRows, maxRows, enterSends, sendIcon, sendLabel, attachIcon, attachments, items, accept, acceptLabel, maxFiles, showSize | send, sendBlocked, filesAdded, rejected, remove, retry, touch |
+| `lc-message-composer` | LcMessageComposerComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, maxLength, placeholder, inputId, ariaLabel, sending, minRows, maxRows, enterSends, sendIcon, sendLabel, attachments, items | send, sendBlocked, filesAdded, rejected, remove, retry, touch |
 | `lc-money-input` | LcMoneyInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals | touch |
 | `lc-number-input` | LcNumberInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals, step, unit, showStepper | touch |
 | `lc-password-input` | LcPasswordInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, autocomplete, placeholder, inputId, ariaLabel | touch |

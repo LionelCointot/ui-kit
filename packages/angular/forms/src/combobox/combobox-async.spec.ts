@@ -26,7 +26,7 @@ class FakeSearch {
 @Component({
   imports: [LcComboboxComponent],
   template: `
-    <lc-combobox ariaLabel="Commune" [search]="source.search" [displayWith]="display" [trackBy]="key" [debounceMs]="debounce()"
+    <lc-combobox ariaLabel="Commune" [search]="source.search" [displayWith]="display" [trackBy]="key" [searchSettings]="{ debounceMs: debounce() }"
       [(value)]="value" (selectionChange)="changes.push($event)" (searchFailed)="failures.push($event)" />
   `,
 })

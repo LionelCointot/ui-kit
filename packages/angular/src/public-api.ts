@@ -20,6 +20,7 @@ export * from './lib/icon/icon.component';
 export * from './lib/avatar/avatar.component';
 export * from './lib/button/button.component';
 export * from './lib/button/button-group.component';
+export * from './lib/theme-toggle/theme-toggle.component';
 export * from './lib/spinner/spinner.component';
 export * from './lib/skeleton/skeleton.component';
 export * from './lib/truncate/truncate.directive';

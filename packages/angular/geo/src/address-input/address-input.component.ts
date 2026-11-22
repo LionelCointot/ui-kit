@@ -17,7 +17,7 @@ const ADDRESS_MIN_LENGTH = 3;
   selector: 'lc-address-input',
   imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent],
   template: `
-    <lc-combobox [search]="searchFn()" [displayWith]="display" [trackBy]="trackBy" [(value)]="value" [debounceMs]="debounceMs()" [minLength]="minLength"
+    <lc-combobox [search]="searchFn()" [displayWith]="display" [trackBy]="trackBy" [(value)]="value" [searchSettings]="searchSettings()"
       (selectionChange)="selectionChange.emit($event)" (touch)="touch.emit()"
       [inputId]="inputId()" [ariaLabel]="ariaLabel()" [placeholder]="placeholder()" [size]="size()" [fillMode]="fillMode()"
       [rounded]="rounded()" [disabled]="disabled() || unavailable()" [readonly]="readonly()" [invalid]="invalid()"
@@ -51,7 +51,7 @@ export class LcAddressInputComponent extends LcGeoFieldBase<LcAddress, LcAddress
 
   /** Indice de type pour le gabarit d'option. */
   protected readonly addressHint: LcAddress | null = null;
-  protected readonly minLength = ADDRESS_MIN_LENGTH;
+  protected readonly searchSettings = computed(() => ({ debounceMs: this.debounceMs(), minChars: ADDRESS_MIN_LENGTH }));
   /** Nouvelle fonction (donc nouvelle recherche) quand une restriction change. */
   protected readonly searchFn = computed(() => {
     const kind = this.kind();
