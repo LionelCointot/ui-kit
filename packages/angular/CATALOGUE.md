@@ -124,7 +124,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
 | `[lcMenuTriggerFor]` | LcMenuTriggerDirective | directive | lcMenuTriggerFor (requis) | – |
-| `a[lcNavItem]` | LcNavItemComponent | composant | icon, badge | – |
+| `a[lcNavItem]` | LcNavItemComponent | composant | icon, badge, active, ariaCurrentWhenActive, routerLinkActiveOptions, routerLink, queryParams, fragment | – |
 | `button[lcMenuItem]` | LcMenuItemComponent | composant | icon, destructive | – |
 | `lc-menu` | LcMenuComponent | composant | ariaLabel | opened, closed |
 | `lc-nav-group` | LcNavGroupComponent | composant | label (requis), collapsible, expanded (model) | – |

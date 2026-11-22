@@ -15,6 +15,7 @@
   inset-inline: 0;
   border-radius: var(--lc-nav-item-radius, var(--lc-sys-radius-md));
   background: var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container));
+  box-shadow: var(--lc-nav-item-indicator-shadow);
   pointer-events: none;
 }
 

@@ -21,6 +21,7 @@
 
 :host(.lc-nav-item--active:not(.lc-nav-item--indicated)) {
   background: var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container));
+  box-shadow: var(--lc-nav-item-indicator-shadow);
 }
 
 :host(.lc-nav-item--active) {
