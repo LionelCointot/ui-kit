@@ -1,6 +1,6 @@
 # Spec : Bande à panneaux glissante, repères du fil et arrivée du premier message
 
-- **Statut** : Brouillon (en attente de validation)
+- **Statut** : Validée le 2026-11-22 (« Ok fait tout les recomander alors » : recommandations de Q1 à Q6 retenues)
 - **Auteur** : agent de la tâche T2 de copro-ticket (`copro-ticket/docs/specs/2026-11-suivi-conversation.md`), pour la session principale
 - **Date** : 2026-11-22
 - **ADR liés** : 0009 (cible Baseline 2024, primitives natives sous conditions : `scrollend` et `scrollsnapchange` ont un repli écrit ici), 0010 (options groupées : aucune option nouvelle n'atteint trois entrées d'une même fonction), 0005 (icônes). Pas de nouvel ADR : aucune dépendance, aucune primitive hors cible sans repli.
