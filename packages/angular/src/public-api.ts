@@ -23,5 +23,5 @@ export * from './lib/button/button-group.component';
 export * from './lib/spinner/spinner.component';
 export * from './lib/skeleton/skeleton.component';
 export * from './lib/truncate/truncate.directive';
-export * from './lib/reveal/reveal.directive';
 export * from './lib/core/detach-animated';
+export * from './lib/core/reduced-motion';

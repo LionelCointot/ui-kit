@@ -478,13 +478,22 @@ describe('calendar-panel, corrections après la QA', () => {
     expect(el.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('années : la première page est « 1000 à 1011 », précédent désactivé ; la dernière « 9988 à 9999 », suivant désactivé', async () => {
-    const { el, label, nav, clickAt } = await setupAt('2026-11-12', 'year');
-    for (let step = 0; step < 200 && !nav(/précédentes/).disabled; step++) await clickAt(nav(/précédentes/));
+  // Départ à une page des bornes (la page commence sept ans avant l'année de départ) : parcourir 750 pages une à une dépassait le délai du test selon la machine.
+  it('années : la première page est « 1000 à 1011 », précédent désactivé', async () => {
+    const { el, label, nav, clickAt } = await setupAt('1012-06-01', 'year');
+    expect(label()).toBe('1005 à 1016');
+    expect(nav(/précédentes/).disabled).toBe(false);
+    await clickAt(nav(/précédentes/));
     expect(label()).toBe('1000 à 1011');
     expect(nav(/précédentes/).disabled).toBe(true);
     expect(Math.min(...[...el.querySelectorAll('td[data-date]')].map((c) => Number(c.getAttribute('data-date')!.slice(0, 4))))).toBe(1000);
-    for (let step = 0; step < 1000 && !nav(/suivantes/).disabled; step++) await clickAt(nav(/suivantes/));
+  });
+
+  it('années : la dernière page est « 9988 à 9999 », suivant désactivé', async () => {
+    const { label, nav, clickAt } = await setupAt('9987-06-01', 'year');
+    expect(label()).toBe('9980 à 9991');
+    expect(nav(/suivantes/).disabled).toBe(false);
+    await clickAt(nav(/suivantes/));
     expect(label()).toBe('9988 à 9999');
     expect(nav(/suivantes/).disabled).toBe(true);
   });

@@ -1045,7 +1045,7 @@ lc-form-field [lcSuffix] {
   }
 }
 
-/* lcReveal : entrée en fondu et descente à l'insertion (@starting-style), retardée par rang (--lc-reveal-index posée par la directive). */
+/* lcReveal : entrée en fondu et descente à l'insertion (@starting-style), retardée par rang (--lc-reveal-index posée par l'appelant ; seules les cartes de lc-data-table s'en servent). */
 [lcReveal] {
   transition:
     opacity var(--lc-reveal-duration) var(--lc-reveal-easing),

@@ -7,14 +7,6 @@
     "background": {
       "$value": "{sys.color.surface-raised}",
       "$type": "color"
-    },
-    "border": {
-      "$value": "{sys.color.border}",
-      "$type": "color"
-    },
-    "shadow": {
-      "$value": "{sys.shadow.1}",
-      "$type": "shadow"
     }
   }
 }

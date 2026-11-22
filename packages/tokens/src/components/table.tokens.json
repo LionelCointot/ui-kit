@@ -3,18 +3,6 @@
     "header-background": {
       "$value": "{sys.color.surface-sunken}",
       "$type": "color"
-    },
-    "row-hover": {
-      "$value": "{sys.color.surface-sunken}",
-      "$type": "color"
-    },
-    "border": {
-      "$value": "{sys.color.border}",
-      "$type": "color"
-    },
-    "group-background": {
-      "$value": "{sys.color.surface}",
-      "$type": "color"
     }
   }
 }

@@ -65,3 +65,7 @@ Brief du designer appliqué ; pas de nouvelle direction visuelle.
 
 ## 12. Risques et questions ouvertes
 - Écarts entre le brief (§10) et la fiche de tâche, tranchés en faveur de la fiche : plein écran sous 768 px (brief : 640), bouton « Revenir en bas » (brief : « Revenir à la fin »), `aria-live` réglable par `live` (brief : fixé à `off`) ; **défaut conservé à `off`** (aucune annonce de ligne, décision du brief), `polite` sur demande.
+
+- Écart du 2026-11-22 : `lc-log-view` (T23a, CA-5 à CA-8) est retiré du kit (aucun consommateur), avec ses libellés `log*`.
+
+- Écart du 2026-11-22 : `LcDrawerConfig.dismissible` (défaut true, comme `LcDialogService`) remplace `disableClose` et `closeOnBackdrop`.

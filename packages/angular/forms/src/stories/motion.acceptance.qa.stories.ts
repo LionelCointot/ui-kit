@@ -1,6 +1,6 @@
 import { Component, input, signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { LcButtonComponent, LcIconComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
+import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective } from '@lionelcointot/ui-angular/navigation';
 import { LcComboboxComponent } from '../combobox/combobox.component';
 import { LcDateInputComponent } from '../date-input/date-input.component';
@@ -58,20 +58,18 @@ class MotionButtonsComponent {}
 
 @Component({
   selector: 'lc-motion-reveal',
-  imports: [LcRevealDirective],
   template: `<button id="toggle" type="button" (click)="shown.set(!shown())">Basculer</button>
     @if (shown()) {
       <ul>
         @for (index of indexes; track index) {
-          <li lcReveal [lcRevealIndex]="index" [attr.data-index]="index">Ligne {{ index }}</li>
+          <li lcReveal [style.--lc-reveal-index]="index" [attr.data-index]="index">Ligne {{ index }}</li>
         }
       </ul>
     }`,
 })
 class MotionRevealComponent {
   protected readonly shown = signal(false);
-  // 0, 3, 7, 12 : spec CA-9 ; -1 et 1.5 : index invalides (retombent à 0).
-  protected readonly indexes = [0, 3, 7, 12, -1, 1.5];
+  protected readonly indexes = [0, 3, 7];
 }
 
 const meta: Meta = {

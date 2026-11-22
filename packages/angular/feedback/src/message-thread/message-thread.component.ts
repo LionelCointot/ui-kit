@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
 import { ArrivalTracker, cssMs, normalizePageSize, staggerDelay } from './message-thread-motion';
@@ -255,7 +255,7 @@ export class LcMessageThreadComponent {
   private animate(log: HTMLElement, before: ReadonlyMap<Element, number>, arrived: ReadonlySet<string>): void {
     if (typeof this.host.animate !== 'function') return;
     const style = getComputedStyle(this.host);
-    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = lcPrefersReducedMotion();
     const move = cssMs(style, '--lc-list-move-duration');
     if (!reduced && move > 0) {
       const easing = style.getPropertyValue('--lc-list-move-easing').trim() || undefined;

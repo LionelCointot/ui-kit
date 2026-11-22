@@ -1,4 +1,5 @@
 import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
+import { lcPrefersReducedMotion } from '../core/reduced-motion';
 
 /** shortcut: dupliqué du token `--lc-truncate-speed` (px/s), à garder synchronisé ; sert quand le jeton n'est pas chargé. */
 const FALLBACK_SPEED = 96;
@@ -57,7 +58,7 @@ export class LcTruncateDirective {
     // Un text-indent négatif fausse scrollWidth : on mesure à l'arrêt, puis on reprend le défilement si besoin.
     el.classList.remove('lc-truncate--scrolling');
     const overflow = el.scrollWidth - el.clientWidth;
-    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = lcPrefersReducedMotion();
 
     // Un title qui ne vaut plus ce que nous avons posé est celui du consommateur : on n'y touche plus.
     if (this.ownsTitle && el.title !== this.ownedTitle) this.ownsTitle = false;

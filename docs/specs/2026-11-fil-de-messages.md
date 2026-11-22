@@ -209,3 +209,5 @@ Direction **A** choisie (bulles douces et pleines ; maquette `docs/design/explor
 7. `docs/specs/2026-11-messagerie.md` (tâche M6) précisée dans cette branche : l'état des photos de copro-ticket, livré par copro-ticket #3.
 8. Captures d'exploration et de test novice versionnées sous `docs/design/explorations/2026-11-fil-de-messages/`, comme pour les chantiers précédents.
 | 2026-11-22 | `code-reviewer` | simplification | 5 propositions | Retenu : tests en double (liens, composant), exports inutiles du mouvement, commentaires « en attente du code » ; reporté : bibliothèque commune des outils QA navigateur (`tools/qa/lib.mjs`), tâche à part. |
+
+- Écart du 2026-11-22 : `lc-message` ayant été retiré du kit, CA-T18 (« `lc-message` n'est pas modifié ») est sans objet ; son test statique est supprimé.

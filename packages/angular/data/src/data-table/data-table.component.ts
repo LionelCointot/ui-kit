@@ -10,7 +10,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
   LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate,
-  lcDetachAnimated, lcUniqueId,
+  lcDetachAnimated, lcPrefersReducedMotion, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
 import { LcSheetComponent, LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
@@ -27,8 +27,6 @@ const REVEAL_CARDS = 8;
 
 /** Sous cette largeur (768 px), le tableau passe en cartes : mêmes ruptures que le CSS. */
 const NARROW = '(max-width: 47.99em)';
-
-const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
 /** Écart minimal (px) à partir duquel une ligne est considérée déplacée. */
 const MOVE_THRESHOLD_PX = 0.5;
@@ -310,7 +308,7 @@ export class LcDataTableComponent<T> {
 
   /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
   private timing(duration: string, easing: string): KeyframeAnimationOptions | null {
-    if (typeof this.host.animate !== 'function' || (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches)) return null;
+    if (typeof this.host.animate !== 'function' || lcPrefersReducedMotion()) return null;
     const style = getComputedStyle(this.host);
     const raw = style.getPropertyValue(duration).trim();
     const ms = parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000);
@@ -370,7 +368,7 @@ export class LcDataTableComponent<T> {
   }
 
   protected align(column: LcDataColumn<T>): string {
-    return columnAlign({ id: column.key, header: column.label, value: () => undefined, format: column.format, align: column.align });
+    return columnAlign(column);
   }
 
   protected rememberLabels(key: string, values: readonly LcDistinctValue[]): void {

@@ -255,17 +255,8 @@ describe('LcDrawerService', () => {
       await expect(ref.closed).resolves.toBe('ok');
     });
 
-    it('closeOnBackdrop=false : le voile est sans effet, Échap et le bouton ferment', async () => {
-      const ref = await open({ closeOnBackdrop: false, data: { name: 'x' } });
-      backdrop()!.click();
-      await settle();
-      expect(panel()).not.toBeNull();
-      pressEscape();
-      await expect(ref.closed).resolves.toBeUndefined();
-    });
-
-    it('disableClose : Échap et voile sans effet, bouton de fermeture masqué', async () => {
-      const ref = await open({ disableClose: true, data: { name: 'x' } });
+    it('dismissible: false : Échap et voile sans effet, bouton de fermeture masqué', async () => {
+      const ref = await open({ dismissible: false, data: { name: 'x' } });
       let closed = false;
       void ref.closed.then(() => (closed = true));
       pressEscape();

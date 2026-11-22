@@ -58,7 +58,7 @@ export interface LcTableModel<T> {
 }
 
 /** Alignement effectif d'une colonne. */
-export function columnAlign<T>(column: LcTableColumn<T>): 'start' | 'center' | 'end' {
+export function columnAlign(column: Pick<LcTableColumn<unknown>, 'format' | 'align'>): 'start' | 'center' | 'end' {
   if (column.align) return column.align;
   return column.format === 'money' || column.format === 'percent' || column.format === 'number' || column.format === 'integer' ? 'end' : 'start';
 }

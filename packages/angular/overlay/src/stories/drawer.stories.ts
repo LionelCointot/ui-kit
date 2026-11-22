@@ -55,7 +55,7 @@ class DrawerDemoComponent {
 }
 
 /** Entrées de `lc-drawer` montrées dans la démo, plus les options du service passées à `open()`. */
-type Args = DrawerData & Required<Pick<LcDrawerConfig<DrawerData>, 'side' | 'size' | 'disableClose' | 'closeOnBackdrop'>>;
+type Args = DrawerData & Required<Pick<LcDrawerConfig<DrawerData>, 'side' | 'size' | 'dismissible'>>;
 
 /**
  * Side panel opened by `LcDrawerService.open(Component, config)`: focus is trapped then restored, Escape and a click on the backdrop close it.
@@ -67,12 +67,11 @@ const meta: Meta<Args> = {
   title: 'Overlays/Drawer',
   component: LcDrawerComponent,
   decorators: [moduleMetadata({ imports: [DrawerDemoComponent, LcDrawerComponent, LcDrawerInitialFocusDirective, LcButtonComponent, LcIconComponent] })],
-  args: { title: 'Ajouter un élément', hideClose: false, side: 'end', size: 'medium', disableClose: false, closeOnBackdrop: true },
+  args: { title: 'Ajouter un élément', hideClose: false, side: 'end', size: 'medium', dismissible: true },
   argTypes: {
     side: { control: 'inline-radio', options: ['start', 'end'], description: 'Service config `side`.' },
     size: { control: 'inline-radio', options: ['small', 'medium', 'large'], description: 'Service config `size`.' },
-    disableClose: { control: 'boolean', description: 'Service config `disableClose`: Escape, backdrop and close button do nothing.' },
-    closeOnBackdrop: { control: 'boolean', description: 'Service config `closeOnBackdrop`.' },
+    dismissible: { control: 'boolean', description: 'Service config `dismissible`: Escape, backdrop click and close button.' },
   },
 };
 export default meta;
@@ -81,12 +80,12 @@ type Story = StoryObj<Args>;
 /** Click the button to open the drawer: every control (title, close button, side, size, dismissal) is applied. */
 export const Playground: Story = {
   // S'ouvre au clic : la vérification des contrôles clique sur le bouton avant de comparer le rendu.
-  // closeOnBackdrop : comportement à la fermeture, sans effet visible sur le rendu.
-  parameters: { controlsCheck: { openWith: 'button', stateDependent: ['closeOnBackdrop'] } },
+  // dismissible : comportement à la fermeture, sans effet visible sur le rendu.
+  parameters: { controlsCheck: { openWith: 'button', stateDependent: ['dismissible'] } },
   render: (args) => ({
     props: {
       config: {
-        side: args.side, size: args.size, disableClose: args.disableClose, closeOnBackdrop: args.closeOnBackdrop,
+        side: args.side, size: args.size, dismissible: args.dismissible,
         data: { title: args.title, hideClose: args.hideClose },
       } satisfies LcDrawerConfig<DrawerData>,
     },
@@ -125,7 +124,7 @@ export const OpensAtStart: Story = {
 export const NotDismissible: Story = {
   parameters: fixedExample,
   render: () => ({
-    props: { config: { size: 'large', disableClose: true, data: { title: 'Action obligatoire' } } satisfies LcDrawerConfig<DrawerData> },
+    props: { config: { size: 'large', dismissible: false, data: { title: 'Action obligatoire' } } satisfies LcDrawerConfig<DrawerData> },
     template: `<lc-drawer-demo [config]="config" />`,
   }),
 };

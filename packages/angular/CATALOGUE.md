@@ -7,7 +7,6 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `[lcReveal]` | LcRevealDirective | directive | lcRevealIndex | – |
 | `[lcTruncate]` | LcTruncateDirective | directive | – | – |
 | `button[lcButton], a[lcButton]` | LcButtonComponent | composant | themeColor, fillMode, size, rounded, loading, iconOnly, fullWidth, pressed | – |
 | `lc-avatar` | LcAvatarComponent | composant | name (requis), src, size, colorSeed, label | – |
@@ -36,12 +35,9 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `lc-code-block` | LcCodeBlockComponent | composant | code (requis), ariaLabel (requis), wrap, maxHeight, lineNumbers, copyable | – |
 | `lc-data-table` | LcDataTableComponent | composant | source (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, query (model), chips, emptyMessage | – |
 | `lc-description-list` | LcDescriptionListComponent | composant | items (requis), layout | itemAction |
 | `lc-kpi-card` | LcKpiCardComponent | composant | label (requis), value, format, valueText, delta, hint, loading, stale | – |
-| `lc-log-view` | LcLogViewComponent | composant | lines, ariaLabel (requis), maxLines, height, wrap, copyable, live, emptyText, copyLabel, resumeLabel, truncatedLabel, following (model) | copied |
-| `lc-paginator` | LcPaginatorComponent | composant | total (requis), pageSize (model), pageSizes, page (model), ariaLabel | – |
 | `lc-table` | LcTableComponent | composant | data (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), isRowSelectable, rowSelectionLabel, selectionLabel, selectAllHint, rowClass | groupToggled |
 | `lc-timeline-bar` | LcTimelineBarComponent | composant | segments, lanes, axisEnd, reference, axisLabel, label (requis), description (requis), startLabel, endLabel, minLabelShare, emptyMessage, stale, loading, ticks | – |
 | `lc-tree-table` | LcTreeTableComponent | composant | data (requis), children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
@@ -58,9 +54,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-badge` | LcBadgeComponent | composant | themeColor, fillMode, size | – |
 | `lc-empty-state` | LcEmptyStateComponent | composant | icon, title (requis), description | – |
 | `lc-error-state` | LcErrorStateComponent | composant | title (requis), description, retryLabel | retry |
-| `lc-message` | LcMessageComponent | composant | variant, author, date, dateTime | – |
 | `lc-message-thread` | LcMessageThreadComponent | composant | messages (requis), showAvatars, pageSize, ariaLabel | attachmentOpen |
-| `lc-meter` | LcMeterComponent | composant | value (requis), min, max, label (requis), valueText, themeColor, size, showValue | – |
 | `lc-progress-bar` | LcProgressBarComponent | composant | value, label | – |
 | `lc-status-badge` | LcStatusBadgeComponent | composant | kind, icon, size | – |
 | `lc-toast-outlet` | LcToastOutletComponent | composant | – | – |
