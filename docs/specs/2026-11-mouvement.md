@@ -225,7 +225,7 @@ Test `novice-user` : sans objet sur le produit (aucun texte ni étape nouvelle) 
 - [x] CA-21 : Une ligne ou carte ajoutée apparaît en fondu à sa place ; ses voisines glissent (CA-20).
 - [x] CA-22 : Une ligne ou carte retirée reste dans le DOM le temps d'un fondu (`--lc-overlay-exit-duration`), puis disparaît et les suivantes glissent pour combler.
 - [x] CA-23 : Avec `prefers-reduced-motion: reduce`, aucun glissement ni fondu de liste ; premier affichage : cascade inchangée (CA-12).
-- [x] CA-24 : `--lc-sys-duration-move` (500 ms) existe et sert aux déplacements des lignes, du trait des onglets et du fond de la nav latérale, avec `--lc-sys-easing-standard` ; aucun token `easing-spring` (décision 27 révisée).
+- [x] CA-24 : `--lc-sys-duration-move` (500 ms) existe et sert aux déplacements des lignes, du trait des onglets et du fond de la nav latérale, avec `--lc-sys-easing-standard` ; aucun token `easing-spring` (exception postérieure, 2026-11-21 : le jeton de composant `--lc-message-thread-enter-easing` de `2026-11-fil-de-messages.md`, décision 16, sert seulement à l'arrivée d'un message ; aucun jeton `sys` de ressort) (décision 27 révisée).
 - [x] CA-18 : `npx ng test ui-angular --watch=false` passe sans modification ni suppression d'un test existant (vérifié sur le diff) ; `npm run catalogue:check` passe après régénération.
 
 ## 11. Découpage en tâches

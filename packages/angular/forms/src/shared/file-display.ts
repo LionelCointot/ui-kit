@@ -1,32 +1,17 @@
+import { lcStripUnsafeChars } from '@lionelcointot/ui-angular';
+
 /** Plafond d'un nom de fichier dans un nom accessible ou une annonce. */
 const MAX_ANNOUNCED_NAME = 80;
 
-// Caractères de contrôle (C0, DEL, C1), marqueurs bidirectionnels (ALM, LRM, RLM, LRE à RLO, LRI à PDI) et invisibles (ZWSP à ZWJ, WJ, BOM, LS, PS).
-const UNSAFE_CHARS = /[\u0000-\u001F\u007F-\u009F\u061C\u200B-\u200F\u2028-\u202E\u2060\u2066-\u2069\uFEFF]/g;
-
-/** Nom à afficher : sans caractères de contrôle ni marqueurs bidi (le `File.name` d'origine n'est jamais modifié). */
+/** Nom à afficher : sans caractères de contrôle ni marqueurs bidi, `\n` et `\t` compris (le `File.name` d'origine n'est jamais modifié). */
 export function cleanFileName(name: string): string {
-  return name.replace(UNSAFE_CHARS, '');
+  return lcStripUnsafeChars(name).replace(/[\n\t]/g, '');
 }
 
 /** Nom court pour un nom accessible ou une annonce : au plus 80 caractères, « … » compris. */
 export function announcedName(name: string): string {
   const chars = Array.from(cleanFileName(name));
   return chars.length > MAX_ANNOUNCED_NAME ? `${chars.slice(0, MAX_ANNOUNCED_NAME - 1).join('')}…` : chars.join('');
-}
-
-/** Aperçu admis : `blob:`, `data:image/` ou même origine (aucune requête vers un tiers, aucun schéma exécutable). */
-export function isSafePreviewUrl(url: string, base: string): boolean {
-  const lower = url.trim().toLowerCase();
-  if (lower.startsWith('blob:') || lower.startsWith('data:image/')) return true;
-  try {
-    const target = new URL(url, base);
-    const root = new URL(base);
-    // Base `file:`, `about:srcdoc`… : l'origine est opaque ; `javascript:` et `data:text/html` ne sont jamais « de même origine ».
-    return /^https?:$/.test(root.protocol) && /^https?:$/.test(target.protocol) && target.origin === root.origin;
-  } catch {
-    return false;
-  }
 }
 
 /** Taille lisible, unités du kit (1 Ko = 1 000 octets) : « 2,3 Mo ». */

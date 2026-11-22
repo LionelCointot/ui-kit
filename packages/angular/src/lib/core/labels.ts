@@ -203,6 +203,12 @@ export interface LcLabels {
   readonly dateCurrentFrom: (date: string) => string;
   readonly dateCurrentUntil: (date: string) => string;
   readonly dateShortcuts: string;
+
+  // Fil de messages
+  readonly threadLabel: string;
+  readonly threadToday: string;
+  readonly threadYesterday: string;
+  readonly threadAttachmentOpen: (name: string) => string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -797,6 +803,12 @@ export const LC_LABELS_FR: LcLabels = {
   dateCurrentFrom: (date) => `Depuis le ${date}, sans date de fin. Cliquez un jour pour changer.`,
   dateCurrentUntil: (date) => `Jusqu'au ${date} inclus, sans date de début. Cliquez un jour pour changer.`,
   dateShortcuts: 'Raccourcis',
+
+  // Fil de messages
+  threadLabel: 'Échanges',
+  threadToday: 'Aujourd\'hui',
+  threadYesterday: 'Hier',
+  threadAttachmentOpen: (name) => `Ouvrir la pièce jointe : ${name}`,
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -1049,6 +1061,12 @@ export const LC_LABELS_EN: LcLabels = {
   dateCurrentFrom: (date) => `Since ${date}, no end date. Click a day to change.`,
   dateCurrentUntil: (date) => `Until ${date} inclusive, no start date. Click a day to change.`,
   dateShortcuts: 'Shortcuts',
+
+  // Message thread
+  threadLabel: 'Messages',
+  threadToday: 'Today',
+  threadYesterday: 'Yesterday',
+  threadAttachmentOpen: (name) => `Open attachment: ${name}`,
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });

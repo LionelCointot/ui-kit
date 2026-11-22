@@ -59,6 +59,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-empty-state` | LcEmptyStateComponent | composant | icon, title (requis), description | – |
 | `lc-error-state` | LcErrorStateComponent | composant | title (requis), description, retryLabel | retry |
 | `lc-message` | LcMessageComponent | composant | variant, author, date, dateTime | – |
+| `lc-message-thread` | LcMessageThreadComponent | composant | messages (requis), showAvatars, pageSize, ariaLabel | attachmentOpen |
 | `lc-meter` | LcMeterComponent | composant | value (requis), min, max, label (requis), valueText, themeColor, size, showValue | – |
 | `lc-progress-bar` | LcProgressBarComponent | composant | value, label | – |
 | `lc-status-badge` | LcStatusBadgeComponent | composant | kind, icon, size | – |

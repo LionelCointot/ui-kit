@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lc-message-thread : trois directions visuelles</title>
+<style>
+/**
+ * x, this file was auto-generated.
+ */
+
+:root {
+  --lc-ref-color-neutral-0: #ffffff;
+  --lc-ref-color-neutral-25: #fcfcfb;
+  --lc-ref-color-neutral-50: #f9f9f7;
+  --lc-ref-color-neutral-100: #f0efec;
+  --lc-ref-color-neutral-150: #e1e0d9;
+  --lc-ref-color-neutral-200: #c3c2b7;
+  --lc-ref-color-neutral-300: #a3a29a;
+  --lc-ref-color-neutral-400: #898781;
+  --lc-ref-color-neutral-500: #6b6a66;
+  --lc-ref-color-neutral-600: #52514e;
+  --lc-ref-color-neutral-700: #383835;
+  --lc-ref-color-neutral-800: #2c2c2a;
+  --lc-ref-color-neutral-850: #232322;
+  --lc-ref-color-neutral-900: #1a1a19;
+  --lc-ref-color-neutral-950: #0d0d0d;
+  --lc-ref-color-neutral-1000: #0b0b0b;
+  --lc-ref-color-blue-100: #cde2fb;
+  --lc-ref-color-blue-150: #b7d3f6;
+  --lc-ref-color-blue-200: #9ec5f4;
+  --lc-ref-color-blue-250: #86b6ef;
+  --lc-ref-color-blue-300: #6da7ec;
+  --lc-ref-color-blue-350: #5598e7;
+  --lc-ref-color-blue-400: #3987e5;
+  --lc-ref-color-blue-450: #2a78d6;
+  --lc-ref-color-blue-500: #256abf;
+  --lc-ref-color-blue-550: #1c5cab;
+  --lc-ref-color-blue-600: #184f95;
+  --lc-ref-color-blue-650: #104281;
+  --lc-ref-color-blue-700: #0d366b;
+  --lc-ref-color-green-100: #dcf3dc;
+  --lc-ref-color-green-500: #0ca30c;
+  --lc-ref-color-green-600: #008300;
+  --lc-ref-color-green-700: #006300;
+  --lc-ref-color-amber-100: #fdf0d0;
+  --lc-ref-color-amber-400: #fab219;
+  --lc-ref-color-amber-600: #c98500;
+  --lc-ref-color-amber-800: #5c3c00;
+  --lc-ref-color-red-100: #fbe1e1;
+  --lc-ref-color-red-400: #e66767;
+  --lc-ref-color-red-500: #e34948;
+  --lc-ref-color-red-600: #d03b3b;
+  --lc-ref-color-red-700: #a82c2c;
+  --lc-ref-color-purple-100: #e9e6fa;
+  --lc-ref-color-purple-200: #d8d3fb;
+  --lc-ref-color-purple-400: #9085e9;
+  --lc-ref-color-purple-550: #6250d6;
+  --lc-ref-color-purple-700: #4a3aa8;
+  --lc-ref-color-purple-900: #26214f;
+  --lc-ref-color-chart-light-1: #2a78d6;
+  --lc-ref-color-chart-light-2: #eb6834;
+  --lc-ref-color-chart-light-3: #1baf7a;
+  --lc-ref-color-chart-light-4: #eda100;
+  --lc-ref-color-chart-light-5: #e87ba4;
+  --lc-ref-color-chart-light-6: #008300;
+  --lc-ref-color-chart-light-7: #6250d6;
+  --lc-ref-color-chart-light-8: #e34948;
+  --lc-ref-color-chart-dark-1: #3987e5;
+  --lc-ref-color-chart-dark-2: #d95926;
+  --lc-ref-color-chart-dark-3: #199e70;
+  --lc-ref-color-chart-dark-4: #c98500;
+  --lc-ref-color-chart-dark-5: #d55181;
+  --lc-ref-color-chart-dark-6: #008300;
+  --lc-ref-color-chart-dark-7: #9085e9;
+  --lc-ref-color-chart-dark-8: #e66767;
+  --lc-ref-color-chart-status-good: #0ca30c;
+  --lc-ref-color-chart-status-warning: #fab219;
+  --lc-ref-color-chart-status-serious: #ec835a;
+  --lc-ref-color-chart-status-critical: #d03b3b;
+  --lc-ref-color-chart-diverging-neutral-light: #f0efec;
+  --lc-ref-color-chart-diverging-neutral-dark: #383835;
+  --lc-ref-color-orange-100: #f1ded7;
+  --lc-ref-color-orange-200: #e6bdac;
+  --lc-ref-color-orange-300: #dc987d;
+  --lc-ref-color-orange-400: #d4714a;
+  --lc-ref-color-orange-500: #cb4c19;
+  --lc-ref-color-orange-600: #9a3913;
+  --lc-ref-color-orange-700: #6b280d;
+  --lc-ref-space-0: 0;
+  --lc-ref-space-1: 4px;
+  --lc-ref-space-2: 8px;
+  --lc-ref-space-3: 12px;
+  --lc-ref-space-4: 16px;
+  --lc-ref-space-5: 20px;
+  --lc-ref-space-6: 24px;
+  --lc-ref-space-8: 32px;
+  --lc-ref-space-10: 40px;
+  --lc-ref-space-12: 48px;
+  --lc-ref-space-16: 64px;
+  --lc-ref-radius-none: 0;
+  --lc-ref-radius-sm: 4px;
+  --lc-ref-radius-md: 8px;
+  --lc-ref-radius-lg: 12px;
+  --lc-ref-radius-full: 9999px;
+  --lc-ref-font-family-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --lc-ref-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --lc-ref-font-size-xs: 0.75rem;
+  --lc-ref-font-size-sm: 0.875rem;
+  --lc-ref-font-size-md: 1rem;
+  --lc-ref-font-size-lg: 1.125rem;
+  --lc-ref-font-size-xl: 1.25rem;
+  --lc-ref-font-size-2xl: 1.5rem;
+  --lc-ref-font-size-3xl: 1.875rem;
+  --lc-ref-font-weight-regular: 400;
+  --lc-ref-font-weight-medium: 500;
+  --lc-ref-font-weight-semibold: 600;
+  --lc-ref-font-weight-bold: 700;
+  --lc-ref-font-line-height-tight: 1.25;
+  --lc-ref-font-line-height-normal: 1.5;
+  --lc-ref-font-line-height-relaxed: 1.7;
+  --lc-ref-duration-fast: 100ms;
+  --lc-ref-duration-normal: 200ms;
+  --lc-ref-duration-slow: 300ms;
+  --lc-ref-duration-long: 350ms;
+  --lc-ref-duration-move: 500ms;
+  --lc-ref-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --lc-ref-easing-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --lc-ref-motion-stagger: 80ms;
+  --lc-button-press-scale: 0.97;
+  --lc-message-composer-border-style: solid; /** Style of the composer border (solid; dashed is set by the application, not animated). */
+  --lc-message-composer-thumb-width: 7rem; /** Width of an attachment thumbnail. */
+  --lc-message-composer-thumb-preview-height: 4.5rem; /** Height of the preview area of an attachment thumbnail. */
+  --lc-message-composer-remove-size: 1.75rem; /** Visible diameter of the remove button of a thumbnail (the click area stays sys.control-height-md). */
+  --lc-sheet-dismiss-ratio: 0.25; /** Share of its height the sheet must be pulled down to close (unitless number). */
+  --lc-sheet-card-width: 35rem; /** Width of the centred card the sheet becomes on wide screens. */
+  --lc-sheet-card-max-height: 80dvh; /** Maximum height of that card; the body scrolls beyond it. */
+  --lc-dialog-enter-scale: 0.96; /** Scale a dialog starts from when it fades in (unitless number). */
+  --lc-shell-nav-width: 16rem;
+  --lc-shell-nav-collapsed-width: 4.5rem;
+  --lc-truncate-speed: 96; /** Scroll speed of a truncated text on hover, in pixels per second (unitless number). */
+  --lc-button-height-sm: var(--lc-sys-control-height-sm);
+  --lc-button-height-md: var(--lc-sys-control-height-md);
+  --lc-button-height-lg: var(--lc-sys-control-height-lg);
+  --lc-calendar-shadow: var(--lc-sys-shadow-3);
+  --lc-card-shadow: var(--lc-sys-shadow-1);
+  --lc-chart-marker-color: var(--lc-sys-chart-ink-muted);
+  --lc-input-height: var(--lc-sys-control-height-md);
+  --lc-message-composer-border-width: var(--lc-sys-border-width-thin);
+  --lc-message-composer-enter-scale: var(--lc-dialog-enter-scale); /** Scale an attachment thumbnail starts from when it fades in (unitless number). */
+  --lc-button-radius: var(--lc-sys-radius-md);
+  --lc-button-font-weight: var(--lc-sys-font-weight-semibold);
+  --lc-button-padding-inline-sm: var(--lc-sys-space-3);
+  --lc-button-padding-inline-md: var(--lc-sys-space-4);
+  --lc-button-padding-inline-lg: var(--lc-sys-space-5);
+  --lc-button-press-duration: var(--lc-sys-duration-fast);
+  --lc-calendar-cell-size: var(--lc-sys-space-10);
+  --lc-calendar-padding: var(--lc-sys-space-3);
+  --lc-calendar-month-gap: var(--lc-sys-space-6);
+  --lc-calendar-presets-width: calc(var(--lc-sys-space-16) * 3);
+  --lc-calendar-radius: var(--lc-sys-radius-md);
+  --lc-calendar-background: var(--lc-sys-color-surface-raised);
+  --lc-calendar-border: var(--lc-sys-color-border);
+  --lc-calendar-text: var(--lc-sys-color-on-surface);
+  --lc-calendar-weekday-text: var(--lc-sys-color-on-surface-muted);
+  --lc-calendar-day-hover-bg: var(--lc-sys-color-surface-sunken);
+  --lc-calendar-day-disabled-text: var(--lc-sys-color-on-surface-subtle);
+  --lc-calendar-selected-bg: var(--lc-sys-color-primary);
+  --lc-calendar-selected-text: var(--lc-sys-color-on-primary);
+  --lc-calendar-range-bg: var(--lc-sys-color-primary-container);
+  --lc-calendar-range-text: var(--lc-sys-color-on-primary-container);
+  --lc-calendar-range-preview-edge: var(--lc-sys-color-primary);
+  --lc-calendar-today-mark: var(--lc-sys-color-primary);
+  --lc-calendar-today-mark-size: var(--lc-sys-space-1);
+  --lc-calendar-title-border: var(--lc-sys-color-border-strong);
+  --lc-calendar-focus-ring: var(--lc-sys-color-focus-ring);
+  --lc-calendar-zone-bg: var(--lc-sys-color-primary);
+  --lc-calendar-zone-text: var(--lc-sys-color-on-primary);
+  --lc-card-radius: var(--lc-sys-radius-lg);
+  --lc-card-background: var(--lc-sys-color-surface-raised);
+  --lc-card-border: var(--lc-sys-color-border);
+  --lc-input-radius: var(--lc-sys-radius-md);
+  --lc-input-background: var(--lc-sys-color-surface-raised);
+  --lc-input-border: var(--lc-sys-color-border-strong);
+  --lc-input-border-invalid: var(--lc-sys-color-error);
+  --lc-message-composer-border-color: var(--lc-sys-color-border-strong); /** Same default as the fields (lcInput): sys.color.border-strong. */
+  --lc-message-composer-background: var(--lc-sys-color-surface-raised);
+  --lc-message-composer-shake-distance: var(--lc-sys-space-1);
+  --lc-message-composer-shake-duration: var(--lc-sys-duration-normal);
+  --lc-tabs-indicator-duration: var(--lc-sys-duration-move);
+  --lc-tabs-indicator-easing: var(--lc-sys-easing-standard);
+  --lc-nav-item-indicator-duration: var(--lc-sys-duration-move);
+  --lc-nav-item-indicator-easing: var(--lc-sys-easing-standard);
+  --lc-overlay-enter-duration: var(--lc-sys-duration-normal);
+  --lc-overlay-exit-duration: var(--lc-sys-duration-fast);
+  --lc-overlay-easing: var(--lc-sys-easing-standard);
+  --lc-collapse-duration: var(--lc-sys-duration-move);
+  --lc-chip-enter-duration: var(--lc-sys-duration-fast);
+  --lc-reveal-duration: var(--lc-sys-duration-long);
+  --lc-reveal-easing: var(--lc-sys-easing-standard);
+  --lc-reveal-stagger: var(--lc-sys-motion-stagger);
+  --lc-list-move-duration: var(--lc-sys-duration-move);
+  --lc-list-move-easing: var(--lc-sys-easing-standard);
+  --lc-slide-enter-duration: var(--lc-sys-duration-move);
+  --lc-slide-exit-duration: var(--lc-sys-duration-normal);
+  --lc-sheet-top-gap: var(--lc-sys-space-10);
+  --lc-sheet-radius: var(--lc-sys-radius-lg);
+  --lc-shell-nav-duration: var(--lc-sys-duration-long);
+  --lc-shell-header-background: var(--lc-sys-color-surface-raised);
+  --lc-shell-nav-background: var(--lc-sys-color-surface);
+  --lc-table-header-background: var(--lc-sys-color-surface-sunken);
+  --lc-table-row-hover: var(--lc-sys-color-surface-sunken);
+  --lc-table-border: var(--lc-sys-color-border);
+  --lc-table-group-background: var(--lc-sys-color-surface);
+  --lc-calendar-duration: var(--lc-overlay-enter-duration);
+  --lc-calendar-easing: var(--lc-overlay-easing);
+  --lc-overlay-offset: var(--lc-sys-motion-offset);
+  --lc-reveal-offset: var(--lc-sys-motion-offset);
+}
+/**
+ * x, this file was auto-generated.
+ */
+
+:root, [data-theme="default"] {
+  --lc-sys-color-backdrop: rgba(11, 11, 11, 0.45);
+  --lc-sys-state-hover-opacity: 0.08;
+  --lc-sys-state-pressed-opacity: 0.12;
+  --lc-sys-state-disabled-opacity: 0.38;
+  --lc-sys-state-selected-opacity: 0.12;
+  --lc-sys-font-numeric-tabular: tabular-nums;
+  --lc-sys-control-height-sm: 36px;
+  --lc-sys-control-height-md: 44px;
+  --lc-sys-control-height-lg: 52px;
+  --lc-sys-shadow-1: 0 1px 2px rgba(11, 11, 11, 0.06), 0 1px 1px rgba(11, 11, 11, 0.04);
+  --lc-sys-shadow-2: 0 2px 6px rgba(11, 11, 11, 0.08), 0 1px 2px rgba(11, 11, 11, 0.06);
+  --lc-sys-shadow-3: 0 8px 24px rgba(11, 11, 11, 0.12);
+  --lc-sys-shadow-4: 0 16px 48px rgba(11, 11, 11, 0.18);
+  --lc-sys-z-dropdown: 1000;
+  --lc-sys-z-sticky: 1100;
+  --lc-sys-z-overlay: 1200;
+  --lc-sys-z-dialog: 1300;
+  --lc-sys-z-toast: 1400;
+  --lc-sys-z-tooltip: 1500;
+  --lc-sys-icon-size-sm: 16px;
+  --lc-sys-icon-size-md: 20px;
+  --lc-sys-icon-size-lg: 24px;
+  --lc-sys-focus-ring-width: 2px;
+  --lc-sys-focus-ring-offset: 2px;
+  --lc-sys-chart-role-neutral: #898781;
+  --lc-sys-chart-gridline: #e1e0d9;
+  --lc-sys-chart-axis: #c3c2b7;
+  --lc-sys-chart-ink-muted: #898781;
+  --lc-sys-border-width-thin: 1px; /** Filet des contrôles, cartes, tableaux et séparateurs. */
+  --lc-sys-border-width-thick: 2px; /** Indicateur de sélection (onglet actif, élément de navigation actif). */
+  --lc-sys-color-primary: var(--lc-ref-color-blue-550);
+  --lc-sys-color-on-primary: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-primary-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-on-primary-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-secondary: var(--lc-ref-color-neutral-700);
+  --lc-sys-color-on-secondary: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-secondary-container: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-on-secondary-container: var(--lc-ref-color-neutral-900);
+  --lc-sys-color-success: var(--lc-ref-color-green-700);
+  --lc-sys-color-on-success: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-success-container: var(--lc-ref-color-green-100);
+  --lc-sys-color-on-success-container: var(--lc-ref-color-green-700);
+  --lc-sys-color-warning: var(--lc-ref-color-amber-400);
+  --lc-sys-color-on-warning: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-warning-container: var(--lc-ref-color-amber-100);
+  --lc-sys-color-on-warning-container: var(--lc-ref-color-amber-800);
+  --lc-sys-color-error: var(--lc-ref-color-red-600);
+  --lc-sys-color-on-error: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-error-container: var(--lc-ref-color-red-100);
+  --lc-sys-color-on-error-container: var(--lc-ref-color-red-700);
+  --lc-sys-color-info: var(--lc-ref-color-blue-500);
+  --lc-sys-color-on-info: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-info-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-on-info-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-highlight: var(--lc-ref-color-purple-550);
+  --lc-sys-color-on-highlight: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-highlight-container: var(--lc-ref-color-purple-100);
+  --lc-sys-color-on-highlight-container: var(--lc-ref-color-purple-700);
+  --lc-sys-color-neutral: var(--lc-ref-color-neutral-600);
+  --lc-sys-color-on-neutral: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-background: var(--lc-ref-color-neutral-50);
+  --lc-sys-color-surface: var(--lc-ref-color-neutral-25);
+  --lc-sys-color-surface-raised: var(--lc-ref-color-neutral-0);
+  --lc-sys-color-surface-sunken: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-on-surface: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-surface-muted: var(--lc-ref-color-neutral-600);
+  --lc-sys-color-on-surface-subtle: var(--lc-ref-color-neutral-500);
+  --lc-sys-color-border: var(--lc-ref-color-neutral-150);
+  --lc-sys-color-border-strong: var(--lc-ref-color-neutral-400);
+  --lc-sys-color-focus-ring: var(--lc-ref-color-blue-450);
+  --lc-sys-font-family-base: var(--lc-ref-font-family-sans);
+  --lc-sys-font-family-mono: var(--lc-ref-font-family-mono);
+  --lc-sys-font-size-xs: var(--lc-ref-font-size-xs);
+  --lc-sys-font-size-sm: var(--lc-ref-font-size-sm);
+  --lc-sys-font-size-md: var(--lc-ref-font-size-md);
+  --lc-sys-font-size-lg: var(--lc-ref-font-size-lg);
+  --lc-sys-font-size-xl: var(--lc-ref-font-size-xl);
+  --lc-sys-font-size-2xl: var(--lc-ref-font-size-2xl);
+  --lc-sys-font-size-3xl: var(--lc-ref-font-size-3xl);
+  --lc-sys-font-weight-regular: var(--lc-ref-font-weight-regular);
+  --lc-sys-font-weight-medium: var(--lc-ref-font-weight-medium);
+  --lc-sys-font-weight-semibold: var(--lc-ref-font-weight-semibold);
+  --lc-sys-font-weight-bold: var(--lc-ref-font-weight-bold);
+  --lc-sys-font-line-height-tight: var(--lc-ref-font-line-height-tight);
+  --lc-sys-font-line-height-normal: var(--lc-ref-font-line-height-normal);
+  --lc-sys-font-line-height-relaxed: var(--lc-ref-font-line-height-relaxed);
+  --lc-sys-space-0: var(--lc-ref-space-0);
+  --lc-sys-space-1: var(--lc-ref-space-1);
+  --lc-sys-space-2: var(--lc-ref-space-2);
+  --lc-sys-space-3: var(--lc-ref-space-3);
+  --lc-sys-space-4: var(--lc-ref-space-4);
+  --lc-sys-space-5: var(--lc-ref-space-5);
+  --lc-sys-space-6: var(--lc-ref-space-6);
+  --lc-sys-space-8: var(--lc-ref-space-8);
+  --lc-sys-space-10: var(--lc-ref-space-10);
+  --lc-sys-space-12: var(--lc-ref-space-12);
+  --lc-sys-space-16: var(--lc-ref-space-16);
+  --lc-sys-radius-none: var(--lc-ref-radius-none);
+  --lc-sys-radius-sm: var(--lc-ref-radius-sm);
+  --lc-sys-radius-md: var(--lc-ref-radius-md);
+  --lc-sys-radius-lg: var(--lc-ref-radius-lg);
+  --lc-sys-radius-full: var(--lc-ref-radius-full);
+  --lc-sys-duration-fast: var(--lc-ref-duration-fast);
+  --lc-sys-duration-normal: var(--lc-ref-duration-normal);
+  --lc-sys-duration-slow: var(--lc-ref-duration-slow);
+  --lc-sys-duration-long: var(--lc-ref-duration-long);
+  --lc-sys-duration-move: var(--lc-ref-duration-move);
+  --lc-sys-easing-standard: var(--lc-ref-easing-standard);
+  --lc-sys-easing-emphasized: var(--lc-ref-easing-emphasized);
+  --lc-sys-chart-categorical-1: var(--lc-ref-color-chart-light-1);
+  --lc-sys-chart-categorical-2: var(--lc-ref-color-chart-light-2);
+  --lc-sys-chart-categorical-3: var(--lc-ref-color-chart-light-3);
+  --lc-sys-chart-categorical-4: var(--lc-ref-color-chart-light-4);
+  --lc-sys-chart-categorical-5: var(--lc-ref-color-chart-light-5);
+  --lc-sys-chart-categorical-6: var(--lc-ref-color-chart-light-6);
+  --lc-sys-chart-categorical-7: var(--lc-ref-color-chart-light-7);
+  --lc-sys-chart-categorical-8: var(--lc-ref-color-chart-light-8);
+  --lc-sys-chart-role-success: var(--lc-ref-color-chart-light-6);
+  --lc-sys-chart-role-warning: var(--lc-ref-color-chart-light-4);
+  --lc-sys-chart-role-error: var(--lc-ref-color-chart-light-8);
+  --lc-sys-chart-role-info: var(--lc-ref-color-chart-light-1);
+  --lc-sys-chart-role-highlight: var(--lc-ref-color-chart-light-7);
+  --lc-sys-chart-sequential-100: var(--lc-ref-color-blue-100);
+  --lc-sys-chart-sequential-200: var(--lc-ref-color-blue-200);
+  --lc-sys-chart-sequential-300: var(--lc-ref-color-blue-300);
+  --lc-sys-chart-sequential-400: var(--lc-ref-color-blue-400);
+  --lc-sys-chart-sequential-500: var(--lc-ref-color-blue-500);
+  --lc-sys-chart-sequential-600: var(--lc-ref-color-blue-600);
+  --lc-sys-chart-sequential-700: var(--lc-ref-color-blue-700);
+  --lc-sys-chart-diverging-negative: var(--lc-ref-color-chart-light-8);
+  --lc-sys-chart-diverging-neutral: var(--lc-ref-color-chart-diverging-neutral-light);
+  --lc-sys-chart-diverging-positive: var(--lc-ref-color-chart-light-1);
+  --lc-sys-chart-status-good: var(--lc-ref-color-chart-status-good);
+  --lc-sys-chart-status-warning: var(--lc-ref-color-chart-status-warning);
+  --lc-sys-chart-status-serious: var(--lc-ref-color-chart-status-serious);
+  --lc-sys-chart-status-critical: var(--lc-ref-color-chart-status-critical);
+  --lc-sys-chart-surface: var(--lc-ref-color-neutral-25);
+  --lc-sys-chart-ink-primary: var(--lc-ref-color-neutral-1000);
+  --lc-sys-chart-ink-secondary: var(--lc-ref-color-neutral-600);
+  --lc-sys-chart-sequential-warm-100: var(--lc-ref-color-orange-100);
+  --lc-sys-chart-sequential-warm-200: var(--lc-ref-color-orange-200);
+  --lc-sys-chart-sequential-warm-300: var(--lc-ref-color-orange-300);
+  --lc-sys-chart-sequential-warm-400: var(--lc-ref-color-orange-400);
+  --lc-sys-chart-sequential-warm-500: var(--lc-ref-color-orange-500);
+  --lc-sys-chart-sequential-warm-600: var(--lc-ref-color-orange-600);
+  --lc-sys-chart-sequential-warm-700: var(--lc-ref-color-orange-700);
+  --lc-sys-motion-stagger: var(--lc-ref-motion-stagger);
+  --lc-sys-motion-offset: var(--lc-sys-space-2);
+}
+/**
+ * x, this file was auto-generated.
+ */
+
+[data-theme="dark"] {
+  --lc-sys-color-success-container: #0f2a10;
+  --lc-sys-color-warning-container: #33270a;
+  --lc-sys-color-error-container: #3a1414;
+  --lc-sys-color-surface-sunken: #121211;
+  --lc-sys-color-backdrop: rgba(0, 0, 0, 0.6);
+  --lc-sys-state-hover-opacity: 0.08;
+  --lc-sys-state-pressed-opacity: 0.12;
+  --lc-sys-state-disabled-opacity: 0.38;
+  --lc-sys-state-selected-opacity: 0.12;
+  --lc-sys-font-numeric-tabular: tabular-nums;
+  --lc-sys-control-height-sm: 36px;
+  --lc-sys-control-height-md: 44px;
+  --lc-sys-control-height-lg: 52px;
+  --lc-sys-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --lc-sys-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.55);
+  --lc-sys-shadow-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --lc-sys-shadow-4: 0 16px 48px rgba(0, 0, 0, 0.7);
+  --lc-sys-z-dropdown: 1000;
+  --lc-sys-z-sticky: 1100;
+  --lc-sys-z-overlay: 1200;
+  --lc-sys-z-dialog: 1300;
+  --lc-sys-z-toast: 1400;
+  --lc-sys-z-tooltip: 1500;
+  --lc-sys-icon-size-sm: 16px;
+  --lc-sys-icon-size-md: 20px;
+  --lc-sys-icon-size-lg: 24px;
+  --lc-sys-focus-ring-width: 2px;
+  --lc-sys-focus-ring-offset: 2px;
+  --lc-sys-chart-role-neutral: #898781;
+  --lc-sys-chart-gridline: #2c2c2a;
+  --lc-sys-chart-axis: #383835;
+  --lc-sys-chart-ink-muted: #898781;
+  --lc-sys-border-width-thin: 1px; /** Filet des contrôles, cartes, tableaux et séparateurs. */
+  --lc-sys-border-width-thick: 2px; /** Indicateur de sélection (onglet actif, élément de navigation actif). */
+  --lc-sys-color-primary: var(--lc-ref-color-blue-300);
+  --lc-sys-color-on-primary: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-primary-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-on-primary-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-secondary: var(--lc-ref-color-neutral-200);
+  --lc-sys-color-on-secondary: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-secondary-container: var(--lc-ref-color-neutral-800);
+  --lc-sys-color-on-secondary-container: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-success: var(--lc-ref-color-green-500);
+  --lc-sys-color-on-success: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-success-container: var(--lc-ref-color-green-100);
+  --lc-sys-color-warning: var(--lc-ref-color-amber-400);
+  --lc-sys-color-on-warning: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-warning-container: var(--lc-ref-color-amber-100);
+  --lc-sys-color-error: var(--lc-ref-color-red-400);
+  --lc-sys-color-on-error: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-on-error-container: var(--lc-ref-color-red-100);
+  --lc-sys-color-info: var(--lc-ref-color-blue-300);
+  --lc-sys-color-on-info: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-info-container: var(--lc-ref-color-blue-700);
+  --lc-sys-color-on-info-container: var(--lc-ref-color-blue-100);
+  --lc-sys-color-highlight: var(--lc-ref-color-purple-400);
+  --lc-sys-color-on-highlight: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-highlight-container: var(--lc-ref-color-purple-900);
+  --lc-sys-color-on-highlight-container: var(--lc-ref-color-purple-200);
+  --lc-sys-color-neutral: var(--lc-ref-color-neutral-300);
+  --lc-sys-color-on-neutral: var(--lc-ref-color-neutral-1000);
+  --lc-sys-color-background: var(--lc-ref-color-neutral-950);
+  --lc-sys-color-surface: var(--lc-ref-color-neutral-900);
+  --lc-sys-color-surface-raised: var(--lc-ref-color-neutral-850);
+  --lc-sys-color-on-surface: var(--lc-ref-color-neutral-100);
+  --lc-sys-color-on-surface-muted: var(--lc-ref-color-neutral-200);
+  --lc-sys-color-on-surface-subtle: var(--lc-ref-color-neutral-400);
+  --lc-sys-color-border: var(--lc-ref-color-neutral-800);
+  --lc-sys-color-border-strong: var(--lc-ref-color-neutral-400);
+  --lc-sys-color-focus-ring: var(--lc-ref-color-blue-300);
+  --lc-sys-font-family-base: var(--lc-ref-font-family-sans);
+  --lc-sys-font-family-mono: var(--lc-ref-font-family-mono);
+  --lc-sys-font-size-xs: var(--lc-ref-font-size-xs);
+  --lc-sys-font-size-sm: var(--lc-ref-font-size-sm);
+  --lc-sys-font-size-md: var(--lc-ref-font-size-md);
+  --lc-sys-font-size-lg: var(--lc-ref-font-size-lg);
+  --lc-sys-font-size-xl: var(--lc-ref-font-size-xl);
+  --lc-sys-font-size-2xl: var(--lc-ref-font-size-2xl);
+  --lc-sys-font-size-3xl: var(--lc-ref-font-size-3xl);
+  --lc-sys-font-weight-regular: var(--lc-ref-font-weight-regular);
+  --lc-sys-font-weight-medium: var(--lc-ref-font-weight-medium);
+  --lc-sys-font-weight-semibold: var(--lc-ref-font-weight-semibold);
+  --lc-sys-font-weight-bold: var(--lc-ref-font-weight-bold);
+  --lc-sys-font-line-height-tight: var(--lc-ref-font-line-height-tight);
+  --lc-sys-font-line-height-normal: var(--lc-ref-font-line-height-normal);
+  --lc-sys-font-line-height-relaxed: var(--lc-ref-font-line-height-relaxed);
+  --lc-sys-space-0: var(--lc-ref-space-0);
+  --lc-sys-space-1: var(--lc-ref-space-1);
+  --lc-sys-space-2: var(--lc-ref-space-2);
+  --lc-sys-space-3: var(--lc-ref-space-3);
+  --lc-sys-space-4: var(--lc-ref-space-4);
+  --lc-sys-space-5: var(--lc-ref-space-5);
+  --lc-sys-space-6: var(--lc-ref-space-6);
+  --lc-sys-space-8: var(--lc-ref-space-8);
+  --lc-sys-space-10: var(--lc-ref-space-10);
+  --lc-sys-space-12: var(--lc-ref-space-12);
+  --lc-sys-space-16: var(--lc-ref-space-16);
+  --lc-sys-radius-none: var(--lc-ref-radius-none);
+  --lc-sys-radius-sm: var(--lc-ref-radius-sm);
+  --lc-sys-radius-md: var(--lc-ref-radius-md);
+  --lc-sys-radius-lg: var(--lc-ref-radius-lg);
+  --lc-sys-radius-full: var(--lc-ref-radius-full);
+  --lc-sys-duration-fast: var(--lc-ref-duration-fast);
+  --lc-sys-duration-normal: var(--lc-ref-duration-normal);
+  --lc-sys-duration-slow: var(--lc-ref-duration-slow);
+  --lc-sys-duration-long: var(--lc-ref-duration-long);
+  --lc-sys-duration-move: var(--lc-ref-duration-move);
+  --lc-sys-easing-standard: var(--lc-ref-easing-standard);
+  --lc-sys-easing-emphasized: var(--lc-ref-easing-emphasized);
+  --lc-sys-chart-categorical-1: var(--lc-ref-color-chart-dark-1);
+  --lc-sys-chart-categorical-2: var(--lc-ref-color-chart-dark-2);
+  --lc-sys-chart-categorical-3: var(--lc-ref-color-chart-dark-3);
+  --lc-sys-chart-categorical-4: var(--lc-ref-color-chart-dark-4);
+  --lc-sys-chart-categorical-5: var(--lc-ref-color-chart-dark-5);
+  --lc-sys-chart-categorical-6: var(--lc-ref-color-chart-dark-6);
+  --lc-sys-chart-categorical-7: var(--lc-ref-color-chart-dark-7);
+  --lc-sys-chart-categorical-8: var(--lc-ref-color-chart-dark-8);
+  --lc-sys-chart-role-success: var(--lc-ref-color-chart-dark-6);
+  --lc-sys-chart-role-warning: var(--lc-ref-color-chart-dark-4);
+  --lc-sys-chart-role-error: var(--lc-ref-color-chart-dark-8);
+  --lc-sys-chart-role-info: var(--lc-ref-color-chart-dark-1);
+  --lc-sys-chart-role-highlight: var(--lc-ref-color-chart-dark-7);
+  --lc-sys-chart-sequential-100: var(--lc-ref-color-blue-100);
+  --lc-sys-chart-sequential-200: var(--lc-ref-color-blue-200);
+  --lc-sys-chart-sequential-300: var(--lc-ref-color-blue-300);
+  --lc-sys-chart-sequential-400: var(--lc-ref-color-blue-400);
+  --lc-sys-chart-sequential-500: var(--lc-ref-color-blue-500);
+  --lc-sys-chart-sequential-600: var(--lc-ref-color-blue-600);
+  --lc-sys-chart-sequential-700: var(--lc-ref-color-blue-700);
+  --lc-sys-chart-diverging-negative: var(--lc-ref-color-chart-dark-8);
+  --lc-sys-chart-diverging-neutral: var(--lc-ref-color-chart-diverging-neutral-dark);
+  --lc-sys-chart-diverging-positive: var(--lc-ref-color-chart-dark-1);
+  --lc-sys-chart-status-good: var(--lc-ref-color-chart-status-good);
+  --lc-sys-chart-status-warning: var(--lc-ref-color-chart-status-warning);
+  --lc-sys-chart-status-serious: var(--lc-ref-color-chart-status-serious);
+  --lc-sys-chart-status-critical: var(--lc-ref-color-chart-status-critical);
+  --lc-sys-chart-surface: var(--lc-ref-color-neutral-900);
+  --lc-sys-chart-ink-primary: var(--lc-ref-color-neutral-100);
+  --lc-sys-chart-ink-secondary: var(--lc-ref-color-neutral-200);
+  --lc-sys-chart-sequential-warm-100: var(--lc-ref-color-orange-700);
+  --lc-sys-chart-sequential-warm-200: var(--lc-ref-color-orange-600);
+  --lc-sys-chart-sequential-warm-300: var(--lc-ref-color-orange-500);
+  --lc-sys-chart-sequential-warm-400: var(--lc-ref-color-orange-400);
+  --lc-sys-chart-sequential-warm-500: var(--lc-ref-color-orange-300);
+  --lc-sys-chart-sequential-warm-600: var(--lc-ref-color-orange-200);
+  --lc-sys-chart-sequential-warm-700: var(--lc-ref-color-orange-100);
+  --lc-sys-motion-stagger: var(--lc-ref-motion-stagger);
+  --lc-sys-motion-offset: var(--lc-sys-space-2);
+}
+/* Base commune du ui-kit : à importer après lc-tokens.css et le CSS du thème. Uniquement des tokens. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--lc-sys-color-background);
+  color: var(--lc-sys-color-on-surface);
+  font-family: var(--lc-sys-font-family-base);
+  font-size: var(--lc-sys-font-size-md);
+  line-height: var(--lc-sys-font-line-height-normal);
+}
+
+:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: var(--lc-sys-focus-ring-offset);
+}
+
+.lc-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lc-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    animation-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+/* ===== Page de démonstration ===== */
+body{padding-block-end:var(--lc-sys-space-12)}
+.page{max-inline-size:80rem;margin:auto;padding:var(--lc-sys-space-4)}
+.top{display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-3);justify-content:space-between;align-items:flex-start}
+h1{font-size:var(--lc-sys-font-size-xl);margin:0 0 var(--lc-sys-space-1)}
+h2{font-size:var(--lc-sys-font-size-lg);margin:0 0 var(--lc-sys-space-1)}
+h3{font-size:var(--lc-sys-font-size-md);margin:0 0 var(--lc-sys-space-2)}
+.muted{color:var(--lc-sys-color-on-surface-muted);margin:0 0 var(--lc-sys-space-3)}
+code,pre{font-family:var(--lc-sys-font-family-mono);font-size:var(--lc-sys-font-size-sm)}
+pre{background:var(--lc-sys-color-surface-sunken);padding:var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-md);overflow:auto}
+.tools{display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-2);align-items:center}
+.btn{font:inherit;font-weight:var(--lc-sys-font-weight-semibold);min-block-size:44px;padding:0 var(--lc-sys-space-4);border-radius:var(--lc-sys-radius-md);border:1px solid var(--lc-sys-color-border-strong);background:var(--lc-sys-color-surface-raised);color:var(--lc-sys-color-on-surface);cursor:pointer}
+.btn:hover{background:var(--lc-sys-color-surface-sunken)}
+.tools label{display:inline-flex;gap:var(--lc-sys-space-2);align-items:center;min-block-size:44px}
+.dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--lc-sys-space-5);margin-block:var(--lc-sys-space-4)}
+@media (max-width:1000px){.dirs{grid-template-columns:minmax(0,1fr)}}
+.dir>.tag{display:inline-block;font-weight:var(--lc-sys-font-weight-semibold);margin-bottom:var(--lc-sys-space-1)}
+.dir>p{margin:0 0 var(--lc-sys-space-2);color:var(--lc-sys-color-on-surface-muted);font-size:var(--lc-sys-font-size-sm)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--lc-sys-space-4)}
+@media (max-width:1000px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--lc-sys-color-surface-raised);border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-lg);padding:var(--lc-sys-space-4)}
+.card ul{margin:0;padding-inline-start:var(--lc-sys-space-5)}
+.card li{margin-bottom:var(--lc-sys-space-2)}
+section.state{margin-top:var(--lc-sys-space-8)}
+
+/* ===== Fil (ce que fournirait lc-message-thread) ===== */
+.wrap{position:relative;border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-lg) var(--lc-sys-radius-lg) 0 0;border-bottom:0;background:var(--lc-sys-color-surface);overflow:hidden}
+.thr{block-size:40rem;overflow-y:auto;display:flex;flex-direction:column;overscroll-behavior:contain}
+.thr:focus-visible{outline-offset:-2px}
+.full .thr{block-size:auto;overflow:visible}
+.inner{flex:1 0 auto;display:flex;flex-direction:column;justify-content:flex-end;min-block-size:100%;padding:var(--lc-sys-space-3);gap:var(--lc-sys-space-3)}
+.more{align-self:center;font:inherit;font-size:var(--lc-sys-font-size-sm);font-weight:var(--lc-sys-font-weight-semibold);min-block-size:44px;padding:0 var(--lc-sys-space-4);border-radius:var(--lc-sys-radius-full);border:1px solid var(--lc-sys-color-border-strong);background:var(--lc-sys-color-surface-raised);color:var(--lc-sys-color-on-surface);cursor:pointer}
+.more:hover{background:var(--lc-sys-color-surface-sunken)}
+.day{display:flex;align-items:center;gap:var(--lc-sys-space-3);color:var(--lc-sys-color-on-surface-muted);font-size:var(--lc-sys-font-size-xs);font-weight:var(--lc-sys-font-weight-semibold);margin-block:var(--lc-sys-space-1)}
+.day::before,.day::after{content:"";flex:1;block-size:1px;background:var(--lc-sys-color-border)}
+.sys{align-self:center;text-align:center;max-inline-size:90%;color:var(--lc-sys-color-on-surface-muted);font-size:var(--lc-sys-font-size-xs);margin:0}
+.grp{display:flex;gap:var(--lc-sys-space-2);align-items:flex-end;max-inline-size:100%}
+.grp.me{justify-content:flex-end}
+.col{display:flex;flex-direction:column;gap:2px;min-inline-size:0;max-inline-size:min(100%,26rem)}
+.me .col{align-items:flex-end}
+.hd{margin:0 0 var(--lc-sys-space-1);font-size:var(--lc-sys-font-size-xs);color:var(--lc-sys-color-on-surface-muted);display:flex;gap:var(--lc-sys-space-2);flex-wrap:wrap;align-items:center}
+.hd span,.cardhd span{display:inline-flex;gap:var(--lc-sys-space-1);align-items:center}
+.hd b{color:var(--lc-sys-color-on-surface);font-weight:var(--lc-sys-font-weight-semibold)}
+.hd svg,.status svg,.cardhd svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mid{margin:var(--lc-sys-space-2) 0 0;font-size:var(--lc-sys-font-size-xs);color:var(--lc-sys-color-on-surface-muted)}
+.av{--_accent:var(--lc-sys-chart-categorical-1);inline-size:32px;block-size:32px;flex:none;border-radius:var(--lc-sys-radius-full);display:inline-flex;align-items:center;justify-content:center;font-size:var(--lc-sys-font-size-xs);font-weight:var(--lc-sys-font-weight-semibold);line-height:1;background:color-mix(in srgb,var(--_accent) 28%,var(--lc-sys-color-surface-raised));color:var(--lc-sys-color-on-surface)}
+.t2{--_accent:var(--lc-sys-chart-categorical-2)}.t3{--_accent:var(--lc-sys-chart-categorical-3)}
+.bub{margin:0;padding:var(--lc-sys-space-2) var(--lc-sys-space-3);overflow-wrap:anywhere;white-space:pre-wrap;
+  background:var(--lc-message-thread-bubble-background,var(--_bg));color:var(--lc-message-thread-bubble-color,var(--_fg));
+  border:var(--lc-message-thread-bubble-border-width,var(--_bw,0)) var(--lc-message-thread-bubble-border-style,solid) var(--lc-message-thread-bubble-border-color,var(--_bc,transparent))}
+.bub a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.bub a:hover{text-decoration-thickness:2px}
+.bub .lbl{display:flex;gap:var(--lc-sys-space-1);align-items:center;font-size:var(--lc-sys-font-size-xs);font-weight:var(--lc-sys-font-weight-semibold);margin-bottom:var(--lc-sys-space-1)}
+.bub .lbl svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.thumbs{display:flex;gap:var(--lc-sys-space-2);flex-wrap:wrap;margin-top:var(--lc-sys-space-2)}
+.bub>.thumbs:first-child{margin-top:0}
+.ph{padding:0;border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-md);overflow:hidden;cursor:pointer;background:none;display:block;line-height:0}
+.ph img{inline-size:96px;block-size:72px;object-fit:cover;display:block}
+.ph:hover{border-color:var(--lc-sys-color-border-strong)}
+/* application : note interne = redéfinition des jetons du composant */
+.note-interne{--lc-message-thread-bubble-background:var(--lc-sys-color-warning-container);--lc-message-thread-bubble-color:var(--lc-sys-color-on-warning-container);--lc-message-thread-bubble-border-color:var(--lc-sys-color-on-warning-container);--lc-message-thread-bubble-border-width:2px;--lc-message-thread-bubble-border-style:dashed}
+.status{margin:var(--lc-sys-space-1) 0 0;font-size:var(--lc-sys-font-size-xs);color:var(--lc-sys-color-on-surface-muted);display:flex;align-items:center;gap:var(--lc-sys-space-1);flex-wrap:wrap;justify-content:flex-end}
+.status.fail{color:var(--lc-sys-color-error)}
+.status .spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status button{font:inherit;color:inherit;font-weight:var(--lc-sys-font-weight-semibold);text-decoration:underline;background:none;border:0;padding:0 var(--lc-sys-space-2);min-block-size:44px;margin-block:-14px;cursor:pointer}
+.pill{position:absolute;inset-inline:0;inset-block-end:var(--lc-sys-space-3);margin-inline:auto;inline-size:max-content;display:inline-flex;gap:var(--lc-sys-space-2);align-items:center;min-block-size:44px;padding:0 var(--lc-sys-space-4);border:0;border-radius:var(--lc-sys-radius-full);background:var(--lc-sys-color-primary);color:var(--lc-sys-color-on-primary);font:inherit;font-size:var(--lc-sys-font-size-sm);font-weight:var(--lc-sys-font-weight-semibold);box-shadow:var(--lc-sys-shadow-3);cursor:pointer}
+.pill[hidden]{display:none}
+.pill svg{inline-size:16px;block-size:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* zone de saisie : « B retenue » (icône send sans contour ni fond) */
+.mc{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"text text" "clip send";padding:0 var(--lc-sys-space-1) var(--lc-sys-space-1);border:1px solid var(--lc-sys-color-border-strong);border-radius:0 0 var(--lc-sys-radius-lg) var(--lc-sys-radius-lg);background:var(--lc-sys-color-surface-raised)}
+.mc textarea{grid-area:text;display:block;inline-size:100%;min-inline-size:0;font:inherit;line-height:1.5;color:var(--lc-sys-color-on-surface);background:transparent;border:0;resize:none;padding:var(--lc-sys-space-3) var(--lc-sys-space-3) var(--lc-sys-space-1);min-block-size:3.5rem;field-sizing:content;max-block-size:11rem;outline:0}
+.mc textarea::placeholder{color:var(--lc-sys-color-on-surface-muted);opacity:1}
+.mc:focus-within{outline:var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);outline-offset:2px}
+.mc button{inline-size:44px;block-size:44px;border:0;background:transparent;color:var(--lc-sys-color-primary);border-radius:var(--lc-sys-radius-md);cursor:pointer;display:inline-grid;place-items:center;padding:0;align-self:center}
+.mc button:hover{background:color-mix(in srgb,currentColor calc(var(--lc-sys-state-hover-opacity) * 100%),transparent)}
+.mc button:active{background:color-mix(in srgb,currentColor calc(var(--lc-sys-state-pressed-opacity) * 100%),transparent)}
+.mc button:focus-visible{outline:var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);outline-offset:2px}
+.mc button.clip{grid-area:clip;justify-self:start;color:var(--lc-sys-color-on-surface-muted)}
+.mc button[type=submit]{grid-area:send}
+@media (pointer:fine){.mc button{inline-size:var(--lc-sys-control-height-sm);block-size:var(--lc-sys-control-height-sm)}}
+.mc svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media (forced-colors:active){.mc{border-color:CanvasText}.mc button[type=submit]{color:ButtonText}}
+.recv{margin-top:var(--lc-sys-space-2)}
+
+/* ===== Animation : ressort iOS retenu (B de bulles.html) ===== */
+.new{--_spring:linear(0,.009,.035 2.1%,.141 4.4%,.723 12.9%,.938 16.7%,1.017 19.4%,1.067,1.099 24.3%,1.108 26%,1.104,1.088 30.6%,1.03 37.7%,1.008 41.4%,.993 45.8%,.988 50%,.993 59.8%,1.002 75.4%,1);
+  animation:pop 550ms var(--_spring) both,fade var(--lc-sys-duration-normal) var(--lc-sys-easing-standard) both}
+.me .new{transform-origin:100% 100%}.them .new{transform-origin:0 100%}
+@keyframes pop{from{transform:scale(.6)}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.new{animation:fade var(--lc-sys-duration-normal) linear both}.status .spin{animation:none}}
+
+/* ===== A : bulles douces, pleines ===== */
+.dA .bub{--_r:calc(var(--lc-sys-radius-lg) * 1.5);border-radius:var(--_r)}
+.dA .them .bub{--_bg:var(--lc-sys-color-secondary-container);--_fg:var(--lc-sys-color-on-secondary-container)}
+.dA .me .bub{--_bg:var(--lc-sys-color-primary-container);--_fg:var(--lc-sys-color-on-primary-container)}
+/* bulles serrées : le coin du côté de l'auteur se resserre entre deux bulles du groupe, sans queue */
+.dA .them .bub:has(+ .bub),.dA .them .bub+.bub{border-start-start-radius:var(--lc-sys-radius-sm)}
+.dA .them .bub:has(+ .bub){border-end-start-radius:var(--lc-sys-radius-sm)}
+.dA .me .bub:has(+ .bub){border-end-end-radius:var(--lc-sys-radius-sm)}
+.dA .me .bub+.bub{border-start-end-radius:var(--lc-sys-radius-sm)}
+.dA .day{justify-content:center}.dA .day::before,.dA .day::after{display:none}
+.dA .day span{background:var(--lc-sys-color-surface-sunken);padding:var(--lc-sys-space-1) var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-full)}
+
+/* ===== B : cartes à bord fin, fond blanc ===== */
+.dB .wrap{background:var(--lc-sys-color-background)}
+.dB .bub{--_r:var(--lc-sys-radius-md);--_bg:var(--lc-sys-color-surface-raised);--_fg:var(--lc-sys-color-on-surface);--_bw:1px;--_bc:var(--lc-sys-color-border-strong);border-radius:var(--_r)}
+.dB .me .bub{--_bc:var(--lc-sys-color-primary)}
+.dB .bub+.bub{border-start-start-radius:var(--lc-sys-radius-sm);border-start-end-radius:var(--lc-sys-radius-sm)}
+.dB .bub:has(+ .bub){border-end-start-radius:var(--lc-sys-radius-sm);border-end-end-radius:var(--lc-sys-radius-sm)}
+.dB .col{gap:var(--lc-sys-space-1)}
+.dB .hd{display:none}
+.dB .bub .cardhd{display:flex;gap:var(--lc-sys-space-2);flex-wrap:wrap;align-items:baseline;font-size:var(--lc-sys-font-size-xs);color:var(--lc-sys-color-on-surface-muted);margin-bottom:var(--lc-sys-space-1)}
+.dB .bub .cardhd b{color:inherit;font-weight:var(--lc-sys-font-weight-semibold);color:var(--lc-sys-color-on-surface)}
+.dB .note-interne .cardhd,.dB .note-interne .cardhd b{color:var(--lc-sys-color-on-warning-container)}
+.dB .day{text-transform:none}
+.dB .status{color:var(--lc-sys-color-on-surface-muted)}.dB .status.fail{color:var(--lc-sys-color-error)}
+
+/* ===== C : sans bulles pour les autres, filet coloré par auteur ===== */
+.dC .grp.them{display:block}
+.dC .them .col{max-inline-size:100%;gap:var(--lc-sys-space-1);border-inline-start:3px solid var(--_accent);padding-inline-start:var(--lc-sys-space-3);--_accent:var(--lc-sys-chart-categorical-1)}
+.dC .them.t2 .col{--_accent:var(--lc-sys-chart-categorical-2)}.dC .them.t3 .col{--_accent:var(--lc-sys-chart-categorical-3)}
+.dC .them .av{display:none}
+.dC .hd .av{display:inline-flex;inline-size:24px;block-size:24px;font-size:var(--lc-sys-font-size-xs);font-size:10px}
+.dC .hd{gap:var(--lc-sys-space-2)}
+.dC .them .bub{--_fg:var(--lc-sys-color-on-surface);--_bg:transparent;padding:var(--lc-sys-space-1) 0;border-radius:0}
+.dC .them .bub.in-note{padding:var(--lc-sys-space-2) var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-md)}
+.dC .me .bub{--_bg:var(--lc-sys-color-primary-container);--_fg:var(--lc-sys-color-on-primary-container);border-radius:var(--lc-sys-radius-lg)}
+.dC .me .bub:has(+ .bub){border-end-end-radius:var(--lc-sys-radius-sm)}.dC .me .bub+.bub{border-start-end-radius:var(--lc-sys-radius-sm)}
+.dC .day{justify-content:flex-start}.dC .day::before{display:none}
+.dC .them .mid{margin-top:var(--lc-sys-space-3)}
+@media (forced-colors:active){.bub{border:1px solid CanvasText}.dC .them .col{border-inline-start-color:CanvasText}.pill{border:1px solid ButtonText}}
+
+/* ===== A retenue (PR 2) : sans « Envoi… », sans « Messages précédents », sans pastille ===== */
+.ret{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--lc-sys-space-5)}
+@media (max-width:1000px){.ret{grid-template-columns:minmax(0,1fr)}}
+.ra{background:var(--lc-sys-color-background);color:var(--lc-sys-color-on-surface);padding:var(--lc-sys-space-3);border-radius:var(--lc-sys-radius-lg)}
+.ra .thr{block-size:auto;overflow:visible}
+.ra .wrap{border-radius:var(--lc-sys-radius-lg) var(--lc-sys-radius-lg) 0 0}
+.ra .sys time{font-variant-numeric:tabular-nums}
+.ra .ph{border-color:var(--lc-sys-color-border-strong)}
+@media (forced-colors:active){.ra .bub{border:1px solid CanvasText}.ra .ph{border-color:ButtonText}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol>
+ <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+ <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+ <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+ <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></symbol>
+ <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+</svg>
+<main class="page">
+<div class="top">
+ <div>
+  <h1>lc-message-thread : trois directions</h1>
+  <p class="muted">Maquette autonome, jetons du kit (<code>--lc-sys-*</code>) inlinés, thème clair et sombre. Même conversation partout (valeurs d'exemple : une copropriétaire, deux gestionnaires). Essayez « Envoyer » (ressort retenu) et « Simuler une réception ». Dans la vraie page, le fil se pose au-dessus de <code>lc-message-composer</code> (direction B retenue, ci-dessous).</p>
+ </div>
+ <div class="tools">
+  <label><input type="checkbox" id="all"> Fil entier, sans défilement</label>
+  <button class="btn" id="theme" type="button">Thème sombre</button>
+ </div>
+</div>
+<div class="dirs" id="dirs"></div>
+
+<section class="state" id="a-retenue">
+ <h2>A retenue : périmètre de la PR 2</h2>
+ <p class="muted">Direction A, sans état « Envoi… / Non envoyé », sans « Messages précédents » (les anciens messages se révèlent en remontant), sans dépôt sur le fil, sans pastille. Clair et sombre côte à côte (valeurs d'exemple). Messages système : « mise en pause » et « résolue ». « Simuler une réception » joue le ressort.</p>
+ <div class="ret" id="ret"></div>
+</section>
+
+<section class="state">
+ <h2>Jetons proposés et classe de l'application</h2>
+<pre>/* jetons du composant (repli sur --lc-sys-*), les mêmes pour les 3 directions */
+--lc-message-thread-bubble-background / -color / -border-color / -border-width / -border-style
+
+.note-interne {  /* CSS de l'application (copro-ticket), posée sur le message */
+  --lc-message-thread-bubble-background:   var(--lc-sys-color-warning-container);
+  --lc-message-thread-bubble-color:        var(--lc-sys-color-on-warning-container);
+  --lc-message-thread-bubble-border-color: var(--lc-sys-color-on-warning-container);
+  --lc-message-thread-bubble-border-width: 2px;
+  --lc-message-thread-bubble-border-style: dashed;
+}</pre>
+ <p class="muted">Écart à signaler : le ressort (<code>linear()</code>, 550 ms) est écrit en local ici, comme dans <code>bulles.html</code> ; le kit n'a pas de jeton de ressort. À créer (<code>--lc-sys-easing-spring</code>, <code>--lc-sys-duration-spring</code>) à l'implémentation. Les rayons et teintes d'auteur (<code>--lc-sys-chart-categorical-n</code>, comme <code>lc-avatar</code>) sont des jetons existants ; le rayon 18 px de A vaut 1,5 × <code>radius-lg</code>.</p>
+</section>
+
+<section class="state">
+ <h2>Forces, faiblesses, recommandation</h2>
+ <div class="cards">
+  <div class="card"><h3>A · Bulles douces, pleines</h3><ul>
+   <li><b>Pour :</b> geste immédiatement lisible, mes messages et ceux des autres se distinguent d'un coup d'œil, bien adapté au ressort.</li>
+   <li><b>Contre :</b> reste le plus proche d'une messagerie grand public ; les bulles pâles (bleu clair, gris chaud) ont peu de contraste entre elles sur le fond.</li>
+   <li><b>Coût :</b> faible, pas de dépendance à la couleur d'auteur.</li></ul></div>
+  <div class="card"><h3>B · Cartes à bord fin</h3><ul>
+   <li><b>Pour :</b> le plus sobre et le plus propre au kit (aucune ressemblance avec iMessage) ; nom et date dans la carte, donc toujours rattachés au texte ; très lisible en thème sombre.</li>
+   <li><b>Contre :</b> plus de traits à l'écran, côté droit / gauche moins marqué que des bulles pleines ; l'en-tête dans la carte demande une structure de balisage de plus.</li>
+   <li><b>Coût :</b> moyen (en-tête de carte), reste simple.</li></ul></div>
+  <div class="card"><h3>C · Filet par auteur, bulles pour moi seulement</h3><ul>
+   <li><b>Pour :</b> la plus économe en place et en encre ; la lecture ressemble à un journal de suivi, adaptée à un gestionnaire qui relit beaucoup ; asymétrie nette.</li>
+   <li><b>Contre :</b> la note interne devient la seule « boîte » côté gauche (c'est voulu, mais elle ressort plus que les autres) ; la teinte du filet vient des couleurs de graphique (certaines jaunes sont faibles sur fond clair), le nom reste donc l'information principale ; le ressort sur du texte nu paraît moins net.</li>
+   <li><b>Coût :</b> moyen (deux gabarits selon l'auteur).</li></ul></div>
+ </div>
+ <p style="margin-top:var(--lc-sys-space-4)"><b>Recommandation : B</b> si l'on veut l'identité la plus propre au kit et un thème sombre sans effort ; <b>A</b> si le public principal (copropriétaire sur téléphone) doit retrouver sans effort le geste d'une messagerie. Éviter C comme défaut du composant (pas de bulle côté autres, donc l'animation de ressort et la note interne s'en trouvent affaiblies) ; elle peut rester une variante. Choix à faire par l'utilisateur.</p>
+</section>
+</main>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const icon = (id) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('aria-hidden', 'true'); const u = document.createElementNS(NS, 'use'); u.setAttribute('href', '#i-' + id); s.append(u); return s; };
+const h = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (v === false || v == null) continue; k === 'class' ? e.className = v : e.setAttribute(k, v === true ? '' : v); } e.append(...kids.flat().filter(k => k != null)); return e; };
+const photo = (n) => { const c = [['#8fb0c8', '#35546b'], ['#c9b48f', '#6b5535']][n];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="72"><rect width="96" height="72" fill="${c[0]}"/><rect y="46" width="96" height="26" fill="${c[1]}"/><circle cx="${30 + n * 28}" cy="34" r="10" fill="#fff" opacity=".7"/><path d="M0 60Q24 50 48 60T96 56V72H0Z" fill="#fff" opacity=".25"/></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg); };
+const people = { me: { name: 'Vous', tone: 'me' }, marc: { name: 'Marc Lefèvre', ini: 'ML', tone: 't2' }, cam: { name: 'Camille Bernard', ini: 'CB', tone: 't3' } };
+const URL_RE = /(https?:\/\/[^\s<]+)/g;
+const rich = (t) => t.split(URL_RE).map((p, i) => i % 2 ? h('a', { href: p, target: '_blank', rel: 'noopener noreferrer' }, p) : p);
+let uid = 0;
+const seed = () => [
+  { id: ++uid, day: '18 nov.' },
+  { id: ++uid, who: 'me', t: '09:12', text: 'Bonjour, il y a une fuite d\'eau dans la cave, près du compteur.' },
+  { id: ++uid, who: 'me', t: '09:12', text: 'Voici deux photos :', photos: [0, 1] },
+  { id: ++uid, who: 'marc', t: '09:40', text: 'Bonjour Madame Martin, merci pour votre signalement.' },
+  { id: ++uid, who: 'marc', t: '09:41', text: 'Je préviens le plombier. Suivi : https://exemple.fr/suivi/1234' },
+  { id: ++uid, sys: 'Demande qualifiée par Marc Lefèvre', t: '09:41' },
+  { id: ++uid, who: 'marc', t: '09:45', note: true, text: 'Vérifier le contrat d\'entretien avant d\'envoyer l\'artisan.' },
+  { id: ++uid, day: 'Aujourd\'hui' },
+  { id: ++uid, who: 'cam', t: '08:30', text: 'Le plombier passera jeudi entre 9 h et 11 h.' },
+  { id: ++uid, who: 'cam', t: '08:31', text: 'Pensez à laisser l\'accès à la cave.' },
+  { id: ++uid, who: 'cam', t: '08:52', text: 'Il vous appellera 15 minutes avant son arrivée.' },
+  { id: ++uid, who: 'me', t: '09:05', text: 'Parfait, je serai là. Merci !' },
+  { id: ++uid, who: 'me', t: '09:06', text: 'Je laisse la clé au gardien si besoin.', status: 'sending' },
+  { id: ++uid, who: 'me', t: '09:07', text: 'Pouvez-vous confirmer l\'heure d\'arrivée ?', status: 'fail' },
+];
+const mins = (t) => +t.slice(0, 2) * 60 + +t.slice(3);
+function groups(msgs) { const out = []; let g;
+  for (const m of msgs) { if (!m.who) { out.push(m); g = null; continue; }
+    if (g && g.who === m.who && !!g.note === !!m.note) g.items.push(m); else { g = { who: m.who, note: m.note, items: [m], first: m.id }; out.push(g); } }
+  return out; }
+function build(dir, msgs, newId) {
+  const nodes = [h('button', { class: 'more', type: 'button', 'data-k': 'more' }, 'Messages précédents')];
+  for (const g of groups(msgs)) {
+    if (g.day) { nodes.push(h('p', { class: 'day', 'data-k': 'd' + g.id }, h('span', {}, g.day))); continue; }
+    if (g.sys) { nodes.push(h('p', { class: 'sys', 'data-k': 's' + g.id }, g.sys + ' · ' + g.t)); continue; }
+    const p = people[g.who], me = g.who === 'me', last = g.items[g.items.length - 1];
+    const hd = h('p', { class: 'hd', 'data-k': 'h' + g.first }, dir === 'C' && !me ? h('span', { class: 'av ' + p.tone, 'aria-hidden': 'true' }, p.ini) : null,
+      h('b', {}, p.name), h('time', {}, g.items[0].t), g.note ? h('span', {}, icon('lock'), ' Note interne') : null);
+    const kids = [];
+    if (dir !== 'B') kids.push(hd);
+    g.items.forEach((m, i) => {
+      if (i && mins(m.t) - mins(g.items[i - 1].t) >= 5) kids.push(h('p', { class: 'mid', 'data-k': 'm' + m.id }, h('time', {}, m.t)));
+      const card = dir === 'B' && i === 0 ? h('div', { class: 'cardhd' }, h('b', {}, p.name), h('time', {}, m.t), g.note ? h('span', {}, icon('lock'), ' Note interne') : null) : null;
+      const label = g.note && dir !== 'B' && false ? null : null;
+      const b = h('div', { class: 'bub' + (g.note ? ' in-note' : '') + (m.id === newId ? ' new' : ''), 'data-k': 'b' + m.id }, card,
+        m.photos ? [h('div', {}, rich(m.text)), h('div', { class: 'thumbs' }, m.photos.map(n => h('button', { class: 'ph', type: 'button', 'aria-label': 'Ouvrir la photo ' + (n + 1) + ' (nouvel onglet)' }, h('img', { src: photo(n), alt: 'Photo de la cave ' + (n + 1), width: 96, height: 72 }))))] : rich(m.text));
+      kids.push(b);
+      if (m.status === 'sending') kids.push(h('p', { class: 'status', 'data-k': 'st' + m.id }, h('span', { class: 'spin', style: 'display:inline-flex' }, icon('loader')), 'Envoi…'));
+      if (m.status === 'fail') kids.push(h('p', { class: 'status fail', 'data-k': 'st' + m.id }, icon('alert'), 'Non envoyé · ', h('button', { type: 'button', 'data-retry': m.id }, 'Réessayer')));
+    });
+    const av = !me && dir !== 'C' ? h('span', { class: 'av ' + p.tone, 'aria-hidden': 'true', 'data-k': 'a' + g.first }, p.ini) : null;
+    const grp = h('div', { class: 'grp ' + (me ? 'me ' : 'them ') + (g.note ? 'note-interne ' : '') + p.tone }, av, h('div', { class: 'col' }, kids));
+    nodes.push(grp);
+  }
+  return nodes; }
+function mount(dir, label) {
+  const msgs = seed();
+  const root = h('div', { class: 'dir d' + dir });
+  const thr = h('div', { class: 'thr', role: 'log', 'aria-live': 'polite', 'aria-label': 'Fil de la demande', tabindex: '0' }, h('div', { class: 'inner' }));
+  const pill = h('button', { class: 'pill', type: 'button', hidden: true }, 'Nouveau message', icon('down'));
+  const ta = h('textarea', { rows: 1, 'aria-label': 'Votre message', placeholder: 'Écrivez votre message…' });
+  const form = h('form', { class: 'mc' }, ta, h('button', { class: 'clip', type: 'button', 'aria-label': 'Joindre un fichier' }, icon('clip')), h('button', { type: 'submit', 'aria-label': 'Envoyer' }, icon('send')));
+  const recv = h('button', { class: 'btn recv', type: 'button' }, 'Simuler une réception');
+  root.append(h('span', { class: 'tag' }, label[0]), h('p', {}, label[1]), h('div', { class: 'wrap' }, thr, pill), form, recv);
+  const inner = $('.inner', thr), reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const atBottom = () => thr.scrollHeight - thr.clientHeight - thr.scrollTop < 40;
+  function render(newId, forceBottom) {
+    const keep = atBottom() || forceBottom, st = thr.scrollTop;
+    const before = new Map([...inner.querySelectorAll('[data-k]')].map(e => [e.dataset.k, e.getBoundingClientRect().top]));
+    inner.replaceChildren(...build(dir, msgs, newId));
+    thr.scrollTop = keep ? thr.scrollHeight : st;
+    if (newId && !reduce()) inner.querySelectorAll('[data-k]').forEach(e => { const b = before.get(e.dataset.k); if (b == null) return;
+      const dy = b - e.getBoundingClientRect().top; if (dy) e.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(0.2, 0, 0, 1)' }); });
+    return keep; }
+  function push(m) { const keep = atBottom(); msgs.push({ id: ++uid, ...m }); const id = uid; render(id, m.who === 'me'); if (!keep && m.who !== 'me') pill.hidden = false;
+    if (m.status === 'sending') setTimeout(() => { msgs.find(x => x.id === id).status = null; render(); }, 1200); }
+  const now = () => new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date()).replace(' h ', ':').replace('h', ':');
+  form.addEventListener('submit', (e) => { e.preventDefault(); push({ who: 'me', t: now(), text: ta.value.trim() || 'Merci beaucoup !', status: 'sending' }); ta.value = ''; });
+  recv.addEventListener('click', () => push({ who: 'cam', t: now(), text: 'Bien reçu, je transmets au plombier.' }));
+  pill.addEventListener('click', () => { thr.scrollTo({ top: thr.scrollHeight, behavior: reduce() ? 'auto' : 'smooth' }); pill.hidden = true; });
+  thr.addEventListener('scroll', () => { if (atBottom()) pill.hidden = true; });
+  inner.addEventListener('click', (e) => { const r = e.target.closest('[data-retry]'); if (r) { const m = msgs.find(x => x.id == r.dataset.retry); m.status = 'sending'; render(); setTimeout(() => { m.status = null; render(); }, 1200); } });
+  render(null, true);
+  return root; }
+const defs = [
+  ['A', ['A · Bulles douces, pleines', 'Bulles arrondies pleines (bleu clair pour moi, gris chaud pour les autres), nom et date au-dessus du groupe, avatar au niveau de la dernière bulle.']],
+  ['B', ['B · Cartes à bord fin', 'Cartes blanches à bord fin, nom et date dans la première carte du groupe ; mes cartes ont le bord en couleur principale ; avatar au niveau de la dernière carte.']],
+  ['C', ['C · Filet par auteur', 'Pas de bulle pour les autres : texte aligné à gauche, filet coloré par auteur, avatar dans l\'en-tête ; bulle seulement pour moi.']],
+];
+$('#dirs').append(...defs.map(([d, l]) => mount(d, l)));
+document.querySelectorAll('.thr').forEach(t => { t.scrollTop = t.scrollHeight; });
+$('#all').addEventListener('change', (e) => { document.body.classList.toggle('full', e.target.checked); });
+
+/* ---- A retenue ---- */
+const seedR = () => [
+  { id: ++uid, day: '18 nov.' },
+  { id: ++uid, who: 'me', t: '09:12', text: 'Bonjour, il y a une fuite d\'eau dans la cave, près du compteur.' },
+  { id: ++uid, who: 'me', t: '09:12', text: 'Voici deux photos :', photos: [0, 1] },
+  { id: ++uid, who: 'marc', t: '09:40', text: 'Bonjour Madame Martin, merci pour votre signalement.' },
+  { id: ++uid, who: 'marc', t: '09:41', text: 'Je préviens le plombier. Suivi : https://exemple.fr/suivi/1234' },
+  { id: ++uid, sys: 'Demande mise en pause par Marc', t: '09:41' },
+  { id: ++uid, who: 'marc', t: '09:45', note: true, text: 'Vérifier le contrat d\'entretien avant d\'envoyer l\'artisan.' },
+  { id: ++uid, day: 'Aujourd\'hui' },
+  { id: ++uid, who: 'cam', t: '08:30', text: 'Le plombier passera jeudi entre 9 h et 11 h.' },
+  { id: ++uid, who: 'cam', t: '08:31', text: 'Pensez à laisser l\'accès à la cave.' },
+  { id: ++uid, who: 'cam', t: '08:52', text: 'Il vous appellera 15 minutes avant son arrivée.' },
+  { id: ++uid, who: 'me', t: '09:05', text: 'Parfait, je serai là. Merci !' },
+  { id: ++uid, sys: 'Demande résolue par Camille', t: '16:05' },
+];
+function buildR(msgs, newId) {
+  const nodes = [];
+  for (const g of groups(msgs)) {
+    if (g.day) { nodes.push(h('p', { class: 'day', 'data-k': 'd' + g.id }, h('span', {}, g.day))); continue; }
+    if (g.sys) { nodes.push(h('p', { class: 'sys', 'data-k': 's' + g.id }, g.sys + ' · ', h('time', {}, g.t))); continue; }
+    const p = people[g.who], me = g.who === 'me';
+    const kids = [h('p', { class: 'hd', 'data-k': 'h' + g.first }, h('b', {}, p.name), h('time', {}, g.items[0].t), g.note ? h('span', {}, icon('lock'), ' Note interne') : null)];
+    g.items.forEach((m, i) => {
+      if (i && mins(m.t) - mins(g.items[i - 1].t) >= 5) kids.push(h('p', { class: 'mid', 'data-k': 'm' + m.id }, h('time', {}, m.t)));
+      kids.push(h('div', { class: 'bub' + (m.id === newId ? ' new' : ''), 'data-k': 'b' + m.id },
+        m.photos ? [h('div', {}, rich(m.text)), h('div', { class: 'thumbs' }, m.photos.map(n => h('button', { class: 'ph', type: 'button', 'aria-label': 'Ouvrir la photo ' + (n + 1) + ' (nouvel onglet)' }, h('img', { src: photo(n), alt: 'Photo de la cave ' + (n + 1), width: 96, height: 72 }))))] : rich(m.text)));
+    });
+    const av = me ? null : h('span', { class: 'av ' + p.tone, 'aria-hidden': 'true', 'data-k': 'a' + g.first }, p.ini);
+    nodes.push(h('div', { class: 'grp ' + (me ? 'me ' : 'them ') + (g.note ? 'note-interne ' : '') + p.tone }, av, h('div', { class: 'col' }, kids)));
+  }
+  return nodes; }
+function mountR(theme, title) {
+  const msgs = seedR();
+  const thr = h('div', { class: 'thr', role: 'log', 'aria-label': 'Échanges de la demande', tabindex: '0' }, h('div', { class: 'inner' }));
+  const ta = h('textarea', { rows: 1, 'aria-label': 'Votre message', placeholder: 'Écrivez votre message…' });
+  const form = h('form', { class: 'mc' }, ta, h('button', { class: 'clip', type: 'button', 'aria-label': 'Joindre un fichier' }, icon('clip')), h('button', { type: 'submit', 'aria-label': 'Envoyer' }, icon('send')));
+  const recv = h('button', { class: 'btn recv', type: 'button' }, 'Simuler une réception');
+  const root = h('div', { class: 'ra dA', 'data-theme': theme }, h('h3', {}, title), h('div', { class: 'wrap' }, thr), form, recv);
+  const inner = $('.inner', thr);
+  const render = (newId) => {
+    const before = new Map([...inner.querySelectorAll('[data-k]')].map(e => [e.dataset.k, e.getBoundingClientRect().top]));
+    inner.replaceChildren(...buildR(msgs, newId));
+    if (newId && !matchMedia('(prefers-reduced-motion: reduce)').matches) inner.querySelectorAll('[data-k]').forEach(e => { const b = before.get(e.dataset.k); if (b == null) return;
+      const dy = b - e.getBoundingClientRect().top; if (dy) e.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(0.2, 0, 0, 1)' }); }); };
+  const add = (m) => { msgs.push({ id: ++uid, ...m }); render(uid); };
+  form.addEventListener('submit', (e) => { e.preventDefault(); add({ who: 'me', t: '16:06', text: ta.value.trim() || 'Merci beaucoup !' }); ta.value = ''; });
+  recv.addEventListener('click', () => add({ who: 'cam', t: '16:07', text: 'Je reste disponible si besoin.' }));
+  render(null); return root; }
+$('#ret').append(mountR('default', 'Thème clair'), mountR('dark', 'Thème sombre'));
+const params = new URLSearchParams(location.search);
+if (params.has('tout')) { $('#all').checked = true; document.body.classList.add('full'); }
+if (params.get('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+const tb = $('#theme');
+tb.addEventListener('click', () => { const d = document.documentElement.dataset.theme === 'dark'; document.documentElement.dataset.theme = d ? 'default' : 'dark'; tb.textContent = d ? 'Thème sombre' : 'Thème clair'; });
+</script>
+</body>
+</html>
