@@ -177,6 +177,21 @@ describe('LcSwipePanelsComponent', () => {
     expect(scrollTo).toHaveBeenCalledWith({ left: 300, behavior: 'instant' });
   });
 
+  it('pendant un redimensionnement, une position intermédiaire ne change pas le panneau actif', async () => {
+    fixture.componentInstance.active.set(1);
+    await fixture.whenStable();
+    strip.dispatchEvent(new Event('scrollend'));
+    fixture.componentInstance.changes.length = 0;
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(120); // largeur de transition, pas encore replacée
+    intersect(panels[2], 1);
+    expect(fixture.componentInstance.active()).toBe(1);
+    expect(fixture.componentInstance.changes).toEqual([]);
+    resized(); // replacée à 120 px
+    strip.dispatchEvent(new Event('scrollend'));
+    intersect(panels[2], 1);
+    expect(fixture.componentInstance.active()).toBe(2);
+  });
+
   it('le focus d’un panneau qui devient inert passe au panneau actif', async () => {
     const field = panels[0].querySelector<HTMLInputElement>('#field')!;
     field.focus();

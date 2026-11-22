@@ -61,6 +61,8 @@ export class LcSwipePanelsComponent {
   private muted = false;
   private mutedTimer: ReturnType<typeof setTimeout> | undefined;
   private placed = false;
+  /** Largeur de la bande au dernier placement : tant qu'elle diffère, la position de défilement n'est pas fiable (redimensionnement en cours). */
+  private placedWidth = 0;
 
   constructor() {
     afterRenderEffect(() => {
@@ -80,7 +82,7 @@ export class LcSwipePanelsComponent {
       const elements = this.panels().map((panel) => panel.element);
       const sync = (target: Element | null | undefined): void => {
         const index = target ? elements.indexOf(target as HTMLElement) : -1;
-        if (!this.muted && index >= 0 && index !== this.index()) this.activeIndex.set(index);
+        if (!this.muted && this.host.clientWidth === this.placedWidth && index >= 0 && index !== this.index()) this.activeIndex.set(index);
       };
       const intersection = new IntersectionObserver(
         (entries) => entries.forEach((entry) => entry.isIntersecting && entry.intersectionRatio >= ACTIVE_THRESHOLD && sync(entry.target)),
@@ -137,6 +139,7 @@ export class LcSwipePanelsComponent {
     const width = this.host.clientWidth;
     if (!width) return;
     this.placed = true;
+    this.placedWidth = width;
     const behavior = instant || lcPrefersReducedMotion() ? 'instant' : 'smooth';
     this.muted = true;
     clearTimeout(this.mutedTimer);
