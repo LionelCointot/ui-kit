@@ -24,4 +24,4 @@ Option 2.
 ## Conséquences
 - Positives : API des composants plus courte, collision `minLength` supprimée (`minChars`), une option nouvelle n'ajoute pas d'entrée.
 - Négatives / dette : un consommateur ne doit pas fabriquer l'objet dans une méthode ou un accesseur appelés par le gabarit (nouvelle référence à chaque lecture) ; un littéral de gabarit (`[searchSettings]="{ debounceMs: debounce() }"`) est mémoïsé par Angular et ne change de référence que si une de ses valeurs change ; une famille `boolean | settings` se coupe seulement par la liaison `[x]="false"` (l'attribut statique `x="false"` est une chaîne, donc un objet absent : famille activée) ; Storybook ne pilote pas un objet par contrôle, d'où des Playground à arguments à plat rebâtis en objet dans `render`.
-- Applications : `lc-combobox` (`searchSettings`), `lc-message-composer` (`attachments`). Les autres composants se convertissent quand on les touche, pas en bloc.
+- Applications : `lc-combobox` (`searchSettings`), `lc-message-composer` (`attachments`), `lc-table` (`selectable`). Les autres composants se convertissent quand on les touche, pas en bloc.

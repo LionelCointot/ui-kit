@@ -5,7 +5,8 @@ import {
 } from '@angular/core';
 import { LC_LABELS, LcFormatService, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
-import { LcSort, LcTableColumn, columnAlign, nextSort } from '../table/table-model';
+import { LcSort, LcTableColumn, nextSort } from '../table/table-model';
+import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from '../table/table-shared';
 import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './tree-table-model';
 
 /**
@@ -25,11 +26,11 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
         <thead>
           <tr>
             @for (column of columns(); track column.id) {
-              <th scope="col" [class]="cellClass(column)" [style.width]="column.width ?? null" [attr.aria-sort]="ariaSort(column)">
+              <th scope="col" [class]="cellClass(column)" [style.width]="column.width ?? null" [attr.aria-sort]="ariaSort(sortDirection(column))">
                 @if (column.sortable) {
                   <button type="button" class="lc-table__sort" (click)="toggleSort(column)">
                     <span>{{ column.header }}</span>
-                    <lc-icon class="lc-table__sort-icon" [name]="sortIcon(column)" />
+                    <lc-icon class="lc-table__sort-icon" [name]="sortIcon(sortDirection(column))" />
                   </button>
                 } @else {
                   {{ column.header }}
@@ -58,7 +59,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
                         @if (view.template; as template) {
                           <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="context(view.column, row)" />
                         } @else {
-                          {{ cellText(view.column, row.node) }}
+                          {{ cellText(format, view.column, row.node) }}
                         }
                       </span>
                     </span>
@@ -66,7 +67,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
                     @if (view.template; as template) {
                       <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="context(view.column, row)" />
                     } @else {
-                      {{ cellText(view.column, row.node) }}
+                      {{ cellText(format, view.column, row.node) }}
                     }
                   }
                 </td>
@@ -94,7 +95,11 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
 })
 export class LcTreeTableComponent<T> {
   protected readonly labels = inject(LC_LABELS);
-  private readonly format = inject(LcFormatService);
+  protected readonly format = inject(LcFormatService);
+  protected readonly cellClass = cellClass;
+  protected readonly ariaSort = ariaSort;
+  protected readonly cellText = cellText;
+  protected readonly sortIcon = sortIcon;
 
   /** Nœuds racines. */
   readonly data = input.required<readonly T[]>();
@@ -174,29 +179,12 @@ export class LcTreeTableComponent<T> {
     }
   }
 
-  protected cellClass(column: LcTableColumn<T>): string {
-    const sticky = column.sticky ? ` lc-table__cell--sticky-${column.sticky}` : '';
-    return `lc-table__cell lc-table__cell--${columnAlign(column)}${sticky}`;
-  }
-
-  protected cellText(column: LcTableColumn<T>, node: T): string {
-    return this.format.format(column.value(node), column.format);
-  }
-
   protected context(column: LcTableColumn<T>, row: LcTreeTableRow<T>): unknown {
     return { $implicit: row.node, column, level: row.level };
   }
 
-  protected ariaSort(column: LcTableColumn<T>): 'ascending' | 'descending' | null {
-    const sort = this.sort();
-    if (!column.sortable || sort?.columnId !== column.id) return null;
-    return sort.direction === 'asc' ? 'ascending' : 'descending';
-  }
-
-  protected sortIcon(column: LcTableColumn<T>): string {
-    const sort = this.sort();
-    if (sort?.columnId !== column.id) return 'chevron-down';
-    return sort.direction === 'asc' ? 'chevron-up' : 'chevron-down';
+  protected sortDirection(column: LcTableColumn<T>): LcSort['direction'] | null {
+    return column.sortable ? sortDirection(this.sort(), column.id) : null;
   }
 
   protected toggleSort(column: LcTableColumn<T>): void {

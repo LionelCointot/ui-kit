@@ -6,8 +6,8 @@ lc-data-table {
   display: block;
   overflow: clip;
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
-  border-radius: var(--lc-data-table-radius, var(--lc-sys-radius-lg));
-  background: var(--lc-data-table-background, var(--lc-sys-color-surface-raised));
+  border-radius: var(--lc-table-radius, var(--lc-sys-radius-md));
+  background: var(--lc-table-background, var(--lc-sys-color-surface-raised));
   color: var(--lc-sys-color-on-surface);
 }
 
@@ -188,7 +188,7 @@ lc-data-table {
 .lc-data-table__table th,
 .lc-data-table__table td {
   position: relative;
-  padding: var(--lc-sys-space-2) var(--lc-data-table-cell-padding-inline, var(--lc-sys-space-1));
+  padding: var(--lc-sys-space-2) var(--lc-table-cell-padding-inline, var(--lc-sys-space-1));
   overflow-wrap: anywhere;
 }
 
@@ -219,7 +219,7 @@ lc-data-table {
  * en bas : tous les entonnoirs sont sur la même ligne horizontale. Un espacement net (`space-3`) précède l'entonnoir.
  */
 .lc-data-table__table th {
-  background: var(--lc-data-table-header-background, var(--lc-sys-color-surface-sunken));
+  background: var(--lc-table-header-background, var(--lc-sys-color-surface-sunken));
   color: var(--lc-sys-color-on-surface-muted);
   font-size: var(--lc-sys-font-size-sm);
   font-weight: var(--lc-sys-font-weight-medium);
