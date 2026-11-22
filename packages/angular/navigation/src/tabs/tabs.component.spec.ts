@@ -45,6 +45,12 @@ describe('LcTabsComponent', () => {
     expect(element.querySelector('#synthese-content')).not.toBeNull();
   });
 
+  it('marge latérale des onglets réglable par --lc-tabs-tab-padding-inline', async () => {
+    await setup();
+    const css = Array.from(document.querySelectorAll('style')).map((style) => style.textContent).join('');
+    expect(css).toContain('padding-inline: var(--lc-tabs-tab-padding-inline, var(--lc-sys-space-4))');
+  });
+
   it('crée le contenu paresseux à la première sélection seulement', async () => {
     const { fixture, element, tabs, panels } = await setup();
     expect(element.querySelector('#echeances-content')).toBeNull();
