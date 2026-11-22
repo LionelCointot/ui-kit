@@ -4,6 +4,7 @@
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
 //   node tools/qa/storybook-browser.mjs motion                    mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px
+//   node tools/qa/storybook-browser.mjs swipe                     lc-swipe-panels, lc-tabs en swipe, fond du segmenté (spec 2026-11-bande-a-panneaux-et-reperes, CA-1 à CA-11) ; normal et mouvement réduit à 360 px, colonnes à 1280 px
 //   node tools/qa/storybook-browser.mjs stories-motion           stories de mouvement : ouverture sans erreur, « Rejouer », bandeau de réduction (CA-16a à CA-16c)
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
@@ -1348,6 +1349,267 @@ async function storiesMotion(browser, base) {
   return failures;
 }
 
+/** lc-swipe-panels, lc-tabs en swipe, lc-segmented-control suivi (spec 2026-11-bande-a-panneaux-et-reperes) : CA-1 à CA-11, 360 px, mouvement normal et réduit, 1 280 px en colonnes. */
+async function swipe(browser, base) {
+  let failures = 0;
+  const check = (ok, label, detail = '') => {
+    if (!ok) failures += 1;
+    console.log(`${ok ? 'OK ' : 'KO '} ${label}${detail ? ` ${detail}` : ''}`);
+  };
+  const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
+  const PLAY = 'navigation-swipe-panels--playground';
+  const SEG = 'navigation-swipe-panels--with-segmented-control';
+  const NESTED = 'navigation-swipe-panels--nested';
+  const TABS = 'navigation-tabs--swipe';
+  const STRIP = 'lc-swipe-panels';
+  const open = async (id, { width = 360, reduced = false, args = '' } = {}) => {
+    const context = await browser.newContext({ viewport: { width, height: 700 }, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
+    await page.goto(`${base}/iframe.html?id=${id}&viewMode=story${args ? `&args=${args}` : ''}`);
+    await page.waitForSelector(`${STRIP} .lc-swipe-panel`, { state: 'attached', timeout: 20000 });
+    // Sorties du composant : les actions de Storybook passent par le canal ; `__ev` les range.
+    await page.evaluate(() => {
+      window.__ev = [];
+      window.__STORYBOOK_ADDONS_CHANNEL__?.on('storybook/actions/action-event', (event) => window.__ev.push(event?.data?.data?.name ?? event?.data?.name));
+    });
+    return { context, page, errors };
+  };
+  // Défilement scripté : instantané, puis fin du défilement (`scrollend`, repli 1,5 s) et deux images.
+  const scrollTo = (page, left, sel = STRIP) =>
+    page.evaluate(([sel, left]) => new Promise((resolve) => {
+      const strip = document.querySelector(sel);
+      const done = () => requestAnimationFrame(() => requestAnimationFrame(resolve));
+      strip.addEventListener('scrollend', done, { once: true });
+      setTimeout(done, 1500);
+      strip.scrollTo({ left, behavior: 'instant' });
+    }), [sel, left]);
+  const frames = (page, n = 2) => page.evaluate((n) => new Promise((resolve) => { const step = (k) => (k === 0 ? resolve() : requestAnimationFrame(() => step(k - 1))); step(n); }), n);
+  const setArgs = (page, id, updatedArgs) => page.evaluate(([id, updatedArgs]) => window.__STORYBOOK_ADDONS_CHANNEL__.emit('updateStoryArgs', { storyId: id, updatedArgs }), [id, updatedArgs]);
+  const poll = (page, fn, arg, timeout = 5000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true, () => false);
+  const state = (page, sel = STRIP) => page.evaluate((sel) => {
+    const strip = document.querySelector(sel);
+    const panels = [...strip.querySelectorAll(':scope > .lc-swipe-panel')];
+    return { left: strip.scrollLeft, width: strip.clientWidth, inert: panels.map((p) => p.hasAttribute('inert')), progress: parseFloat(strip.style.getPropertyValue('--lc-swipe-panels-progress')), rects: panels.map((p) => p.getBoundingClientRect().left), host: strip.getBoundingClientRect().left };
+  }, sel);
+
+  for (const reduced of [false, true]) {
+    const tag = reduced ? 'réduit 360px' : 'normal 360px';
+
+    // CA-1 : glissement jusqu'au panneau 2.
+    {
+      const { context, page, errors } = await open(PLAY, { reduced });
+      const { width } = await state(page);
+      await scrollTo(page, 2 * width);
+      await poll(page, () => window.__ev.length >= 1, null);
+      const s = await state(page);
+      const ev = JSON.stringify(await page.evaluate(() => window.__ev));
+      check(ev === '["activeIndexChange"]', `CA-1 ${tag} activeIndexChange émis une fois`, ev);
+      check(JSON.stringify(s.inert) === '[true,true,false]', `CA-1 ${tag} inert [0,1] oui, [2] non`, JSON.stringify(s.inert));
+      check(errors.length === 0, `CA-1 ${tag} sans erreur`, errors.join(' | '));
+      await context.close();
+    }
+
+    // CA-2 et CA-6 : activeIndex posé par le parent (0 → 2, en traversant le panneau 1).
+    {
+      const { context, page } = await open(PLAY, { reduced });
+      await page.evaluate(() => { window.__seen = [0]; new MutationObserver(() => document.querySelectorAll('.lc-swipe-panel').forEach((p, i) => !p.hasAttribute('inert') && !window.__seen.includes(i) && window.__seen.push(i))).observe(document.querySelector('lc-swipe-panels'), { attributes: true, subtree: true, attributeFilter: ['inert'] }); });
+      await setArgs(page, PLAY, { activeIndex: 2 });
+      await poll(page, () => !document.querySelectorAll('.lc-swipe-panel')[2].hasAttribute('inert'), null);
+      await frames(page, 2);
+      const at = await state(page);
+      if (reduced) check(near(at.left, 2 * at.width), `CA-6 ${tag} changement d'index : bande en place deux images après (instant)`, `scrollLeft ${at.left}`);
+      else check(at.left < 2 * at.width - 1, `CA-6 contrôle ${tag} sans réduction : encore en chemin deux images après (smooth)`, `scrollLeft ${at.left}`);
+      await poll(page, () => { const s = document.querySelector('lc-swipe-panels'); return s.scrollLeft >= s.clientWidth * 2 - 1; }, null);
+      await frames(page, 30);
+      const done = await state(page);
+      check(near(done.left, 2 * done.width) && JSON.stringify(done.inert) === '[true,true,false]', `CA-2 ${tag} activeIndex 2 : bande au panneau 2 (±1 px), inert suit`, `scrollLeft ${done.left} ${JSON.stringify(done.inert)}`);
+      check((await page.evaluate(() => window.__ev.length)) === 0, `CA-2 ${tag} aucune émission par le parent`);
+      const seen = JSON.stringify(await page.evaluate(() => window.__seen));
+      check(seen === '[0,2]', `CA-2 ${tag} le panneau 1 n'est jamais actif pendant le défilement`, seen);
+      await context.close();
+    }
+
+    // CA-2 (parent qui réécrit l'index) et CA-5 (fond du segmenté) : story WithSegmentedControl.
+    {
+      const { context, page, errors } = await open(SEG, { reduced });
+      await page.evaluate(() => { window.__ends = 0; document.querySelector('lc-swipe-panels').addEventListener('scrollend', () => window.__ends++); });
+      await page.locator('[role=radio]').nth(2).click();
+      await poll(page, () => document.querySelector('lc-swipe-panels').scrollLeft >= 2 * document.querySelector('lc-swipe-panels').clientWidth - 1, null);
+      await frames(page, 30);
+      const s = await state(page);
+      check(near(s.left, 2 * s.width) && JSON.stringify(s.inert) === '[true,true,false]', `CA-2 ${tag} clic segment 2 : bande au panneau 2`, `scrollLeft ${s.left}`);
+      const ends = await page.evaluate(() => window.__ends);
+      check(ends <= 1, `CA-2 ${tag} index réécrit par le parent : un seul défilement de fin`, `scrollend ×${ends}`);
+      // CA-5 : mi-chemin 0 → 1, accrochage coupé pour tenir la position.
+      await scrollTo(page, 0);
+      await page.evaluate(() => (document.querySelector('lc-swipe-panels').style.scrollSnapType = 'none'));
+      await page.locator(STRIP).evaluate((el) => el.scrollTo({ left: el.clientWidth / 2, behavior: 'instant' }));
+      await frames(page, 3);
+      const m = await page.evaluate(() => {
+        const r = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.width]; };
+        const [o0, o1] = [...document.querySelectorAll('[role=radio]')].map(r);
+        const ind = document.querySelector('.lc-segmented-control__indicator');
+        return { progress: parseFloat(document.querySelector('lc-swipe-panels').style.getPropertyValue('--lc-swipe-panels-progress')), o0, o1, ind: r(ind), anims: ind.getAnimations().length };
+      });
+      check(near(m.progress, 0.5, 0.02), `CA-5 ${tag} --lc-swipe-panels-progress ≈ 0,5`, String(m.progress));
+      check(near(m.ind[0], (m.o0[0] + m.o1[0]) / 2) && near(m.ind[1], (m.o0[1] + m.o1[1]) / 2) && m.anims === 0, `CA-5 ${tag} fond du segmenté à mi-chemin (position, largeur, aucune animation)`, JSON.stringify(m));
+      check(errors.length === 0, `CA-2/5 ${tag} sans erreur`, errors.join(' | '));
+      await context.close();
+    }
+
+    // CA-5 (trait des onglets), CA-6 (trait), CA-11 : lc-tabs en swipe.
+    {
+      const { context, page, errors } = await open(TABS, { reduced });
+      const dom = await page.evaluate(() => { const p = [...document.querySelectorAll('[role=tabpanel]')]; return { n: p.length, inert: p.map((e) => e.hasAttribute('inert')), hidden: p.map((e) => e.hasAttribute('hidden')) }; });
+      check(dom.n === 3 && JSON.stringify(dom.inert) === '[false,true,true]' && !dom.hidden.some(Boolean), `CA-11 ${tag} trois tabpanel dès l'affichage, inert sur les non sélectionnés, aucun hidden`, JSON.stringify(dom));
+      await page.locator('[role=tab]').nth(1).focus();
+      await page.keyboard.press('ArrowRight');
+      await frames(page, 3);
+      const key = await page.evaluate(() => ({ focus: [...document.querySelectorAll('[role=tab]')].indexOf(document.activeElement), sel: [...document.querySelectorAll('[role=tab]')].map((t) => t.getAttribute('aria-selected')).join() }));
+      check(key.focus === 2 && key.sel === 'false,false,true', `CA-11 ${tag} flèche droite : focus et sélection à l'onglet suivant (activation automatique comme avant)`, JSON.stringify(key));
+      await page.locator('[role=tab]').first().click();
+      await poll(page, () => document.querySelector('lc-swipe-panels').scrollLeft === 0, null);
+      await frames(page, 30);
+      const w = (await state(page)).width;
+      await page.locator('[role=tab]').nth(1).click();
+      if (reduced) {
+        await frames(page, 2);
+        const left = (await state(page)).left;
+        check(near(left, w), `CA-6 ${tag} clic d'onglet : bande en place deux images après`, `scrollLeft ${left}`);
+      }
+      await poll(page, (w) => document.querySelector('lc-swipe-panels').scrollLeft >= w - 1, w);
+      await frames(page, 30);
+      await scrollTo(page, 0);
+      await page.evaluate(() => (document.querySelector('lc-swipe-panels').style.scrollSnapType = 'none'));
+      await page.locator(STRIP).evaluate((el) => el.scrollTo({ left: el.clientWidth / 2, behavior: 'instant' }));
+      await frames(page, 3);
+      const m = await page.evaluate(() => {
+        const r = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.width]; };
+        const [t0, t1] = [...document.querySelectorAll('[role=tab]')].map(r);
+        const ind = document.querySelector('.lc-tabs__indicator');
+        return { t0, t1, ind: r(ind), anims: ind.getAnimations().length };
+      });
+      check(near(m.ind[0], (m.t0[0] + m.t1[0]) / 2) && near(m.ind[1], (m.t0[1] + m.t1[1]) / 2) && m.anims === 0, `CA-5 ${tag} trait des onglets à mi-chemin (position, largeur, aucune animation)`, JSON.stringify(m));
+      check(errors.length === 0, `CA-11 ${tag} sans erreur`, errors.join(' | '));
+      await context.close();
+    }
+  }
+
+  // CA-3 : sans scrollend, la sourdine finit avant 800 ms et un glissement suivant est suivi.
+  {
+    const { context, page } = await open(PLAY);
+    await page.evaluate(() => { const add = HTMLElement.prototype.addEventListener; HTMLElement.prototype.addEventListener = function (type, ...rest) { return this.localName === 'lc-swipe-panels' && type === 'scrollend' ? undefined : add.call(this, type, ...rest); }; });
+    await setArgs(page, PLAY, { activeIndex: 2 });
+    const t0 = await page.evaluate(() => performance.now());
+    await poll(page, () => { const s = document.querySelector('lc-swipe-panels'); return s.scrollLeft >= s.clientWidth * 2 - 1; }, null);
+    const during = await page.evaluate(() => window.__ev.length);
+    await page.evaluate((t0) => new Promise((resolve) => { const step = () => (performance.now() - t0 >= 850 ? resolve() : requestAnimationFrame(step)); step(); }), t0);
+    await scrollTo(page, 0);
+    const followed = await poll(page, () => window.__ev.length >= 1, null);
+    check(during === 0 && followed, 'CA-3 sans scrollend : aucune émission pendant le défilement, glissement suivi à 850 ms', `pendant ${during}, suivi ${followed}`);
+    await context.close();
+  }
+
+  // CA-4 : imbrication et chaînage (molette horizontale).
+  for (const chain of [true, false]) {
+    const { context, page } = await open(NESTED);
+    await page.locator('[role=radio]').nth(1).click();
+    const w = (await state(page)).width;
+    await poll(page, (w) => document.querySelector('lc-swipe-panels').scrollLeft >= w - 1, w);
+    await frames(page, 30);
+    if (!chain) await page.evaluate(() => document.querySelectorAll('lc-swipe-panels')[1].classList.remove('lc-swipe-panels--chain'));
+    const oba = await page.evaluate(() => getComputedStyle(document.querySelectorAll('lc-swipe-panels')[1]).overscrollBehaviorX);
+    const box = await page.locator('lc-tabs [role=tabpanel]').first().boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(-250, 0);
+    await frames(page, 30);
+    const left = await page.evaluate(() => document.querySelector('lc-swipe-panels').scrollLeft);
+    check(oba === (chain ? 'auto' : 'contain'), `CA-4 chain ${chain} : overscroll-behavior-x ${oba}`);
+    check(chain ? near(left, 0) : near(left, w), `CA-4 chain ${chain} : molette vers le début, bande extérieure ${chain ? 'revient au panneau 0' : 'ne bouge pas'}`, `scrollLeft ${left}`);
+    await context.close();
+  }
+
+  // CA-7 : focus et inert.
+  {
+    const { context, page } = await open(PLAY);
+    await page.evaluate(() => {
+      document.querySelectorAll('.lc-swipe-panel').forEach((p, i) => p.insertAdjacentHTML('beforeend', `<button id="b${i}">b${i}</button>`));
+      document.querySelector('lc-swipe-panels').insertAdjacentHTML('beforebegin', '<button id="before">avant</button>');
+    });
+    await page.locator('#before').focus();
+    const seen = [];
+    for (let i = 0; i < 3; i++) { await page.keyboard.press('Tab'); seen.push(await page.evaluate(() => document.activeElement?.id || document.activeElement?.localName)); }
+    check(seen[0] === 'b0' && !seen.includes('b1') && !seen.includes('b2'), 'CA-7 Tab depuis l\'élément précédent : seul le panneau actif est atteint', seen.join());
+    await page.locator('#b0').focus();
+    const { width } = await state(page);
+    await scrollTo(page, width);
+    await frames(page, 3);
+    const active = await page.evaluate(() => { const a = document.activeElement; return { panel: [...document.querySelectorAll('.lc-swipe-panel')].indexOf(a), tag: a.localName }; });
+    check(active.panel === 1, 'CA-7 focus dans le panneau 0 puis glissement : activeElement est le panneau 1', JSON.stringify(active));
+    await context.close();
+  }
+
+  // CA-8 : 20 glissements dans Nested, aucune tâche longue.
+  {
+    const { context, page, errors } = await open(NESTED);
+    await frames(page, 90); // le démarrage de Storybook et d'Angular (~1 s) produit ses propres tâches longues : mesure une fois la page au repos
+    await page.evaluate(() => { window.__long = []; new PerformanceObserver((list) => list.getEntries().forEach((e) => window.__long.push([Math.round(e.startTime), Math.round(e.duration)]))).observe({ type: 'longtask', buffered: false }); });
+    const { width } = await state(page);
+    const marks = [];
+    for (let i = 0; i < 20; i++) { marks.push(Math.round(await page.evaluate(() => performance.now()))); await scrollTo(page, i % 2 === 0 ? width : 0); }
+    const long = (await page.evaluate(() => window.__long)).filter(([, d]) => d > 50);
+    if (long.length) console.log(`   tâches longues [début, durée] ${JSON.stringify(long)}, début des glissements ${marks[0]} ms`);
+    check(long.length === 0 && errors.length === 0, 'CA-8 Nested : 20 glissements, aucune tâche longue > 50 ms, aucune erreur', `tâches ${JSON.stringify(long)} ${errors.join(' | ')}`);
+    await context.close();
+  }
+
+  // CA-9 et CA-10 : colonnes puis bande ; rotation.
+  {
+    const { context, page } = await open(PLAY);
+    await page.evaluate(() => document.querySelectorAll('.lc-swipe-panel').forEach((p, i) => p.insertAdjacentHTML('beforeend', `<input id="i${i}">`)));
+    await setArgs(page, PLAY, { activeIndex: 1 });
+    await poll(page, () => { const s = document.querySelector('lc-swipe-panels'); return s.scrollLeft >= s.clientWidth - 1; }, null);
+    await frames(page, 30);
+    await page.locator('#i1').fill('saisie');
+    await page.evaluate(() => { window.__nodes = [...document.querySelectorAll('.lc-swipe-panel')]; window.__ev.length = 0; });
+    await setArgs(page, PLAY, { layout: 'columns' });
+    await poll(page, () => document.querySelector('lc-swipe-panels').classList.contains('lc-swipe-panels--columns'), null);
+    await frames(page, 3);
+    await page.evaluate(() => document.querySelector('lc-swipe-panels').style.setProperty('--lc-swipe-panels-columns', 'minmax(0, 1fr) 21rem'));
+    await frames(page, 2);
+    const col = await page.evaluate(() => { const p = [...document.querySelectorAll('.lc-swipe-panel')]; return { inert: p.some((e) => e.hasAttribute('inert')), same: p.every((e, i) => e === window.__nodes[i]), value: document.querySelector('#i1').value, w1: p[1].getBoundingClientRect().width, rem: parseFloat(getComputedStyle(document.documentElement).fontSize) }; });
+    check(!col.inert && col.same && col.value === 'saisie', 'CA-9 colonnes : aucun inert, mêmes nœuds, champ saisi conservé', JSON.stringify(col));
+    check(near(col.w1, 21 * col.rem), 'CA-9 colonnes : second panneau de 21 rem (±1 px)', `${col.w1} px, 21 rem = ${21 * col.rem}`);
+    await page.evaluate(() => document.querySelector('lc-swipe-panels').style.removeProperty('--lc-swipe-panels-columns'));
+    await setArgs(page, PLAY, { layout: 'strip' });
+    await poll(page, () => !document.querySelector('lc-swipe-panels').classList.contains('lc-swipe-panels--columns'), null);
+    await frames(page, 5);
+    const back = await state(page);
+    const same = await page.evaluate(() => [...document.querySelectorAll('.lc-swipe-panel')].every((e, i) => e === window.__nodes[i]));
+    check(same && near(back.rects[1], back.host) && back.inert.join() === 'true,false,true', 'CA-9 retour en bande : mêmes nœuds, panneau 1 affiché (±1 px)', JSON.stringify(back));
+    // CA-10 : rotation, le conteneur de la story passe de 360 à 740 px.
+    await page.evaluate(() => (window.__ev.length = 0));
+    await page.setViewportSize({ width: 740, height: 360 });
+    await page.evaluate(() => (document.querySelector('lc-swipe-panels').parentElement.style.inlineSize = '740px'));
+    await frames(page, 5);
+    const rot = await state(page);
+    check(rot.width > 600 && near(rot.rects[1], rot.host) && near(rot.left, rot.width) && (await page.evaluate(() => window.__ev.length)) === 0, 'CA-10 rotation 360 → 740 px : panneau actif aligné (±1 px), aucune émission', JSON.stringify(rot));
+    await context.close();
+  }
+
+  // 1 280 px : colonnes, rien ne défile.
+  {
+    const { context, page } = await open(PLAY, { width: 1280, args: 'layout:columns' });
+    const s = await page.evaluate(() => { const el = document.querySelector('lc-swipe-panels'); const p = [...el.querySelectorAll('.lc-swipe-panel')].map((e) => e.getBoundingClientRect().left); return { overflow: el.scrollWidth > el.clientWidth, inert: !!el.querySelector('[inert]'), lefts: p }; });
+    check(!s.overflow && !s.inert && s.lefts[0] < s.lefts[1] && s.lefts[1] < s.lefts[2], 'CA-9 1280 px en colonnes : panneaux côte à côte, aucun inert, rien ne défile', JSON.stringify(s));
+    await context.close();
+  }
+  return failures;
+}
+
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -1370,10 +1632,12 @@ try {
     failures = await motion(browser, base);
   } else if (mode === 'stories-motion') {
     failures = await storiesMotion(browser, base);
+  } else if (mode === 'swipe') {
+    failures = await swipe(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | stories-motion | dom | treegrid | filter-date');
+    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | swipe | stories-motion | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {

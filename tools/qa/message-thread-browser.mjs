@@ -1,5 +1,5 @@
 // Acceptation navigateur de docs/specs/2026-11-fil-de-messages.md (lc-message-thread ; Chromium, Storybook statique dist/storybook ; STORYBOOK_DIR pour une autre construction).
-//   node tools/qa/message-thread-browser.mjs layout|attach|text|motion|scroll|axe|engines|all
+//   node tools/qa/message-thread-browser.mjs layout|systemAction|attach|text|motion|scroll|axe|engines|all
 //   layout : CA-T1 T2 T5 T7 T17 · attach : T6 · text : T8 T15 T16 T17 (DOM) · motion : T3 T4 T13 · scroll : T9 T10 · axe : T11 (+ T19 rendu minimal) · engines : T10 sous Firefox et WebKit si Playwright les a
 // Stories : QA/Feedback/Message thread (Acceptance, AcceptanceEn, Bare) ; fil piloté par window.__thread, événements lus dans window.__qa.events.
 // Acceptation de docs/specs/2026-11-fil-de-messages.md. Code de sortie 1 au moindre échec.
@@ -175,6 +175,18 @@ async function layout() {
   });
 }
 
+// CA-12 (spec bande et repères) : le bouton d'action d'un repère mesure au moins 44 px de haut ; story Conversation, 360 px tactile.
+async function systemAction() {
+  await withCtx('phone', async (c) => {
+    const page = await c.newPage();
+    await page.goto(`${base}/iframe.html?id=feedback-message-thread--conversation&viewMode=story`);
+    await page.waitForSelector('.lc-message-thread__system', { timeout: 20000 });
+    const r = await page.evaluate(() => { const b = [...document.querySelectorAll('.lc-message-thread__system button')]; return { n: b.length, heights: b.map((e) => Math.round(e.getBoundingClientRect().height * 10) / 10) }; });
+    check('CA-12 bouton d\'action du repère : au moins 44 px de haut (360 px)', r.n > 0 && r.heights.every((h) => h >= 44), JSON.stringify(r));
+    await page.close();
+  });
+}
+
 // ---------- pièces jointes : CA-T6 ----------
 async function attach() {
   await withCtx('desk', async (c) => {
@@ -339,6 +351,10 @@ async function motion() {
     await page.evaluate(async () => { window.__thread.remount(); await new Promise((r) => setTimeout(r, 300)); await Q.until(() => !!Q.log()); });
     const empty = await page.evaluate(async () => { window.__thread.add([{ id: 'first', authorId: 'a', authorName: 'Alice', mine: false, sentAt: '2026-11-21T09:00:00Z', text: 'Bonjour' }]); await Q.until(() => Q.bubbles().length === 1); return { n: Q.bubbles().length, anims: Q.anims().filter((a) => a.effect.getComputedTiming().duration > 1).length }; });
     check('CA-T4 fil monté vide puis un message : ce message joue l\'entrée', empty.n === 1 && empty.anims > 0, JSON.stringify(empty));
+    // CA-14 : un repère nouveau entre avec l'animation d'arrivée.
+    await put(page, [alt(1)]);
+    const sys = await page.evaluate(async () => { window.__thread.add([{ id: 'sys-new', authorId: 'a', authorName: 'Marc', mine: false, kind: 'system', sentAt: '2026-11-21T09:05:00Z', text: 'En attente', tone: 'warning' }]); await Q.until(() => !!document.querySelector('.lc-message-thread__system')); const el = document.querySelector('.lc-message-thread__system'); return { anims: Q.anims().length, own: el.getAnimations({ subtree: true }).length }; });
+    check('CA-14 repère nouveau : joue l\'animation d\'arrivée', sys.own > 0, JSON.stringify(sys));
     // CA-16 : contenu qui tient, puis une arrivée qui le fait déborder : le fil est en bas.
     await patch(page, { height: 300 }); await put(page, [alt(1)]);
     const fits = await page.evaluate(async (add) => { const log = Q.log(); const fit = log.scrollHeight <= log.clientHeight + 1; window.__thread.add(add); await Q.until(() => Q.bubbles().length === 4); await Q.settle(); return { fit, gap: log.scrollHeight - log.scrollTop - log.clientHeight, scrolls: log.scrollHeight > log.clientHeight + 1 }; }, [long(alt(2)), long(alt(3)), long(alt(4))]);
@@ -499,7 +515,7 @@ async function engines() {
 }
 
 try {
-  const modes = { layout, attach, text, motion, scroll, axe, engines };
+  const modes = { layout, systemAction, attach, text, motion, scroll, axe, engines };
   const [mode = 'all'] = process.argv.slice(2);
   for (const m of mode === 'all' ? Object.keys(modes) : [mode]) { if (!modes[m]) { console.error(`Usage : message-thread-browser.mjs ${Object.keys(modes).join('|')}|all`); failures += 1; break; } console.log(`# ${m}`); try { await modes[m](); } catch (e) { failures += 1; console.log(`KO  ${m} : exception ${String(e.message).split('\n')[0]}`); } }
 } finally { await browser.close(); server.close(); }

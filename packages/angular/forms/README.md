@@ -1,7 +1,11 @@
 # @lionelcointot/ui-angular/forms
 
 Champs de formulaire (`lc-form-field`, saisies, sélecteurs, `lc-file-upload`, `lc-message-composer`…). Cette page ne détaille que
-`lc-message-composer` ; les autres composants sont décrits dans `CATALOGUE.md` et dans la vitrine Storybook.
+`lc-message-composer` et `indicatorProgress` de `lc-segmented-control` ; les autres composants sont décrits dans `CATALOGUE.md` et dans la vitrine Storybook.
+
+## `lc-segmented-control` : `indicatorProgress`
+
+`[indicatorProgress]` (nombre de 0 à n - 1, ou `null` : rendu habituel) pose un fond unique qui suit cette position entre deux segments voisins, sans transition (`transform`) ; le segment choisi perd son propre fond, la coche reste. À lier à `progress()` d'un `lc-swipe-panels` (voir `navigation/src/swipe-panels/README.md`) pour que le fond suive le doigt ; `value` reste la source du choix. Écart connu : aucun jeton nouveau pour ce fond (il reprend ceux du segment).
 
 ## `lc-message-composer`
 
