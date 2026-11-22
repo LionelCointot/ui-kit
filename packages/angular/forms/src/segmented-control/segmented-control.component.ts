@@ -11,10 +11,12 @@ import {
   model,
   output,
   afterNextRender,
+  afterRenderEffect,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
-import { LC_DEFAULTS, LcIconComponent, LcOption, LcSize, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_DEFAULTS, LcIconComponent, LcOption, LcSize, joinIds, lcIndicatorRect, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
 interface SegmentView<T> {
@@ -35,6 +37,9 @@ interface SegmentView<T> {
   selector: 'lc-segmented-control',
   imports: [LcIconComponent],
   template: `
+    @if (indicatorProgress() !== null) {
+      <span #indicator class="lc-segmented-control__indicator" aria-hidden="true"></span>
+    }
     @for (segment of segments(); track $index) {
       <button #segment type="button" role="radio" class="lc-segmented-control__option"
         [attr.aria-checked]="segment.selected" [tabIndex]="segment.tabIndex" [disabled]="segment.disabled"
@@ -61,6 +66,7 @@ interface SegmentView<T> {
     '[attr.aria-disabled]': "disabled() ? 'true' : null",
     '[class]': "'lc-segmented-control--' + resolvedSize()",
     '[class.lc-segmented-control--full-width]': 'fullWidth()',
+    '[class.lc-segmented-control--tracked]': 'indicatorProgress() !== null',
   },
 })
 export class LcSegmentedControlComponent<T> implements FormValueControl<T | null>, LcFormFieldControl {
@@ -78,6 +84,11 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   readonly fullWidth = input(false, { transform: booleanAttribute });
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly id = input<string>(lcUniqueId('segmented'));
+  /**
+   * Position réelle de la sélection, de 0 à n - 1 (`progress()` d'un `lc-swipe-panels`) : un fond suit cette position entre les
+   * segments voisins, sans transition, et le segment choisi perd son propre fond (la coche reste). `null` : rendu habituel.
+   */
+  readonly indicatorProgress = input<number | null>(null);
   /** Valeur pilotée : un choix émet `valueRequest` sans changer `value` ; l'affichage suit seulement `value`. */
   readonly controlled = input(false, { transform: booleanAttribute });
   /** Choix de l'utilisateur en mode `controlled`. */
@@ -89,6 +100,7 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   readonly labelable = false;
 
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('segment');
+  private readonly indicator = viewChild<ElementRef<HTMLElement>>('indicator');
   protected readonly resolvedSize = computed(() => this.size() ?? this.defaults.size);
   protected readonly describedBy = computed(() => joinIds(this.field?.describedBy(), this.extraDescribedBy()));
 
@@ -105,6 +117,24 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   });
 
   constructor() {
+    afterRenderEffect((onCleanup) => {
+      const indicator = this.indicator()?.nativeElement;
+      const progress = this.indicatorProgress();
+      const buttons = this.buttons();
+      if (!indicator || progress === null) return;
+      const place = (): void => {
+        const rect = lcIndicatorRect(buttons.map(({ nativeElement: button }) => ({ left: button.offsetLeft, width: button.offsetWidth })), progress);
+        indicator.hidden = !rect;
+        if (!rect) return;
+        indicator.style.transform = `translateX(${rect.left}px)`;
+        indicator.style.width = `${rect.width}px`;
+      };
+      place();
+      // Une largeur qui change (pleine largeur, rotation) déplace les segments sans changer la progression.
+      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
+      observer?.observe(this.host);
+      onCleanup(() => observer?.disconnect());
+    });
     if (isDevMode()) {
       afterNextRender(() => {
         if (!this.ariaLabel() && !this.field && !this.host.hasAttribute('aria-labelledby')) {

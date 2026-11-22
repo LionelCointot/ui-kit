@@ -13,8 +13,8 @@ const PANEL_STYLE = 'min-block-size:8rem;border:1px solid var(--lc-sys-color-bor
   imports: [LcSegmentedControlComponent, LcSwipePanelsComponent, LcSwipePanelDirective],
   template: `
     <div style="inline-size:360px;max-inline-size:100%;display:grid;gap:var(--lc-sys-space-3)">
-      <lc-segmented-control ariaLabel="View" fullWidth [options]="views" [value]="index()" (valueChange)="index.set($event ?? 0)" />
-      <lc-swipe-panels [(activeIndex)]="index">
+      <lc-segmented-control ariaLabel="View" fullWidth [options]="views" [value]="index()" [indicatorProgress]="strip.progress()" (valueChange)="index.set($event ?? 0)" />
+      <lc-swipe-panels #strip [(activeIndex)]="index">
         <section lcSwipePanel><div style="${PANEL_STYLE}">Messages panel</div></section>
         <section lcSwipePanel><div style="${PANEL_STYLE}">Details panel</div></section>
         <section lcSwipePanel><div style="${PANEL_STYLE}">History panel</div></section>
@@ -33,8 +33,8 @@ class SegmentedDemoComponent {
   imports: [LcSegmentedControlComponent, LcSwipePanelsComponent, LcSwipePanelDirective, LcTabsComponent, LcTabComponent],
   template: `
     <div style="inline-size:360px;max-inline-size:100%;block-size:20rem;display:flex;flex-direction:column;gap:var(--lc-sys-space-3)">
-      <lc-segmented-control ariaLabel="Section" fullWidth [options]="sections" [value]="index()" (valueChange)="index.set($event ?? 0)" />
-      <lc-swipe-panels [(activeIndex)]="index" style="flex:1">
+      <lc-segmented-control ariaLabel="Section" fullWidth [options]="sections" [value]="index()" [indicatorProgress]="strip.progress()" (valueChange)="index.set($event ?? 0)" />
+      <lc-swipe-panels #strip [(activeIndex)]="index" style="flex:1">
         <section lcSwipePanel aria-label="Conversation"><div style="${PANEL_STYLE}">Conversation</div></section>
         <section lcSwipePanel aria-label="Information" style="display:flex">
           <lc-tabs ariaLabel="Information" [swipe]="{ chain: true }" style="flex:1">
@@ -84,7 +84,7 @@ export const Playground: Story = {
   }),
 };
 
-/** A segmented control bound to the same index as the strip. */
+/** A segmented control bound to the same index as the strip; its background follows the finger (`indicatorProgress`). */
 export const WithSegmentedControl: Story = {
   parameters: fixedExample,
   render: () => ({ template: '<lc-swipe-panels-segmented-demo />' }),

@@ -203,3 +203,31 @@ describe('LcSegmentedControlComponent', () => {
     expect(radios[2].getAttribute('aria-checked')).toBe('true');
   });
 });
+
+@Component({
+  imports: [LcSegmentedControlComponent],
+  template: '<lc-segmented-control ariaLabel="Vue" [options]="options" [indicatorProgress]="progress()" value="a" />',
+})
+class TrackedHostComponent {
+  readonly options: readonly LcOption<string>[] = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }];
+  readonly progress = signal<number | null>(0.5);
+}
+
+describe('LcSegmentedControlComponent indicatorProgress', () => {
+  it('place le fond entre les segments voisins, et le retire quand la progression est nulle', async () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 100 : 0; });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 60 : 100; });
+    const fixture = TestBed.createComponent(TrackedHostComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
+    expect(indicator.getAttribute('aria-hidden')).toBe('true');
+    expect(indicator.style.transform).toBe('translateX(50px)');
+    expect(indicator.style.width).toBe('80px');
+    expect(element.querySelector('lc-segmented-control')!.classList).toContain('lc-segmented-control--tracked');
+    fixture.componentInstance.progress.set(null);
+    await fixture.whenStable();
+    expect(element.querySelector('.lc-segmented-control__indicator')).toBeNull();
+    vi.restoreAllMocks();
+  });
+});

@@ -84,7 +84,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-password-input` | LcPasswordInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, autocomplete, placeholder, inputId, ariaLabel | touch |
 | `lc-percent-input` | LcPercentInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals, step | touch |
 | `lc-radio-group` | LcRadioGroupComponent | composant | legend (requis), orientation | – |
-| `lc-segmented-control` | LcSegmentedControlComponent | composant | options (requis), value (model), ariaLabel, extraDescribedBy, size, fullWidth, disabled, id, controlled | valueRequest, touch |
+| `lc-segmented-control` | LcSegmentedControlComponent | composant | options (requis), value (model), ariaLabel, extraDescribedBy, size, fullWidth, disabled, id, indicatorProgress, controlled | valueRequest, touch |
 | `lc-slider` | LcSliderComponent | composant | value (model), min, max, step, unit, decimals, showValue, marks, valueText, inputId, ariaLabel, size, themeColor, disabled, readonly, invalid, touched, required, errors | committed, touch |
 | `ng-template[lcComboboxOption]` | LcComboboxOptionDirective | directive | lcComboboxOptionOf | – |
 | `select[lcSelect]` | LcSelectDirective | directive | id, size, invalid, touched, errors | – |
