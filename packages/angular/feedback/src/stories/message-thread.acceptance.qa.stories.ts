@@ -7,7 +7,7 @@ import type { LcThreadMessage } from '../message-thread/message-thread.model';
 
 // Fixture de la spec 2026-11-fil-de-messages (F0, tests d'acceptation) : pilotée par `node tools/qa/message-thread-browser.mjs`, sans `play`.
 // Écrite avant le code : le composant est attendu dans ../message-thread/message-thread.component (LcMessageThreadComponent),
-// le modèle dans ../message-thread/message-thread.model (LcThreadMessage) ; en attente du code, la construction de Storybook échoue sur ces imports.
+// le modèle dans ../message-thread/message-thread.model (LcThreadMessage).
 // Fenêtre : window.__thread = { set(liste), add(liste), remove(id), patch(partiel), messages(), remount(), destroy() } ; window.__qa.events = [{ type: 'attachmentOpen', detail: { messageId, attachmentId } }].
 // Variante « box » : un conteneur #qa-box (colonne flex, hauteur posée par patch({ height }), null = sans hauteur) autour du fil, le fil ne reçoit AUCUN style de la story ;
 // variante « bare » : <lc-message-thread [messages] /> seul (CA-T19). #qa-spacer (hauteur patch({ spacer })) précède le fil : la sentinelle part hors écran en défilement de page.

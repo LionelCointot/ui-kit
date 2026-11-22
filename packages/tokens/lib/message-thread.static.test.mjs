@@ -1,4 +1,4 @@
-// docs/specs/2026-11-fil-de-messages.md (F0, écrit avant le code ; rouge attendu, « en attente du code ») : CA-T11 (statique), CA-T18, CA-T19 (statique) et architecture, par contrôles statiques.
+// docs/specs/2026-11-fil-de-messages.md : CA-T11 (statique), CA-T18, CA-T19 (statique) et architecture, par contrôles statiques.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -14,7 +14,7 @@ const files = (d, ext) => (existsSync(d) ? readdirSync(d, { recursive: true }).f
 const sources = (ext) => files(dir, ext).map(read).join('\n');
 const css = () => sources(/\.css$/);
 const code = () => sources(/\.(ts|html)$/);
-const need = (src, what) => assert.ok(src.length > 0, `${what} absent : en attente du code (packages/angular/feedback/src/message-thread/)`);
+const need = (src, what) => assert.ok(src.length > 0, `${what} absent (packages/angular/feedback/src/message-thread/)`);
 // Retire les var(...) imbriqués et les commentaires : ce qui reste est de la valeur en dur.
 const bare = (v) => { let s = v.replace(/\/\*[\s\S]*?\*\//g, ''); for (let p; p !== s;) { p = s; s = s.replace(/var\([^()]*\)/g, ''); } return s; };
 const noComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -106,7 +106,7 @@ test('architecture : safe-text.ts dans le principal ; forms et feedback n\'en ga
 });
 
 test('feedback : lc-message-thread exporté par le point d\'entrée', () => {
-  assert.match(read(path.join(ng, 'feedback/src/public-api.ts')), /message-thread\/message-thread\.component/, 'non exporté (en attente du code)');
+  assert.match(read(path.join(ng, 'feedback/src/public-api.ts')), /message-thread\/message-thread\.component/, 'non exporté');
 });
 
 test('CA-T19 : générique et facile : aucun terme métier, aucune entrée obligatoire autre que messages, README ≤ 10 lignes, story Minimal', () => {
@@ -115,7 +115,7 @@ test('CA-T19 : générique et facile : aucun terme métier, aucune entrée oblig
   assert.deepEqual(all.match(/copro|syndic|ticket|gestionnaire|harmonie|vilogi|finance|locataire|loyer|immobili/gi) ?? [], [], 'terme métier');
   assert.deepEqual([...code().matchAll(/input\.required/g)].length, 1, 'une seule entrée obligatoire (messages)');
   assert.match(code(), /messages\s*=\s*input\.required/, 'messages doit être l\'entrée obligatoire');
-  const readme = read(path.join(dir, 'README.md')); assert.ok(readme.length > 0, 'README.md absent (en attente du code)');
+  const readme = read(path.join(dir, 'README.md')); assert.ok(readme.length > 0, 'README.md absent');
   const blocks = [...readme.matchAll(/```[a-z]*\n([\s\S]*?)```/g)].map((m) => m[1].trim().split('\n').length);
   assert.ok(blocks.length > 0 && Math.min(...blocks) <= 10, `aucun exemple de dix lignes au plus (${blocks})`);
   assert.match(readme, /<lc-message-thread[^>]*\[messages\]/, 'l\'exemple doit utiliser <lc-message-thread [messages]>');

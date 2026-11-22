@@ -1,7 +1,7 @@
 /** Taille d'une page de l'affichage progressif quand `pageSize` est absent ou invalide. */
-export const DEFAULT_PAGE_SIZE = 30;
+const DEFAULT_PAGE_SIZE = 30;
 /** Décalage total maximal d'un lot d'arrivées. */
-export const MAX_STAGGER_MS = 300;
+const MAX_STAGGER_MS = 300;
 
 /** `pageSize` utilisable : entier strictement positif, sinon `DEFAULT_PAGE_SIZE`. */
 export const normalizePageSize = (value: unknown): number => (typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : DEFAULT_PAGE_SIZE);

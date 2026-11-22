@@ -1,4 +1,4 @@
-import { ArrivalTracker, DEFAULT_PAGE_SIZE, normalizePageSize, staggerDelay } from './message-thread-motion';
+import { ArrivalTracker, normalizePageSize, staggerDelay } from './message-thread-motion';
 
 describe('ArrivalTracker', () => {
   it('premier rendu non vide : tout est vu, aucune arrivée', () => {
@@ -34,7 +34,6 @@ describe('normalizePageSize', () => {
   it.each([[10, 10], [1, 1], [0, 30], [-5, 30], [2.5, 30], [NaN, 30], [Infinity, 30], ['12', 30], [undefined, 30]])('%s -> %s', (input, expected) => {
     expect(normalizePageSize(input)).toBe(expected);
   });
-  it('défaut 30', () => expect(DEFAULT_PAGE_SIZE).toBe(30));
 });
 
 describe('staggerDelay', () => {

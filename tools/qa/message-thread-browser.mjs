@@ -2,7 +2,7 @@
 //   node tools/qa/message-thread-browser.mjs layout|attach|text|motion|scroll|axe|engines|all
 //   layout : CA-T1 T2 T5 T7 T17 · attach : T6 · text : T8 T15 T16 T17 (DOM) · motion : T3 T4 T13 · scroll : T9 T10 · axe : T11 (+ T19 rendu minimal) · engines : T10 sous Firefox et WebKit si Playwright les a
 // Stories : QA/Feedback/Message thread (Acceptance, AcceptanceEn, Bare) ; fil piloté par window.__thread, événements lus dans window.__qa.events.
-// Écrit AVANT le code (F0) : rouge attendu tant que lc-message-thread manque. Code de sortie 1 au moindre échec.
+// Acceptation de docs/specs/2026-11-fil-de-messages.md. Code de sortie 1 au moindre échec.
 // Sélecteurs imposés (spec 5.1 / 5.4) : lc-message-thread, [role="log"], .lc-message-thread__bubble, lc-avatar, <time>, <bdi>, <a target>, vignettes <button> + <img> dans la bulle.
 // Méthode de CA-T3 : toutes les animations sont mises en pause à currentTime = 0 juste après l'insertion, puis on mesure.
 // Limites : le geste tactile réel et la lecture d'écran ne sont pas essayés ; les avertissements « développement » (CA-T17) sont dans message-thread.acceptance.spec.ts (Storybook statique = mode production).
@@ -79,7 +79,7 @@ async function open(ctx, id = ACC, { theme = 'default', now } = {}) {
   page.on('console', (m) => page.logs.push(`${m.type()}: ${m.text()}`));
   if (now) await page.clock.setFixedTime(new Date(now)); // l'horloge n'est figée que pour les dates (les minuteries courent)
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
-  await page.waitForSelector('lc-message-thread', { state: 'attached', timeout: 15000 }); // en attente du code : le composant n'existe pas encore
+  await page.waitForSelector('lc-message-thread', { state: 'attached', timeout: 15000 });
   await page.evaluate(INIT);
   await page.waitForTimeout(300);
   return page;

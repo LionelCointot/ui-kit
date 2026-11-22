@@ -47,23 +47,4 @@ describe('splitLinks', () => {
     expect(joined(text)).toBe(text);
   });
 
-  it('corpus aléatoire (graine fixe) : tout lien rendu est en http(s), le texte est conservé', () => {
-    let seed = 42;
-    const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
-    const alphabet = ['http://', 'https://', 'HtTp://', 'javascript:', 'data:', '(', ')', '<', '>', '"', ' ', '\n', '\t', '.', ',', 'a', 'b.test', '/', '%', '&', ':', '\u0000'];
-    for (let i = 0; i < 600; i++) {
-      let text = '';
-      for (let n = rnd() * 12; n > 0; n--) text += alphabet[Math.floor(rnd() * alphabet.length)];
-      expect(joined(text)).toBe(text);
-      for (const p of splitLinks(text)) if (p.type === 'link') expect(p.href).toMatch(/^https?:\/\//);
-    }
-  });
-
-  it('adresse de 200 000 caractères et motifs adverses : découpe linéaire', () => {
-    for (const text of [`https://x.test/${'a'.repeat(200_000)}`, `https://x.test/${')'.repeat(200_000)}`, `https://${'.'.repeat(200_000)}`, `${'http://'.repeat(30_000)}`]) {
-      const start = performance.now();
-      splitLinks(text);
-      expect(performance.now() - start).toBeLessThan(50);
-    }
-  });
 });

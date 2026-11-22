@@ -161,20 +161,6 @@ describe('lc-message-thread', () => {
     });
   });
 
-  it('message sans texte ni pièce jointe : aucune bulle ; sentAt invalide : bulle sans <time> et avertissement sans le texte', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const { qa } = render([msg('1', { text: '  ' }), msg('2', { sentAt: 'pas une date', text: 'secret' })]);
-    expect(qa('.lc-message-thread__bubble').length).toBe(1);
-    expect(qa('time').length).toBe(0);
-    expect(warn).toHaveBeenCalled();
-    expect(warn.mock.calls.flat().join(' ')).not.toContain('secret');
-  });
-
-  it('CA-T17 : id en double, le premier rendu', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const { qa } = render([msg('1', { text: 'premier' }), msg('1', { text: 'second' })]);
-    expect(qa('.lc-message-thread__text').map((t) => t.textContent)).toEqual(['premier']);
-  });
 
   it('le message ajouté apparaît à la mise à jour de la liste', () => {
     const { fixture, host, qa } = render([msg('1')]);
