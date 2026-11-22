@@ -3,8 +3,9 @@ import { commonArgTypes } from '@lc/storybook';
 import { LcThemeToggleComponent } from '@lionelcointot/ui-angular';
 
 /**
- * Light / dark / system switch bound to `LcThemeService` (`choice`, `setChoice`): three icon buttons in a group, the current
- * choice exposed by `aria-pressed`. Names come from `LC_LABELS.themeToggle` and also show as the native `title` tooltip.
+ * Single icon button bound to `LcThemeService` (`choice`, `setChoice`) that cycles light, dark, system. The icon shows the
+ * current choice (sun, moon, sun-moon for system). Its accessible name states the current choice and the action
+ * (`LC_LABELS.themeToggle`) and is also the native `title` tooltip; no `aria-pressed`.
  *
  * Import: `import { LcThemeToggleComponent } from '@lionelcointot/ui-angular';`
  */

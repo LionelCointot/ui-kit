@@ -54,7 +54,7 @@ describe('LcIconComponent', () => {
     const OLD_ICONS = [
       'check', 'x', 'chevron-down', 'chevron-up', 'chevron-left', 'chevron-right', 'plus', 'minus', 'pencil', 'copy', 'trash-2', 'save',
       'folder-open', 'download', 'upload', 'search', 'info', 'circle-check', 'circle-alert', 'triangle-alert', 'circle-x', 'menu',
-      'ellipsis-vertical', 'settings', 'sun', 'moon', 'monitor', 'calendar', 'table', 'chart-line', 'eye', 'eye-off', 'external-link',
+      'ellipsis-vertical', 'settings', 'sun', 'moon', 'sun-moon', 'calendar', 'table', 'chart-line', 'eye', 'eye-off', 'external-link',
       'rotate-ccw', 'house', 'landmark', 'calculator', 'arrow-up', 'arrow-down', 'arrow-up-down', 'arrow-right', 'trending-up',
       'trending-down', 'user', 'users', 'user-plus', 'user-pen', 'log-in', 'log-out', 'lock', 'lock-open', 'key-round', 'shield-check',
       'scale', 'git-branch', 'git-commit-horizontal', 'activity', 'refresh-cw', 'play', 'square', 'circle-dashed', 'clock',

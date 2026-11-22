@@ -13,7 +13,7 @@ const OUTPUT = path.join(ROOT, 'packages', 'angular', 'src', 'lib', 'icon', 'def
 const ICONS = [
   'check', 'x', 'chevron-down', 'chevron-up', 'chevron-left', 'chevron-right', 'plus', 'minus', 'pencil', 'copy',
   'trash-2', 'save', 'folder-open', 'download', 'upload', 'search', 'info', 'circle-check', 'circle-alert',
-  'triangle-alert', 'circle-x', 'menu', 'ellipsis-vertical', 'settings', 'sun', 'moon', 'monitor', 'calendar',
+  'triangle-alert', 'circle-x', 'menu', 'ellipsis-vertical', 'settings', 'sun', 'moon', 'sun-moon', 'monitor', 'calendar',
   'table', 'chart-line', 'eye', 'eye-off', 'external-link', 'rotate-ccw', 'house', 'landmark', 'calculator',
   // Ajouts internes : indicateurs de tri du tableau et tendances des cartes indicateurs.
   'arrow-up', 'arrow-down', 'arrow-up-down', 'arrow-right', 'trending-up', 'trending-down',
@@ -35,6 +35,8 @@ const ICONS = [
   'funnel', 'funnel-x', 'search-x',
   // Ajout : personne retirée (écran « Ouverture des copropriétés » de copro-ticket).
   'user-x',
+  // Ajout : pièce jointe (compositeur de messages).
+  'paperclip',
 ];
 
 /** Extrait le contenu du SVG (formes) et le réenveloppe sans classe ni dimensions (la taille vient du CSS). */

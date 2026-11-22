@@ -386,10 +386,12 @@ const DATA_TABLE_EN: LcDataTableLabels = {
 
 /** Textes de `lc-theme-toggle` : nom du groupe et des trois choix. */
 export interface LcThemeToggleLabels {
-  readonly group: string;
+  /** Noms des trois choix, insérés dans `name`. */
   readonly light: string;
   readonly dark: string;
   readonly system: string;
+  /** Nom accessible et infobulle du bouton : choix courant et action (ex. « Thème : système. Passer au thème clair. »). */
+  readonly name: (current: string, next: string) => string;
 }
 
 /** Textes d'exemple de l'aperçu du theme builder. */
@@ -723,7 +725,7 @@ export const LC_LABELS_FR: LcLabels = {
   chartAnnotation: 'Point annoté',
   chartSummary: summaryFr,
   themeBuilder: THEME_BUILDER_FR,
-  themeToggle: { group: 'Thème', light: 'Thème clair', dark: 'Thème sombre', system: 'Thème du système' },
+  themeToggle: { light: 'clair', dark: 'sombre', system: 'système', name: (current, next) => `Thème : ${current}. Passer au thème ${next}.` },
   dataTable: DATA_TABLE_FR,
   dateZoneDay: 'jj',
   dateZoneMonth: 'mm',
@@ -962,7 +964,7 @@ export const LC_LABELS_EN: LcLabels = {
   chartAnnotation: 'Annotated point',
   chartSummary: summaryEn,
   themeBuilder: THEME_BUILDER_EN,
-  themeToggle: { group: 'Theme', light: 'Light theme', dark: 'Dark theme', system: 'System theme' },
+  themeToggle: { light: 'light', dark: 'dark', system: 'system', name: (current, next) => `Theme: ${current}. Switch to ${next} theme.` },
   dataTable: DATA_TABLE_EN,
   dateZoneDay: 'dd',
   dateZoneMonth: 'mm',
