@@ -88,7 +88,7 @@ describe('LcSegmentedControlComponent', () => {
   });
 
   describe('coche de l\'option active', () => {
-    it('seule l\'option active affiche la coche (à la place de son icône) et aria-checked', async () => {
+    it('l\'option active sans icône affiche la coche, une option avec icône garde son icône, et aria-checked', async () => {
       const fixture = TestBed.createComponent(SegmentedHostComponent);
       await fixture.whenStable();
       const radios = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="radio"]'));
@@ -98,7 +98,7 @@ describe('LcSegmentedControlComponent', () => {
       expect(radios.map(icon)).toEqual(['check', null, 'calendar']);
       radios[2].click();
       await fixture.whenStable();
-      expect(radios.map(icon)).toEqual([null, null, 'check']);
+      expect(radios.map(icon)).toEqual([null, null, 'calendar']);
       expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true']);
     });
   });
@@ -229,5 +229,46 @@ describe('LcSegmentedControlComponent indicatorProgress', () => {
     await fixture.whenStable();
     expect(element.querySelector('.lc-segmented-control__indicator')).toBeNull();
     vi.restoreAllMocks();
+  });
+});
+
+@Component({
+  imports: [LcSegmentedControlComponent],
+  template: '<lc-segmented-control ariaLabel="Vue" fillMode="solid" [options]="options" [(value)]="value" />',
+})
+class SolidHostComponent {
+  readonly options: readonly LcOption<string>[] = [{ value: 'a', label: 'A', icon: 'info' }, { value: 'b', label: 'B', icon: 'check' }];
+  readonly value = signal<string | null>('a');
+}
+
+describe('LcSegmentedControlComponent fillMode solid', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('pose la pastille sur le segment choisi, la fait glisser au choix, garde les icônes', async () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 100 : 0; });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 60 : 100; });
+    const fixture = TestBed.createComponent(SolidHostComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
+    expect(element.querySelector('lc-segmented-control')!.classList).toContain('lc-segmented-control--solid');
+    expect(indicator.style.transform).toBe('translateX(0px)');
+    expect(indicator.classList).toContain('lc-segmented-control__indicator--instant');
+    const icons = () => fixture.debugElement.queryAll(By.directive(LcIconComponent)).map((debug) => debug.componentInstance.name());
+    expect(icons()).toEqual(['info', 'check']);
+    element.querySelectorAll<HTMLElement>('[role=radio]')[1].click();
+    await fixture.whenStable();
+    expect(indicator.style.transform).toBe('translateX(100px)');
+    expect(indicator.style.width).toBe('60px');
+    expect(indicator.classList).not.toContain('lc-segmented-control__indicator--instant');
+    fixture.componentInstance.value.set(null);
+    await fixture.whenStable();
+    expect(indicator.hidden).toBe(true);
+  });
+
+  it('sans fillMode solid ni suivi, aucune pastille', async () => {
+    const fixture = TestBed.createComponent(SegmentedHostComponent);
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.lc-segmented-control__indicator')).toBeNull();
   });
 });

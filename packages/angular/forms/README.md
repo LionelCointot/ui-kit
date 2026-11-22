@@ -1,11 +1,15 @@
 # @lionelcointot/ui-angular/forms
 
 Champs de formulaire (`lc-form-field`, saisies, sélecteurs, `lc-file-upload`, `lc-message-composer`…). Cette page ne détaille que
-`lc-message-composer` et `indicatorProgress` de `lc-segmented-control` ; les autres composants sont décrits dans `CATALOGUE.md` et dans la vitrine Storybook.
+`lc-message-composer`, `fillMode` et `indicatorProgress` de `lc-segmented-control` ; les autres composants sont décrits dans `CATALOGUE.md` et dans la vitrine Storybook.
 
-## `lc-segmented-control` : `indicatorProgress`
+## `lc-segmented-control` : `fillMode` et `indicatorProgress`
 
-`[indicatorProgress]` (nombre de 0 à n - 1, ou `null` : rendu habituel) pose un fond unique qui suit cette position entre deux segments voisins, sans transition (`transform`) ; le segment choisi perd son propre fond, la coche reste. À lier à `progress()` d'un `lc-swipe-panels` (voir `navigation/src/swipe-panels/README.md`) pour que le fond suive le doigt ; `value` reste la source du choix. Écart connu : aucun jeton nouveau pour ce fond (il reprend ceux du segment).
+`fillMode` : `outline` (défaut, segments bordés, le choisi est plein) ou `solid` (maquette « pastille » : piste creusée `surface-sunken`, pastille `surface-raised` + `shadow-1` qui glisse vers le segment choisi, au clic comme au clavier ; texte `on-surface-muted` puis `on-surface`). `flat` n'existe pas ici. Jetons de la variante : `--lc-segmented-control-track-bg|track-radius|track-padding|pill-bg|pill-shadow|pill-radius|pill-fg|muted-fg`, durée et courbe du glissement `--lc-segmented-control-indicator-duration|easing` (comme `lc-tabs`). Pas de glissement au premier affichage, à la remesure, avec `indicatorProgress` ni sous `prefers-reduced-motion` ; en `forced-colors`, le segment choisi est entouré. Une option avec icône garde son icône quand elle est choisie (dans les deux variantes) ; la coche ne sert qu'aux options sans icône.
+
+### `indicatorProgress`
+
+`[indicatorProgress]` (nombre de 0 à n - 1, ou `null` : rendu habituel) pose un fond unique qui suit cette position entre deux segments voisins, sans transition (`transform`) ; le segment choisi perd son propre fond. À lier à `progress()` d'un `lc-swipe-panels` (voir `navigation/src/swipe-panels/README.md`) pour que le fond suive le doigt ; `value` reste la source du choix. Avec `fillMode="solid"`, ce fond est la pastille ; sinon il reprend les jetons du segment.
 
 ## `lc-message-composer`
 

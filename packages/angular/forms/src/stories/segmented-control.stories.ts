@@ -24,8 +24,8 @@ class ControlledDemoComponent {
 }
 
 /**
- * Exclusive choice between a few options, shown as a row of segments (`lc-segmented-control`). The active option carries a check and a
- * background, so the state never relies on colour alone. In controlled mode, a click is only a request (`valueRequest`).
+ * Exclusive choice between a few options, shown as a row of segments (`lc-segmented-control`). The active option gets a background and a ring
+ * (`outline`) or a raised pill that slides over a sunken track (`fillMode="solid"`), so the state never relies on colour alone; an option without icon shows a check when active. In controlled mode, a click is only a request (`valueRequest`).
  *
  * Import: `import { LcSegmentedControlComponent } from '@lionelcointot/ui-angular/forms';`
  */
@@ -33,9 +33,10 @@ const meta: Meta<LcSegmentedControlComponent<string>> = {
   title: 'Forms/Segmented control',
   component: LcSegmentedControlComponent,
   decorators: [moduleMetadata({ imports: [LcSegmentedControlComponent, ControlledDemoComponent] })],
-  args: { ariaLabel: 'Niveau de détail', size: 'medium', fullWidth: false, disabled: false },
+  args: { ariaLabel: 'Niveau de détail', size: 'medium', fillMode: 'outline', fullWidth: false, disabled: false },
   argTypes: {
     size: commonArgTypes.size,
+    fillMode: { control: 'inline-radio', options: ['outline', 'solid'] },
     options: { control: false },
     value: { control: false },
     valueRequest: { action: 'valueRequest' },
@@ -49,7 +50,7 @@ export const Playground: Story = {
   render: (args) => ({
     props: { ...args, options: OPTIONS, selection: signal<string | null>('simple') },
     template: `
-      <lc-segmented-control [options]="options" [(value)]="selection" [ariaLabel]="ariaLabel" [size]="size"
+      <lc-segmented-control [options]="options" [(value)]="selection" [ariaLabel]="ariaLabel" [size]="size" [fillMode]="fillMode"
         [fullWidth]="fullWidth" [disabled]="disabled" />`,
   }),
 };
@@ -63,6 +64,18 @@ export const WithIcons: Story = {
       selection: signal<string | null>('chart'),
     },
     template: `<lc-segmented-control ariaLabel="Affichage" [options]="options" [(value)]="selection" />`,
+  }),
+};
+
+/** `fillMode="solid"`: sunken track and a raised pill that slides to the chosen segment; each option keeps its icon. */
+export const SolidWithIcons: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: {
+      options: [{ value: 'messages', label: 'Échanges', icon: 'message-square' }, { value: 'info', label: 'Informations', icon: 'info' }],
+      selection: signal<string | null>('messages'),
+    },
+    template: `<lc-segmented-control ariaLabel="Affichage" fillMode="solid" fullWidth [options]="options" [(value)]="selection" />`,
   }),
 };
 

@@ -9,6 +9,16 @@
       "$type": "cubicBezier"
     }
   },
+  "segmented-control": {
+    "indicator-duration": {
+      "$value": "{sys.duration.move}",
+      "$type": "duration"
+    },
+    "indicator-easing": {
+      "$value": "{sys.easing.standard}",
+      "$type": "cubicBezier"
+    }
+  },
   "nav-item": {
     "indicator-duration": {
       "$value": "{sys.duration.move}",

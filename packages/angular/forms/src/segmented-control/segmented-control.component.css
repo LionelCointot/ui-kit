@@ -108,9 +108,68 @@
   pointer-events: none;
 }
 
-:host(.lc-segmented-control--tracked) .lc-segmented-control__option[aria-checked='true'] {
+:host(.lc-segmented-control--tracked) .lc-segmented-control__option[aria-checked='true'],
+:host(.lc-segmented-control--solid) .lc-segmented-control__option[aria-checked='true'] {
   background: transparent;
   box-shadow: none;
+}
+
+/*
+ * Variante `solid` : piste creusée et pastille levée qui glisse vers le segment choisi (même mécanique que le trait de `lc-tabs`).
+ * `--_inset` est à la fois le rembourrage de la piste et le retrait vertical de la pastille.
+ */
+:host(.lc-segmented-control--solid) {
+  --_inset: var(--lc-segmented-control-track-padding, var(--lc-sys-space-1));
+  --_pill-radius: var(--lc-segmented-control-pill-radius, var(--lc-sys-radius-md));
+
+  padding: var(--_inset);
+  gap: var(--_inset);
+  border: 0;
+  border-radius: var(--lc-segmented-control-track-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-segmented-control-track-bg, var(--lc-sys-color-surface-sunken));
+}
+
+:host(.lc-segmented-control--solid) .lc-segmented-control__option {
+  border-radius: var(--_pill-radius);
+  color: var(--lc-segmented-control-muted-fg, var(--lc-sys-color-on-surface-muted));
+  font-weight: var(--lc-sys-font-weight-semibold);
+}
+
+:host(.lc-segmented-control--solid) .lc-segmented-control__option + .lc-segmented-control__option {
+  border-inline-start: 0;
+}
+
+:host(.lc-segmented-control--solid) .lc-segmented-control__option[aria-checked='true'] {
+  color: var(--lc-segmented-control-pill-fg, var(--lc-sys-color-on-surface));
+}
+
+@media (hover: hover) {
+  :host(.lc-segmented-control--solid) .lc-segmented-control__option:hover:not(:disabled) {
+    background: transparent;
+    color: var(--lc-segmented-control-pill-fg, var(--lc-sys-color-on-surface));
+  }
+}
+
+:host(.lc-segmented-control--solid) .lc-segmented-control__indicator {
+  inset-block: var(--_inset);
+  border-radius: var(--_pill-radius);
+  background: var(--lc-segmented-control-pill-bg, var(--lc-sys-color-surface-raised));
+  box-shadow: var(--lc-segmented-control-pill-shadow, var(--lc-sys-shadow-1));
+  transition:
+    transform var(--lc-segmented-control-indicator-duration) var(--lc-segmented-control-indicator-easing),
+    width var(--lc-segmented-control-indicator-duration) var(--lc-segmented-control-indicator-easing);
+}
+
+/* Premier placement, remesure et suivi du doigt : pas de glissement. */
+:host(.lc-segmented-control--solid) .lc-segmented-control__indicator--instant,
+:host(.lc-segmented-control--tracked) .lc-segmented-control__indicator {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.lc-segmented-control--solid) .lc-segmented-control__indicator {
+    transition: none;
+  }
 }
 
 @media (forced-colors: active) {

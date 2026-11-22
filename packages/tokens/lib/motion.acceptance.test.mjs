@@ -42,6 +42,8 @@ const COMPONENT_TOKENS = {
   // Décision 27 révisée : les déplacements (indicateurs, lignes) durent 500 ms avec easing-standard (pas de ressort).
   '--lc-tabs-indicator-duration': 'duration-move',
   '--lc-tabs-indicator-easing': 'easing-standard',
+  '--lc-segmented-control-indicator-duration': 'duration-move',
+  '--lc-segmented-control-indicator-easing': 'easing-standard',
   '--lc-nav-item-indicator-duration': 'duration-move',
   '--lc-nav-item-indicator-easing': 'easing-standard',
   '--lc-list-move-duration': 'duration-move',
