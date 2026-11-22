@@ -54,6 +54,10 @@
       "$value": "26rem",
       "$type": "dimension"
     },
+    "bubble-max-share": {
+      "$value": "0.8",
+      "$type": "number"
+    },
     "group-gap": {
       "$value": "{sys.space.4}",
       "$type": "dimension"

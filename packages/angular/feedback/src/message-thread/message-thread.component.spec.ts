@@ -221,6 +221,15 @@ describe('lc-message-thread', () => {
       expect(q('[role="log"]')?.hasAttribute('aria-busy')).toBe(false);
     });
 
+    it('conteneur qui défile non rempli (place libre au-dessus de la sentinelle) : les paliers s\'enchaînent jusqu\'au premier message, sans boucle', async () => {
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+        return { top: this.classList.contains('lc-message-thread__sentinel') ? 100 : 0 } as DOMRect;
+      });
+      const { fixture, qa } = render(many(25), (h) => h.pageSize.set(10));
+      for (let i = 0; i < 5; i++) { await fixture.whenStable(); fixture.detectChanges(); }
+      expect(qa('[data-message-id]').length).toBe(25);
+    });
+
     it.each([0, -3, 2.5, NaN])('pageSize %s : 30 messages rendus', (size) => {
       const { qa } = render(many(40), (h) => h.pageSize.set(size));
       expect(qa('[data-message-id]').length).toBe(30);

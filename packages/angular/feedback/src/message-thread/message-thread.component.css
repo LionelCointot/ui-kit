@@ -79,7 +79,8 @@
   display: flex;
   gap: var(--lc-sys-space-2);
   align-items: flex-end;
-  max-inline-size: 100%;
+  /* Une bulle laisse toujours du vide du côté opposé : on voit à qui elle est. */
+  max-inline-size: calc(100% * var(--lc-message-thread-bubble-max-share));
 }
 
 .lc-message-thread__group--mine {
@@ -87,6 +88,7 @@
   --_fg: var(--lc-message-thread-bubble-color-mine, var(--lc-sys-color-on-primary-container));
 
   justify-content: flex-end;
+  align-self: flex-end;
 }
 
 .lc-message-thread__avatar {

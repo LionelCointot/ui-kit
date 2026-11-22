@@ -44,10 +44,6 @@ export interface LcLabels {
   readonly stepOf: (current: number, total: number) => string;
   /** @deprecated Remplacé par `stepGoTo` (nom accessible d'une étape cliquable du fil d'étapes v2). */
   readonly stepBack: (name: string) => string;
-  readonly threadLabel: string;
-  readonly threadToday: string;
-  readonly threadYesterday: string;
-  readonly threadAttachmentOpen: (name: string) => string;
   readonly stepGoTo: (position: number, name: string) => string;
   /** Texte masqué ajouté au nom d'une étape en erreur. */
   readonly stepInvalid: string;
@@ -207,6 +203,12 @@ export interface LcLabels {
   readonly dateCurrentFrom: (date: string) => string;
   readonly dateCurrentUntil: (date: string) => string;
   readonly dateShortcuts: string;
+
+  // Fil de messages
+  readonly threadLabel: string;
+  readonly threadToday: string;
+  readonly threadYesterday: string;
+  readonly threadAttachmentOpen: (name: string) => string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -673,10 +675,6 @@ export const LC_LABELS_FR: LcLabels = {
   pageStatus: (page, pageCount) => `Page ${frNumber.format(page)} sur ${frNumber.format(pageCount)}`,
   stepOf: (current, total) => `Étape ${current} sur ${total}`,
   stepBack: (name) => `Revenir à : ${name}`,
-  threadLabel: 'Échanges',
-  threadToday: 'Aujourd\'hui',
-  threadYesterday: 'Hier',
-  threadAttachmentOpen: (name) => `Ouvrir la pièce jointe : ${name}`,
   stepGoTo: (position, name) => `Aller à l'étape ${position} : ${name}`,
   stepInvalid: '(à corriger)',
   stepOptionalHidden: '(facultative)',
@@ -805,6 +803,12 @@ export const LC_LABELS_FR: LcLabels = {
   dateCurrentFrom: (date) => `Depuis le ${date}, sans date de fin. Cliquez un jour pour changer.`,
   dateCurrentUntil: (date) => `Jusqu'au ${date} inclus, sans date de début. Cliquez un jour pour changer.`,
   dateShortcuts: 'Raccourcis',
+
+  // Fil de messages
+  threadLabel: 'Échanges',
+  threadToday: 'Aujourd\'hui',
+  threadYesterday: 'Hier',
+  threadAttachmentOpen: (name) => `Ouvrir la pièce jointe : ${name}`,
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -929,10 +933,6 @@ export const LC_LABELS_EN: LcLabels = {
   pageStatus: (page, pageCount) => `Page ${enNumber.format(page)} of ${enNumber.format(pageCount)}`,
   stepOf: (current, total) => `Step ${current} of ${total}`,
   stepBack: (name) => `Back to: ${name}`,
-  threadLabel: 'Messages',
-  threadToday: 'Today',
-  threadYesterday: 'Yesterday',
-  threadAttachmentOpen: (name) => `Open attachment: ${name}`,
   stepGoTo: (position, name) => `Go to step ${position}: ${name}`,
   stepInvalid: '(to fix)',
   stepOptionalHidden: '(optional)',
@@ -1061,6 +1061,12 @@ export const LC_LABELS_EN: LcLabels = {
   dateCurrentFrom: (date) => `Since ${date}, no end date. Click a day to change.`,
   dateCurrentUntil: (date) => `Until ${date} inclusive, no start date. Click a day to change.`,
   dateShortcuts: 'Shortcuts',
+
+  // Message thread
+  threadLabel: 'Messages',
+  threadToday: 'Today',
+  threadYesterday: 'Yesterday',
+  threadAttachmentOpen: (name) => `Open attachment: ${name}`,
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });

@@ -58,12 +58,13 @@ export function groupThreadMessages(messages: readonly LcThreadMessage[], ctx: L
   const now = ctx.now ?? new Date();
   const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
   const timeFormat = new Intl.DateTimeFormat(ctx.locale, { hour: '2-digit', minute: '2-digit' });
-  const dateFormat = (withYear: boolean) => new Intl.DateTimeFormat(ctx.locale, { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) });
+  const dateFormat = new Intl.DateTimeFormat(ctx.locale, { day: 'numeric', month: 'short' });
+  const dateFormatWithYear = new Intl.DateTimeFormat(ctx.locale, { day: 'numeric', month: 'short', year: 'numeric' });
 
   const dayLabel = (d: Date) =>
     dayKey(d) === dayKey(now) ? ctx.labels.threadToday
       : dayKey(d) === dayKey(yesterday) ? ctx.labels.threadYesterday
-        : dateFormat(d.getFullYear() !== now.getFullYear()).format(d);
+        : (d.getFullYear() !== now.getFullYear() ? dateFormatWithYear : dateFormat).format(d);
 
   const items: LcThreadItem[] = [];
   const seen = new Set<string>();
@@ -79,7 +80,7 @@ export function groupThreadMessages(messages: readonly LcThreadMessage[], ctx: L
     }
     seen.add(message.id);
     const system = message.kind === 'system';
-    if (!system && !message.text?.trim() && !message.attachments?.length) continue;
+    if (!message.text?.trim() && (system || !message.attachments?.length)) continue;
 
     const date = new Date(message.sentAt);
     const ts = date.getTime();

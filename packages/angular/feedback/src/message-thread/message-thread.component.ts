@@ -94,7 +94,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
                       @if (bubble.time; as t) { <p class="lc-message-thread__time"><time [attr.datetime]="t.iso">{{ t.text }}</time></p> }
                       <div class="lc-message-thread__bubble">
                         @if (bubble.parts; as parts) {
-                          <span class="lc-message-thread__text">@for (part of parts; track $index) {@if (part.type === 'link') {<a [href]="part.href" target="_blank" rel="noopener noreferrer">{{ part.text }}</a>} @else {<ng-container>{{ part.text }}</ng-container>}}</span>
+                          <span class="lc-message-thread__text">@for (part of parts; track $index) {@if (part.type === 'link') {<a [href]="part.href" target="_blank" rel="noopener noreferrer">{{ part.text }}</a>} @else {{{ part.text }}}}</span>
                         }
                         @if (bubble.thumbs.length) {
                           <div class="lc-message-thread__thumbs">
@@ -102,6 +102,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
                               <button type="button" class="lc-message-thread__thumb" [attr.aria-label]="labels.threadAttachmentOpen(thumb.name)" [attr.title]="thumb.name"
                                 (click)="attachmentOpen.emit({ message: bubble.message, attachment: thumb.attachment })">
                                 @if (thumb.previewUrl; as src) {
+                                  <!-- width/height ne fixent que le ratio (pas de saut de mise en page) ; la taille vient des jetons thumb-width/height. -->
                                   <img [src]="src" width="96" height="72" alt="" />
                                 } @else {
                                   <lc-icon name="file-text" /><span class="lc-message-thread__thumb-name">{{ thumb.name }}</span>
@@ -171,7 +172,10 @@ export class LcMessageThreadComponent {
     afterRenderEffect(() => {
       const ids = this.messages().map((message) => message.id);
       this.view();
-      untracked(() => this.settle(ids));
+      untracked(() => {
+        this.settle(ids);
+        this.fillUp();
+      });
     });
     afterNextRender(() => {
       const log = this.log().nativeElement;
@@ -190,6 +194,15 @@ export class LcMessageThreadComponent {
         this.destroyRef.onDestroy(() => observer.disconnect());
       }
     });
+  }
+
+  /** Conteneur qui défile et que les messages rendus ne remplissent pas : la sentinelle reste visible, on enchaîne un palier (fini quand tout est rendu). */
+  private fillUp(): void {
+    if (this.shown().length >= this.messages().length) return;
+    const inner = this.inner().nativeElement;
+    const free = this.sentinel().nativeElement.getBoundingClientRect().top - inner.getBoundingClientRect().top - (parseFloat(getComputedStyle(inner).paddingTop) || 0);
+    // shortcut: un contenu qui remplit pile le conteneur (place libre nulle) n'enchaîne pas, le défilement de page non plus ; l'observateur prend le relais.
+    if (free > 1) this.showMore();
   }
 
   private showMore(): void {

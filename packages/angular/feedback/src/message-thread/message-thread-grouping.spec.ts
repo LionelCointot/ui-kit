@@ -36,6 +36,10 @@ describe('groupThreadMessages', () => {
     expect(groups(run([msg('1', { sentAt: at(20, 23, 59) }), msg('2', { sentAt: at(21, 0, 1) })]))).toHaveLength(2);
   });
 
+  it('un message système sans texte (ou blanc) est écarté, comme un message normal vide', () => {
+    expect(run([msg('1', { kind: 'system', text: undefined }), msg('2', { kind: 'system', text: '  ' }), msg('3', { text: '' })])).toEqual([]);
+  });
+
   it('séparateurs de jour : Aujourd\'hui, Hier, date courte (fr et en)', () => {
     const days = (labels: typeof LC_LABELS_FR, locale: string) => run([msg('1', { sentAt: at(18, 9, 0) }), msg('2', { sentAt: at(20, 9, 0) }), msg('3')], labels, locale)
       .flatMap((i) => (i.type === 'day' ? [i.label] : []));
