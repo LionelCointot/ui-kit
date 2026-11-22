@@ -24,21 +24,31 @@ const SHORT: LcThreadMessage[] = [
 const LONG: LcThreadMessage[] = Array.from({ length: 24 }, (_, i) =>
   i % 3 === 2 ? mine(`m${i}`, 200 - i * 5, `Message ${i + 1} de la conversation.`) : other(`m${i}`, 200 - i * 5, `Message ${i + 1} de la conversation.`));
 
+/** Fixed wall-clock time on a local day (`daysAgo` = 1 for yesterday), so the render never depends on when the story is opened. */
+const at = (daysAgo: number, hours: number, minutes: number) => {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysAgo, hours, minutes).toISOString();
+};
+const photo = (color: string) =>
+  'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="${color}"/></svg>`);
+const person = (id: string, name: string, sentAt: string, text: string, extra: Partial<LcThreadMessage> = {}): LcThreadMessage =>
+  ({ id, authorId: id.split('-')[0], authorName: name, mine: false, sentAt, text, ...extra });
+const system = (id: string, sentAt: string, text: string): LcThreadMessage =>
+  ({ id, authorId: 'sys', authorName: 'Système', mine: false, kind: 'system', sentAt, text });
+
+const MARC = 'Marc Lefèvre';
+const CAMILLE = 'Camille Bernard';
 const CONVERSATION: LcThreadMessage[] = [
-  other('c1', 3 * 24 * 60, 'Voici le plan de la semaine.'),
-  { id: 'c2', authorId: 'sys', authorName: 'Système', mine: false, kind: 'system', sentAt: iso(2 * 24 * 60), text: 'Tâche mise en pause par Sam' },
-  mine('c3', 24 * 60 + 30, 'Bien reçu.', { attachments: [{ id: 'f1', name: 'plan-semaine.pdf' }] }),
-  other('c4', 90, 'Les nouvelles sont sur https://example.org/nouvelles.'),
-  mine('c5', 10, 'Merci !'),
+  person('me-1', 'Vous', at(1, 9, 12), 'Bonjour, voici une photo du problème.', { mine: true, attachments: [{ id: 'p1', name: 'photo-1.png', previewUrl: photo('#c2410c') }] }),
+  person('marc-1', MARC, at(1, 9, 40), 'Merci, je regarde cela et je reviens vers vous.'),
+  system('sys-1', at(1, 9, 41), 'Demande mise en pause par Marc'),
+  person('camille-1', CAMILLE, at(0, 8, 30), 'Bonjour, je reprends le dossier. Voir https://example.org/dossier.'),
+  person('me-2', 'Vous', at(0, 8, 52), 'Voici une seconde photo, prise ce matin.', { mine: true, attachments: [{ id: 'p2', name: 'photo-2.png', previewUrl: photo('#0369a1') }] }),
+  person('camille-2', CAMILLE, at(0, 9, 5), 'Parfait, c\'est bien reçu.'),
+  system('sys-2', at(0, 16, 5), 'Demande résolue par Camille'),
 ];
 
-/** Internal note: the application sets a class on the message; it redefines the bubble tokens, nothing else. */
-@Component({
-  selector: 'lc-internal-note-thread-demo',
-  imports: [LcMessageThreadComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
+const NOTE_STYLES = `
     .internal-note {
       --lc-message-thread-bubble-background: var(--lc-sys-color-warning-container);
       --lc-message-thread-bubble-color: var(--lc-sys-color-on-warning-container);
@@ -46,7 +56,15 @@ const CONVERSATION: LcThreadMessage[] = [
       --lc-message-thread-bubble-border-width: var(--lc-sys-border-width-thick);
       --lc-message-thread-bubble-border-color: var(--lc-sys-color-warning);
     }
-  `,
+  `;
+
+/** Internal note: the application sets a class on the message; it redefines the bubble tokens, nothing else. */
+@Component({
+  selector: 'lc-internal-note-thread-demo',
+  imports: [LcMessageThreadComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  styles: NOTE_STYLES,
   template: `<div style="height:22rem;display:flex;flex-direction:column"><lc-message-thread [messages]="messages" /></div>`,
 })
 class InternalNoteThreadDemoComponent {
@@ -55,6 +73,19 @@ class InternalNoteThreadDemoComponent {
     mine('n2', 12, 'À vérifier avec l\'équipe avant de répondre.', { cssClass: 'internal-note', mention: 'Note interne' }),
     mine('n3', 2, 'Je confirme la date demain.'),
   ];
+}
+
+/** Full conversation, not height-limited: the thread grows with its content. */
+@Component({
+  selector: 'lc-conversation-thread-demo',
+  imports: [LcMessageThreadComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  styles: NOTE_STYLES,
+  template: `<div style="max-width:40rem"><lc-message-thread [messages]="messages" [pageSize]="20" /></div>`,
+})
+class ConversationThreadDemoComponent {
+  protected readonly messages = CONVERSATION;
 }
 
 /** The thread above a message composer: the composer is projected with `lcThreadComposer`, sending appends a message. */
@@ -90,7 +121,7 @@ class ThreadWithComposerDemoComponent {
 const meta: Meta<LcMessageThreadComponent> = {
   title: 'Feedback/Message thread',
   component: LcMessageThreadComponent,
-  decorators: [moduleMetadata({ imports: [LcMessageThreadComponent, LcMessageComposerComponent, LcButtonComponent, StoryMotionNoticeComponent, InternalNoteThreadDemoComponent, ThreadWithComposerDemoComponent] })],
+  decorators: [moduleMetadata({ imports: [LcMessageThreadComponent, LcMessageComposerComponent, LcButtonComponent, StoryMotionNoticeComponent, InternalNoteThreadDemoComponent, ThreadWithComposerDemoComponent, ConversationThreadDemoComponent] })],
   args: { showAvatars: true, pageSize: 10, ariaLabel: 'Échanges' },
   argTypes: { pageSize: { control: 'number' }, messages: { control: false }, attachmentOpen: { action: 'attachmentOpen' } },
 };
@@ -111,13 +142,10 @@ export const Minimal: Story = {
   render: () => ({ props: { messages: SHORT }, template: `<lc-message-thread [messages]="messages" />` }),
 };
 
-/** Day separators, a system line, an attachment thumbnail (opens through `attachmentOpen`) and a clickable link. */
+/** Day separators, system lines, an internal note, photo thumbnails (open through `attachmentOpen`) and a clickable link. */
 export const Conversation: Story = {
   parameters: fixedExample,
-  render: () => ({
-    props: { messages: CONVERSATION },
-    template: `<div style="height:28rem;display:flex;flex-direction:column"><lc-message-thread [messages]="messages" /></div>`,
-  }),
+  render: () => ({ template: `<lc-conversation-thread-demo />` }),
 };
 
 /** Internal note: a `cssClass` on the message redefines the `--lc-message-thread-bubble-*` tokens (dashed border) and `mention` adds a short mark. */
