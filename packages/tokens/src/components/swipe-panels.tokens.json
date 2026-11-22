@@ -1,0 +1,14 @@
+{
+  "swipe-panels": {
+    "gutter": {
+      "$description": "Inline padding of each panel in strip layout. 0 by default; use sys.space.4 when the strip touches the screen edge, to leave the iOS back gesture at the left edge.",
+      "$value": "0",
+      "$type": "dimension"
+    },
+    "gap": {
+      "$description": "Gap between panels in columns layout.",
+      "$value": "{sys.space.4}",
+      "$type": "dimension"
+    }
+  }
+}

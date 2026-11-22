@@ -11,3 +11,4 @@ export * from './nav-group/nav-group.component';
 export * from './menu/menu.component';
 export * from './menu/menu-item.component';
 export * from './menu/menu-trigger.directive';
+export * from './swipe-panels/swipe-panels.component';

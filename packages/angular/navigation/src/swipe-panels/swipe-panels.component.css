@@ -1,0 +1,43 @@
+.lc-swipe-panels {
+  display: flex;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.lc-swipe-panels--chain {
+  overscroll-behavior-x: auto;
+}
+
+.lc-swipe-panels > .lc-swipe-panel {
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding-inline: var(--lc-swipe-panels-gutter);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.lc-swipe-panels > .lc-swipe-panel:focus {
+  outline: none;
+}
+
+/* Colonnes : mêmes panneaux côte à côte, rien ne défile ; `--lc-swipe-panels-columns` surcharge les colonnes (largeurs inégales). */
+.lc-swipe-panels--columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: var(--lc-swipe-panels-columns, repeat(var(--lc-swipe-panels-count), minmax(0, 1fr)));
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--lc-swipe-panels-gap);
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.lc-swipe-panels--columns > .lc-swipe-panel {
+  padding-inline: 0;
+}
