@@ -164,12 +164,11 @@ async function layout() {
     const SYS = 'Demande qualifiée par Marc';
     await put(page, [mk(1), mk(2, { kind: 'system', authorName: 'Marc', text: SYS, s: 60 }), mk(3, { s: 120 })]);
     const r = await page.evaluate((txt) => {
-      const C = Q.content(); const hit = Q.textRect(Q.log(), txt); const tp = hit?.node.parentElement;
-      let row = tp; while (row && row !== Q.log() && !row.querySelector('time')) row = row.parentElement;
-      let rr = hit?.rect; const tm = row && row !== Q.log() && row.querySelector('time'); if (rr && tm) { const t = Q.R(tm); rr = { left: Math.min(rr.left, t.left), right: Math.max(rr.right, t.right) }; } // ligne = texte · heure
-      return { found: !!hit, mid: rr && (rr.left + rr.right) / 2, C: C.mid, color: tp && getComputedStyle(tp).color, sys: Q.probe('color:var(--lc-message-thread-system-color)', 'color'), time: !!(row && row !== Q.log() && row.querySelector('time')), noBdi: !row?.querySelector('bdi'), noAvatar: !row?.querySelector('lc-avatar'), notBubble: !tp?.closest('.lc-message-thread__bubble'), alice: Q.names().filter((x) => x === 'Alice').length, avatars: document.querySelectorAll('lc-avatar').length, marc: Q.names().includes('Marc') };
+      const C = Q.content(); const badge = document.querySelector('.lc-message-thread__system lc-status-badge'); // la pastille est la ligne visible ; le texte masqué (sr) est clippé à 1 px
+      const hit = badge && badge.textContent.includes(txt); const tp = badge; const row = badge?.closest('.lc-message-thread__system'); const b = badge && Q.R(badge); const rr = b && { left: b.left, right: b.right };
+      return { found: !!hit, mid: rr && (rr.left + rr.right) / 2, C: C.mid, color: tp && getComputedStyle(tp).color, time: !!row?.querySelector('time'), noBdi: !row?.querySelector('bdi'), noAvatar: !row?.querySelector('lc-avatar'), notBubble: !tp?.closest('.lc-message-thread__bubble'), alice: Q.names().filter((x) => x === 'Alice').length, avatars: document.querySelectorAll('lc-avatar').length, marc: Q.names().includes('Marc') };
     }, SYS);
-    check('CA-T7 ligne système centrée (± 2 px), hors bulle, couleur system-color', r.found && near(r.mid, r.C, 2) && r.notBubble && r.color === r.sys, JSON.stringify(r));
+    check('CA-T7 pastille du repère centrée (± 2 px), hors bulle', r.found && near(r.mid, r.C, 2) && r.notBubble, JSON.stringify(r));
     check('CA-T7 heure dans <time>, ni nom ni avatar sur la ligne système', r.time && r.noBdi && r.noAvatar && !r.marc, JSON.stringify(r));
     check('CA-T7 le système rompt le groupe : même auteur de part et d\'autre = deux groupes (deux avatars)', r.alice === 2 && r.avatars === 2, JSON.stringify(r));
     await page.close();

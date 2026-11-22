@@ -90,7 +90,15 @@
       "$value": "{sys.color.on-surface-muted}",
       "$type": "color"
     },
-    "system-color": {
+    "system-rule-color": {
+      "$value": "{sys.color.border}",
+      "$type": "color"
+    },
+    "system-gap": {
+      "$value": "{sys.space.1}",
+      "$type": "dimension"
+    },
+    "system-detail-color": {
       "$value": "{sys.color.on-surface-muted}",
       "$type": "color"
     },

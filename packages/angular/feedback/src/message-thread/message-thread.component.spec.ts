@@ -108,6 +108,40 @@ describe('lc-message-thread', () => {
     expect(sys[0].querySelector('lc-avatar, bdi')).toBeNull();
   });
 
+  it('CA-12 : repère complet, pastille de ton, phrase seule non masquée, action émise une fois', () => {
+    const { fixture, qa, q } = render([msg('1', { kind: 'system', text: 'En attente', tone: 'warning', icon: 'clock', detail: 'Attente devis', ariaLabel: 'Marc a mis la demande en attente', actionLabel: 'Voir' })]);
+    const emitted: LcThreadMessage[] = [];
+    fixture.debugElement.query((d) => d.name === 'lc-message-thread').componentInstance.systemAction.subscribe((m: LcThreadMessage) => emitted.push(m));
+    const badge = q('lc-status-badge')!;
+    expect(badge.classList.contains('lc-status-badge--warning')).toBe(true);
+    expect(badge.textContent).toContain('En attente');
+    expect(badge.querySelector('lc-icon')).not.toBeNull();
+    expect(badge.querySelector('time')).not.toBeNull();
+    expect(q('.lc-message-thread__sr')!.textContent).toBe('Marc a mis la demande en attente');
+    expect(q('.lc-message-thread__rule')!.getAttribute('aria-hidden')).toBe('true');
+    expect(q('.lc-message-thread__detail')!.getAttribute('aria-hidden')).toBe('true');
+    qa('.lc-message-thread__action')[0].click();
+    expect(emitted.map((m) => m.id)).toEqual(['1']);
+  });
+
+  it('CA-13 : repère sans ton ni ariaLabel : neutre, phrase = mot court, seconde ligne et heure ; ton inconnu : neutre', () => {
+    const { q } = render([msg('1', { kind: 'system', text: 'Mise à jour', detail: 'Raison', sentAt: at(9, 5) })]);
+    expect(q('lc-status-badge')!.classList.contains('lc-status-badge--neutral')).toBe(true);
+    expect(q('.lc-message-thread__sr')!.textContent).toMatch(/^Mise à jour\. Raison\. \d/);
+    expect(q('.lc-message-thread__action')).toBeNull();
+    TestBed.resetTestingModule();
+    const bad = render([msg('2', { kind: 'system', text: 'X', tone: 'inconnu' as never })]);
+    expect(bad.q('lc-status-badge')!.classList.contains('lc-status-badge--neutral')).toBe(true);
+  });
+
+  it('CA-14 : caractères de contrôle et bidi retirés de text, detail, ariaLabel et actionLabel', () => {
+    const { q } = render([msg('1', { kind: 'system', text: 'a\u0000b', detail: 'c‮d', ariaLabel: 'e\u0007f', actionLabel: 'g‏h' })]);
+    expect(q('lc-status-badge')!.textContent).toContain('ab');
+    expect(q('.lc-message-thread__detail')!.textContent).toBe('cd');
+    expect(q('.lc-message-thread__sr')!.textContent).toBe('ef');
+    expect(q('.lc-message-thread__action')!.textContent).toBe('gh');
+  });
+
   it('CA-T8 : adresse http(s) en lien sûr ; javascript: et HTML en texte', () => {
     const { qa } = render([msg('1', { text: 'Suivi https://exemple.fr/suivi/1234. javascript:alert(1) <img src=x onerror=alert(1)>\nligne 2' })]);
     const links = qa('.lc-message-thread__text a');

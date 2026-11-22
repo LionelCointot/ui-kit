@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRe
 import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
+import { LC_STATUS_ICONS } from '../status-icons';
+import { LcStatusBadgeComponent } from '../status-badge/status-badge.component';
 import { ArrivalTracker, cssMs, normalizePageSize, staggerDelay } from './message-thread-motion';
+import type { LcStatusBadgeKind } from '../status-icons';
 import type { LcThreadAttachment, LcThreadMessage } from './message-thread.model';
 
 /** Émis quand on ouvre une pièce jointe (clic, Entrée ou Espace sur sa vignette). */
@@ -27,12 +30,20 @@ interface ThreadBubble {
 }
 type ThreadView =
   | { type: 'day'; key: string; label: string; date: string }
-  | { type: 'system'; key: string; text: string; time: LcThreadTime | null }
+  | { type: 'system'; key: string; message: LcThreadMessage; text: string; detail: string; tone: LcStatusBadgeKind; icon: string | undefined; sentence: string; action: string; time: LcThreadTime | null }
   | { type: 'group'; key: string; authorName: string; mine: boolean; cssClass: string; mention: string | undefined; time: LcThreadTime | null; bubbles: ThreadBubble[] };
 
 function toView(item: LcThreadItem): ThreadView {
   if (item.type === 'day') return item;
-  if (item.type === 'system') return { type: 'system', key: item.key, text: lcStripUnsafeChars(item.message.text ?? ''), time: item.time };
+  if (item.type === 'system') {
+    const { message, time } = item;
+    const text = lcStripUnsafeChars(message.text ?? '');
+    const detail = lcStripUnsafeChars(message.detail ?? '');
+    const tone = message.tone && message.tone in LC_STATUS_ICONS ? message.tone : 'neutral';
+    // Sans `ariaLabel`, la phrase lue est le mot court, la seconde ligne et l'heure.
+    const sentence = lcStripUnsafeChars(message.ariaLabel ?? '') || [text, detail, time?.text].filter(Boolean).join('. ');
+    return { type: 'system', key: item.key, message, text, detail, tone, icon: message.icon, sentence, action: lcStripUnsafeChars(message.actionLabel ?? ''), time };
+  }
   return {
     type: 'group', key: item.key, authorName: item.authorName, mine: item.mine, cssClass: item.cssClass, time: item.time,
     mention: item.mention === undefined ? undefined : lcStripUnsafeChars(item.mention),
@@ -65,7 +76,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
  */
 @Component({
   selector: 'lc-message-thread',
-  imports: [LcAvatarComponent, LcIconComponent],
+  imports: [LcAvatarComponent, LcIconComponent, LcStatusBadgeComponent],
   template: `
     <div #log class="lc-message-thread__log" role="log" [attr.aria-label]="ariaLabel() || labels.threadLabel" [attr.tabindex]="scrolls() ? 0 : null" [attr.aria-busy]="loading() || null">
       <div #inner class="lc-message-thread__inner">
@@ -76,7 +87,14 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
               <time class="lc-message-thread__day" [attr.data-key]="item.key" [attr.datetime]="item.date"><span>{{ item.label }}</span></time>
             }
             @case ('system') {
-              <p class="lc-message-thread__system" [attr.data-key]="item.key">{{ item.text }}@if (item.time; as t) { · <time [attr.datetime]="t.iso">{{ t.text }}</time>}</p>
+              <div class="lc-message-thread__system" [class]="item.message.cssClass ?? ''" [attr.data-key]="item.key">
+                <span class="lc-message-thread__sr">{{ item.sentence }}</span>
+                <div class="lc-message-thread__rule" aria-hidden="true">
+                  <lc-status-badge [kind]="item.tone" [icon]="item.icon" size="small">{{ item.text }}@if (item.time; as t) { <time [attr.datetime]="t.iso">{{ t.text }}</time>}</lc-status-badge>
+                </div>
+                @if (item.detail) { <p class="lc-message-thread__detail" aria-hidden="true">{{ item.detail }}</p> }
+                @if (item.action) { <button type="button" class="lc-message-thread__action" (click)="systemAction.emit(item.message)">{{ item.action }}</button> }
+              </div>
             }
             @case ('group') {
               <div class="lc-message-thread__group" [class]="item.cssClass" [class.lc-message-thread__group--mine]="item.mine" [attr.data-key]="item.key">
@@ -142,6 +160,8 @@ export class LcMessageThreadComponent {
   readonly ariaLabel = input<string>();
 
   readonly attachmentOpen = output<LcThreadAttachmentOpenEvent>();
+  /** Clic sur le bouton d'un repère (`actionLabel`). */
+  readonly systemAction = output<LcThreadMessage>();
 
   private readonly host: HTMLElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly log = viewChild.required<ElementRef<HTMLElement>>('log');

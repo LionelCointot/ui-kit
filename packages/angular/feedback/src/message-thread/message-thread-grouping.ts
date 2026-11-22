@@ -81,6 +81,7 @@ export function groupThreadMessages(messages: readonly LcThreadMessage[], ctx: L
     seen.add(message.id);
     const system = message.kind === 'system';
     if (!message.text?.trim() && (system || !message.attachments?.length)) continue;
+    if (!system && (message.tone || message.icon || message.detail || message.ariaLabel || message.actionLabel)) warn(`champs de repère ignorés sur un message qui n'est pas \`system\` : ${message.id}`);
 
     const date = new Date(message.sentAt);
     const ts = date.getTime();

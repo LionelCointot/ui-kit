@@ -33,19 +33,23 @@ const photo = (color: string) =>
   'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="${color}"/></svg>`);
 const person = (id: string, name: string, sentAt: string, text: string, extra: Partial<LcThreadMessage> = {}): LcThreadMessage =>
   ({ id, authorId: id.split('-')[0], authorName: name, mine: false, sentAt, text, ...extra });
-const system = (id: string, sentAt: string, text: string): LcThreadMessage =>
-  ({ id, authorId: 'sys', authorName: 'Système', mine: false, kind: 'system', sentAt, text });
+const system = (id: string, sentAt: string, text: string, extra: Partial<LcThreadMessage> = {}): LcThreadMessage =>
+  ({ id, authorId: 'sys', authorName: 'Système', mine: false, kind: 'system', sentAt, text, ...extra });
 
 const MARC = 'Marc Lefèvre';
 const CAMILLE = 'Camille Bernard';
 const CONVERSATION: LcThreadMessage[] = [
   person('me-1', 'Vous', at(1, 9, 12), 'Bonjour, voici une photo du problème.', { mine: true, attachments: [{ id: 'p1', name: 'photo-1.png', previewUrl: photo('#c2410c') }] }),
   person('marc-1', MARC, at(1, 9, 40), 'Merci, je regarde cela et je reviens vers vous.'),
-  system('sys-1', at(1, 9, 41), 'Demande mise en pause par Marc'),
+  system('sys-1', at(1, 9, 41), 'En attente', { tone: 'warning', icon: 'clock', detail: 'Attente du devis', ariaLabel: 'Marc a mis la demande en attente, attente du devis' }),
+  system('sys-1b', at(1, 9, 50), 'Prise en charge', { tone: 'info' }),
+  system('sys-1c', at(1, 9, 55), 'Refusée', { tone: 'error', detail: 'Hors contrat', actionLabel: 'Voir la demande' }),
+  system('sys-1d', at(1, 9, 58), 'Mise à jour'),
+  system('sys-1e', at(1, 9, 59), 'Mise en avant', { tone: 'highlight' }),
   person('camille-1', CAMILLE, at(0, 8, 30), 'Bonjour, je reprends le dossier. Voir https://example.org/dossier.'),
   person('me-2', 'Vous', at(0, 8, 52), 'Voici une seconde photo, prise ce matin.', { mine: true, attachments: [{ id: 'p2', name: 'photo-2.png', previewUrl: photo('#0369a1') }] }),
   person('camille-2', CAMILLE, at(0, 9, 5), 'Parfait, c\'est bien reçu.'),
-  system('sys-2', at(0, 16, 5), 'Demande résolue par Camille'),
+  system('sys-2', at(0, 16, 5), 'Résolue', { tone: 'success', detail: 'Clôturée par Camille' }),
 ];
 
 const NOTE_STYLES = `

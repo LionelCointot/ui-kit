@@ -1,3 +1,8 @@
+import type { LcStatusBadgeKind } from '../status-icons';
+
+/** Ton d'un repère : les rôles de `lc-status-badge`. */
+export type LcThreadTone = LcStatusBadgeKind;
+
 /** Pièce jointe d'un message du fil ; `previewUrl` est filtrée avant affichage (`isSafePreviewUrl`). */
 export interface LcThreadAttachment {
   id: string;
@@ -19,10 +24,20 @@ export interface LcThreadMessage {
   sentAt: string;
   text?: string;
   attachments?: LcThreadAttachment[];
-  /** `system` : ligne centrée, hors groupe. */
+  /** `system` : repère centré (pastille `text`), hors groupe. */
   kind?: 'message' | 'system';
   /** Classe posée par l'application (note interne) : redéfinit les jetons de bulle. */
   cssClass?: string;
   /** Texte court sous l'en-tête du groupe (« Restreint »). */
   mention?: string;
+  /** system : rôle de couleur de la pastille ; `neutral` par défaut. */
+  tone?: LcThreadTone;
+  /** system : icône `lc-icon` de la pastille ; celle du ton par défaut. */
+  icon?: string;
+  /** system : seconde ligne, sous la pastille (raison). */
+  detail?: string;
+  /** system : phrase lue à la place de la pastille, de la seconde ligne et de l'heure. */
+  ariaLabel?: string;
+  /** system : libellé d'un bouton sous le repère ; un clic émet `systemAction`. */
+  actionLabel?: string;
 }
