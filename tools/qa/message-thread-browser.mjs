@@ -328,11 +328,22 @@ async function motion() {
   await withCtx('desk', async (c) => {
     const page = await open(c);
     const probe = (list, expectN) => page.evaluate(async ({ list, expectN }) => { window.__thread.set(list); await Q.until(() => Q.bubbles().length === expectN); const now = Q.anims().length; await Q.raf(); await Q.raf(); return { now, later: Q.anims().length, n: Q.bubbles().length }; }, { list, expectN });
-    await put(page, []);
-    const first = await probe([alt(1), alt(2), alt(3), alt(4), alt(5), alt(6)], 6);
-    check('CA-T4 premier rendu (liste vide puis remplie) : aucune animation, immédiatement et après deux images', first.n === 6 && first.now === 0 && first.later === 0, JSON.stringify(first));
-    const same = await probe([alt(1), alt(2), alt(3), alt(4), alt(5), alt(6)].map((m) => ({ ...m })), 6);
+    const six = [alt(1), alt(2), alt(3), alt(4), alt(5), alt(6)];
+    await put(page, six);
+    // Ouverture : le composant est remonté avec six messages déjà dans la liste.
+    const first = await page.evaluate(async () => { window.__thread.remount(); await new Promise((r) => setTimeout(r, 300)); await Q.until(() => !!Q.log() && Q.bubbles().length === 6, 3000); const now = Q.anims().length; await Q.raf(); await Q.raf(); return { now, later: Q.anims().length, n: Q.bubbles().length }; });
+    check('CA-T4 premier rendu (six messages montés directement) : aucune animation, immédiatement et après deux images', first.n === 6 && first.now === 0 && first.later === 0, JSON.stringify(first));
+    const same = await probe(six.map((m) => ({ ...m })), 6);
     check('CA-T4 remplacement de la liste sans id nouveau : aucune animation', same.now === 0 && same.later === 0, JSON.stringify(same));
+    // CA-15 : fil monté vide, puis un message : il joue l'entrée.
+    await put(page, []);
+    await page.evaluate(async () => { window.__thread.remount(); await new Promise((r) => setTimeout(r, 300)); await Q.until(() => !!Q.log()); });
+    const empty = await page.evaluate(async () => { window.__thread.add([{ id: 'first', authorId: 'a', authorName: 'Alice', mine: false, sentAt: '2026-11-21T09:00:00Z', text: 'Bonjour' }]); await Q.until(() => Q.bubbles().length === 1); return { n: Q.bubbles().length, anims: Q.anims().filter((a) => a.effect.getComputedTiming().duration > 1).length }; });
+    check('CA-T4 fil monté vide puis un message : ce message joue l\'entrée', empty.n === 1 && empty.anims > 0, JSON.stringify(empty));
+    // CA-16 : contenu qui tient, puis une arrivée qui le fait déborder : le fil est en bas.
+    await patch(page, { height: 300 }); await put(page, [alt(1)]);
+    const fits = await page.evaluate(async (add) => { const log = Q.log(); const fit = log.scrollHeight <= log.clientHeight + 1; window.__thread.add(add); await Q.until(() => Q.bubbles().length === 4); await Q.settle(); return { fit, gap: log.scrollHeight - log.scrollTop - log.clientHeight, scrolls: log.scrollHeight > log.clientHeight + 1 }; }, [long(alt(2)), long(alt(3)), long(alt(4))]);
+    check('CA-T4 contenu qui tenait puis arrivée qui déborde : le fil est en bas', fits.fit && fits.scrolls && fits.gap <= 1, JSON.stringify(fits));
     await page.close();
   });
   await withCtx('deskReduced', async (c) => {

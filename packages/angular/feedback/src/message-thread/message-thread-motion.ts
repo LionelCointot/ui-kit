@@ -11,13 +11,14 @@ export const staggerDelay = (index: number, count: number, staggerMs: number): n
 
 /**
  * Se souvient des identifiants déjà vus : une arrivée est un identifiant jamais vu.
- * Le premier rendu non vide (y compris après une liste d'abord vide) marque tout comme vu.
+ * Le premier rendu du composant ouvre le fil, vide ou non : tout ce qu'il contient est vu.
+ * Ensuite, tout identifiant nouveau est une arrivée, y compris le premier message d'un fil vide.
  */
 export class ArrivalTracker {
   private readonly seen = new Set<string>();
   private started = false;
 
-  /** `true` une fois la première liste non vide reçue. */
+  /** `true` une fois le premier rendu reçu. */
   get hasStarted(): boolean {
     return this.started;
   }
@@ -26,7 +27,7 @@ export class ArrivalTracker {
   next(ids: readonly string[]): string[] {
     const fresh = ids.filter((id) => !this.seen.has(id) && this.seen.add(id));
     if (this.started) return fresh;
-    this.started = ids.length > 0;
+    this.started = true;
     return [];
   }
 }

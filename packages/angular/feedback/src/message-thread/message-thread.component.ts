@@ -216,7 +216,7 @@ export class LcMessageThreadComponent {
     const log = this.log().nativeElement;
     const bottoms = new Map<Element, number>();
     for (const el of log.querySelectorAll(MOVING)) bottoms.set(el, el.getBoundingClientRect().bottom);
-    this.before = { bottoms, glued: log.scrollHeight > log.clientHeight + 1 && log.scrollHeight - log.scrollTop - log.clientHeight <= 2 };
+    this.before = { bottoms, glued: log.scrollHeight - log.scrollTop - log.clientHeight <= 2 };
   }
 
   /** Après le rendu, dans la même image : position de lecture, glissement des messages déjà affichés, entrée des arrivées. */

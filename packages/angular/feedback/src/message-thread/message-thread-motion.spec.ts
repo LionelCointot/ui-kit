@@ -5,13 +5,13 @@ describe('ArrivalTracker', () => {
     expect(new ArrivalTracker().next(['1', '2', '3'])).toEqual([]);
   });
 
-  it('liste d\'abord vide puis remplie : aucune arrivée, puis les identifiants nouveaux', () => {
+  it('premier rendu vide : ouverture ; le premier message qui suit est une arrivée', () => {
     const tracker = new ArrivalTracker();
-    expect(tracker.next([])).toEqual([]);
     expect(tracker.hasStarted).toBe(false);
-    expect(tracker.next(['1', '2'])).toEqual([]);
+    expect(tracker.next([])).toEqual([]);
     expect(tracker.hasStarted).toBe(true);
-    expect(tracker.next(['1', '2', '3', '4'])).toEqual(['3', '4']);
+    expect(tracker.next(['1'])).toEqual(['1']);
+    expect(tracker.next(['1', '2', '3'])).toEqual(['2', '3']);
   });
 
   it('remplacement de liste sans identifiant nouveau, retrait puis retour : aucune arrivée', () => {
