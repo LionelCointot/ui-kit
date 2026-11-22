@@ -1,16 +1,27 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, afterRenderEffect, computed, contentChildren, inject, input, model, signal, viewChild, viewChildren } from '@angular/core';
-import { LcIconComponent, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, afterRenderEffect, computed, contentChildren, inject, input, model, output, signal, viewChild, viewChildren } from '@angular/core';
+import { LcIconComponent, lcIndicatorRect, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LcSwipePanelDirective, LcSwipePanelsComponent } from '../swipe-panels/swipe-panels.component';
 import { LcTabComponent } from './tab.component';
+
+/** Réglages du glissement de `lc-tabs` (ADR 0010 : `swipe` vaut `boolean | LcTabsSwipeSettings`). */
+export interface LcTabsSwipeSettings {
+  /** `true` : au bord, le geste passe à la bande qui défile au-dessus (bandes imbriquées). */
+  readonly chain?: boolean;
+}
 
 /**
  * Onglets (`tablist`, `tab`, `tabpanel`). Flèches gauche et droite, Début et Fin ; activation
  * automatique (l'onglet focalisé est sélectionné) ou manuelle (Entrée ou Espace). Le contenu d'un onglet
  * n'est créé qu'à sa première sélection, puis conservé.
+ *
+ * Avec `swipe`, les panneaux sont ceux d'un `lc-swipe-panels` (un seul jeu de `tabpanel`, tous créés d'emblée, `inert`
+ * hors de vue, jamais `hidden`) : un glissement change d'onglet et le trait suit le doigt. L'hôte remplit son conteneur
+ * (liste fixe, bande qui prend le reste). Un onglet désactivé n'a pas de panneau.
  */
 @Component({
   selector: 'lc-tabs',
-  imports: [NgTemplateOutlet, LcIconComponent],
+  imports: [NgTemplateOutlet, LcIconComponent, LcSwipePanelsComponent, LcSwipePanelDirective],
   template: `
     <div #list class="lc-tabs__list" role="tablist" [attr.aria-label]="ariaLabel() || null"
       [class.lc-tabs__list--fade-left]="fadeLeft()" [class.lc-tabs__list--fade-right]="fadeRight()"
@@ -19,7 +30,7 @@ import { LcTabComponent } from './tab.component';
       @for (tab of tabs(); track tab.id()) {
         <button #tabButton type="button" role="tab" class="lc-tabs__tab"
           [id]="tabId(tab.id())" [attr.aria-selected]="tab.id() === current()"
-          [attr.aria-controls]="panelId(tab.id())" [tabIndex]="tab.id() === focusable() ? 0 : -1"
+          [attr.aria-controls]="swipeOn() && tab.disabled() ? null : panelId(tab.id())" [tabIndex]="tab.id() === focusable() ? 0 : -1"
           [disabled]="tab.disabled()" (click)="select(tab.id())" (keydown)="onKeydown($event, $index)">
           @if (tab.icon()) {
             <lc-icon [name]="tab.icon()!" />
@@ -28,26 +39,42 @@ import { LcTabComponent } from './tab.component';
         </button>
       }
     </div>
-    @for (tab of tabs(); track tab.id()) {
-      <div role="tabpanel" class="lc-tabs__panel" tabindex="0"
-        [id]="panelId(tab.id())" [attr.aria-labelledby]="tabId(tab.id())" [hidden]="tab.id() !== current()">
-        @if (visited().has(tab.id()) || tab.id() === current()) {
-          <ng-container [ngTemplateOutlet]="tab.contentTemplate()" />
+    @if (swipeOn()) {
+      <lc-swipe-panels #strip class="lc-tabs__strip" [chain]="chain()" [activeIndex]="swipeIndex()" (activeIndexChange)="onSwipe($event)">
+        @for (tab of swipeTabs(); track tab.id()) {
+          <div lcSwipePanel role="tabpanel" class="lc-tabs__panel" tabindex="0"
+            [id]="panelId(tab.id())" [attr.aria-labelledby]="tabId(tab.id())">
+            <ng-container [ngTemplateOutlet]="tab.contentTemplate()" />
+          </div>
         }
-      </div>
+      </lc-swipe-panels>
+    } @else {
+      @for (tab of tabs(); track tab.id()) {
+        <div role="tabpanel" class="lc-tabs__panel" tabindex="0"
+          [id]="panelId(tab.id())" [attr.aria-labelledby]="tabId(tab.id())" [hidden]="tab.id() !== current()">
+          @if (visited().has(tab.id()) || tab.id() === current()) {
+            <ng-container [ngTemplateOutlet]="tab.contentTemplate()" />
+          }
+        </div>
+      }
     }
   `,
   styleUrl: './tabs.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-tabs', '[class.lc-tabs--ready]': 'ready()' },
+  host: { class: 'lc-tabs', '[class.lc-tabs--ready]': 'ready()', '[class.lc-tabs--swipe]': 'swipeOn()' },
 })
 export class LcTabsComponent {
   readonly selected = model<string | null>(null);
   readonly activation = input<'automatic' | 'manual'>('automatic');
   readonly ariaLabel = input<string>();
+  /** Panneaux glissants (voir la description du composant) ; un objet règle le glissement. */
+  readonly swipe = input<boolean | LcTabsSwipeSettings, boolean | LcTabsSwipeSettings | ''>(false, { transform: (value) => value === '' || value });
+  /** Émis à chaque changement d'onglet ; `source` distingue un choix (`tab` : clic, clavier) d'un glissement (`swipe`). */
+  readonly selectionChange = output<{ id: string; source: 'tab' | 'swipe' }>();
 
   protected readonly tabs = contentChildren(LcTabComponent);
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
+  private readonly strip = viewChild(LcSwipePanelsComponent);
   private readonly list = viewChild.required<ElementRef<HTMLElement>>('list');
   private readonly indicator = viewChild.required<ElementRef<HTMLElement>>('indicator');
   private readonly view = inject(DOCUMENT).defaultView;
@@ -67,6 +94,10 @@ export class LcTabsComponent {
     const found = tabs.find((tab) => tab.id() === wanted && !tab.disabled());
     return (found ?? tabs.find((tab) => !tab.disabled()))?.id() ?? null;
   });
+  protected readonly swipeOn = computed(() => !!this.swipe());
+  protected readonly chain = computed(() => { const swipe = this.swipe(); return typeof swipe === 'object' && !!swipe.chain; });
+  protected readonly swipeTabs = computed(() => this.tabs().filter((tab) => !tab.disabled()));
+  protected readonly swipeIndex = computed(() => Math.max(0, this.swipeTabs().findIndex((tab) => tab.id() === this.current())));
   /** Onglet atteignable par Tab (focus itinérant), suit la sélection tant que le focus n'a pas bougé. */
   private readonly focusedTab = signal<string | null>(null);
   protected readonly focusable = computed(() => this.focusedTab() ?? this.current());
@@ -77,7 +108,11 @@ export class LcTabsComponent {
       const index = this.tabs().findIndex((tab) => tab.id() === this.focusable());
       this.scrollTabIntoView(this.buttons()[index]?.nativeElement);
       this.updateFades();
-      this.placeIndicator(false);
+      if (!this.swipeOn()) this.placeIndicator(false);
+    });
+    // En glissement, le trait suit la progression de la bande (position et largeur interpolées, sans transition).
+    afterRenderEffect(() => {
+      if (this.swipeOn()) this.followStrip();
     });
     afterRenderEffect((onCleanup) => {
       // Une remesure due à la taille (et non à une sélection) pose l'indicateur sans transition.
@@ -105,6 +140,7 @@ export class LcTabsComponent {
    * glisse : une remesure (`resized`) ou une même sélection (ajout d'onglet, focus) pose le trait sans transition.
    */
   private placeIndicator(resized: boolean): void {
+    if (this.swipeOn()) return this.followStrip();
     const indicator = this.indicator().nativeElement;
     const id = this.current();
     const button = this.buttons()[this.tabs().findIndex((tab) => tab.id() === id)]?.nativeElement;
@@ -116,6 +152,25 @@ export class LcTabsComponent {
     indicator.style.transform = `translateX(${button.offsetLeft}px)`;
     indicator.style.width = `${button.offsetWidth}px`;
     this.ready.set(true);
+  }
+
+  private followStrip(): void {
+    const indicator = this.indicator().nativeElement;
+    const tabs = this.tabs();
+    const buttons = this.buttons();
+    const rects = this.swipeTabs().map((tab) => buttons[tabs.indexOf(tab)]?.nativeElement).filter((button) => !!button).map((button) => ({ left: button.offsetLeft, width: button.offsetWidth }));
+    const rect = lcIndicatorRect(rects, this.strip()?.progress() ?? 0);
+    indicator.hidden = !rect;
+    if (!rect) return;
+    indicator.classList.add('lc-tabs__indicator--instant');
+    indicator.style.transform = `translateX(${rect.left}px)`;
+    indicator.style.width = `${rect.width}px`;
+    this.ready.set(true);
+  }
+
+  protected onSwipe(index: number): void {
+    const tab = this.swipeTabs()[index];
+    if (tab) this.pick(tab.id(), 'swipe');
   }
 
   /** Fait défiler la rangée (jamais la page) jusqu'à l'onglet, en laissant la largeur du fondu de chaque côté. */
@@ -141,6 +196,11 @@ export class LcTabsComponent {
   }
 
   protected select(id: string): void {
+    this.pick(id, 'tab');
+  }
+
+  private pick(id: string, source: 'tab' | 'swipe'): void {
+    if (id !== this.current()) this.selectionChange.emit({ id, source });
     this.selected.set(id);
     this.focusedTab.set(null);
     this.visited.update((set) => new Set(set).add(id));

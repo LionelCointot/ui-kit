@@ -26,3 +26,4 @@ export * from './lib/skeleton/skeleton.component';
 export * from './lib/truncate/truncate.directive';
 export * from './lib/core/detach-animated';
 export * from './lib/core/reduced-motion';
+export * from './lib/core/indicator-rect';

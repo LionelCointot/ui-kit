@@ -119,14 +119,16 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
 | `[lcMenuTriggerFor]` | LcMenuTriggerDirective | directive | lcMenuTriggerFor (requis) | – |
+| `[lcSwipePanel]` | LcSwipePanelDirective | directive | – | – |
 | `a[lcNavItem]` | LcNavItemComponent | composant | icon, badge, active, ariaCurrentWhenActive, routerLinkActiveOptions, routerLink, queryParams, fragment | – |
 | `button[lcMenuItem]` | LcMenuItemComponent | composant | icon, destructive | – |
 | `lc-menu` | LcMenuComponent | composant | ariaLabel | opened, closed |
 | `lc-nav-group` | LcNavGroupComponent | composant | label (requis), collapsible, expanded (model) | – |
 | `lc-nav-list` | LcNavListComponent | composant | collapsed | – |
 | `lc-stepper` | LcStepperComponent | composant | steps (requis), ariaLabel (requis), compact, linear, orientation, variant | stepSelect, directionChange |
+| `lc-swipe-panels` | LcSwipePanelsComponent | composant | activeIndex (model), layout, chain | – |
 | `lc-tab` | LcTabComponent | composant | id (requis), label (requis), disabled, icon | – |
-| `lc-tabs` | LcTabsComponent | composant | selected (model), activation, ariaLabel | – |
+| `lc-tabs` | LcTabsComponent | composant | selected (model), activation, ariaLabel, swipe | selectionChange |
 | `ng-template[lcStepAction]` | LcStepActionDirective | directive | – | – |
 | `ng-template[lcTabContent]` | LcTabContentDirective | directive | – | – |
 

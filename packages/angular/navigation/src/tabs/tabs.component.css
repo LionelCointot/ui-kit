@@ -126,3 +126,24 @@
     border-block-end-color: Highlight;
   }
 }
+
+/* Glissement : l'hôte remplit son conteneur, la liste reste fixe et la bande prend le reste ; chaque panneau défile à part. */
+:host(.lc-tabs--swipe) {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+:host(.lc-tabs--swipe) .lc-tabs__list {
+  flex: none;
+}
+
+.lc-tabs__strip {
+  flex: 1;
+}
+
+.lc-tabs__strip > .lc-tabs__panel {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}

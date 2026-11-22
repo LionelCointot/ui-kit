@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { fixedExample } from '@lc/storybook';
 import { LcSegmentedControlComponent } from '@lionelcointot/ui-angular/forms';
-import { LcSwipePanelDirective, LcSwipePanelsComponent } from '@lionelcointot/ui-angular/navigation';
+import { LcSwipePanelDirective, LcSwipePanelsComponent, LcTabComponent, LcTabsComponent } from '@lionelcointot/ui-angular/navigation';
 
 const VIEWS = [{ value: 0, label: 'Messages' }, { value: 1, label: 'Details' }, { value: 2, label: 'History' }];
 const PANEL_STYLE = 'min-block-size:8rem;border:1px solid var(--lc-sys-color-border);border-radius:var(--lc-sys-radius-md);padding:var(--lc-sys-space-4);margin-inline:var(--lc-sys-space-1)';
@@ -27,6 +27,31 @@ class SegmentedDemoComponent {
   protected readonly index = signal(0);
 }
 
+/** Two strips: the outer one has two panels; the second holds `lc-tabs` with `swipe` and `chain`, so at its first tab the gesture passes to the outer strip. */
+@Component({
+  selector: 'lc-swipe-panels-nested-demo',
+  imports: [LcSegmentedControlComponent, LcSwipePanelsComponent, LcSwipePanelDirective, LcTabsComponent, LcTabComponent],
+  template: `
+    <div style="inline-size:360px;max-inline-size:100%;block-size:20rem;display:flex;flex-direction:column;gap:var(--lc-sys-space-3)">
+      <lc-segmented-control ariaLabel="Section" fullWidth [options]="sections" [value]="index()" (valueChange)="index.set($event ?? 0)" />
+      <lc-swipe-panels [(activeIndex)]="index" style="flex:1">
+        <section lcSwipePanel aria-label="Conversation"><div style="${PANEL_STYLE}">Conversation</div></section>
+        <section lcSwipePanel aria-label="Information" style="display:flex">
+          <lc-tabs ariaLabel="Information" [swipe]="{ chain: true }" style="flex:1">
+            <lc-tab id="request" label="Request"><p>Request panel</p></lc-tab>
+            <lc-tab id="photos" label="Photos"><p>Photos panel</p></lc-tab>
+            <lc-tab id="history" label="History"><p>History panel</p></lc-tab>
+          </lc-tabs>
+        </section>
+      </lc-swipe-panels>
+    </div>
+  `,
+})
+class NestedDemoComponent {
+  protected readonly sections = [{ value: 0, label: 'Conversation' }, { value: 1, label: 'Information' }];
+  protected readonly index = signal(0);
+}
+
 /**
  * Horizontal strip of full-width panels with native scroll snapping (`lc-swipe-panels`, children marked `lcSwipePanel`). A swipe changes
  * `activeIndex` (the only case where `activeIndexChange` is emitted); setting `activeIndex` scrolls the strip. Hidden panels are `inert`.
@@ -37,7 +62,7 @@ class SegmentedDemoComponent {
 const meta: Meta<LcSwipePanelsComponent> = {
   title: 'Navigation/Swipe panels',
   component: LcSwipePanelsComponent,
-  decorators: [moduleMetadata({ imports: [LcSwipePanelsComponent, LcSwipePanelDirective, SegmentedDemoComponent] })],
+  decorators: [moduleMetadata({ imports: [LcSwipePanelsComponent, LcSwipePanelDirective, SegmentedDemoComponent, NestedDemoComponent] })],
   argTypes: { layout: { control: 'inline-radio', options: ['strip', 'columns'] }, activeIndex: { control: { type: 'number', min: 0, max: 2 } }, activeIndexChange: { action: 'activeIndexChange' }, progress: { control: false } },
   args: { layout: 'strip', chain: false, activeIndex: 0 },
 };
@@ -63,4 +88,10 @@ export const Playground: Story = {
 export const WithSegmentedControl: Story = {
   parameters: fixedExample,
   render: () => ({ template: '<lc-swipe-panels-segmented-demo />' }),
+};
+
+/** Nested strips with `lc-tabs` in swipe mode (`chain`): the tabs and the outer strip follow the same gesture. */
+export const Nested: Story = {
+  parameters: fixedExample,
+  render: () => ({ template: '<lc-swipe-panels-nested-demo />' }),
 };

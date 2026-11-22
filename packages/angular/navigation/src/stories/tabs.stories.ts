@@ -104,3 +104,18 @@ export const Animation: Story = {
     };
   },
 };
+
+/** With `swipe`, the panels slide: a swipe changes tab, the indicator follows the finger, and only the panels of the strip exist (hidden ones are `inert`). `selectionChange` tells a click (`tab`) from a swipe (`swipe`). */
+export const Swipe: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `
+      <div style="inline-size:360px;max-inline-size:100%;block-size:14rem;display:flex">
+        <lc-tabs ariaLabel="Rubriques" swipe style="flex:1">
+          <lc-tab id="a" label="Messages"><p>Messages panel</p></lc-tab>
+          <lc-tab id="b" label="Details"><p>Details panel</p></lc-tab>
+          <lc-tab id="c" label="History"><p>History panel</p></lc-tab>
+        </lc-tabs>
+      </div>`,
+  }),
+};

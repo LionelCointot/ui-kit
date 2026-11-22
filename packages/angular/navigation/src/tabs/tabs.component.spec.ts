@@ -519,3 +519,64 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
     expect(indicator.style.width).toBe('80px');
   });
 });
+
+@Component({
+  imports: [LcTabsComponent, LcTabComponent],
+  template: `
+    <lc-tabs ariaLabel="Rubriques" swipe [(selected)]="selected" (selectionChange)="changes.push($event)">
+      <lc-tab id="a" label="A"><p>Contenu A</p></lc-tab>
+      <lc-tab id="b" label="B"><p>Contenu B</p></lc-tab>
+      <lc-tab id="off" label="Off" [disabled]="true">x</lc-tab>
+      <lc-tab id="c" label="C"><p>Contenu C</p></lc-tab>
+    </lc-tabs>
+  `,
+})
+class SwipeTabsHostComponent {
+  readonly selected = signal<string | null>(null);
+  readonly changes: { id: string; source: string }[] = [];
+}
+
+describe('LcTabsComponent swipe', () => {
+  let intersect: (target: Element, ratio: number) => void;
+
+  async function setup() {
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: (entries: unknown[]) => void) {
+        intersect = (target, ratio) => callback([{ target, isIntersecting: true, intersectionRatio: ratio }]);
+      }
+      observe() {}
+      disconnect() {}
+    });
+    Element.prototype.scrollTo = vi.fn() as unknown as typeof Element.prototype.scrollTo;
+    const fixture = TestBed.createComponent(SwipeTabsHostComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector('lc-swipe-panels')!.dispatchEvent(new Event('scrollend'));
+    return { fixture, element, panels: Array.from(element.querySelectorAll<HTMLElement>('[role="tabpanel"]')) };
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('un seul jeu de tabpanel, tous créés, inert et jamais hidden, reliés aux onglets (aucun panneau pour un onglet désactivé)', async () => {
+    const { element, panels } = await setup();
+    const tabs = Array.from(element.querySelectorAll<HTMLElement>('[role="tab"]'));
+    expect(panels.length).toBe(3);
+    expect(panels.map((panel) => panel.hasAttribute('inert'))).toEqual([false, true, true]);
+    expect(panels.some((panel) => panel.hidden)).toBe(false);
+    expect(element.textContent).toContain('Contenu C');
+    expect(panels.map((panel) => panel.getAttribute('aria-labelledby'))).toEqual([tabs[0].id, tabs[1].id, tabs[3].id]);
+    expect(tabs.map((tab) => tab.getAttribute('aria-controls'))).toEqual([panels[0].id, panels[1].id, null, panels[2].id]);
+  });
+
+  it('selectionChange : source tab pour un clic, swipe pour un glissement, rien si l’onglet ne change pas', async () => {
+    const { fixture, element, panels } = await setup();
+    const tabs = Array.from(element.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    tabs[0].click();
+    tabs[1].click();
+    await fixture.whenStable();
+    intersect(panels[2], 0.8);
+    await fixture.whenStable();
+    expect(fixture.componentInstance.changes).toEqual([{ id: 'b', source: 'tab' }, { id: 'c', source: 'swipe' }]);
+    expect(fixture.componentInstance.selected()).toBe('c');
+  });
+});
