@@ -99,6 +99,10 @@
   min-inline-size: 0;
 }
 
+.lc-message-thread__rule lc-status-badge time {
+  margin-inline-start: var(--lc-sys-space-2);
+}
+
 .lc-message-thread__detail {
   max-inline-size: 90%;
   margin: 0;

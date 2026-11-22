@@ -117,6 +117,7 @@ describe('lc-message-thread', () => {
     expect(badge.textContent).toContain('En attente');
     expect(badge.querySelector('lc-icon')).not.toBeNull();
     expect(badge.querySelector('time')).not.toBeNull();
+    expect(getComputedStyle(badge.querySelector('time')!).marginInlineStart).toBe('var(--lc-sys-space-2)');
     expect(q('.lc-message-thread__sr')!.textContent).toBe('Marc a mis la demande en attente');
     expect(q('.lc-message-thread__rule')!.getAttribute('aria-hidden')).toBe('true');
     expect(q('.lc-message-thread__detail')!.getAttribute('aria-hidden')).toBe('true');
