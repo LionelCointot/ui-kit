@@ -4,7 +4,7 @@ import { LcProgressBarComponent } from '@lionelcointot/ui-angular/feedback';
 
 /**
  * Progress bar (`role="progressbar"`): a value from 0 to 100, or `null` for an indeterminate progress.
- * Use it for the advance of a task; for a measured quantity, use `lc-meter`.
+ * Use it for the advance of a task.
  *
  * Import: `import { LcProgressBarComponent } from '@lionelcointot/ui-angular/feedback';`
  */

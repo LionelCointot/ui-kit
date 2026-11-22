@@ -1,7 +1,6 @@
 // docs/specs/2026-11-fil-de-messages.md : CA-T11 (statique), CA-T18, CA-T19 (statique) et architecture, par contrôles statiques.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import postcss from 'postcss';
@@ -69,15 +68,6 @@ test('CA-T11 : libellés thread* présents en français et en anglais, anglais t
   assert.match(labels, /readonly threadAttachmentOpen: \(/);
   for (const b of [fr, en]) assert.match(b, /threadAttachmentOpen: \(/, 'threadAttachmentOpen(name)');
   assert.match(fr, /threadToday: ['"]Aujourd['’\\]*'?hui/); assert.match(fr, /threadYesterday: 'Hier'/);
-});
-
-test('CA-T18 : lc-message n\'est pas modifié (CSS, composant et ses 16 tests CA-D3, empreintes de la base)', () => {
-  const m = path.join(ng, 'feedback/src/message');
-  const h = (f) => createHash('sha256').update(readFileSync(path.join(m, f))).digest('hex');
-  assert.equal(h('message.component.css'), '9e9f4c353316788ccb2d4ce51c60dd2685251af2dc509e045895b398766d5a41');
-  assert.equal(h('message.component.ts'), '97289251a97663319656c3275db0046d03667661db11e9127aa8c212bd57f815');
-  assert.equal(h('message.component.spec.ts'), '07468c91577e7821f0602f0b82cf4436e2b22f7fc226c9e7c65ebcfaabb850e2');
-  assert.equal((read(path.join(m, 'message.component.spec.ts')).match(/^\s*it\(/gm) ?? []).length, 16);
 });
 
 test('architecture : feedback/src/message-thread n\'importe ni forms ni aucun autre point d\'entrée secondaire (le principal seulement)', () => {

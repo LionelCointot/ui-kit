@@ -31,15 +31,6 @@ export interface LcLabels {
   readonly selectRow: string;
   readonly selectAll: string;
   readonly selectionCount: (selected: number, total: number) => string;
-  /** Jauge (`lc-meter`) : texte lu quand la valeur n'est pas mesurée. */
-  readonly noValue: string;
-  /** Pagination (`lc-paginator`). */
-  readonly pagination: string;
-  readonly previousPage: string;
-  readonly nextPage: string;
-  readonly pageSize: string;
-  readonly pageRange: (first: number, last: number, total: number) => string;
-  readonly pageStatus: (page: number, pageCount: number) => string;
   /** Fil d'étapes (`lc-stepper`) : position (« Étape 2 sur 5 »), nom accessible d'une étape cliquable et mentions des étapes en erreur ou facultatives. */
   readonly stepOf: (current: number, total: number) => string;
   /** @deprecated Remplacé par `stepGoTo` (nom accessible d'une étape cliquable du fil d'étapes v2). */
@@ -53,22 +44,6 @@ export interface LcLabels {
   readonly stepOptional: string;
   /** Bouton qui déplie la liste des réponses du fil d'étapes en variante `rail` sous 900 px. */
   readonly stepAnswers: string;
-  /** Bloc de code (`lc-code-block`). */
-  readonly copy: string;
-  readonly copied: string;
-  readonly copyFailed: string;
-  readonly codeTruncated: (count: number) => string;
-  /** Journal (`lc-log-view`) : copie, reprise du suivi, avis de lignes masquées, état vide et repères de niveau. */
-  readonly logCopy: string;
-  readonly logResume: string;
-  readonly logTruncated: (count: number) => string;
-  readonly logEmpty: string;
-  readonly logLevelError: string;
-  readonly logLevelInfo: string;
-  /** Message (`lc-message`) : variante annoncée avant l'auteur ; la note à diffusion restreinte l'affiche aussi à l'écran. */
-  readonly messageReceived: string;
-  readonly messageSent: string;
-  readonly messageRestricted: string;
   /** Dépôt de fichiers (`lc-file-upload`) : choix, zone de dépôt, limite, état et actions de chaque ligne, annonces. */
   readonly fileUploadChoose: string;
   readonly fileUploadChooseMany: string;
@@ -148,6 +123,8 @@ export interface LcLabels {
   /** Résumé lu par les technologies d'assistance pour un graphique. */
   readonly chartSummary: (info: LcChartSummaryInfo) => string;
   readonly themeBuilder: LcThemeBuilderLabels;
+  /** Bascule de thème (`lc-theme-toggle`). */
+  readonly themeToggle: LcThemeToggleLabels;
   /** Tableau filtrable (`lc-data-table`). Pour nommer les lignes (« demandes »), remplacer `rows`, `rowNoun`, `showRows`, `noResultsTitle`. */
   readonly dataTable: LcDataTableLabels;
   /** Champ de date à zones : lettres d'une zone vide, noms des zones, aide et annonces. */
@@ -406,6 +383,14 @@ const DATA_TABLE_EN: LcDataTableLabels = {
   announceFiltersApplied: 'Filters applied.',
   announceDraftCleared: 'All choices cleared.',
 };
+
+/** Textes de `lc-theme-toggle` : nom du groupe et des trois choix. */
+export interface LcThemeToggleLabels {
+  readonly group: string;
+  readonly light: string;
+  readonly dark: string;
+  readonly system: string;
+}
 
 /** Textes d'exemple de l'aperçu du theme builder. */
 export interface LcThemePreviewSamples {
@@ -666,13 +651,6 @@ export const LC_LABELS_FR: LcLabels = {
   selectRow: 'Sélectionner la ligne',
   selectAll: 'Tout sélectionner',
   selectionCount: (selected, total) => `${selected} sélectionnées sur ${total}`,
-  noValue: 'Non mesuré',
-  pagination: 'Pagination',
-  previousPage: 'Précédent',
-  nextPage: 'Suivant',
-  pageSize: 'Éléments par page',
-  pageRange: (first, last, total) => (total === 0 ? '0 sur 0' : `${frNumber.format(first)} à ${frNumber.format(last)} sur ${frNumber.format(total)}`),
-  pageStatus: (page, pageCount) => `Page ${frNumber.format(page)} sur ${frNumber.format(pageCount)}`,
   stepOf: (current, total) => `Étape ${current} sur ${total}`,
   stepBack: (name) => `Revenir à : ${name}`,
   stepGoTo: (position, name) => `Aller à l'étape ${position} : ${name}`,
@@ -680,19 +658,6 @@ export const LC_LABELS_FR: LcLabels = {
   stepOptionalHidden: '(facultative)',
   stepOptional: 'Facultative',
   stepAnswers: 'Voir vos réponses',
-  copy: 'Copier',
-  copied: 'Copié',
-  copyFailed: 'Copie impossible',
-  codeTruncated: (count) => `Texte tronqué aux ${count} premiers caractères`,
-  logCopy: 'Copier le journal',
-  logResume: 'Revenir en bas',
-  logTruncated: (count) => (count === 1 ? '1 ligne plus ancienne masquée' : `${count} lignes plus anciennes masquées`),
-  logEmpty: 'Aucune sortie pour l\'instant.',
-  logLevelError: 'err',
-  logLevelInfo: 'info',
-  messageReceived: 'Message reçu',
-  messageSent: 'Message envoyé',
-  messageRestricted: 'Note à diffusion restreinte',
   fileUploadChoose: 'Choisir un fichier',
   fileUploadChooseMany: 'Choisir des fichiers',
   fileUploadDropHint: 'Glissez vos fichiers ici, ou',
@@ -758,6 +723,7 @@ export const LC_LABELS_FR: LcLabels = {
   chartAnnotation: 'Point annoté',
   chartSummary: summaryFr,
   themeBuilder: THEME_BUILDER_FR,
+  themeToggle: { group: 'Thème', light: 'Thème clair', dark: 'Thème sombre', system: 'Thème du système' },
   dataTable: DATA_TABLE_FR,
   dateZoneDay: 'jj',
   dateZoneMonth: 'mm',
@@ -924,13 +890,6 @@ export const LC_LABELS_EN: LcLabels = {
   selectRow: 'Select row',
   selectAll: 'Select all',
   selectionCount: (selected, total) => `${selected} selected of ${total}`,
-  noValue: 'Not measured',
-  pagination: 'Pagination',
-  previousPage: 'Previous',
-  nextPage: 'Next',
-  pageSize: 'Items per page',
-  pageRange: (first, last, total) => (total === 0 ? '0 of 0' : `${enNumber.format(first)} to ${enNumber.format(last)} of ${enNumber.format(total)}`),
-  pageStatus: (page, pageCount) => `Page ${enNumber.format(page)} of ${enNumber.format(pageCount)}`,
   stepOf: (current, total) => `Step ${current} of ${total}`,
   stepBack: (name) => `Back to: ${name}`,
   stepGoTo: (position, name) => `Go to step ${position}: ${name}`,
@@ -938,19 +897,6 @@ export const LC_LABELS_EN: LcLabels = {
   stepOptionalHidden: '(optional)',
   stepOptional: 'Optional',
   stepAnswers: 'View your answers',
-  copy: 'Copy',
-  copied: 'Copied',
-  copyFailed: 'Copy failed',
-  codeTruncated: (count) => `Text truncated to the first ${count} characters`,
-  logCopy: 'Copy the log',
-  logResume: 'Back to bottom',
-  logTruncated: (count) => (count === 1 ? '1 older line hidden' : `${count} older lines hidden`),
-  logEmpty: 'No output yet.',
-  logLevelError: 'err',
-  logLevelInfo: 'info',
-  messageReceived: 'Received message',
-  messageSent: 'Sent message',
-  messageRestricted: 'Restricted note',
   fileUploadChoose: 'Choose a file',
   fileUploadChooseMany: 'Choose files',
   fileUploadDropHint: 'Drag your files here, or',
@@ -1016,6 +962,7 @@ export const LC_LABELS_EN: LcLabels = {
   chartAnnotation: 'Annotated point',
   chartSummary: summaryEn,
   themeBuilder: THEME_BUILDER_EN,
+  themeToggle: { group: 'Theme', light: 'Light theme', dark: 'Dark theme', system: 'System theme' },
   dataTable: DATA_TABLE_EN,
   dateZoneDay: 'dd',
   dateZoneMonth: 'mm',

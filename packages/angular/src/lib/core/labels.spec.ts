@@ -28,48 +28,6 @@ describe('libellés du fil d\'étapes v2 (CA-11, CA-14)', () => {
   });
 });
 
-describe('libellés du journal (lc-log-view)', () => {
-  it('français', () => {
-    expect(LC_LABELS_FR.logCopy).toBe('Copier le journal');
-    expect(LC_LABELS_FR.logResume).toBe('Revenir en bas');
-    expect(LC_LABELS_FR.logEmpty).toBe('Aucune sortie pour l\'instant.');
-    expect(LC_LABELS_FR.logLevelError).toBe('err');
-    expect(LC_LABELS_FR.logLevelInfo).toBe('info');
-    expect(LC_LABELS_FR.logTruncated(1)).toBe('1 ligne plus ancienne masquée');
-    expect(LC_LABELS_FR.logTruncated(12)).toBe('12 lignes plus anciennes masquées');
-  });
-
-  it('anglais', () => {
-    expect(LC_LABELS_EN.logCopy).toBe('Copy the log');
-    expect(LC_LABELS_EN.logResume).toBe('Back to bottom');
-    expect(LC_LABELS_EN.logEmpty).toBe('No output yet.');
-    expect(LC_LABELS_EN.logLevelError).toBe('err');
-    expect(LC_LABELS_EN.logLevelInfo).toBe('info');
-    expect(LC_LABELS_EN.logTruncated(1)).toBe('1 older line hidden');
-    expect(LC_LABELS_EN.logTruncated(12)).toBe('12 older lines hidden');
-  });
-});
-
-describe('libellés de pagination : grands nombres', () => {
-  it('français : séparateur de milliers en espace fine insécable (U+202F)', () => {
-    expect(LC_LABELS_FR.pageRange(1, 25, 12345)).toBe('1 à 25 sur 12\u202F345');
-    expect(LC_LABELS_FR.pageStatus(1, 494)).toBe('Page 1 sur 494');
-    expect(LC_LABELS_FR.pageStatus(1234, 12345)).toBe('Page 1\u202F234 sur 12\u202F345');
-  });
-
-  it('anglais : séparateur virgule', () => {
-    expect(LC_LABELS_EN.pageRange(1, 25, 12345)).toBe('1 to 25 of 12,345');
-    expect(LC_LABELS_EN.pageStatus(1, 494)).toBe('Page 1 of 494');
-    expect(LC_LABELS_EN.pageStatus(1234, 12345)).toBe('Page 1,234 of 12,345');
-  });
-
-  it('total à 0 : libellé dédié dans les deux langues', () => {
-    expect(LC_LABELS_FR.pageRange(0, 0, 0)).toBe('0 sur 0');
-    expect(LC_LABELS_EN.pageRange(0, 0, 0)).toBe('0 of 0');
-  });
-});
-
-
 describe('libellés du fil de messages', () => {
   it('français et anglais', () => {
     expect([LC_LABELS_FR.threadLabel, LC_LABELS_FR.threadToday, LC_LABELS_FR.threadYesterday]).toEqual(['Échanges', 'Aujourd\'hui', 'Hier']);

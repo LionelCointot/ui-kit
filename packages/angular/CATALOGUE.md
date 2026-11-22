@@ -7,7 +7,6 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `[lcReveal]` | LcRevealDirective | directive | lcRevealIndex | – |
 | `[lcTruncate]` | LcTruncateDirective | directive | – | – |
 | `button[lcButton], a[lcButton]` | LcButtonComponent | composant | themeColor, fillMode, size, rounded, loading, iconOnly, fullWidth, pressed | – |
 | `lc-avatar` | LcAvatarComponent | composant | name (requis), src, size, colorSeed, label | – |
@@ -15,6 +14,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-icon` | LcIconComponent | composant | name (requis), size, label | – |
 | `lc-skeleton` | LcSkeletonComponent | composant | shape, lines, width, height | – |
 | `lc-spinner` | LcSpinnerComponent | composant | size, label | – |
+| `lc-theme-toggle` | LcThemeToggleComponent | composant | size, fillMode | – |
 | `lcDate` | LcDatePipe | pipe | – | – |
 | `lcMoney` | LcMoneyPipe | pipe | – | – |
 | `lcMonths` | LcMonthsPipe | pipe | – | – |
@@ -36,12 +36,9 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
-| `lc-code-block` | LcCodeBlockComponent | composant | code (requis), ariaLabel (requis), wrap, maxHeight, lineNumbers, copyable | – |
 | `lc-data-table` | LcDataTableComponent | composant | source (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, query (model), chips, emptyMessage | – |
 | `lc-description-list` | LcDescriptionListComponent | composant | items (requis), layout | itemAction |
 | `lc-kpi-card` | LcKpiCardComponent | composant | label (requis), value, format, valueText, delta, hint, loading, stale | – |
-| `lc-log-view` | LcLogViewComponent | composant | lines, ariaLabel (requis), maxLines, height, wrap, copyable, live, emptyText, copyLabel, resumeLabel, truncatedLabel, following (model) | copied |
-| `lc-paginator` | LcPaginatorComponent | composant | total (requis), pageSize (model), pageSizes, page (model), ariaLabel | – |
 | `lc-table` | LcTableComponent | composant | data (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), isRowSelectable, rowSelectionLabel, selectionLabel, selectAllHint, rowClass | groupToggled |
 | `lc-timeline-bar` | LcTimelineBarComponent | composant | segments, lanes, axisEnd, reference, axisLabel, label (requis), description (requis), startLabel, endLabel, minLabelShare, emptyMessage, stale, loading, ticks | – |
 | `lc-tree-table` | LcTreeTableComponent | composant | data (requis), children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
@@ -58,9 +55,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-badge` | LcBadgeComponent | composant | themeColor, fillMode, size | – |
 | `lc-empty-state` | LcEmptyStateComponent | composant | icon, title (requis), description | – |
 | `lc-error-state` | LcErrorStateComponent | composant | title (requis), description, retryLabel | retry |
-| `lc-message` | LcMessageComponent | composant | variant, author, date, dateTime | – |
 | `lc-message-thread` | LcMessageThreadComponent | composant | messages (requis), showAvatars, pageSize, ariaLabel | attachmentOpen |
-| `lc-meter` | LcMeterComponent | composant | value (requis), min, max, label (requis), valueText, themeColor, size, showValue | – |
 | `lc-progress-bar` | LcProgressBarComponent | composant | value, label | – |
 | `lc-status-badge` | LcStatusBadgeComponent | composant | kind, icon, size | – |
 | `lc-toast-outlet` | LcToastOutletComponent | composant | – | – |
@@ -77,13 +72,13 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `input[type=checkbox][lcCheckbox]` | LcCheckboxDirective | directive | id, indeterminate, invalid, touched, errors | – |
 | `input[type=radio][lcRadio]` | LcRadioDirective | directive | – | – |
 | `lc-choice-card` | LcChoiceCardComponent | composant | title (requis), description | – |
-| `lc-combobox` | LcComboboxComponent | composant | value (model), options, search, displayWith (requis), trackBy (requis), filterKeys, minLength, debounceMs, maxResults, openOnFocus, extraDescribedBy, clearable, placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors | selectionChange, searchFailed, touch |
+| `lc-combobox` | LcComboboxComponent | composant | value (model), options, search, displayWith (requis), trackBy (requis), searchSettings, extraDescribedBy, clearable, placeholder, inputId, ariaLabel, size, fillMode, rounded, disabled, readonly, invalid, touched, required, errors | selectionChange, searchFailed, touch |
 | `lc-date-input` | LcDateInputComponent | composant | value (model), min, max, disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, inputId, ariaLabel | touch |
 | `lc-date-range-input` | LcDateRangeInputComponent | composant | value (model), min, max, presets, disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, inputId, ariaLabel | touch |
 | `lc-file-upload` | LcFileUploadComponent | composant | items, accept, multiple, maxFiles, disabled, showSize, chooseIcon, errorPlaceholderIcon, fullWidthMobile, removeLabelVisible, ariaLabel, id | filesAdded, rejected, remove, retry |
 | `lc-form-field` | LcFormFieldComponent | composant | label (requis), hint, hintPlacement, errors, required, state, layout, labelHidden | – |
 | `lc-list-editor` | LcListEditorComponent | composant | items, savedItems, minActive, maxLength, isDuplicate, addLabel, addButtonLabel, addError, emptyText, listLabel, disabled, busy, ariaLabel, id | add, rename, move, toggle |
-| `lc-message-composer` | LcMessageComposerComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, maxLength, placeholder, inputId, ariaLabel, sending, minRows, maxRows, enterSends, sendIcon, sendLabel, attachIcon, attachments, items, accept, acceptLabel, maxFiles, showSize | send, sendBlocked, filesAdded, rejected, remove, retry, touch |
+| `lc-message-composer` | LcMessageComposerComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, maxLength, placeholder, inputId, ariaLabel, sending, minRows, maxRows, enterSends, sendIcon, sendLabel, attachments, items | send, sendBlocked, filesAdded, rejected, remove, retry, touch |
 | `lc-money-input` | LcMoneyInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals | touch |
 | `lc-number-input` | LcNumberInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, min, max, size, fillMode, rounded, placeholder, inputId, ariaLabel, decimals, step, unit, showStepper | touch |
 | `lc-password-input` | LcPasswordInputComponent | composant | value (model), disabled, readonly, invalid, touched, required, errors, size, fillMode, rounded, autocomplete, placeholder, inputId, ariaLabel | touch |

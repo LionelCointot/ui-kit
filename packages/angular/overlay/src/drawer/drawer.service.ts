@@ -13,10 +13,8 @@ export interface LcDrawerConfig<D> {
   readonly side?: LcDrawerSide;
   /** Largeur : 24, 32 ou 40 rem ; défaut 'medium'. Plein écran sous 768 px. */
   readonly size?: LcDrawerSize;
-  /** Rend Échap, le voile et le bouton de fermeture sans effet ; défaut false. */
-  readonly disableClose?: boolean;
-  /** Fermeture par clic sur le voile (sans effet si `disableClose`) ; défaut true. */
-  readonly closeOnBackdrop?: boolean;
+  /** Fermeture par Échap, clic sur le voile et bouton de fermeture ; défaut true (comme `LcDialogService`). */
+  readonly dismissible?: boolean;
   /** Nom accessible ; sinon le titre de `lc-drawer`. */
   readonly ariaLabel?: string;
 }
@@ -33,8 +31,7 @@ export class LcDrawerService {
 
   open<C, D = unknown, R = unknown>(component: Type<C>, config: LcDrawerConfig<D> = {}): LcDrawerRef<R> {
     const side = config.side ?? 'end';
-    const dismissible = !config.disableClose;
-    const closeOnBackdrop = dismissible && (config.closeOnBackdrop ?? true);
+    const dismissible = config.dismissible ?? true;
     const context: LcDrawerContext = { titleId: lcUniqueId('drawer-title'), side, dismissible };
     const position = this.overlay.position().global().top('0');
     let lcRef: LcDrawerRef<R> | undefined;
@@ -51,7 +48,7 @@ export class LcDrawerService {
       backdropClass: 'lc-drawer-backdrop',
       providers: (cdkRef) => {
         lcRef = new LcDrawerRef<R>(cdkRef);
-        lcCloseOnDismiss(cdkRef, lcRef, { escape: dismissible, backdrop: closeOnBackdrop });
+        lcCloseOnDismiss(cdkRef, lcRef, { escape: dismissible, backdrop: dismissible });
         return [
           { provide: LcDrawerRef, useValue: lcRef },
           { provide: LC_DRAWER_DATA, useValue: config.data },

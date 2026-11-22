@@ -37,7 +37,7 @@ function serve() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-const NEW_STORY_FRAGMENTS = ['feedback-status-badge', 'feedback-meter', 'data-tree-table', 'data-paginator', 'data-code-block', 'navigation-nav-group', 'bar-chart--by-role', 'area-chart--by-role', 'buttons-button--variants', 'forms-slider', 'theme-builder'];
+const NEW_STORY_FRAGMENTS = ['feedback-status-badge', 'data-tree-table', 'navigation-nav-group', 'bar-chart--by-role', 'area-chart--by-role', 'buttons-button--variants', 'forms-slider', 'theme-builder'];
 
 async function openStory(browser, base, id, theme) {
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
@@ -118,22 +118,6 @@ async function dom(browser, base) {
     console.log(`${ok ? 'OK ' : 'KO '} ${name}${detail ? ` : ${detail}` : ''}`);
   };
 
-  // CA-K4.1 : atteindre la dernière page avec « Suivant » (clic réel).
-  {
-    const { page, context, errors } = await openStory(browser, base, 'data-paginator--playground', 'default');
-    const next = page.getByRole('button', { name: 'Suivant' });
-    let steps = 0;
-    while ((await next.isEnabled()) && steps < 20) {
-      await next.click();
-      steps += 1;
-      await page.waitForTimeout(50);
-    }
-    const status = (await page.locator('[role=status]').first().textContent())?.trim();
-    const match = /Page (\d+) sur (\d+)/.exec(status ?? '');
-    check('CA-K4.1 paginateur : « Suivant » mène à la dernière page', !!match && match[1] === match[2], `${status} après ${steps} clics ; erreurs : ${errors.join(' ; ') || 'aucune'}`);
-    await context.close();
-  }
-
   // CA-K8.2 : groupe replié, liens hors tabulation et hors arbre d'accessibilité.
   {
     const { page, context } = await openStory(browser, base, 'navigation-nav-group--collapsible', 'default');
@@ -169,25 +153,6 @@ async function dom(browser, base) {
     await context.close();
   }
 
-  // CA-K7.3 : numéros de ligne non sélectionnables.
-  {
-    const { page, context } = await openStory(browser, base, 'data-code-block--line-numbers', 'default');
-    const result = await page.evaluate(() => {
-      const line = document.querySelector('.lc-code-block__line');
-      const style = getComputedStyle(line, '::before');
-      const pre = document.querySelector('.lc-code-block__pre');
-      const selection = getSelection();
-      selection.removeAllRanges();
-      const range = document.createRange();
-      range.selectNodeContents(pre);
-      selection.addRange(range);
-      return { userSelect: style.userSelect, content: style.content, selected: selection.toString().slice(0, 60) };
-    });
-    check('CA-K7.3 numéros de ligne : user-select none sur le contenu généré', result.userSelect === 'none' && /\d|counter/.test(result.content), JSON.stringify(result));
-    check('CA-K7.3 sélection du bloc : aucun numéro en tête du texte copié', !/^\s*1\s/.test(result.selected), JSON.stringify(result.selected));
-    await context.close();
-  }
-
   // CA-K3.2 : un seul arrêt de tabulation dans le tableau hiérarchique.
   {
     const { page, context } = await openStory(browser, base, 'data-tree-table--all-expanded', 'default');
@@ -216,7 +181,7 @@ async function dom(browser, base) {
     await context.close();
   }
 
-  // CA-K1.3 / CA-K5 : forced-colors (bordure visible du badge, remplissage de la jauge en Highlight).
+  // CA-K1.3 : forced-colors (bordure visible du badge).
   {
     const context = await browser.newContext({ forcedColors: 'active', viewport: { width: 1100, height: 800 } });
     const page = await context.newPage();
@@ -224,10 +189,6 @@ async function dom(browser, base) {
     await page.waitForSelector('lc-status-badge');
     const borders = await page.locator('lc-status-badge').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).borderTopColor));
     check('CA-K1.3 forced-colors : bordure du badge visible (non transparente)', borders.length === 6 && borders.every((color) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'), borders.join(' | '));
-    await page.goto(`${base}/iframe.html?id=retours-d-état-jauge--couleurs&viewMode=story`);
-    await page.waitForSelector('lc-meter');
-    const fills = await page.locator('.lc-meter__fill').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).backgroundColor));
-    check('CA-K5 forced-colors : remplissage de la jauge uniforme (Highlight système)', fills.length >= 5 && new Set(fills).size === 1, fills.join(' | '));
     await context.close();
   }
   return results.every(Boolean) ? 0 : 1;
@@ -1199,7 +1160,7 @@ async function motion(browser, base) {
       await motionIndicators(context, base, name, tag, width, check);
       if (name !== 'forced') await motionList(context, base, reduced, tag, width === 360, check);
 
-      // CA-9 : lcReveal.
+      // CA-9 : attribut lcReveal (règle globale ; plus de directive).
       {
         const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--reveal');
         await page.evaluate(() => {
@@ -1226,7 +1187,7 @@ async function motion(browser, base) {
         const staggerMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-stagger'));
         const durationMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-duration'));
         const offset = await page.evaluate(() => window.__qa.tokenPx('--lc-sys-motion-offset'));
-        const expected = { 0: 0, 3: 3, 7: 7, 12: 7, '-1': 0, '1.5': 0 };
+        const expected = { 0: 0, 3: 3, 7: 7 };
         for (const row of rows) {
           const rank = expected[row.index];
           if (reduced) {

@@ -33,40 +33,45 @@ const trackBy = (city: City) => city.id;
  *
  * Import: `import { LcComboboxComponent } from '@lionelcointot/ui-angular/forms';`
  */
-const meta: Meta<LcComboboxComponent<City>> = {
+/** Playground arguments: the flat controls that feed `searchSettings`. */
+type PlaygroundArgs = LcComboboxComponent<City> & { minChars: number; maxResults: number; openOnFocus: boolean };
+
+const meta: Meta<PlaygroundArgs> = {
   title: 'Forms/Combobox',
   component: LcComboboxComponent,
   decorators: [moduleMetadata({ imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent, LcFormFieldComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
   args: {
     placeholder: 'Rechercher une ville', clearable: true, disabled: false, readonly: false, required: false, invalid: false, touched: false,
-    size: 'medium', fillMode: 'solid', rounded: 'medium', maxResults: 50, minLength: 0, openOnFocus: true,
+    size: 'medium', fillMode: 'solid', rounded: 'medium', maxResults: 50, minChars: 0, openOnFocus: true,
   },
   argTypes: {
     size: commonArgTypes.size,
     fillMode: commonArgTypes.fillMode,
     rounded: commonArgTypes.rounded,
     openOnFocus: { control: 'boolean' },
-    minLength: { control: 'number' },
+    minChars: { control: 'number' },
     maxResults: { control: 'number' },
-    debounceMs: { table: { disable: true } },
+    searchSettings: { table: { disable: true } },
   },
 };
 export default meta;
-type Story = StoryObj<LcComboboxComponent<City>>;
+type Story = StoryObj<PlaygroundArgs>;
 
 /** Every input is bound: change them in the Controls panel. */
 export const Playground: Story = {
   // Contrôles sans effet dans l'état initial (texte d'état vide, erreur affichée après interaction…) : vérifiés à la main.
-  parameters: { controlsCheck: { stateDependent: ['minLength', 'maxResults', 'clearable', 'invalid', 'touched'] } },
+  parameters: { controlsCheck: { stateDependent: ['minChars', 'maxResults', 'clearable', 'invalid', 'touched'] } },
   render: (args) => ({
-    props: { ...args, cities: CITIES, display, trackBy, city: signal<City | null>(null) },
+    // Flat controls rebuilt into the settings object, like a consumer would write it.
+    props: { ...args, cities: CITIES, display, trackBy, city: signal<City | null>(null),
+      settings: { minChars: args.minChars, maxResults: args.maxResults, openOnFocus: args.openOnFocus } },
     template: `
       <div style="max-width:24rem">
         <lc-form-field label="Ville" hint="Tapez « ro » ou « zu » ; Bas ouvre la liste, Entrée choisit, Échap ferme.">
           <lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city"
             [placeholder]="placeholder" [clearable]="clearable" [size]="size" [fillMode]="fillMode" [rounded]="rounded"
             [disabled]="disabled" [readonly]="readonly" [required]="required" [invalid]="invalid" [touched]="touched"
-            [minLength]="minLength" [maxResults]="maxResults" [openOnFocus]="openOnFocus" />
+            [searchSettings]="settings" />
         </lc-form-field>
         <p style="margin-top:1rem">Valeur : {{ city()?.name ?? 'aucune' }}</p>
       </div>`,

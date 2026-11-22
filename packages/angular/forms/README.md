@@ -11,7 +11,7 @@ glisser-déposer. Contrôle de formulaire (`FormValueControl<string>`) : libell�
 
 ```html
 <lc-form-field label="Votre message">
-  <lc-message-composer [(value)]="text" accept="image/*,.pdf" [items]="uploads()"
+  <lc-message-composer [(value)]="text" [attachments]="{ accept: 'image/*,.pdf' }" [items]="uploads()"
     (send)="post($event.text)" (sendBlocked)="onBlocked($event)"
     (filesAdded)="upload($event)" (rejected)="log($event)" (remove)="drop($event)" (retry)="upload([])" />
 </lc-form-field>
@@ -23,7 +23,7 @@ glisser-déposer. Contrôle de formulaire (`FormValueControl<string>`) : libell�
 - `sendBlocked` dit pourquoi un envoi n'est pas parti : `'empty'` (rien à envoyer), `'sending'` (envoi en cours ou déjà parti),
   `'uploading'` (une pièce jointe est encore en cours d'envoi). Une pièce jointe en erreur ne bloque pas. L'application peut s'en servir
   à la place d'un indicateur à elle.
-- Pièces jointes : le composant émet les `File` acceptés (`filesAdded`) ; l'application les envoie et tient `items`
+- Pièces jointes : `attachments` vaut `true` (défauts), `false` (aucune) ou un objet `LcComposerAttachments` (`icon`, `accept`, `acceptLabel`, `maxFiles`, `showSize`) ; `items` reste à plat (ADR 0010). Le composant émet les `File` acceptés (`filesAdded`) ; l'application les envoie et tient `items`
   (`LcFileUploadItem` : `id`, `name`, `size`, `status`, `progress`, `previewUrl`…) à jour, et retire un item sur `remove`.
   Le composant ne crée ni ne révoque d'adresse d'objet.
 - **Refus** : le composant affiche lui-même le message (nom et raison, un par raison) sous le rectangle et secoue le rectangle ;

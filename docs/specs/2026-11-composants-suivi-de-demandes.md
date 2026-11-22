@@ -112,3 +112,5 @@ Correctifs sur U1 (constats de QA) :
 - D4, zone de frappe : l'en-tête triable et le bouton de repli de groupe de `lc-table` ont une zone de 44 px (pseudo-élément, `--lc-button-hit-size`, comme `lcButton`) ; en densité `compact`, les lignes étant plus basses, la zone s'arrête à la boîte du bouton, compromis de cette densité.
 - D6, CSS : les deux sélecteurs `:host(.lc-button--pressed…)` sont conservés (non redondants : le premier gagne sur `:hover`/`:active`, le second couvre l'état désactivé que le premier exclut) ; le commentaire le dit.
 - D4, reste connu : en densité `compact`, la boîte du bouton d'en-tête (36 px) dépasse la ligne (33 px) de 1 à 4 px ; ce débord existait avant U2, n'empêche aucun clic et n'est pas traité dans ce lot.
+
+- Écart du 2026-11-22 : `lc-message` (D3) est retiré du kit (aucun consommateur ; remplacé par la bulle de `lc-message-thread`), avec ses libellés `messageReceived`, `messageSent` et `messageRestricted`.

@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, afterRenderEffect, computed, contentChildren, inject, input, model, signal, viewChild, viewChildren } from '@angular/core';
-import { LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LcIconComponent, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcTabComponent } from './tab.component';
 
 /**
@@ -128,7 +128,7 @@ export class LcTabsComponent {
     const delta = box.left < listBox.left + margin ? box.left - listBox.left - margin
       : box.right > listBox.right - margin ? box.right - listBox.right + margin : 0;
     if (delta === 0) return;
-    const reduced = this.view.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reduced = lcPrefersReducedMotion();
     list.scrollBy({ left: delta, behavior: reduced ? 'auto' : 'smooth' });
   }
 

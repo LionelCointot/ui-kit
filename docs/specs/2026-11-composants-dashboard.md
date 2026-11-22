@@ -45,3 +45,5 @@ Libellés ajoutés à `LC_LABELS` (fr, en) : `noValue`, `pagination`, `previousP
 | K7 : confirmation | toast ou `role="status"` | `role="status"` interne | pas de dépendance au toast |
 | K8 : mode réduit | titre masqué | un groupe `collapsible` reste déplié, titre non bouton | éviter un bouton invisible tabulable |
 | Format | — | Prettier non appliqué | le dépôt n'y est pas conforme ; pas de lint configuré |
+
+- Écart du 2026-11-22 : `lc-meter` (K5), `lc-paginator` avec `lcPageSlice` et `lcPageCount` (K4) et `lc-code-block` (K7) sont retirés du kit (aucun consommateur), avec leurs libellés ; le contrôle de contraste CA-K5.3 est supprimé avec `lc-meter`.

@@ -30,17 +30,6 @@ for (const theme of THEMES) {
     }
   });
 
-  // CA-K5.3 : remplissage de lc-meter contre la piste (surface-sunken) ; warning porté par le contour on-warning-container
-  test(`CA-K5.3 : lc-meter, remplissage ≥ 3:1 contre la piste pour les cinq couleurs (${theme}) ; warning par son contour`, () => {
-    const fills = { primary: 'sys.color.primary', success: 'sys.color.success', error: 'sys.color.error', neutral: 'sys.color.neutral' };
-    for (const [color, token] of Object.entries(fills)) {
-      const result = ratio(theme, token, 'sys.color.surface-sunken');
-      assert.ok(result >= 3, `${theme} ${color} : ${result.toFixed(2)}:1`);
-    }
-    const edge = ratio(theme, 'sys.color.on-warning-container', 'sys.color.surface-sunken');
-    assert.ok(edge >= 3, `${theme} contour warning : ${edge.toFixed(2)}:1`);
-  });
-
   // CA-K6.2 : marques de rôle contre la surface de graphique
   test(`CA-K6.2 : marques de rôle des graphiques ≥ 3:1 contre chart.surface, hors warning (contour d'encre) (${theme})`, () => {
     for (const role of ['success', 'error', 'highlight', 'info', 'neutral']) {

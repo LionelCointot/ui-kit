@@ -1,14 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { LcFileUploadItem } from '../file-upload/file-upload.component';
 import type { LcFileRefusal } from '../shared/file-filter';
-import { LcMessageComposerComponent } from './message-composer.component';
+import { LcMessageComposerComponent, type LcComposerAttachments } from './message-composer.component';
 
 @Component({
   imports: [LcMessageComposerComponent],
   template: `
-    <lc-message-composer [(value)]="text" ariaLabel="Message" [items]="items()" [attachments]="attachments()"
-      [disabled]="disabled()" [accept]="accept()" [acceptLabel]="acceptLabel()" [maxFiles]="maxFiles()"
+    <lc-message-composer [(value)]="text" ariaLabel="Message" [items]="items()" [attachments]="settings()"
+      [disabled]="disabled()"
       (filesAdded)="added.push($event)" (rejected)="refused.push($event)" (remove)="removed.push($event)" (retry)="retried.push($event)" />
   `,
 })
@@ -20,6 +20,10 @@ class HostComponent {
   readonly accept = signal('image/*,.pdf');
   readonly acceptLabel = signal<string | undefined>(undefined);
   readonly maxFiles = signal<number | null>(10);
+  readonly showSize = signal(true);
+  readonly override = signal<boolean | LcComposerAttachments | null>(null);
+  readonly settings = computed<boolean | LcComposerAttachments>(() => this.override() ?? (this.attachments()
+    ? { accept: this.accept(), acceptLabel: this.acceptLabel(), maxFiles: this.maxFiles(), showSize: this.showSize() } : false));
   readonly added: File[][] = [];
   readonly refused: LcFileRefusal[][] = [];
   readonly removed: string[] = [];
@@ -110,6 +114,46 @@ describe('LcMessageComposerComponent : pièces jointes', () => {
     host.items.set([]);
     await settle();
     expect(document.activeElement).toBe(textarea);
+  });
+
+  describe('forme boolean | LcComposerAttachments', () => {
+    it.each([[true], [{}]] as const)('%j : défauts (trombone « paperclip », tous types, 10 fichiers)', async (value) => {
+      const { host, element, settle } = await setup();
+      host.override.set(value);
+      await settle();
+      expect(element.querySelector('.lc-message-composer__attach')).not.toBeNull();
+      expect(element.querySelector('input[type="file"]')!.hasAttribute('accept')).toBe(false);
+      host.items.set(Array.from({ length: 10 }, (_, i) => item(String(i), `${i}.png`)));
+      await settle();
+      expect(element.textContent).toContain('10');
+    });
+
+    it('false : pas de trombone', async () => {
+      const { host, element, settle } = await setup();
+      host.override.set(false);
+      await settle();
+      expect(element.querySelector('.lc-message-composer__attach')).toBeNull();
+    });
+
+    it('icon change le pictogramme du trombone', async () => {
+      const { host, element, settle } = await setup();
+      const icon = () => element.querySelector('.lc-message-composer__attach lc-icon')!.innerHTML;
+      const byDefault = icon();
+      host.override.set({ icon: 'image' });
+      await settle();
+      expect(icon()).not.toBe(byDefault);
+    });
+
+    it('showSize: false masque le poids des pièces', async () => {
+      const { host, element, settle } = await setup();
+      host.items.set([item('1', 'a.png', { size: 2048 })]);
+      await settle();
+      const shown = element.querySelector('[role="list"]')!.textContent;
+      host.showSize.set(false);
+      await settle();
+      expect(shown).toMatch(/Ko|KB|o\b/);
+      expect(element.querySelector('[role="list"]')!.textContent).not.toBe(shown);
+    });
   });
 
   describe('dépôt', () => {

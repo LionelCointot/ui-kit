@@ -104,10 +104,8 @@ Transitions du rectangle sur `border-color`, `border-width` et `background` (`bo
     [minRows]="1" [maxRows]="7"
     enterSends="auto"                          // 'auto' | true | false
     sendIcon="send" [sendLabel]="undefined"     // nom accessible ; défaut composerSend
-    attachIcon="paperclip" [attachments]="true"
+    [attachments]="true"                       // boolean | LcComposerAttachments { icon, accept, acceptLabel, maxFiles, showSize } (ADR 0010)
     [items]="uploads"                          // LcFileUploadItem[]
-    accept="image/*,.pdf" [maxFiles]="10"      // 10 par défaut ; null : sans limite
-    [showSize]="true"
     (send)="…"                                 // { text: string } ; text = value().trim()
     (sendBlocked)="…"                          // 'empty' | 'sending' | 'uploading'
     (filesAdded)="…" (rejected)="…" (remove)="…" (retry)="…">

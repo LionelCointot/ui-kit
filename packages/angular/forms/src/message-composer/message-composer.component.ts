@@ -29,6 +29,20 @@ import type { LcFileUploadItem } from '../file-upload/file-upload.component';
 import { acceptedFilesText, announcedName, cleanFileName, fileSizeText } from '../shared/file-display';
 import { dragHasFiles, dragLeftZone, droppedFiles, filterFiles, type LcFileRefusal, type LcFileRejectionReason } from '../shared/file-filter';
 
+/** Réglages des pièces jointes de `lc-message-composer` ; chaque champ absent prend son défaut. */
+export interface LcComposerAttachments {
+  /** Pictogramme du bouton (défaut : `paperclip`). */
+  readonly icon?: string;
+  /** Types acceptés, comme l'attribut `accept` d'un champ fichier (défaut : tous). */
+  readonly accept?: string;
+  /** Remplace la liste des types déduite de `accept` dans le message de refus par type. */
+  readonly acceptLabel?: string;
+  /** Nombre maximal de pièces jointes (défaut : 10) ; `null` : sans limite. */
+  readonly maxFiles?: number | null;
+  /** Affiche le poids de chaque pièce (défaut : oui). */
+  readonly showSize?: boolean;
+}
+
 /** Pourquoi un envoi n'a pas été émis : rien à envoyer, envoi en cours (ou déjà parti), pièce jointe en cours d'envoi. */
 export type LcMessageSendBlockedReason = 'empty' | 'sending' | 'uploading';
 
@@ -119,12 +133,12 @@ const COUNTER_THRESHOLD = 0.9;
         [attr.aria-required]="isRequired() ? 'true' : null" [attr.aria-describedby]="describedBy()"
         (input)="onInput($event)" (keydown)="onKeydown($event)" (paste)="onPaste($event)" (blur)="onBlur($event)"></textarea>
       <div #bar class="lc-message-composer__bar">
-        @if (attachments()) {
+        @if (attach().enabled) {
           <button lcButton type="button" iconOnly fillMode="flat" themeColor="primary" class="lc-message-composer__attach"
             [disabled]="disabled()" [attr.aria-label]="labels.composerAttach" (click)="fileInput.click()">
-            <lc-icon [name]="attachIcon()" />
+            <lc-icon [name]="attach().icon" />
           </button>
-          <input #fileInput type="file" multiple hidden tabindex="-1" [attr.accept]="accept() || null" (change)="onFilesChosen($event)" />
+          <input #fileInput type="file" multiple hidden tabindex="-1" [attr.accept]="attach().accept || null" (change)="onFilesChosen($event)" />
         }
         <div class="lc-message-composer__actions"><ng-content select="[lcComposerAction]" /></div>
         @if (counterState() !== 'none') {
@@ -189,15 +203,10 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   readonly sendIcon = input('send');
   /** Nom accessible de l'envoi (défaut `LC_LABELS.composerSend`). */
   readonly sendLabel = input<string>();
-  readonly attachIcon = input('paperclip');
-  readonly attachments = input(true, { transform: booleanAttribute });
+  /** Famille des pièces jointes : `true` (défaut) = défauts, `false` = aucune, objet = activées et réglées. */
+  readonly attachments = input<boolean | LcComposerAttachments>(true);
+  /** Fichiers joints en cours ou prêts (données, donc à plat). */
   readonly items = input<readonly LcFileUploadItem[]>([]);
-  readonly accept = input('');
-  /** Remplace la liste des types déduite de `accept` dans le message de refus par type. */
-  readonly acceptLabel = input<string>();
-  /** Nombre maximal de pièces jointes ; `null` : sans limite. */
-  readonly maxFiles = input<number | null>(10);
-  readonly showSize = input(true, { transform: booleanAttribute });
 
   readonly send = output<{ text: string }>();
   readonly sendBlocked = output<LcMessageSendBlockedReason>();
@@ -244,7 +253,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
     this.sending() ? this.labels.composerSending
       : this.counterState() === 'full' ? this.labels.composerLimitReached
         : this.counterState() === 'near' ? this.labels.composerLimitNear
-          : this.filesFull() ? this.labels.fileUploadLimitReached(this.maxFiles() ?? 0) : '');
+          : this.filesFull() ? this.labels.fileUploadLimitReached(this.attach().maxFiles ?? 0) : '');
   /** Annonce polie du début, de la fin et de l'échec d'envoi d'une pièce jointe (jamais à chaque pourcentage) ; sans changement, le texte reste. */
   protected readonly announcement = linkedSignal<readonly LcFileUploadItem[], string>({
     source: this.items,
@@ -262,10 +271,23 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       return messages.length > 0 ? messages.join('. ') : previous.value;
     },
   });
-  private readonly canAttach = computed(() => this.attachments() && !this.disabled());
+  /** Réglages des pièces jointes fusionnés avec les défauts. */
+  protected readonly attach = computed(() => {
+    const given = this.attachments();
+    const settings = typeof given === 'object' ? given : {};
+    return {
+      enabled: given !== false,
+      icon: settings.icon ?? 'paperclip',
+      accept: settings.accept ?? '',
+      acceptLabel: settings.acceptLabel,
+      maxFiles: settings.maxFiles === undefined ? 10 : settings.maxFiles,
+      showSize: settings.showSize ?? true,
+    };
+  });
+  private readonly canAttach = computed(() => this.attach().enabled && !this.disabled());
   private readonly filesFull = computed(() => {
-    const max = this.maxFiles();
-    return this.attachments() && max !== null && this.items().length >= max;
+    const { enabled, maxFiles: max } = this.attach();
+    return enabled && max !== null && this.items().length >= max;
   });
   protected readonly thumbs = computed<readonly ThumbView[]>(() => {
     const broken = this.brokenPreviews();
@@ -274,7 +296,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       const name = cleanFileName(item.name);
       const shown = announcedName(item.name);
       const progress = Number.isFinite(item.progress) ? Math.round(Math.min(100, Math.max(0, item.progress as number))) : null;
-      const size = this.showSize() ? fileSizeText(item.size, units, (value) => this.format.number(value)) : '';
+      const size = this.attach().showSize ? fileSizeText(item.size, units, (value) => this.format.number(value)) : '';
       const state = item.status === 'uploading' ? this.labels.fileUploadUploading(progress) : (item.statusLabel ?? '');
       const preview = item.previewUrl && !broken.has(item.previewUrl) && isSafePreviewUrl(item.previewUrl, this.document.baseURI)
         ? item.previewUrl : null;
@@ -293,7 +315,7 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
       };
     });
   });
-  private readonly acceptedText = computed(() => this.acceptLabel()?.trim() || acceptedFilesText(this.accept()));
+  private readonly acceptedText = computed(() => this.attach().acceptLabel?.trim() || acceptedFilesText(this.attach().accept));
   /** Un message par raison de refus, avec les noms des fichiers concernés. */
   protected readonly refusalMessages = computed(() => {
     const refused = this.refusals();
@@ -458,9 +480,9 @@ export class LcMessageComposerComponent implements FormValueControl<string>, LcF
   /** Trie les fichiers (choix, dépôt, collage) : type d'abord, puis place restante. Un refus s'affiche et secoue le rectangle. */
   private addFiles(files: File[]): void {
     if (files.length === 0) return;
-    const max = this.maxFiles();
+    const { accept, maxFiles: max } = this.attach();
     const { accepted, refused } = filterFiles(files, {
-      accept: this.accept(), room: max === null ? Infinity : max - this.items().length, multiple: true, skipEmpty: true,
+      accept, room: max === null ? Infinity : max - this.items().length, multiple: true, skipEmpty: true,
     });
     this.refusals.set(refused);
     if (accepted.length) this.filesAdded.emit(accepted);

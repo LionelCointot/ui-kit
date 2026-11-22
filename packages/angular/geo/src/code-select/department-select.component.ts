@@ -17,8 +17,7 @@ import { LcCodeSelectBase } from './code-select-base';
   selector: 'lc-department-select',
   imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent],
   template: `
-    <lc-combobox [search]="searchFn()" [displayWith]="display" [trackBy]="trackBy" [filterKeys]="filterKeys" [minLength]="0"
-      [debounceMs]="0" [openOnFocus]="true" [value]="selectedItem()" (selectionChange)="onSelect($event)" (touch)="touch.emit()"
+    <lc-combobox [search]="searchFn()" [displayWith]="display" [trackBy]="trackBy" [searchSettings]="searchSettings" [value]="selectedItem()" (selectionChange)="onSelect($event)" (touch)="touch.emit()"
       [inputId]="inputId()" [ariaLabel]="ariaLabel()" [placeholder]="placeholder()" [size]="size()" [fillMode]="fillMode()"
       [rounded]="rounded()" [disabled]="disabled() || unavailable()" [readonly]="readonly()" [invalid]="invalid()"
       [touched]="touched()" [required]="required()" [errors]="errors()" [extraDescribedBy]="unknownCode() ? unknownCodeId : null">
