@@ -32,7 +32,7 @@
     @if (chipViews().length) {
       <ul class="lc-data-table__chip-list">
         @for (chip of chipViews(); track chip.key) {
-          <li class="lc-data-table__chip">
+          <li class="lc-data-table__chip" (animate.leave)="fadeOutChip($event)">
             <button type="button" class="lc-data-table__chip-edit" [id]="uid + '-chip-' + chip.key"
               [attr.aria-label]="text.editFilter(chip.column.label, chip.summary)" (click)="editChip(chip.column)">
               <span class="lc-data-table__chip-key">{{ chip.label }} :</span><span class="lc-data-table__chip-value">{{ chip.shortSummary }}</span>
@@ -105,17 +105,9 @@
         }
       } @else {
         @for (row of rows(); track trackBy()(row)) {
-          <tr>
-            @for (column of columns(); track column.key; let first = $first) {
-              <td [class]="'lc-data-table__cell lc-data-table__cell--' + align(column)" [class.lc-data-table__card-only]="column.cardOnly"
-                [class.lc-data-table__title]="first" [attr.data-label]="first || column.cardOnly ? null : column.label">
-                @if (cellTemplates().get(column.key); as template) {
-                  <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: row, column: $any(column) }" />
-                } @else {
-                  {{ cellText(column, row) }}
-                }
-              </td>
-            }
+          <!-- Cascade des 8 premières cartes au premier affichage seulement (attribut lu par la feuille globale, comme `lcReveal`) ; ensuite : différence animée. -->
+          <tr [attr.lcReveal]="cascadeIndex($index) === null ? null : ''" [style.--lc-reveal-index]="cascadeIndex($index)" (animate.leave)="fadeOut($event)">
+            <ng-container [ngTemplateOutlet]="rowCells" [ngTemplateOutletContext]="{ $implicit: row }" />
           </tr>
         } @empty {
           <tr class="lc-data-table__state">
@@ -140,10 +132,24 @@
   <p class="lc-data-table__notice" role="status">{{ labels.truncatedRows(rows().length) }}</p>
 }
 
+<!-- Cellules d'une ligne -->
+<ng-template #rowCells let-row>
+  @for (column of columns(); track column.key; let first = $first) {
+    <td [class]="'lc-data-table__cell lc-data-table__cell--' + align(column)" [class.lc-data-table__card-only]="column.cardOnly"
+      [class.lc-data-table__title]="first" [attr.data-label]="first || column.cardOnly ? null : column.label">
+      @if (cellTemplates().get(column.key); as template) {
+        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: row, column: $any(column) }" />
+      } @else {
+        {{ cellText(column, row) }}
+      }
+    </td>
+  }
+</ng-template>
+
 <!-- Menu de filtre (ordinateur) : boîte de dialogue non modale ancrée sous l'entonnoir -->
 <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="menuOrigin()" [cdkConnectedOverlayOpen]="!!menuColumn()"
-  [cdkConnectedOverlayPositions]="menuPositions" [cdkConnectedOverlayPush]="true" cdkConnectedOverlayPanelClass="lc-data-table__overlay"
-  (overlayOutsideClick)="onMenuOutsideClick($event)" (overlayKeydown)="onMenuKeydown($event)" (detach)="closeMenu(false)">
+  [cdkConnectedOverlayPositions]="menuPositions" [cdkConnectedOverlayPush]="true" [cdkConnectedOverlayDisableClose]="true" cdkConnectedOverlayPanelClass="lc-data-table__overlay"
+  (overlayOutsideClick)="onMenuOutsideClick($event)" (overlayKeydown)="onMenuKeydown($event)" (detach)="menuColumn.set(null)">
   @if (menuColumn(); as column) {
     <div class="lc-data-table__menu" role="dialog" aria-modal="false" tabindex="-1" cdkTrapFocus [id]="uid + '-menu'"
       [attr.aria-labelledby]="uid + '-menu-title'" [attr.aria-busy]="menuFilter.loading() || null">
@@ -164,15 +170,9 @@
   }
 </ng-template>
 
-<!-- Panneau des filtres (téléphone) : dialogue modal plein écran, rien n'est appliqué avant « Afficher » -->
-<dialog #panel class="lc-data-table__panel" [attr.aria-labelledby]="uid + '-panel-title'" (close)="onPanelClosed()">
+<!-- Panneau des filtres (téléphone) : feuille modale du bas, rien n'est appliqué avant « Afficher » ; le contenu reste monté jusqu'à `closed` (fin de la sortie) -->
+<lc-sheet [(open)]="panelVisible" [title]="text.filters(0)" [closeText]="labels.cancel" (closed)="onPanelClosed()">
   @if (panelOpen()) {
-    <div class="lc-data-table__panel-head">
-      <h2 class="lc-data-table__panel-title" [id]="uid + '-panel-title'">{{ text.filters(0) }}</h2>
-      <button lcButton type="button" fillMode="flat" themeColor="neutral" [iconOnly]="true" [attr.aria-label]="text.closeWithoutApplying" autofocus (click)="closePanel()">
-        <lc-icon name="x" />
-      </button>
-    </div>
     <div class="lc-data-table__panel-body">
       @for (section of panelSections(); track section.column.key) {
         <section class="lc-data-table__section">
@@ -185,23 +185,31 @@
               <lc-icon name="chevron-down" />
             </button>
           </h3>
-          <div class="lc-data-table__section-body" [id]="uid + '-section-' + section.column.key" [hidden]="!section.open">
-            @if (section.open) {
-              <lc-column-filter [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
-                [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
-                [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
-                (valuesLoaded)="rememberLabels(section.column.key, $event)" />
-            }
+          <div class="lc-data-table__section-body" [class.lc-data-table__section-body--open]="section.open"
+            [id]="uid + '-section-' + section.column.key" [attr.inert]="section.open ? null : ''">
+            <div class="lc-data-table__section-clip">
+              <div class="lc-data-table__section-content">
+                @if (section.rendered) {
+                  <lc-column-filter lcNativeDatePicker [column]="section.column" [source]="dataSource()" [context]="panelQuery()" [autofocus]="false"
+                    [applied]="activeColumns().includes(section.column)" [idPrefix]="uid + '-panel-' + section.column.key"
+                    [value]="panelDraft()[section.column.key]" (valueChange)="setDraft(section.column.key, $event)"
+                    (valuesLoaded)="rememberLabels(section.column.key, $event)" />
+                }
+              </div>
+            </div>
           </div>
         </section>
       }
     </div>
-    <div class="lc-data-table__panel-foot">
+    <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
+  }
+  <!-- `ngProjectAs` : la projection ciblée ne traverse pas un `@if` ; les boutons n'existent que feuille montée. -->
+  <ng-container ngProjectAs="[lcSheetFooter]">
+    @if (panelOpen()) {
       <button lcButton type="button" fillMode="outline" themeColor="neutral" [disabled]="!panelHasDraft()" (click)="clearPanel()">{{ text.clearAll }}</button>
       <button lcButton type="button" class="lc-data-table__panel-apply" [disabled]="panelCount() === 0" (click)="applyPanel()">
         {{ panelCount() === null ? text.apply : text.showRows(panelCount() ?? 0) }}
       </button>
-    </div>
-    <p class="lc-data-table__hidden" aria-live="polite">{{ panelCount() === null ? '' : text.rows(panelCount() ?? 0) }}</p>
-  }
-</dialog>
+    }
+  </ng-container>
+</lc-sheet>

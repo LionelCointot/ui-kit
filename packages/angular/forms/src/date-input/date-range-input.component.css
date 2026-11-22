@@ -68,9 +68,11 @@
   cursor: pointer;
 }
 
-.lc-date-range-input__button:hover {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
-  color: var(--lc-sys-color-on-surface);
+@media (hover: hover) {
+  .lc-date-range-input__button:hover {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+    color: var(--lc-sys-color-on-surface);
+  }
 }
 
 .lc-date-range-input__button:focus-visible {

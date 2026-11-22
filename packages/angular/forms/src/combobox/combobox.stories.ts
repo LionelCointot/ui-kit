@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { commonArgTypes, fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, commonArgTypes, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent, LcComboboxOptionDirective, LcComboboxComponent, LcHighlightComponent } from '@lionelcointot/ui-angular/forms';
 
 interface City {
@@ -35,7 +36,7 @@ const trackBy = (city: City) => city.id;
 const meta: Meta<LcComboboxComponent<City>> = {
   title: 'Forms/Combobox',
   component: LcComboboxComponent,
-  decorators: [moduleMetadata({ imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent, LcFormFieldComponent] })],
+  decorators: [moduleMetadata({ imports: [LcComboboxComponent, LcComboboxOptionDirective, LcHighlightComponent, LcFormFieldComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
   args: {
     placeholder: 'Rechercher une ville', clearable: true, disabled: false, readonly: false, required: false, invalid: false, touched: false,
     size: 'medium', fillMode: 'solid', rounded: 'medium', maxResults: 50, minLength: 0, openOnFocus: true,
@@ -162,6 +163,42 @@ export const AsyncError: Story = {
         <lc-form-field label="Ville" hint="La recherche échoue : état d'erreur et « Réessayer ».">
           <lc-combobox [search]="search" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" />
         </lc-form-field>
+      </div>`,
+  }),
+};
+
+const ANIMATION_CODE = `import { Component, signal } from '@angular/core';
+import { LcComboboxComponent, LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcComboboxComponent, LcFormFieldComponent],
+  template: \`
+    <lc-form-field label="Ville">
+      <lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" />
+    </lc-form-field>\`,
+})
+export class ExampleComponent {
+  readonly cities = ['Amsterdam', 'Berlin', 'Bruxelles', 'Copenhague'];
+  readonly city = signal<string | null>(null);
+  readonly display = (city: string) => city;
+  readonly trackBy = (city: string) => city;
+}`;
+
+/** The suggestion list fades in while moving down from the field, and fades out when it closes. "Rejouer" reopens it. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({
+    props: { cities: CITIES, display, trackBy, city: signal<City | null>(null), ...replayable({ play: (_later, root) => root.querySelector<HTMLElement>('input')?.click() }) },
+    template: `
+      <lc-story-motion-notice />
+      <div #root style="max-width:24rem;min-height:20rem">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+        @for (key of keys(); track key) {
+          <lc-form-field label="Ville">
+            <lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city" placeholder="Rechercher une ville" />
+          </lc-form-field>
+        }
       </div>`,
   }),
 };

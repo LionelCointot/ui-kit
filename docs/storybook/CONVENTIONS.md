@@ -28,6 +28,11 @@ Modèle de référence : `packages/angular/src/lib/button/button.stories.ts`.
    et une phrase JSDoc qui dit ce que montre l'exemple.
 6. Pas de story en double avec `Playground` (supprimer un ancien `Default` identique).
 7. Styles de mise en page des démos (`display:flex; gap`) : autorisés dans le gabarit, en `var(--lc-sys-space-*)` plutôt qu'en pixels.
+8. **Composant qui bouge** (indicateur, appui, panneau, cascade, déplacement de lignes) : une story `Animation` après les exemples figés, avec `parameters: { ...fixedExample, docs: { source: { code } } }` et une JSDoc d'une phrase.
+   - Bouton « Rejouer » : le contenu est réinséré par clé de rendu (`replayable()` de `@lc/storybook`, `@for (key of keys(); track key)`), puis un scénario court l'exerce (onglets et navigation : retour sans transition au premier élément, puis sélection du dernier ; panneaux : ouverture ; tableau : filtre appliqué puis rétabli).
+   - Bandeau `<lc-story-motion-notice />` au-dessus de la démo : `role="status"`, présent seulement si le système demande de réduire les animations (`prefers-reduced-motion`), il suit les changements.
+   - Extrait « Show code » écrit à la main, limité à l'usage du composant : ni bouton « Rejouer », ni composant de démo.
+   - Les stories d'acceptation du mouvement (mesures, sens, réduction) vont dans des fichiers `*.qa.stories.ts`, jamais dans la story `Animation`.
 
 ## Code affiché (onglet Code, « Show code »)
 Le code est généré pour chaque story : un composant Angular complet (`import`, `@Component`, classe) à coller dans une application.

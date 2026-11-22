@@ -133,7 +133,7 @@ describe('LcDisclosureGroupDirective', () => {
       await click('gb');
       expect(open()).toEqual(['gb']);
       const region = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('#gl .lc-disclosure__region')!;
-      expect(region.hidden).toBe(true);
+      expect(region.hasAttribute('inert')).toBe(true);
       expect(region.querySelector('.probe')).not.toBeNull();
       expect(created).toBe(1);
     });
@@ -216,8 +216,8 @@ describe('LcDisclosureComponent', () => {
       await click('b');
       expect(part('a').button.getAttribute('aria-expanded')).toBe('true');
       expect(part('b').button.getAttribute('aria-expanded')).toBe('true');
-      expect(part('a').region.hidden).toBe(false);
-      expect(part('b').region.hidden).toBe(false);
+      expect(part('a').region.hasAttribute('inert')).toBe(false);
+      expect(part('b').region.hasAttribute('inert')).toBe(false);
     });
 
     it('focusSummary() donne le focus au bouton résumé', async () => {
@@ -228,15 +228,15 @@ describe('LcDisclosureComponent', () => {
   });
 
   describe('CA-10 : replié, lazy, headingLevel, disabled', () => {
-    it('replié = hidden + inert ; déplié = ni l\'un ni l\'autre', async () => {
+    it('replié = inert (visibility masquée par la feuille de style) ; déplié = pas inert', async () => {
       const { part, click } = await setup();
-      expect(part('b').region.hidden).toBe(true);
+      expect(part('b').region.hasAttribute('inert')).toBe(true);
       expect(part('b').region.getAttribute('inert')).toBe('');
       await click('b');
-      expect(part('b').region.hidden).toBe(false);
+      expect(part('b').region.hasAttribute('inert')).toBe(false);
       expect(part('b').region.hasAttribute('inert')).toBe(false);
       await click('b');
-      expect(part('b').region.hidden).toBe(true);
+      expect(part('b').region.hasAttribute('inert')).toBe(true);
       expect(part('b').region.getAttribute('inert')).toBe('');
     });
 
@@ -261,7 +261,7 @@ describe('LcDisclosureComponent', () => {
     it('lcDisclosureContent sans lazy : créé d\'emblée, replié', async () => {
       const { part } = await setup();
       expect(created).toBe(1);
-      expect(part('a').region.hidden).toBe(true);
+      expect(part('a').region.hasAttribute('inert')).toBe(true);
     });
 
     it('lazy sans lcDisclosureContent : le contenu projeté n\'est dans le DOM qu\'à partir du premier dépliage, puis conservé', async () => {
@@ -270,7 +270,7 @@ describe('LcDisclosureComponent', () => {
       await click('c');
       expect(part('c').region.querySelector('.plain-lazy')).not.toBeNull();
       await click('c');
-      expect(part('c').region.hidden).toBe(true);
+      expect(part('c').region.hasAttribute('inert')).toBe(true);
       expect(part('c').region.querySelector('.plain-lazy')).not.toBeNull();
     });
 
@@ -294,7 +294,7 @@ describe('LcDisclosureComponent', () => {
       await click('a');
       expect(host.expandedA()).toBe(false);
       expect(host.changes).toEqual([]);
-      expect(part('a').region.hidden).toBe(true);
+      expect(part('a').region.hasAttribute('inert')).toBe(true);
     });
   });
 });

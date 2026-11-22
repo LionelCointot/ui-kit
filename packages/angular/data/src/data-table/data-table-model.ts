@@ -1,11 +1,11 @@
 import type { Observable } from 'rxjs';
 import { of } from 'rxjs';
 import { localDateToIso, type LcValueFormat } from '@lionelcointot/ui-angular';
+import type { LcDateInterval } from '@lionelcointot/ui-angular/forms';
 import { LcSort, LcTableColumn, sortRows } from '../table/table-model';
 
-/** Période (dates ISO « AAAA-MM-JJ », incluses) ou raccourci « N derniers jours » (aujourd'hui compris). */
+/** Période (dates ISO « AAAA-MM-JJ », incluses) ; une borne absente ne borne pas. */
 export interface LcDateRange {
-  readonly preset?: number;
   readonly from?: string;
   readonly to?: string;
 }
@@ -27,7 +27,7 @@ export interface LcFilterOption<T> {
 
 export type LcColumnFilter<T> =
   | { readonly type: 'multi'; readonly format?: (value: string) => string; readonly icon?: (value: string) => string | null; readonly order?: readonly string[] }
-  | { readonly type: 'dateRange'; readonly presets?: readonly number[] }
+  | { readonly type: 'dateRange' }
   | { readonly type: 'text'; readonly label: string; readonly hint?: string }
   | { readonly type: 'single'; readonly options: readonly LcFilterOption<T>[] };
 
@@ -70,7 +70,6 @@ export interface LcDataSource<T> {
 }
 
 export const LC_EMPTY_QUERY: LcTableQuery = { filters: {}, sort: null };
-export const LC_DEFAULT_DATE_PRESETS: readonly number[] = [7, 30];
 
 export function isDateRange(value: LcFilterValue | undefined): value is LcDateRange {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -80,22 +79,28 @@ export function isDateRange(value: LcFilterValue | undefined): value is LcDateRa
 export function isFilterActive(value: LcFilterValue | undefined): boolean {
   if (value === undefined) return false;
   if (typeof value === 'string') return value.trim() !== '';
-  if (isDateRange(value)) return !!(value.preset || value.from || value.to);
+  if (isDateRange(value)) return !!(value.from || value.to);
   return value.length > 0;
 }
 
-/** Bornes ISO d'une période ; un raccourci de N jours finit aujourd'hui et commence N - 1 jours avant. */
-export function dateRangeBounds(range: LcDateRange, today: Date = new Date()): { from: string; to: string } {
-  if (range.preset) {
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (range.preset - 1));
-    return { from: localDateToIso(start), to: localDateToIso(today) };
-  }
-  return { from: range.from ?? '', to: range.to ?? '' };
+/**
+ * Période du filtre → valeur de `lc-date-range-input`. Rend `previous` quand les bornes sont les mêmes : le champ prend
+ * tout nouvel objet pour une valeur posée par le code et efface alors sa saisie en cours (pas d'écho saisie → valeur → champ).
+ */
+export function toDateInterval(range: LcDateRange, previous?: LcDateInterval): LcDateInterval {
+  const from = range.from ?? null;
+  const to = range.to ?? null;
+  return previous && previous.from === from && previous.to === to ? previous : { from, to };
+}
+
+/** Valeur de `lc-date-range-input` → période du filtre ; deux bornes vides donnent `{}`. */
+export function fromDateInterval(interval: LcDateInterval): LcDateRange {
+  return { ...(interval.from ? { from: interval.from } : {}), ...(interval.to ? { to: interval.to } : {}) };
 }
 
 /** Vrai si la fin de la période est avant son début. */
 export function isDateRangeInverted(range: LcDateRange | undefined): boolean {
-  return !!range && !range.preset && !!range.from && !!range.to && range.to < range.from;
+  return !!range && !!range.from && !!range.to && range.to < range.from;
 }
 
 /** Texte sans accents ni casse, pour les recherches. */
@@ -103,14 +108,11 @@ export function normalizeText(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
-/** Valeur de filtre normalisée : `undefined` si elle ne filtre rien ; un raccourci de dates ne garde que `preset`. */
+/** Valeur de filtre normalisée : `undefined` si elle ne filtre rien. */
 export function cleanFilterValue(value: LcFilterValue | undefined): LcFilterValue | undefined {
   if (!isFilterActive(value)) return undefined;
   if (typeof value === 'string') return value.trim();
-  if (isDateRange(value)) {
-    if (value.preset) return { preset: value.preset };
-    return { ...(value.from ? { from: value.from } : {}), ...(value.to ? { to: value.to } : {}) };
-  }
+  if (isDateRange(value)) return { ...(value.from ? { from: value.from } : {}), ...(value.to ? { to: value.to } : {}) };
   return value;
 }
 
@@ -131,7 +133,7 @@ function cellIsoDate(value: unknown): string {
 }
 
 /** Données locales : la ligne passe-t-elle le filtre de cette colonne ? */
-export function matchesFilter<T>(row: T, column: LcDataColumn<T>, value: LcFilterValue, today: Date = new Date()): boolean {
+export function matchesFilter<T>(row: T, column: LcDataColumn<T>, value: LcFilterValue): boolean {
   const filter = column.filter;
   if (!filter || !isFilterActive(value)) return true;
   const cell = column.value?.(row);
@@ -145,7 +147,7 @@ export function matchesFilter<T>(row: T, column: LcDataColumn<T>, value: LcFilte
       return option?.match ? option.match(row) : cellString(cell) === value;
     }
     case 'dateRange': {
-      const { from, to } = dateRangeBounds(value as LcDateRange, today);
+      const { from, to } = value as LcDateRange;
       const date = cellIsoDate(cell);
       return !!date && (!from || date >= from) && (!to || date <= to);
     }
@@ -154,11 +156,11 @@ export function matchesFilter<T>(row: T, column: LcDataColumn<T>, value: LcFilte
 
 /** Données locales : lignes qui passent tous les filtres (sauf celui de `except`). */
 export function filterRows<T>(
-  rows: readonly T[], columns: readonly LcDataColumn<T>[], filters: LcTableQuery['filters'], except?: string, today: Date = new Date(),
+  rows: readonly T[], columns: readonly LcDataColumn<T>[], filters: LcTableQuery['filters'], except?: string,
 ): readonly T[] {
   const active = columns.filter((column) => column.key !== except && column.filter && isFilterActive(filters[column.key]));
   if (!active.length) return rows;
-  return rows.filter((row) => active.every((column) => matchesFilter(row, column, filters[column.key], today)));
+  return rows.filter((row) => active.every((column) => matchesFilter(row, column, filters[column.key])));
 }
 
 /** Tri des lignes selon une colonne (valeurs absentes en dernier, ordre d'origine à égalité). */
@@ -185,12 +187,12 @@ export function orderDistinct(values: readonly LcDistinctValue[], order?: readon
 
 /** Données locales : valeurs distinctes d'une colonne et leur nombre, compte tenu des autres filtres seulement. */
 export function localDistinct<T>(
-  rows: readonly T[], columns: readonly LcDataColumn<T>[], key: string, query: LcTableQuery, today: Date = new Date(),
+  rows: readonly T[], columns: readonly LcDataColumn<T>[], key: string, query: LcTableQuery,
 ): readonly LcDistinctValue[] {
   const column = columns.find((candidate) => candidate.key === key);
   if (!column) return [];
   const counts = new Map<string, number>();
-  for (const row of filterRows(rows, columns, query.filters, key, today)) {
+  for (const row of filterRows(rows, columns, query.filters, key)) {
     const value = cellString(column.value?.(row));
     counts.set(value, (counts.get(value) ?? 0) + 1);
   }
@@ -199,9 +201,9 @@ export function localDistinct<T>(
 }
 
 /** Source locale : filtre, trie et compte en mémoire. */
-export function lcLocalSource<T>(rows: readonly T[], columns: readonly LcDataColumn<T>[], today: () => Date = () => new Date()): LcDataSource<T> {
+export function lcLocalSource<T>(rows: readonly T[], columns: readonly LcDataColumn<T>[]): LcDataSource<T> {
   return {
-    rows: (query) => of({ rows: sortDataRows(filterRows(rows, columns, query.filters, undefined, today()), columns, query.sort), total: rows.length }),
-    distinct: (key, query) => of(localDistinct(rows, columns, key, query, today())),
+    rows: (query) => of({ rows: sortDataRows(filterRows(rows, columns, query.filters, undefined), columns, query.sort), total: rows.length }),
+    distinct: (key, query) => of(localDistinct(rows, columns, key, query)),
   };
 }

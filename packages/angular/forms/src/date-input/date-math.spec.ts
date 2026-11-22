@@ -10,6 +10,7 @@ import {
   lastDayOfMonth,
   lastDaysInterval,
   lastMonthInterval,
+  lastWeekInterval,
   lastOfMonth,
   monthGrid,
   thisMonthInterval,
@@ -122,6 +123,14 @@ describe('date-math', () => {
     expect(page[0]).toBe(2019);
     expect(page[11]).toBe(2030);
     expect(page).toHaveLength(12);
+  });
+
+  it('la semaine dernière : lundi au dimanche précédents, un dimanche, un lundi, en début de mois et d’année', () => {
+    expect(lastWeekInterval('2026-11-19')).toEqual({ from: '2026-11-09', to: '2026-11-15' });
+    expect(lastWeekInterval('2026-11-22')).toEqual({ from: '2026-11-09', to: '2026-11-15' }); // dimanche
+    expect(lastWeekInterval('2026-11-16')).toEqual({ from: '2026-11-09', to: '2026-11-15' }); // lundi
+    expect(lastWeekInterval('2026-10-01')).toEqual({ from: '2026-09-21', to: '2026-09-27' }); // début de mois
+    expect(lastWeekInterval('2026-01-01')).toEqual({ from: '2025-12-22', to: '2025-12-28' }); // début d’année
   });
 
   it('raccourcis au 19 novembre 2026', () => {

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette : lc-sheet sur grand écran (A carte centrée, B feuille en bas)</title>
+<style>
+:root {
+  --lc-sys-color-background: #f9f9f7; --lc-sys-color-surface-raised: #ffffff; --lc-sys-color-surface-sunken: #f0efec;
+  --lc-sys-color-on-surface: #0b0b0b; --lc-sys-color-on-surface-muted: #52514e;
+  --lc-sys-color-border: #e1e0d9; --lc-sys-color-border-strong: #898781; --lc-sys-color-focus-ring: #2a78d6;
+  --lc-sys-color-primary: #1f5fb4; --lc-sys-color-on-primary: #fff; --lc-sys-color-backdrop: rgba(11, 11, 11, 0.45);
+  --lc-sys-space-1: 4px; --lc-sys-space-2: 8px; --lc-sys-space-3: 12px; --lc-sys-space-4: 16px; --lc-sys-space-6: 24px; --lc-sys-space-10: 40px;
+  --lc-sys-radius-md: 8px; --lc-sys-radius-lg: 12px; --lc-sys-radius-full: 9999px;
+  --lc-sys-duration-normal: 200ms; --lc-sys-duration-move: 500ms;
+  --lc-sys-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --lc-sys-elevation-overlay: 0 12px 32px rgba(11, 11, 11, 0.18);
+  --lc-sheet-top-gap: var(--lc-sys-space-10);
+  --lc-sheet-radius: var(--lc-sys-radius-lg);
+  --lc-slide-enter-duration: var(--lc-sys-duration-move);
+  --lc-slide-exit-duration: var(--lc-sys-duration-normal);
+  /* Grand écran (valeurs d'exemple) */
+  --lc-sheet-card-width: 35rem;      /* A : 560 px */
+  --lc-sheet-card-max-height: 80dvh;
+  --lc-sheet-bottom-width: 40rem;    /* B : 640 px */
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: var(--lc-sys-color-background); color: var(--lc-sys-color-on-surface); }
+.app { display: grid; grid-template-columns: 15rem 1fr; min-block-size: 100dvh; }
+.nav { background: var(--lc-sys-color-surface-raised); border-inline-end: 1px solid var(--lc-sys-color-border); padding: var(--lc-sys-space-4); }
+.nav b { display: block; margin-block-end: var(--lc-sys-space-4); }
+.nav a { display: block; padding: var(--lc-sys-space-2) var(--lc-sys-space-3); border-radius: var(--lc-sys-radius-md); color: inherit; text-decoration: none; }
+.nav a[aria-current] { background: var(--lc-sys-color-surface-sunken); font-weight: 600; }
+main { padding: var(--lc-sys-space-6); }
+h1 { font-size: 1.375rem; margin: 0 0 var(--lc-sys-space-2); }
+.lead { color: var(--lc-sys-color-on-surface-muted); margin: 0 0 var(--lc-sys-space-4); max-inline-size: 60ch; }
+.bar { display: flex; gap: var(--lc-sys-space-3); flex-wrap: wrap; margin-block-end: var(--lc-sys-space-4); }
+.btn { min-block-size: 40px; padding: 0 var(--lc-sys-space-4); border: 1px solid var(--lc-sys-color-border-strong); border-radius: var(--lc-sys-radius-md);
+  background: var(--lc-sys-color-surface-raised); color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.btn--primary { background: var(--lc-sys-color-primary); border-color: var(--lc-sys-color-primary); color: var(--lc-sys-color-on-primary); }
+.btn--icon { inline-size: 40px; padding: 0; border-color: transparent; background: transparent; font-size: 1.25rem; }
+:focus-visible { outline: 2px solid var(--lc-sys-color-focus-ring); outline-offset: 2px; }
+table { inline-size: 100%; border-collapse: collapse; background: var(--lc-sys-color-surface-raised); border: 1px solid var(--lc-sys-color-border); }
+th, td { text-align: start; padding: var(--lc-sys-space-2) var(--lc-sys-space-3); border-block-end: 1px solid var(--lc-sys-color-border); }
+th { background: var(--lc-sys-color-surface-sunken); }
+
+/* ---- Socle commun (comme au téléphone) ---- */
+.sheet { padding: 0; border: 0; overflow: hidden; background: var(--lc-sys-color-background); color: inherit; }
+.sheet[open] { display: flex; flex-direction: column; }
+.sheet::backdrop { background: var(--lc-sys-color-backdrop); transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); }
+@starting-style { .sheet[open]::backdrop { opacity: 0; } }
+.sheet[data-closing]::backdrop { opacity: 0; }
+.sheet__head { display: flex; align-items: center; gap: var(--lc-sys-space-2); min-block-size: 56px;
+  padding: 0 var(--lc-sys-space-2) 0 var(--lc-sys-space-6); background: var(--lc-sys-color-surface-raised); border-block-end: 1px solid var(--lc-sys-color-border); }
+.sheet__head h2 { flex: 1; margin: 0; font-size: 1.125rem; }
+.sheet__body { flex: 1; overflow-y: auto; padding: var(--lc-sys-space-4) var(--lc-sys-space-6); }
+.sheet__foot { display: flex; justify-content: flex-end; gap: var(--lc-sys-space-3); padding: var(--lc-sys-space-3) var(--lc-sys-space-6);
+  background: var(--lc-sys-color-surface-raised); border-block-start: 1px solid var(--lc-sys-color-border); }
+.field { display: grid; gap: var(--lc-sys-space-1); margin-block-end: var(--lc-sys-space-4); }
+.field span { font-weight: 600; font-size: .875rem; }
+.field input, .field select, .field textarea { font: inherit; padding: var(--lc-sys-space-2) var(--lc-sys-space-3);
+  border: 1px solid var(--lc-sys-color-border-strong); border-radius: var(--lc-sys-radius-md); background: var(--lc-sys-color-surface-raised); }
+.handle-strip { display: flex; justify-content: center; padding-block: var(--lc-sys-space-2) 0; background: var(--lc-sys-color-surface-raised); }
+.handle { inline-size: 36px; block-size: 5px; border-radius: var(--lc-sys-radius-full); background: var(--lc-sys-color-border-strong); }
+
+/* ---- A : carte centrée (fiche iPad) ---- */
+.sheet--a { inline-size: min(var(--lc-sheet-card-width), 100% - 2 * var(--lc-sys-space-6));
+  max-block-size: var(--lc-sheet-card-max-height); margin: auto;
+  border-radius: var(--lc-sheet-radius); box-shadow: var(--lc-sys-elevation-overlay); }
+.sheet--a[open] { transform: translateY(0); opacity: 1;
+  transition: transform var(--lc-slide-enter-duration) var(--lc-sys-easing-standard), opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); }
+@starting-style { .sheet--a[open] { transform: translateY(50dvh); opacity: 0; } }
+.sheet--a[data-closing] { transform: translateY(50dvh); opacity: 0;
+  transition: transform var(--lc-slide-exit-duration) var(--lc-sys-easing-standard), opacity var(--lc-slide-exit-duration) var(--lc-sys-easing-standard); }
+.sheet--a .handle-strip { display: none; }
+
+/* ---- B : feuille en bas, largeur limitée ---- */
+.sheet--b { inline-size: min(var(--lc-sheet-bottom-width), 100%); max-inline-size: none;
+  block-size: calc(100dvh - var(--lc-sheet-top-gap)); max-block-size: none; margin: auto auto 0;
+  border-start-start-radius: var(--lc-sheet-radius); border-start-end-radius: var(--lc-sheet-radius); box-shadow: var(--lc-sys-elevation-overlay); }
+.sheet--b[open] { transform: translateY(0); transition: transform var(--lc-slide-enter-duration) var(--lc-sys-easing-standard); }
+@starting-style { .sheet--b[open] { transform: translateY(100%); } }
+.sheet--b[data-closing] { transform: translateY(100%); transition: transform var(--lc-slide-exit-duration) var(--lc-sys-easing-standard); }
+
+@media (prefers-reduced-motion: reduce) { .sheet, .sheet::backdrop { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav" aria-label="Navigation"><b>Application</b><a href="#" aria-current="page">Éléments</a><a href="#">Rapports</a><a href="#">Réglages</a></nav>
+  <main>
+    <h1>Feuille sur grand écran</h1>
+    <p class="lead">Même composant, deux présentations au-dessus de la largeur du téléphone. Ouvre chacune et compare. Sur téléphone, les deux redeviennent la feuille du bas, avec poignée.</p>
+    <div class="bar">
+      <button class="btn btn--primary" data-open="a">A · Carte centrée (iPad)</button>
+      <button class="btn" data-open="b">B · Feuille en bas, largeur limitée</button>
+    </div>
+    <table>
+      <thead><tr><th>Nom</th><th>État</th><th>Mis à jour</th><th>Responsable</th></tr></thead>
+      <tbody>
+        <tr><td>Élément 1</td><td>Ouvert</td><td>12/11/2026</td><td>Camille</td></tr>
+        <tr><td>Élément 2</td><td>En cours</td><td>10/11/2026</td><td>Sacha</td></tr>
+        <tr><td>Élément 3</td><td>Fermé</td><td>02/11/2026</td><td>Alex</td></tr>
+        <tr><td>Élément 4</td><td>Ouvert</td><td>28/10/2026</td><td>Dominique</td></tr>
+        <tr><td>Élément 5</td><td>En cours</td><td>21/10/2026</td><td>Morgan</td></tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+
+<template id="content">
+  <div class="handle-strip" aria-hidden="true"><span class="handle"></span></div>
+  <header class="sheet__head"><h2>Nouvel élément</h2><button class="btn btn--icon" data-close aria-label="Fermer" autofocus>✕</button></header>
+  <div class="sheet__body">
+    <label class="field"><span>Nom</span><input value="Élément 6"></label>
+    <label class="field"><span>État</span><select><option>Ouvert</option><option>En cours</option><option>Fermé</option></select></label>
+    <label class="field"><span>Responsable</span><input value="Camille"></label>
+    <label class="field"><span>Description</span><textarea rows="4">Texte d'exemple.</textarea></label>
+  </div>
+  <footer class="sheet__foot"><button class="btn" data-close>Annuler</button><button class="btn btn--primary" data-close>Enregistrer</button></footer>
+</template>
+<dialog class="sheet sheet--a" id="a" aria-labelledby="a-t"></dialog>
+<dialog class="sheet sheet--b" id="b" aria-labelledby="b-t"></dialog>
+
+<script>
+const tpl = document.getElementById('content');
+for (const id of ['a', 'b']) {
+  const d = document.getElementById(id);
+  d.append(tpl.content.cloneNode(true));
+  d.querySelector('h2').id = id + '-t';
+  const close = () => {
+    if (!d.open || d.dataset.closing) return;
+    d.dataset.closing = '';
+    const done = () => { d.close(); delete d.dataset.closing; };
+    matchMedia('(prefers-reduced-motion: reduce)').matches ? done() : setTimeout(done, 200);
+  };
+  d.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  d.addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target === d) close(); });
+}
+document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.open).showModal()));
+const q = new URLSearchParams(location.search).get('open');
+if (q) document.getElementById(q)?.showModal();
+</script>
+</body>
+</html>

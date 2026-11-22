@@ -2,6 +2,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { Injectable, Type, inject } from '@angular/core';
 import { lcUniqueId } from '@lionelcointot/ui-angular';
+import { lcCloseOnDismiss } from '../dialog/dialog-ref';
 import {
   LC_DRAWER_CONTEXT, LC_DRAWER_DATA, LcDrawerContext, LcDrawerRef, LcDrawerSide, LcDrawerSize,
 } from './drawer-ref';
@@ -19,8 +20,6 @@ export interface LcDrawerConfig<D> {
   /** Nom accessible ; sinon le titre de `lc-drawer`. */
   readonly ariaLabel?: string;
 }
-
-const ESCAPE_KEY = 'Escape';
 
 /**
  * Tiroirs latéraux modaux sur CDK Dialog (même mécanique que `LcDialogService`) : focus piégé puis restauré,
@@ -45,20 +44,14 @@ export class LcDrawerService {
       data: config.data ?? null,
       ariaLabel: config.ariaLabel ?? null,
       ariaLabelledBy: config.ariaLabel ? null : context.titleId,
-      // Fermeture gérée ici : le CDK ne sait pas séparer Échap et clic sur le voile.
+      // Fermeture gérée ici : le CDK ne sait pas séparer Échap et clic sur le voile, ni jouer la sortie animée.
       disableClose: true,
       positionStrategy: side === 'end' ? position.end('0') : position.start('0'),
       panelClass: ['lc-drawer-panel', `lc-drawer-panel--${side}`, `lc-drawer-panel--${config.size ?? 'medium'}`],
       backdropClass: 'lc-drawer-backdrop',
       providers: (cdkRef) => {
         lcRef = new LcDrawerRef<R>(cdkRef);
-        cdkRef.backdropClick.subscribe(() => closeOnBackdrop && cdkRef.close());
-        cdkRef.keydownEvents.subscribe((event) => {
-          if (dismissible && event.key === ESCAPE_KEY && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
-            event.preventDefault();
-            cdkRef.close();
-          }
-        });
+        lcCloseOnDismiss(cdkRef, lcRef, { escape: dismissible, backdrop: closeOnBackdrop });
         return [
           { provide: LcDrawerRef, useValue: lcRef },
           { provide: LC_DRAWER_DATA, useValue: config.data },

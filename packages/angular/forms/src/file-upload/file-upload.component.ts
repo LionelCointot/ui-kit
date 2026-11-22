@@ -18,6 +18,8 @@ import {
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { fileSizeText } from '../shared/file-display';
+import { dragHasFiles, dragLeftZone, filterFiles, type LcFileRefusal, type LcFileRejectionReason } from '../shared/file-filter';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
 /** État d'un fichier, fourni par l'application : en attente, en cours d'envoi, terminé, en erreur. */
@@ -43,13 +45,9 @@ export interface LcFileUploadItem {
   readonly retryable?: boolean;
 }
 
-/** Raison du refus d'un fichier : type non accepté, ou nombre maximal de fichiers dépassé. */
-export type LcFileRejectionReason = 'type' | 'count';
+export type { LcFileRejectionReason };
 
-export interface LcFileUploadRejection {
-  readonly file: File;
-  readonly reason: LcFileRejectionReason;
-}
+export type LcFileUploadRejection = LcFileRefusal;
 
 interface RowView {
   readonly item: LcFileUploadItem;
@@ -63,16 +61,6 @@ interface RowView {
   readonly removeLabel: string;
   readonly retryLabel: string;
   readonly retryable: boolean;
-}
-
-/** Vrai si le fichier correspond à `accept` (types MIME, `type/*` ou extensions, comme l'attribut natif). */
-function matchesAccept(file: File, accept: string): boolean {
-  const tokens = accept.split(',').map((token) => token.trim().toLowerCase()).filter(Boolean);
-  if (tokens.length === 0) return true;
-  const name = file.name.toLowerCase();
-  const type = file.type.toLowerCase();
-  return tokens.some((token) =>
-    token.startsWith('.') ? name.endsWith(token) : token.endsWith('/*') ? type.startsWith(token.slice(0, -1)) : type === token);
 }
 
 /**
@@ -325,7 +313,7 @@ export class LcFileUploadComponent implements LcFormFieldControl {
   }
 
   protected onDrag(event: DragEvent): void {
-    if (!event.dataTransfer?.types.includes('Files')) return;
+    if (!dragHasFiles(event)) return;
     event.preventDefault(); // sans cela, le navigateur ouvrirait le fichier déposé
     const blocked = this.disabled() || this.full();
     event.dataTransfer.dropEffect = blocked ? 'none' : 'copy';
@@ -333,11 +321,11 @@ export class LcFileUploadComponent implements LcFormFieldControl {
   }
 
   protected onDragLeave(event: DragEvent): void {
-    if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) this.dragging.set(false);
+    if (dragLeftZone(event)) this.dragging.set(false);
   }
 
   protected onDrop(event: DragEvent): void {
-    if (!event.dataTransfer?.types.includes('Files')) return;
+    if (!dragHasFiles(event)) return;
     event.preventDefault();
     this.dragging.set(false);
     this.receive(event.dataTransfer.files);
@@ -361,29 +349,13 @@ export class LcFileUploadComponent implements LcFormFieldControl {
   private receive(list: FileList | null): void {
     if (!list || list.length === 0 || this.disabled()) return;
     const max = this.maxFiles();
-    const room = Math.min(max === null ? Infinity : Math.max(0, max - this.items().length), this.multiple() ? Infinity : 1);
-    const accepted: File[] = [];
-    const refused: LcFileUploadRejection[] = [];
-    for (const file of Array.from(list)) {
-      if (!matchesAccept(file, this.accept())) refused.push({ file, reason: 'type' });
-      else if (accepted.length >= room) refused.push({ file, reason: 'count' });
-      else accepted.push(file);
-    }
+    const room = max === null ? Infinity : Math.max(0, max - this.items().length);
+    const { accepted, refused } = filterFiles(Array.from(list), { accept: this.accept(), room, multiple: this.multiple() });
     if (accepted.length > 0) this.filesAdded.emit(accepted);
     if (refused.length > 0) this.rejected.emit(refused);
   }
 
-  /** Taille lisible, unités du kit (1 Ko = 1 000 octets) : « 2,3 Mo ». */
   private sizeText(bytes: number): string {
-    let value = Number.isFinite(bytes) ? Math.max(0, bytes) : 0;
-    let unit = 0;
-    let shown = Math.round(value);
-    // On passe à l'unité supérieure quand la valeur arrondie atteint 1 000 (999 999 o : « 1 Mo », pas « 1 000 Ko »).
-    while (shown >= 1000 && unit < 3) {
-      value /= 1000;
-      unit += 1;
-      shown = Number(value.toFixed(value >= 100 ? 0 : 1)); // décimale nulle omise : « 2 Mo », pas « 2,0 Mo »
-    }
-    return `${this.format.number(shown)} ${this.labels.fileSizeUnits[unit]}`;
+    return fileSizeText(bytes, this.labels.fileSizeUnits, (value) => this.format.number(value));
   }
 }

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Démo : arrivée des messages (A existant, B ressort)</title>
+<style>
+:root {
+  --bg: #f9f9f7; --surface: #ffffff; --border: #e1e0d9; --text: #0b0b0b; --muted: #52514e;
+  --primary: #1f5fb4; --on-primary: #ffffff; --other: #ecebe6;
+  --space-2: 8px; --space-3: 12px; --space-4: 16px; --radius-lg: 18px;
+  --duration-normal: 200ms; --duration-move: 500ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-offset: 8px;
+  /* B : ressort façon iOS (amorti, léger dépassement), en linear() (Baseline 2023) */
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.4%, 1.067, 1.099 24.3%, 1.108 26%, 1.104, 1.088 30.6%, 1.03 37.7%, 1.008 41.4%, 0.993 45.8%, 0.988 50%, 0.993 59.8%, 1.002 75.4%, 1);
+  --spring-duration: 550ms;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.45 system-ui, sans-serif; background: var(--bg); color: var(--text); }
+main { max-inline-size: 64rem; margin: auto; padding: var(--space-4); }
+h1 { font-size: 1.25rem; margin: 0 0 var(--space-2); }
+p.lead { color: var(--muted); margin: 0 0 var(--space-4); }
+.bar { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+button { font: inherit; font-weight: 600; min-block-size: 44px; padding: 0 var(--space-4); border-radius: 10px; border: 1px solid #898781; background: var(--surface); cursor: pointer; }
+button.primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--space-4); }
+.col h2 { font-size: 1rem; margin: 0 0 4px; }
+.col small { display: block; color: var(--muted); margin-bottom: var(--space-2); }
+.thread { block-size: 26rem; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-2);
+  padding: var(--space-3); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.msg { max-inline-size: 78%; padding: 8px 14px; border-radius: var(--radius-lg); }
+.msg.me { align-self: flex-end; background: var(--primary); color: var(--on-primary); border-end-end-radius: 6px; transform-origin: 100% 100%; }
+.msg.them { align-self: flex-start; background: var(--other); border-end-start-radius: 6px; transform-origin: 0 100%; }
+/* A : existant du kit (vignette de la zone de saisie / dialogue) : fondu + 0,96 → 1 + décalage du côté de l'auteur */
+.A .msg.new { animation: a-in var(--duration-normal) var(--easing-standard) both; }
+.A .msg.new.me { --dx: var(--motion-offset); } .A .msg.new.them { --dx: calc(-1 * var(--motion-offset)); }
+@keyframes a-in { from { opacity: 0; transform: translateX(var(--dx)) scale(0.96); } }
+/* B : ressort iOS : pop depuis le coin de la bulle */
+.B .msg.new { animation: b-in var(--spring-duration) var(--spring) both, fade var(--duration-normal) var(--easing-standard) both; }
+@keyframes b-in { from { transform: scale(0.6); } }
+@keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .msg.new { animation: fade var(--duration-normal) linear both !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Arrivée d'un message : A (animations existantes du kit) ou B (ressort à la iOS)</h1>
+  <p class="lead">Les deux fils reçoivent les mêmes messages en même temps. Dans les deux cas, les messages précédents remontent en glissant (glissement de liste du kit, 500 ms). Seule l'apparition de la nouvelle bulle diffère.</p>
+  <div class="bar">
+    <button class="primary" data-send="me">Envoyer (moi, à droite)</button>
+    <button data-send="them">Recevoir (l'autre, à gauche)</button>
+    <button id="auto">Rejouer une conversation</button>
+  </div>
+  <div class="cols">
+    <section class="col"><h2>A. Existant du kit</h2><small>Fondu, 0,96 → 1, décalage de 8 px de son côté ; 200 ms, courbe standard.</small><div class="thread A" id="A"></div></section>
+    <section class="col"><h2>B. Ressort à la iOS</h2><small>Pop depuis le coin de la bulle, 0,6 → 1 avec léger dépassement ; 550 ms.</small><div class="thread B" id="B"></div></section>
+  </div>
+</main>
+<script>
+const texts = { me: ['Bonjour, il y a une fuite dans la cave.', 'Je vous envoie une photo.', 'Merci beaucoup !'],
+                them: ['Bonjour, merci pour votre message.', 'Le plombier passe jeudi entre 9 h et 11 h.', 'Bonne journée.'] };
+const count = { me: 0, them: 0 };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function add(who) {
+  const t = texts[who][count[who]++ % texts[who].length];
+  for (const id of ['A', 'B']) {
+    const thread = document.getElementById(id);
+    const old = [...thread.children];
+    const before = old.map(el => el.getBoundingClientRect().top);
+    const el = document.createElement('div');
+    el.className = `msg ${who} new`; el.textContent = t;
+    thread.append(el);
+    old.forEach((m, i) => { m.classList.remove('new');
+      const dy = before[i] - m.getBoundingClientRect().top;
+      if (dy && !reduce) m.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(0.2, 0, 0, 1)' }); });
+    while (thread.children.length > 9) thread.firstElementChild.remove();
+  }
+}
+document.querySelectorAll('[data-send]').forEach(b => b.addEventListener('click', () => add(b.dataset.send)));
+document.getElementById('auto').addEventListener('click', () => {
+  ['A', 'B'].forEach(id => document.getElementById(id).replaceChildren()); count.me = count.them = 0;
+  ['me', 'them', 'them', 'me', 'them', 'me'].forEach((w, i) => setTimeout(() => add(w), 300 + i * 1100));
+});
+document.getElementById('auto').click();
+</script>
+</body>
+</html>

@@ -55,7 +55,7 @@ const preview: Preview = {
           'Introduction',
           'Getting started',
           'Foundations',
-          ['Colors', 'Typography', 'Spacing and shape', 'Elevation and motion', 'Icons'],
+          ['Colors', 'Typography', 'Spacing and shape', 'Elevation', 'Motion', 'Icons'],
           'Buttons',
           'Forms',
           'Data',

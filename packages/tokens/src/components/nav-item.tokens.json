@@ -1,0 +1,8 @@
+{
+  "nav-item": {
+    "indicator-shadow": {
+      "$value": "none",
+      "$type": "shadow"
+    }
+  }
+}

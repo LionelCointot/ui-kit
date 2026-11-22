@@ -423,7 +423,7 @@ describe('CA-33 raccourcis', () => {
   const dates = (button: HTMLButtonElement) => [...button.querySelectorAll('span')].map((s) => flat(s.textContent));
   const labelOf = { seven: /7 derniers jours/, thirty: /30 derniers jours/, month: /Ce mois-ci/, last: /Le mois dernier/ };
 
-  it('CA-33 : au 19 novembre 2026, quatre raccourcis avec leurs dates visibles sous le libellé', async () => {
+  it('CA-33 : au 19 novembre 2026, cinq raccourcis avec leurs dates visibles sous le libellé', async () => {
     const { open, buttonByText } = await mount();
     await open();
     expect(dates(buttonByText(labelOf.seven)!)).toEqual(['7 derniers jours', 'du 13 au 19 novembre 2026']);
@@ -561,12 +561,21 @@ describe('CA-36 mode natif', () => {
     const { root, inputs, host, settle } = await mount({ mode: 'native' });
     const row = root.querySelector('[role="group"][aria-label="Raccourcis"]')!;
     expect(row).not.toBeNull();
-    expect(row.querySelectorAll('button')).toHaveLength(4);
+    expect(row.querySelectorAll('button')).toHaveLength(5);
     expect(inputs()[1].compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const seven = [...row.querySelectorAll('button')].find((b) => /7 derniers jours/.test(b.textContent!))!;
     seven.click();
     await settle();
     expect(host.value()).toEqual({ from: '2026-11-13', to: '2026-11-19' });
+  });
+
+  it('CA-36 : « La semaine dernière » = lundi au dimanche précédents (jeudi 19/11/2026 → 09 au 15/11)', async () => {
+    const { root, host, settle } = await mount({ mode: 'native' });
+    const last = [...root.querySelectorAll('[role="group"][aria-label="Raccourcis"] button')].find((b) => /La semaine dernière/.test(b.textContent!)) as HTMLButtonElement;
+    expect(last).toBeDefined();
+    last.click();
+    await settle();
+    expect(host.value()).toEqual({ from: '2026-11-09', to: '2026-11-15' });
   });
 });
 

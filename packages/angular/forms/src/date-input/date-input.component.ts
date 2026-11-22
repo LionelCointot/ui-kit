@@ -28,6 +28,7 @@ import { transformedValue } from '@angular/forms/signals';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   LC_DEFAULTS, LC_LABELS, LC_LOCALE, LcFillMode, LcFormatService, LcIconComponent, LcRounded, LcSize, joinIds, lcUniqueId, localDateToIso,
+  lcDetachAnimated,
 } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import {
@@ -210,6 +211,8 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   private openPanel(): void {
     if (this.panel() || this.disabled() || this.readonly()) return;
     this.overlayRef ??= createCalendarOverlay(this.injector, this.host, this.doc, (target) => !!this.buttonRef()?.nativeElement.contains(target), (restore) => this.close(restore));
+    // Réouverture pendant le fondu de fermeture : le rattachement annule le retrait (lcDetachAnimated).
+    if (this.overlayRef.hasAttached()) this.overlayRef.detach();
     const panel = this.overlayRef.attach(new ComponentPortal(LcCalendarPanelComponent, this.viewContainerRef));
     this.syncPanel(panel);
     panel.instance.picked.subscribe((iso) => this.choose(fromIso(iso)));
@@ -229,7 +232,7 @@ export class LcDateInputComponent implements FormValueControl<string | null>, Lc
   private close(restoreFocus: boolean): void {
     if (!this.panel()) return;
     this.panel.set(null);
-    this.overlayRef?.detach();
+    if (this.overlayRef) void lcDetachAnimated(this.overlayRef);
     if (restoreFocus) this.buttonRef()?.nativeElement.focus();
   }
 

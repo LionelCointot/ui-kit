@@ -86,6 +86,20 @@ export interface LcLabels {
   readonly fileUploadProgress: (name: string) => string;
   readonly fileUploadAnnounceDone: (name: string) => string;
   readonly fileUploadAnnounceRemoved: (name: string) => string;
+  readonly composerSend: string;
+  readonly composerAttach: string;
+  readonly composerDrop: string;
+  readonly composerAttachments: string;
+  readonly composerSending: string;
+  /** Refus d'un fichier déposé ou choisi : nom et raison (`type` : type non accepté, `count` : trop de fichiers). */
+  readonly composerRejected: (name: string, reason: 'type' | 'count') => string;
+  /** Refus par type quand `accept` est renseigné : nom du fichier et liste des types acceptés. */
+  readonly composerRejectedType: (name: string, accepted: string) => string;
+  /** Compteur de caractères : saisis sur maximum. */
+  readonly composerCount: (length: number, max: number) => string;
+  /** Annonces à l'approche et à l'atteinte de la limite de caractères. */
+  readonly composerLimitNear: string;
+  readonly composerLimitReached: string;
   /** Unités de taille de fichier, de l'octet au gigaoctet. */
   readonly fileSizeUnits: readonly [string, string, string, string];
   /** Liste modifiable (`lc-list-editor`) : champ d'ajout, commandes et état de chaque ligne, erreurs détectées, annonces. */
@@ -175,6 +189,7 @@ export interface LcLabels {
   readonly datePeriodFrom: string;
   readonly datePeriodTo: string;
   readonly dateOnDay: (date: string) => string;
+  readonly dateLastWeek: string;
   readonly dateThisMonth: string;
   readonly dateLastMonth: string;
   /** Champ de période : nom du groupe, bouton (`text` : « du 3 au 12 novembre 2026 » ou une borne), ligne d'une seule borne, groupe des raccourcis natifs. */
@@ -188,6 +203,12 @@ export interface LcLabels {
   readonly dateCurrentFrom: (date: string) => string;
   readonly dateCurrentUntil: (date: string) => string;
   readonly dateShortcuts: string;
+
+  // Fil de messages
+  readonly threadLabel: string;
+  readonly threadToday: string;
+  readonly threadYesterday: string;
+  readonly threadAttachmentOpen: (name: string) => string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -231,7 +252,6 @@ export interface LcDataTableLabels {
   /** Texte cherché, dans le résumé d'un filtre texte. */
   readonly quoted: (text: string) => string;
   readonly lastDays: (days: number) => string;
-  readonly chosenPeriod: string;
   readonly from: string;
   readonly to: string;
   readonly since: (date: string) => string;
@@ -240,7 +260,6 @@ export interface LcDataTableLabels {
   readonly dateOrderError: string;
   readonly filters: (active: number) => string;
   readonly filtersButtonLabel: (active: number) => string;
-  readonly closeWithoutApplying: string;
   readonly all: string;
   readonly activeFilters: string;
   readonly noFilter: string;
@@ -297,16 +316,14 @@ const DATA_TABLE_FR: LcDataTableLabels = {
   emptyValue: '(vide)',
   quoted: (text) => `« ${text} »`,
   lastDays: (days) => `${days} derniers jours`,
-  chosenPeriod: 'Période choisie',
   from: 'Du',
   to: 'Au',
   since: (date) => `depuis le ${date}`,
   until: (date) => `jusqu'au ${date}`,
-  datesNote: 'Dates incluses. Une date vide ne borne pas la période.',
+  datesNote: 'Dates incluses.',
   dateOrderError: 'La date de fin est avant la date de début.',
   filters: (active) => (active ? `Filtres (${active})` : 'Filtres'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filtres' : `Filtres, ${active} ${active > 1 ? 'actifs' : 'actif'}`),
-  closeWithoutApplying: 'Fermer sans appliquer',
   all: 'Tout',
   activeFilters: 'Filtres actifs',
   noFilter: 'Aucun filtre. Touchez « Filtres » pour filtrer.',
@@ -363,16 +380,14 @@ const DATA_TABLE_EN: LcDataTableLabels = {
   emptyValue: '(empty)',
   quoted: (text) => `“${text}”`,
   lastDays: (days) => `Last ${days} days`,
-  chosenPeriod: 'Custom period',
   from: 'From',
   to: 'To',
   since: (date) => `since ${date}`,
   until: (date) => `until ${date}`,
-  datesNote: 'Dates included. An empty date leaves the period open.',
+  datesNote: 'Dates included.',
   dateOrderError: 'The end date is before the start date.',
   filters: (active) => (active ? `Filters (${active})` : 'Filters'),
   filtersButtonLabel: (active) => (active === 0 ? 'Filters' : `Filters, ${active} active`),
-  closeWithoutApplying: 'Close without applying',
   all: 'All',
   activeFilters: 'Active filters',
   noFilter: 'No filter. Tap “Filters” to filter.',
@@ -693,6 +708,16 @@ export const LC_LABELS_FR: LcLabels = {
   fileUploadProgress: (name) => `Envoi de ${name}`,
   fileUploadAnnounceDone: (name) => `${name} : envoi terminé`,
   fileUploadAnnounceRemoved: (name) => `${name} retiré`,
+  composerSend: 'Envoyer',
+  composerAttach: 'Joindre un fichier',
+  composerDrop: 'Déposez vos fichiers ici',
+  composerAttachments: 'Pièces jointes',
+  composerSending: 'Envoi en cours…',
+  composerRejected: (name, reason) => `${name} : ${reason === 'type' ? 'type de fichier non accepté.' : 'nombre maximal de fichiers atteint.'}`,
+  composerRejectedType: (name, accepted) => `${name} n'est pas accepté. Fichiers acceptés : ${accepted}.`,
+  composerCount: (length, max) => `${length} / ${max}`,
+  composerLimitNear: 'Vous approchez de la limite de caractères.',
+  composerLimitReached: 'Limite de caractères atteinte.',
   fileSizeUnits: ['o', 'Ko', 'Mo', 'Go'],
   listEditorList: 'Éléments',
   listEditorAddLabel: 'Nouvel élément',
@@ -766,6 +791,7 @@ export const LC_LABELS_FR: LcLabels = {
   datePeriodFrom: 'du',
   datePeriodTo: 'au',
   dateOnDay: (date) => `le ${date}`,
+  dateLastWeek: 'La semaine dernière',
   dateThisMonth: 'Ce mois-ci',
   dateLastMonth: 'Le mois dernier',
   datePeriod: 'Période',
@@ -777,6 +803,12 @@ export const LC_LABELS_FR: LcLabels = {
   dateCurrentFrom: (date) => `Depuis le ${date}, sans date de fin. Cliquez un jour pour changer.`,
   dateCurrentUntil: (date) => `Jusqu'au ${date} inclus, sans date de début. Cliquez un jour pour changer.`,
   dateShortcuts: 'Raccourcis',
+
+  // Fil de messages
+  threadLabel: 'Échanges',
+  threadToday: 'Aujourd\'hui',
+  threadYesterday: 'Hier',
+  threadAttachmentOpen: (name) => `Ouvrir la pièce jointe : ${name}`,
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -934,6 +966,16 @@ export const LC_LABELS_EN: LcLabels = {
   fileUploadProgress: (name) => `Uploading ${name}`,
   fileUploadAnnounceDone: (name) => `${name}: upload complete`,
   fileUploadAnnounceRemoved: (name) => `${name} removed`,
+  composerSend: 'Send',
+  composerAttach: 'Attach a file',
+  composerDrop: 'Drop your files here',
+  composerAttachments: 'Attachments',
+  composerSending: 'Sending…',
+  composerRejected: (name, reason) => `${name}: ${reason === 'type' ? 'file type not accepted.' : 'maximum number of files reached.'}`,
+  composerRejectedType: (name, accepted) => `${name} is not accepted. Accepted files: ${accepted}.`,
+  composerCount: (length, max) => `${length} / ${max}`,
+  composerLimitNear: 'You are nearing the character limit.',
+  composerLimitReached: 'Character limit reached.',
   fileSizeUnits: ['B', 'KB', 'MB', 'GB'],
   listEditorList: 'Items',
   listEditorAddLabel: 'New item',
@@ -1007,6 +1049,7 @@ export const LC_LABELS_EN: LcLabels = {
   datePeriodFrom: 'from',
   datePeriodTo: 'to',
   dateOnDay: (date) => date,
+  dateLastWeek: 'Last week',
   dateThisMonth: 'This month',
   dateLastMonth: 'Last month',
   datePeriod: 'Period',
@@ -1018,6 +1061,12 @@ export const LC_LABELS_EN: LcLabels = {
   dateCurrentFrom: (date) => `Since ${date}, no end date. Click a day to change.`,
   dateCurrentUntil: (date) => `Until ${date} inclusive, no start date. Click a day to change.`,
   dateShortcuts: 'Shortcuts',
+
+  // Message thread
+  threadLabel: 'Messages',
+  threadToday: 'Today',
+  threadYesterday: 'Yesterday',
+  threadAttachmentOpen: (name) => `Open attachment: ${name}`,
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });

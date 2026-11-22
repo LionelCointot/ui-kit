@@ -1,14 +1,15 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, linkedSignal, model, output, signal,
-  untracked,
+  ChangeDetectionStrategy, Component, Directive, ElementRef, Injector, afterNextRender, computed, effect, inject, input, linkedSignal, model, output, signal,
+  untracked, viewChild,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { LC_LABELS, LcButtonComponent, LcIconComponent, LcSkeletonComponent } from '@lionelcointot/ui-angular';
 import { LcAlertComponent } from '@lionelcointot/ui-angular/feedback';
+import { LC_DATE_PICKER, LcDateRangeInputComponent, type LcDateInterval } from '@lionelcointot/ui-angular/forms';
 import {
-  LC_DEFAULT_DATE_PRESETS, LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcFilterValue, LcTableQuery,
-  dateRangeBounds, isDateRange, isDateRangeInverted, normalizeText, orderDistinct,
+  LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcFilterValue, LcTableQuery,
+  fromDateInterval, isDateRange, normalizeText, orderDistinct, toDateInterval,
 } from './data-table-model';
 
 /** Au-delà de ce nombre de valeurs, une recherche apparaît au-dessus de la liste. */
@@ -27,7 +28,7 @@ interface ValueOption {
  */
 @Component({
   selector: 'lc-column-filter',
-  imports: [LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent],
+  imports: [LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent, LcDateRangeInputComponent],
   template: `
     @switch (column().filter?.type) {
       @case ('multi') {
@@ -92,32 +93,9 @@ interface ValueOption {
         }
       }
       @case ('dateRange') {
-        <fieldset class="lc-column-filter__radios">
-          <legend class="lc-column-filter__hidden">{{ column().label }}</legend>
-          @for (preset of presets(); track preset) {
-            <label class="lc-column-filter__option">
-              <input type="radio" class="lc-radio" [name]="idPrefix() + '-preset'" [checked]="range().preset === preset" (change)="setPreset(preset)" />
-              <span class="lc-column-filter__label">{{ labels.lastDays(preset) }}</span>
-            </label>
-          }
-          <label class="lc-column-filter__option">
-            <input type="radio" class="lc-radio" [name]="idPrefix() + '-preset'" [checked]="!range().preset" (change)="setPreset(0)" />
-            <span class="lc-column-filter__label">{{ labels.chosenPeriod }}</span>
-          </label>
-        </fieldset>
-        <div class="lc-column-filter__range">
-          <label [for]="idPrefix() + '-from'">{{ labels.from }}</label>
-          <input class="lc-input" type="date" [id]="idPrefix() + '-from'" [value]="bounds().from" [class.lc-input--invalid]="inverted()"
-            [attr.aria-invalid]="inverted() ? 'true' : null" [attr.aria-describedby]="inverted() ? idPrefix() + '-error' : null" (change)="setDate('from', $any($event.target).value)" />
-          <label [for]="idPrefix() + '-to'">{{ labels.to }}</label>
-          <input class="lc-input" type="date" [id]="idPrefix() + '-to'" [value]="bounds().to" [class.lc-input--invalid]="inverted()"
-            [attr.aria-invalid]="inverted() ? 'true' : null" [attr.aria-describedby]="inverted() ? idPrefix() + '-error' : null" (change)="setDate('to', $any($event.target).value)" />
-        </div>
-        @if (inverted()) {
-          <p class="lc-column-filter__error" [id]="idPrefix() + '-error'"><lc-icon name="circle-alert" />{{ labels.dateOrderError }}</p>
-        } @else {
-          <p class="lc-column-filter__note">{{ labels.datesNote }}</p>
-        }
+        <lc-date-range-input class="lc-column-filter__range" [inputId]="idPrefix() + '-from'" [ariaLabel]="periodLabel()"
+          [value]="interval()" (valueChange)="setInterval($event)" />
+        <p class="lc-column-filter__note">{{ labels.datesNote }}</p>
       }
       @case ('text') {
         @if (textFilter(); as filter) {
@@ -151,7 +129,8 @@ interface ValueOption {
 })
 export class LcColumnFilterComponent<T> {
   protected readonly labels = inject(LC_LABELS).dataTable;
-  protected readonly retryLabel = inject(LC_LABELS).retry;
+  private readonly rootLabels = inject(LC_LABELS);
+  protected readonly retryLabel = this.rootLabels.retry;
   private readonly announcer = inject(LiveAnnouncer);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
@@ -216,13 +195,13 @@ export class LcColumnFilterComponent<T> {
   protected readonly allChecked = computed(() => this.visible().length > 0 && this.visibleChecked() === this.visible().length);
   protected readonly someChecked = computed(() => this.visibleChecked() > 0 && !this.allChecked());
 
-  protected readonly presets = computed(() => {
-    const filter = this.column().filter;
-    return filter?.type === 'dateRange' ? filter.presets ?? LC_DEFAULT_DATE_PRESETS : [];
+  private readonly rangeField = viewChild(LcDateRangeInputComponent);
+  protected readonly periodLabel = computed(() => `${this.column().label} : ${this.rootLabels.datePeriod.toLowerCase()}`);
+  private readonly range = computed<LcDateRange>(() => (isDateRange(this.value()) ? (this.value() as LcDateRange) : {}));
+  protected readonly interval = linkedSignal<LcDateRange, LcDateInterval>({
+    source: this.range,
+    computation: (range, previous) => toDateInterval(range, previous?.value),
   });
-  protected readonly range = computed<LcDateRange>(() => (isDateRange(this.value()) ? (this.value() as LcDateRange) : {}));
-  protected readonly bounds = computed(() => dateRangeBounds(this.range()));
-  protected readonly inverted = computed(() => isDateRangeInverted(this.range()));
   protected readonly text = computed(() => (typeof this.value() === 'string' ? (this.value() as string) : ''));
   protected readonly textFilter = computed(() => (this.column().filter?.type === 'text' ? (this.column().filter as { label: string; hint?: string }) : null));
   protected readonly singleOptions = computed(() => {
@@ -237,7 +216,7 @@ export class LcColumnFilterComponent<T> {
   readonly canApply = computed(() => {
     const type = this.column().filter?.type;
     if (type === 'multi') return this.values.hasValue() && !this.values.isLoading() && this.options().length > 0;
-    if (type === 'dateRange') return !this.inverted();
+    if (type === 'dateRange') return !this.rangeField()?.orderInvalid();
     return true;
   });
 
@@ -261,9 +240,9 @@ export class LcColumnFilterComponent<T> {
     });
   }
 
-  /** Date du brouillon : `-from` ou `-to` ; utilisé par le parent pour placer le focus sur une période refusée. */
+  /** Première zone du champ de période ; utilisé par le parent pour placer le focus sur une période refusée. */
   focusDate(): void {
-    this.host.querySelector<HTMLElement>(`[id="${this.idPrefix()}-from"]`)?.focus();
+    this.rangeField()?.focus();
   }
 
   protected retry(): void {
@@ -283,18 +262,9 @@ export class LcColumnFilterComponent<T> {
     this.value.set(on ? [...rest, ...visible] : rest);
   }
 
-  protected setPreset(days: number): void {
-    if (days) {
-      this.value.set({ preset: days });
-      return;
-    }
-    const { from, to } = this.bounds();
-    this.value.set({ from, to });
-  }
-
-  protected setDate(end: 'from' | 'to', date: string): void {
-    const { from, to } = this.bounds();
-    this.value.set({ from, to, [end]: date });
+  protected setInterval(interval: LcDateInterval): void {
+    this.interval.set(interval);
+    this.value.set(fromDateInterval(interval));
   }
 
   /** Flèches haut et bas, Début et Fin : d'une case à l'autre. */
@@ -317,6 +287,10 @@ export class LcColumnFilterComponent<T> {
   /** Focus sur la première commande, sauf si le focus est déjà dans le filtre. */
   private focusFirst(): void {
     if (!this.autofocus()) return;
+    if (this.column().filter?.type === 'dateRange') {
+      this.focusDate();
+      return;
+    }
     const active = this.host.ownerDocument.activeElement;
     if (active && active !== this.host && this.host.contains(active)) return;
     this.host.querySelector<HTMLElement>(
@@ -324,3 +298,10 @@ export class LcColumnFilterComponent<T> {
     )?.focus();
   }
 }
+
+/** Panneau plein écran du téléphone : le champ de période du filtre y prend le sélecteur natif (ADR 0008). */
+@Directive({
+  selector: 'lc-column-filter[lcNativeDatePicker]',
+  providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }],
+})
+export class LcNativeDatePickerDirective {}

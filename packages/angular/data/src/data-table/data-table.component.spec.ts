@@ -2,9 +2,12 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
 import { LcDataTableComponent } from './data-table.component';
-import { LcDataColumn, LcDataSource, LcDistinctValue, LcTableQuery, lcLocalSource } from './data-table-model';
+import * as model from './data-table-model';
+import { LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcTableQuery, lcLocalSource } from './data-table-model';
 
 interface Row { id: number; name: string; state: string; city: string; date: string; urgent: boolean }
 
@@ -61,11 +64,11 @@ describe('LcDataTableComponent', () => {
   let host: HostComponent;
   let el: HTMLElement;
 
-  async function setup(options: { source?: LcDataSource<Row> | readonly Row[]; query?: LcTableQuery; narrow?: boolean; chips?: 'auto' | 'always' | 'never' } = {}) {
+  async function setup(options: { source?: LcDataSource<Row> | readonly Row[]; query?: LcTableQuery; narrow?: boolean; chips?: 'auto' | 'always' | 'never'; picker?: 'calendar' | 'native' } = {}) {
     announce = vi.fn().mockResolvedValue(undefined);
     narrow$ = new BehaviorSubject<BreakpointState>({ matches: !!options.narrow, breakpoints: {} });
     TestBed.configureTestingModule({
-      providers: [{ provide: LiveAnnouncer, useValue: { announce } }, { provide: BreakpointObserver, useValue: { observe: () => narrow$ } }],
+      providers: [{ provide: LiveAnnouncer, useValue: { announce } }, { provide: BreakpointObserver, useValue: { observe: () => narrow$ } }, ...(options.picker ? [{ provide: LC_DATE_PICKER, useValue: options.picker }] : [])],
     });
     if (options.narrow) {
       // jsdom ignore la largeur : on reproduit la règle CSS « sous 768 px » pour rendre pastilles et bouton Filtres focalisables.
@@ -285,54 +288,219 @@ describe('LcDataTableComponent', () => {
   });
 
   describe('autres types (CA-8, CA-9, CA-10)', () => {
-    it('CA-8 : un raccourci remplit Du et Au ; modifier une date repasse sur « Période choisie »', async () => {
-      await setup();
-      await open('date');
-      const radios = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=radio]')];
-      expect(radios).toHaveLength(3); // 7 jours, 30 jours, Période choisie
-      await click(radios[0]);
-      const [from, to] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      expect(from.value).not.toBe('');
-      expect(to.value).not.toBe('');
-      const span = (Date.parse(to.value) - Date.parse(from.value)) / 86_400_000;
-      expect(span).toBe(6);
-      from.value = '2026-11-02';
-      from.dispatchEvent(new Event('change'));
-      await stable();
-      expect(radios[2].checked).toBe(true);
-    });
+    describe('filtre de période : champ de date du kit (CA-P1 à CA-P11)', () => {
+      // Aujourd'hui figé au 19 novembre 2026 ; lignes du jeu de test : 2026-11-01 à 2026-11-10 (Demande 1 à 10).
+      beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(2026, 10, 19, 12));
+      });
+      afterEach(() => vi.useRealTimers());
 
-    it('CA-8 : fin avant début : aria-invalid, message relié, Appliquer désactivé', async () => {
-      await setup();
-      await open('date');
-      const [from, to] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      from.value = '2026-11-10';
-      from.dispatchEvent(new Event('change'));
-      await stable();
-      to.value = '2026-11-02';
-      to.dispatchEvent(new Event('change'));
-      await stable();
-      const [from2, to2] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      expect(from2.getAttribute('aria-invalid')).toBe('true');
-      const error = document.getElementById(to2.getAttribute('aria-describedby')!)!;
-      expect(error.textContent).toContain('La date de fin est avant la date de début.');
-      expect(applyBtn().disabled).toBe(true);
-      expect(host.emitted).toHaveLength(0);
-    });
+      const rangeInputs = () => [...menu()!.querySelectorAll<HTMLInputElement>('lc-date-range-input input')];
+      const typeInto = async (input: HTMLInputElement, digits: string) => {
+        input.focus();
+        for (const char of digits) input.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true, cancelable: true }));
+        await stable();
+      };
+      const blur = async (input: HTMLInputElement) => {
+        input.blur();
+        await stable();
+      };
+      const calendarButton = () => menu()!.querySelector<HTMLButtonElement>('lc-date-range-input .lc-date-range-input__button')!;
+      const presetButtons = () => [...document.querySelectorAll<HTMLButtonElement>('lc-date-range-input .lc-date-range-input__shortcuts button, lc-calendar-panel .lc-calendar__preset')];
+      const presetLabel = (re: RegExp) => presetButtons().find((b) => re.test(b.textContent!))!;
+      const ORDER_ERROR = 'La date de fin est avant la date de début.';
 
-    it('CA-8 : une période valide est appliquée et filtre (bornes incluses)', async () => {
-      await setup();
-      await open('date');
-      const [from, to] = [...menu()!.querySelectorAll<HTMLInputElement>('input[type=date]')];
-      from.value = '2026-11-03';
-      from.dispatchEvent(new Event('change'));
-      await stable();
-      to.value = '2026-11-04';
-      to.dispatchEvent(new Event('change'));
-      await stable();
-      await click(applyBtn());
-      expect(lastEmitted().filters).toEqual({ date: { from: '2026-11-03', to: '2026-11-04' } });
-      expect(bodyIds()).toEqual(['Demande 3', 'Demande 4']);
+      it('CA-P1 : ordinateur : un lc-date-range-input dans le filtre, aucun input[type=date]', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        expect(menu()!.querySelectorAll('lc-date-range-input')).toHaveLength(1);
+        expect(menu()!.querySelector('input[type=date]')).toBeNull();
+      });
+
+      it('CA-P2 : période saisie 03 → 04 novembre puis Appliquer : { from, to }, bornes incluses', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '03112026');
+        await typeInto(rangeInputs()[1], '04112026');
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({ date: { from: '2026-11-03', to: '2026-11-04' } });
+        expect(bodyIds()).toEqual(['Demande 3', 'Demande 4']);
+      });
+
+      it('CA-P2 : début seul → { from } ; fin seule → { to } ; aucune clé null', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '03112026');
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({ date: { from: '2026-11-03' } });
+        expect(Object.keys(lastEmitted().filters['date'] as object)).toEqual(['from']);
+        expect(bodyIds()).toHaveLength(8);
+      });
+
+      it('CA-P2 : fin seule → { to } sans clé null', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[1], '04112026');
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({ date: { to: '2026-11-04' } });
+        expect(Object.keys(lastEmitted().filters['date'] as object)).toEqual(['to']);
+        expect(bodyIds()).toEqual(['Demande 1', 'Demande 2', 'Demande 3', 'Demande 4']);
+      });
+
+      it('CA-P3a : aucun bouton radio ; cinq raccourcis du kit, dans le calendrier (ordinateur)', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        expect(menu()!.querySelector('input[type=radio]')).toBeNull();
+        await click(calendarButton());
+        expect(presetButtons().map((b) => b.textContent!)).toEqual([
+          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/La semaine dernière/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
+        ]);
+      });
+
+      it('CA-P3a : aucun bouton radio ; cinq raccourcis du kit, sous le champ (mode natif)', async () => {
+        await setup({ picker: 'native' });
+        await open('date');
+        expect(menu()!.querySelector('input[type=radio]')).toBeNull();
+        expect(presetButtons().map((b) => b.textContent!)).toEqual([
+          expect.stringMatching(/7 derniers jours/), expect.stringMatching(/La semaine dernière/), expect.stringMatching(/30 derniers jours/), expect.stringMatching(/Ce mois-ci/), expect.stringMatching(/Le mois dernier/),
+        ]);
+      });
+
+      it('CA-P3b : « 7 derniers jours » puis Appliquer : { from: 13/11, to: 19/11 } fixes, sans clé preset', async () => {
+        await setup({ picker: 'native' });
+        await open('date');
+        await click(presetLabel(/7 derniers jours/));
+        await click(applyBtn());
+        const value = lastEmitted().filters['date'] as Record<string, unknown>;
+        expect(value).toEqual({ from: '2026-11-13', to: '2026-11-19' });
+        expect(Object.keys(value)).not.toContain('preset');
+      });
+
+      it('CA-P3c : contrat : LC_DEFAULT_DATE_PRESETS n\'existe plus ; preset et presets ne compilent plus', () => {
+        expect(model).not.toHaveProperty('LC_DEFAULT_DATE_PRESETS');
+        // @ts-expect-error `preset` est retiré de LcDateRange
+        const range: LcDateRange = { preset: 7 };
+        // @ts-expect-error `presets` est retiré du filtre `dateRange`
+        const filter: LcDataColumn<Row>['filter'] = { type: 'dateRange', presets: [7] };
+        expect([range, filter]).toHaveLength(2);
+      });
+
+      it('CA-P3c : pastille : « depuis le … », « jusqu\'au … » ou les deux dates ; requête avec preset ignorée', async () => {
+        await setup({ query: q({ date: { from: '2026-11-03' } }), chips: 'always' });
+        expect(el.querySelector('.lc-data-table__chip')!.textContent).toContain('depuis le 3 nov.');
+        host.query.set(q({ date: { to: '2026-11-04' } }));
+        await stable();
+        expect(el.querySelector('.lc-data-table__chip')!.textContent).toContain('jusqu\'au 4 nov.');
+        host.query.set(q({ date: { from: '2026-11-03', to: '2026-11-04' } }));
+        await stable();
+        expect(el.querySelector('.lc-data-table__chip')!.textContent).toMatch(/3\s*[–-]\s*4 nov\./);
+        host.query.set(q({ date: { preset: 7 } as unknown as LcDateRange }));
+        await stable();
+        expect(el.querySelector('.lc-data-table__chip')).toBeNull();
+        expect(bodyIds()).toHaveLength(10);
+      });
+
+      it('CA-P4 : ordinateur : date, raccourci, calendrier ouvert puis fermé, fermeture du menu : rien n\'est émis avant Appliquer', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '03112026');
+        expect(host.emitted).toHaveLength(0);
+        await click(calendarButton());
+        expect(document.querySelector('lc-calendar-panel')).not.toBeNull();
+        await click(presetLabel(/7 derniers jours/));
+        expect(host.emitted).toHaveLength(0);
+        if (document.querySelector('lc-calendar-panel')) await click(calendarButton());
+        expect(host.emitted).toHaveLength(0);
+        await key(document.activeElement ?? menu()!, 'Escape');
+        expect(host.emitted).toHaveLength(0);
+        expect(host.query()).toEqual(q({}));
+      });
+
+      it('CA-P4 : téléphone : rien n\'est émis avant « Afficher N » ; puis { from, to } fixes', async () => {
+        vi.setSystemTime(new Date(2026, 10, 10, 12)); // 04 → 10 nov. : 7 lignes ; « Afficher N » est désactivé à 0 résultat
+        await setup({ narrow: true, picker: 'native' });
+        await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+        const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
+        const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
+        await click(toggle);
+        await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-date-range-input__shortcuts button')].find((b) => /7 derniers jours/.test(b.textContent!))!);
+        expect(host.emitted).toHaveLength(0);
+        expect(host.query()).toEqual(q({}));
+        await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+        expect(host.emitted).toEqual([q({ date: { from: '2026-11-04', to: '2026-11-10' } })]);
+      });
+
+      it('CA-P10 : panneau du téléphone sans LC_DATE_PICKER (pointeur fin simulé) : champ natif ; rien émis avant « Afficher N » ; période préremplie à la réouverture', async () => {
+        const original = window.matchMedia;
+        window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia; // pointeur fin et survol : en `auto`, le kit choisirait son calendrier
+        try {
+          await setup({ narrow: true }); // pas de LC_DATE_PICKER fourni
+          const dialog = () => el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
+          const openSection = async () => {
+            await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+            const toggle = [...dialog().querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
+            if (toggle.getAttribute('aria-expanded') !== 'true') await click(toggle);
+          };
+          const dates = () => [...dialog().querySelectorAll<HTMLInputElement>('lc-date-range-input input')];
+          await openSection();
+          expect(dates().map((i) => i.type)).toEqual(['date', 'date']);
+          expect(dialog().querySelector('lc-date-range-input .lc-date-range-input__button')).toBeNull();
+          dates()[0].value = '2026-11-03';
+          dates()[0].dispatchEvent(new Event('input', { bubbles: true }));
+          dates()[0].dispatchEvent(new Event('change', { bubbles: true }));
+          dates()[1].value = '2026-11-04';
+          dates()[1].dispatchEvent(new Event('input', { bubbles: true }));
+          dates()[1].dispatchEvent(new Event('change', { bubbles: true }));
+          await stable();
+          expect(host.emitted).toHaveLength(0);
+          await click(dialog().querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+          expect(host.emitted).toEqual([q({ date: { from: '2026-11-03', to: '2026-11-04' } })]);
+          await openSection();
+          expect(dates().map((i) => i.value)).toEqual(['2026-11-03', '2026-11-04']);
+        } finally {
+          window.matchMedia = original;
+        }
+      });
+
+      it('CA-P4b : date tapée incomplète ou impossible : aucune émission, aucun message du filtre', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '0311');
+        await blur(rangeInputs()[0]);
+        await typeInto(rangeInputs()[1], '31022026');
+        await blur(rangeInputs()[1]);
+        expect(host.emitted).toHaveLength(0);
+        expect(menu()!.querySelector('.lc-column-filter__error')).toBeNull();
+        expect(menu()!.textContent).not.toContain(ORDER_ERROR);
+      });
+
+      it('CA-P6 : fin avant début : message du composant, une seule fois, sans message ni aria-describedby du filtre ; Appliquer désactivé ; rien émis', async () => {
+        await setup({ picker: 'calendar' });
+        await open('date');
+        await typeInto(rangeInputs()[0], '10112026');
+        await typeInto(rangeInputs()[1], '02112026');
+        expect(menu()!.textContent!.split(ORDER_ERROR)).toHaveLength(2);
+        expect(menu()!.querySelector('lc-date-range-input')!.textContent).toContain(ORDER_ERROR);
+        expect(menu()!.querySelector('.lc-column-filter__error')).toBeNull();
+        const outside = [...menu()!.querySelectorAll('[aria-describedby]')].filter((node) => !node.closest('lc-date-range-input'));
+        expect(outside).toHaveLength(0);
+        expect(applyBtn().disabled).toBe(true);
+        expect(host.emitted).toHaveLength(0);
+      });
+
+      it('CA-P11 : menu rouvert avec { from, to } actif : le champ l\'affiche ; Effacer le vide et retire le filtre', async () => {
+        await setup({ picker: 'calendar', query: q({ date: { from: '2026-11-03', to: '2026-11-04' } }) });
+        await open('date');
+        expect(rangeInputs().map((i) => i.value)).toEqual(['03/11/2026', '04/11/2026']);
+        await click(clearBtn());
+        expect(lastEmitted().filters).toEqual({});
+        await open('date');
+        expect(rangeInputs().map((i) => i.value)).toEqual(['jj/mm/aaaa', 'jj/mm/aaaa']); // masque du champ vide
+        expect(applyBtn().disabled).toBe(false);
+        await click(applyBtn());
+        expect(lastEmitted().filters).toEqual({}); // aucune date : pas de filtre
+      });
     });
 
     it('CA-9 : focus sur le champ à l\'ouverture ; Entrée applique', async () => {
@@ -487,10 +655,18 @@ describe('LcDataTableComponent', () => {
       expect(cells[5].classList).toContain('lc-data-table__card-only');
     });
 
+    it('boutons du pied absents tant que la feuille n\'est pas ouverte (aucun « Appliquer » caché à cliquer)', async () => {
+      await setup({ narrow: true });
+      expect(el.querySelector('.lc-data-table__panel-apply')).toBeNull();
+      expect(el.querySelector('lc-sheet .lc-sheet__footer')!.querySelectorAll('button')).toHaveLength(0);
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      expect(el.querySelector('lc-sheet .lc-sheet__footer .lc-data-table__panel-apply')).not.toBeNull();
+    });
+
     it('CA-15 : rien n\'est appliqué avant « Afficher N » ; le nombre suit les choix', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!;
       expect(toggle.getAttribute('aria-expanded')).toBe('false');
       await click(toggle);
@@ -505,38 +681,460 @@ describe('LcDataTableComponent', () => {
       expect(host.emitted).toEqual([q({ state: ['Close'] })]);
     });
 
-    it('panneau : le premier contrôle porte autofocus, le dialogue n\'est pas focalisé à la main, Échap n\'est pas doublé', async () => {
+    it('CA-H2 : une section jamais ouverte n\'est pas rendue ; repliée après ouverture, elle garde son filtre rendu (la hauteur se replie sans se vider) et devient inert', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
+      const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!;
+      const body = () => document.getElementById(toggle.getAttribute('aria-controls')!)!;
+      expect(body().querySelector('lc-column-filter')).toBeNull();
+      expect(body().hasAttribute('inert')).toBe(true);
+      await click(toggle);
+      expect(body().querySelector('lc-column-filter')).not.toBeNull();
+      expect(body().hasAttribute('inert')).toBe(false);
+      await click(toggle);
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(body().hasAttribute('inert')).toBe(true);
+      expect(body().querySelector('lc-column-filter')).not.toBeNull();
+    });
+
+    it('panneau : le premier contrôle (croix) porte autofocus, le dialogue n\'est pas focalisé à la main ; le bouton s\'appelle « Annuler »', async () => {
+      await setup({ narrow: true });
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       expect(dialog.querySelector('button')!.hasAttribute('autofocus')).toBe(true);
       expect(dialog.hasAttribute('tabindex')).toBe(false);
-      const close = vi.fn();
-      dialog.close = close;
-      await key(dialog, 'Escape'); // le navigateur ferme seul : pas de second chemin de fermeture
-      expect(close).not.toHaveBeenCalled();
+      expect(dialog.querySelector('.lc-sheet__close')!.textContent!.trim()).toBe('Annuler');
+      expect(el.querySelector('dialog.lc-data-table__panel')).toBeNull();
     });
 
     it('CA-15 : Échap ferme sans appliquer et rend le focus au bouton Filtres', async () => {
       await setup({ narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__section-toggle')!);
       await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
       await click(boxes(dialog)[1]);
       dialog.dispatchEvent(new Event('close')); // Échap natif : le navigateur ferme le dialogue puis émet `close`
       await stable();
-      expect(dialog.querySelector('.lc-data-table__panel-apply')).toBeNull();
+      expect(dialog.querySelector('.lc-data-table__panel-body')).toBeNull();
       expect(host.emitted).toHaveLength(0);
       expect(document.activeElement).toBe(el.querySelector('[id$="-filters"]'));
+    });
+
+    it('spec filtre-période §13 (a) : requête inversée fournie par le code, « Afficher N » ouvre la section en faute, focalise « Du » et n\'émet rien', async () => {
+      await setup({ query: q({ date: { from: '2026-11-10', to: '2026-11-03' } }), narrow: true, picker: 'native' });
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
+      dialog.setAttribute('open', ''); // jsdom n'a pas `showModal()` : sans `open`, le dialogue n'est pas rendu et `focus()` est sans effet
+      const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Reçue le'))!;
+      if (toggle.getAttribute('aria-expanded') === 'true') await click(toggle); // le test part d'une section repliée
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+      expect(document.activeElement).toBe(dialog.querySelector('[id$="-panel-date-from"]'));
+      expect(host.emitted).toHaveLength(0);
     });
 
     it('CA-13 : sous 768 px, la pastille rouvre le panneau sur sa colonne', async () => {
       await setup({ query: q({ city: ['Gap'] }), narrow: true });
       await click(el.querySelector<HTMLButtonElement>('[id$="-chip-city"]')!);
-      const dialog = el.querySelector<HTMLDialogElement>('dialog.lc-data-table__panel')!;
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
       const toggle = [...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('Ville'))!;
       expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    });
+  });
+  describe('mouvement (spec 2026-11-mouvement, T6)', () => {
+    /** Simule une animation finie en cours sur l'élément ; `finish()` la termine. */
+    const animate = (node: HTMLElement) => {
+      let finish!: () => void;
+      const finished = new Promise<void>((resolve) => (finish = resolve));
+      node.getAnimations = (() => [{ finished }]) as unknown as typeof node.getAnimations;
+      return finish;
+    };
+    const openPanel = async () => {
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      const dialog = el.querySelector<HTMLDialogElement>('lc-sheet dialog')!;
+      dialog.close = vi.fn();
+      return dialog;
+    };
+    const rowNodes = () => [...el.querySelectorAll('tbody tr:not(.lc-data-table__state)')];
+
+    it('panneau : la croix pose data-closing, puis close() seulement après la fin du fondu', async () => {
+      await setup({ narrow: true });
+      const dialog = await openPanel();
+      const finish = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      expect(dialog.close).not.toHaveBeenCalled();
+      finish();
+      await stable();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+      expect(dialog.hasAttribute('data-closing')).toBe(false);
+      expect(el.querySelector('.lc-data-table__panel-body')).toBeNull();
+    });
+
+    it('panneau : Échap (cancel) est intercepté et ferme en fondu ; « Afficher N » aussi', async () => {
+      await setup({ narrow: true });
+      let dialog = await openPanel();
+      let finish = animate(dialog);
+      const cancel = new Event('cancel', { cancelable: true });
+      dialog.dispatchEvent(cancel);
+      expect(cancel.defaultPrevented).toBe(true);
+      await stable(); // la feuille pose `data-closing` à son prochain passage de détection de changements
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      finish();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+
+      dialog = await openPanel();
+      finish = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      expect(dialog.close).not.toHaveBeenCalled();
+      finish();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+    });
+
+    it('panneau : rouvrir pendant le fondu annule la fermeture', async () => {
+      await setup({ narrow: true });
+      const dialog = await openPanel();
+      const finish = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(false);
+      finish();
+      await stable();
+      expect(dialog.close).not.toHaveBeenCalled();
+    });
+
+    it('menu de filtre : fermeture en fondu (lc-overlay--closing), colonne gardée jusqu\'au retrait du panneau', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      await click(applyBtn());
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      expect(menu()).not.toBeNull();
+      finish();
+      await stable();
+      expect(menu()).toBeNull();
+    });
+
+    it('cartes : lcReveal sur les 8 premières seulement sur téléphone, aucune sur ordinateur', async () => {
+      await setup({ narrow: true });
+      expect(rowNodes()).toHaveLength(10);
+      const revealed = rowNodes().filter((row) => row.hasAttribute('lcReveal'));
+      expect(revealed).toHaveLength(8);
+      expect(revealed.map((row) => (row as HTMLElement).style.getPropertyValue('--lc-reveal-index'))).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
+    });
+
+    it('cartes : aucune lcReveal sur ordinateur', async () => {
+      await setup();
+      expect(rowNodes()).toHaveLength(10);
+      expect(rowNodes().filter((row) => row.hasAttribute('lcReveal'))).toHaveLength(0);
+    });
+
+    it('cartes : la cascade ne joue qu\'au premier affichage ; après un filtre, les cartes conservées gardent leur élément, sans lcReveal', async () => {
+      await setup({ narrow: true });
+      const before = rowNodes();
+      host.source.set([...ROWS]); // nouvelle source, même requête : lignes conservées (suivies par id), pas de cascade
+      await stable();
+      expect(rowNodes()[0]).toBe(before[0]);
+      const dialog = await openPanel();
+      await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
+      await click(boxes(dialog)[1]); // Close : lignes 2, 5, 8
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
+      await stable();
+      const after = rowNodes();
+      expect(after).toEqual([before[1], before[4], before[7]]);
+      expect(after.some((row) => row.hasAttribute('lcReveal'))).toBe(false);
+    });
+
+    describe('différence de liste (décision 26)', () => {
+      type Call = { row: HTMLElement; keyframes: Record<string, unknown[]>; options: KeyframeAnimationOptions; finish: () => void };
+      let calls: Call[];
+
+      /** Web Animations simulée : `animate` enregistre ses appels ; la mise en page est simulée (40 px par ligne, dans l'ordre du DOM). */
+      const stubLayout = (reduced = false) => {
+        calls = [];
+        (HTMLElement.prototype as { animate?: unknown }).animate = function (this: HTMLElement, keyframes: Record<string, unknown[]>, options: KeyframeAnimationOptions) {
+          let finish!: () => void;
+          const finished = new Promise<void>((resolve) => (finish = resolve));
+          calls.push({ row: this, keyframes, options, finish });
+          return { finished };
+        };
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+          const top = [...document.querySelectorAll('tbody tr')].indexOf(this) * 40;
+          return { top } as DOMRect;
+        });
+        if (reduced) vi.stubGlobal('matchMedia', () => ({ matches: true }));
+      };
+      const tokens = (easings: Record<string, string> = { '--lc-list-move-easing': 'ease-in-out' }) => {
+        const table = el.querySelector<HTMLElement>('lc-data-table') ?? el;
+        for (const [name, value] of Object.entries({ '--lc-list-move-duration': '200ms', '--lc-overlay-enter-duration': '0.3s', '--lc-overlay-exit-duration': '100ms', '--lc-overlay-easing': 'ease-out', ...easings })) {
+          table.style.setProperty(name, value);
+        }
+      };
+      const filterTo = async (names: readonly string[]) => {
+        host.query.set(q(names.length ? { state: names } : {}));
+        await stable();
+      };
+      const on = (rows: readonly Element[]) => calls.filter((call) => rows.includes(call.row));
+
+      afterEach(() => {
+        delete (HTMLElement.prototype as { animate?: unknown }).animate;
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+      });
+
+      it('lignes conservées : même élément, glissement translateY(ancienne - nouvelle place) → none, durée et courbe lues en CSS', async () => {
+        await setup();
+        const before = rowNodes();
+        stubLayout();
+        tokens();
+        await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
+        const kept = [before[1], before[4], before[7]];
+        expect(rowNodes()).toEqual(kept);
+        expect(calls.map((call) => call.row)).toEqual(kept);
+        expect(calls.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
+        expect(calls[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
+      });
+
+      it('lignes ajoutées : fondu d\'entrée (--lc-overlay-enter-duration) ; conservées : glissement', async () => {
+        await setup({ query: q({ state: ['Close'] }) });
+        const before = rowNodes();
+        stubLayout();
+        tokens();
+        await filterTo([]);
+        expect(rowNodes()).toHaveLength(10);
+        const fades = calls.filter((call) => 'opacity' in call.keyframes);
+        expect(fades).toHaveLength(7);
+        expect(fades[0].keyframes['opacity']).toEqual([0, 1]);
+        expect(fades[0].options).toEqual({ duration: 300, easing: 'ease-out' });
+        expect(fades.some((call) => before.includes(call.row))).toBe(false);
+        expect(on(before).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
+      });
+
+      it('ligne qui ne bouge pas : pas d\'animation', async () => {
+        await setup();
+        stubLayout();
+        tokens();
+        host.source.set([...ROWS]);
+        await stable();
+        expect(calls).toHaveLength(0);
+      });
+
+      it('réduction de mouvement : ni glissement ni fondu', async () => {
+        await setup();
+        stubLayout(true);
+        tokens();
+        await filterTo(['Close']);
+        await filterTo([]);
+        expect(calls).toHaveLength(0);
+      });
+
+      it('lignes retirées : fondu de sortie, conservées figées à leur place d\'avant, puis UN SEUL glissement de l\'avant à la fin', async () => {
+        await setup();
+        const before = rowNodes();
+        stubLayout();
+        tokens();
+        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
+        // Angular ne joue pas `animate.leave` sous jsdom : on déclare la ligne 1 (État Nouvelle, retirée par le filtre) comme sortante.
+        const animationComplete = vi.fn();
+        component.fadeOut({ target: before[0], animationComplete });
+        expect(before[0].hasAttribute('data-leaving')).toBe(true);
+        expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
+        expect(calls[0].options).toEqual({ duration: 100, easing: 'ease-out', fill: 'forwards' });
+        await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
+        const kept = [before[1], before[4], before[7]];
+        expect(calls).toHaveLength(1); // pas de glissement pendant le fondu
+        expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['translateY(40px)', 'translateY(120px)', 'translateY(200px)']);
+        expect(animationComplete).not.toHaveBeenCalled();
+        calls[0].finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        expect(animationComplete).toHaveBeenCalledOnce();
+        const glides = calls.slice(1);
+        expect(glides.map((call) => call.row)).toEqual(kept); // un seul glissement par ligne conservée
+        expect(glides.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
+        expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['', '', '']);
+      });
+
+      /** Part de « Close » (2, 5, 8) ; la ligne 8 est déclarée sortante, puis le filtre passe à « Nouvelle » (1, 4, 7, 10 ajoutées). */
+      const leavingScenario = async () => {
+        await setup({ query: q({ state: ['Close'] }) });
+        const initial = rowNodes();
+        stubLayout();
+        tokens();
+        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
+        component.fadeOut({ target: initial[2], animationComplete: vi.fn() });
+        await filterTo(['Nouvelle']);
+        return rowNodes() as HTMLElement[];
+      };
+      const settleFade = async () => {
+        calls[0].finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+      };
+
+      it('lignes ajoutées : masquées pendant le fondu des sortantes, puis révélées en fondu par le glissement unique', async () => {
+        const added = await leavingScenario();
+        expect(added.map((row) => row.style.opacity)).toEqual(['0', '0', '0', '0']);
+        expect(calls).toHaveLength(1);
+        await settleFade();
+        const fades = calls.slice(1);
+        expect(fades.map((call) => call.row)).toEqual(added);
+        expect(fades.every((call) => JSON.stringify(call.keyframes['opacity']) === '[0,1]')).toBe(true);
+        expect(added.map((row) => row.style.opacity)).toEqual(['', '', '', '']);
+      });
+
+      it('second filtre pendant le fondu : une ligne ajoutée au premier changement et conservée reste masquée, puis reçoit son fondu', async () => {
+        const added = await leavingScenario();
+        await filterTo(['Nouvelle', 'Qualifiée']); // 1, 4, 7, 10 conservées ; 3, 6, 9 ajoutées
+        expect(rowNodes().filter((row) => added.includes(row as HTMLElement))).toHaveLength(4);
+        expect(added.map((row) => row.style.opacity)).toEqual(['0', '0', '0', '0']);
+        expect(calls).toHaveLength(1);
+        await settleFade();
+        expect(calls.slice(1).filter((call) => 'opacity' in call.keyframes).map((call) => call.row)).toEqual(expect.arrayContaining(added));
+        expect(calls.slice(1).filter((call) => 'transform' in call.keyframes && added.includes(call.row))).toHaveLength(0);
+      });
+
+      type ChipTarget = { fadeOutChip(event: unknown): void };
+      const chipComponent = () => fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as ChipTarget;
+
+      it('CA-H4 : pastille sortante : fondu duration-fast, sortie du flux à sa place, non cliquable (data-leaving) ; retirée à la fin du fondu', async () => {
+        await setup({ query: q({ state: ['Close'] }), chips: 'always' });
+        stubLayout();
+        tokens();
+        el.querySelector<HTMLElement>('lc-data-table')!.style.setProperty('--lc-sys-duration-fast', '150ms');
+        const chip = el.querySelector<HTMLElement>('.lc-data-table__chip')!;
+        const animationComplete = vi.fn();
+        chipComponent().fadeOutChip({ target: chip, animationComplete });
+        expect(chip.hasAttribute('data-leaving')).toBe(true);
+        expect(chip.style.left).toMatch(/px$/);
+        expect(chip.style.top).toMatch(/px$/);
+        expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
+        expect(calls[0].options).toEqual({ duration: 150, easing: 'ease-out', fill: 'forwards' });
+        expect(animationComplete).not.toHaveBeenCalled();
+        calls[0].finish();
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        expect(animationComplete).toHaveBeenCalledOnce();
+      });
+
+      it('CA-R1 : pastille sortante en réduction de mouvement : retrait immédiat, sans animation', async () => {
+        await setup({ query: q({ state: ['Close'] }), chips: 'always' });
+        stubLayout(true);
+        tokens();
+        const animationComplete = vi.fn();
+        chipComponent().fadeOutChip({ target: el.querySelector<HTMLElement>('.lc-data-table__chip')!, animationComplete });
+        expect(animationComplete).toHaveBeenCalledOnce();
+        expect(calls).toHaveLength(0);
+      });
+
+      it('CA-H4 : retrait d\'une pastille : le bloc de la liste glisse d\'un seul trait de sa place d\'avant (translateY) vers sa place d\'après', async () => {
+        await setup({ query: q({ state: ['Close'] }), chips: 'always' });
+        stubLayout();
+        tokens();
+        // La rangée se resserre quand la pastille disparaît : le bloc de la liste remonte de 60 à 20. Comme en navigateur, la mesure compte la translation que le bloc porte à t = 0 (40 px).
+        let shift = 0;
+        const animate = HTMLElement.prototype.animate;
+        (HTMLElement.prototype as { animate?: unknown }).animate = function (this: HTMLElement, ...args: Parameters<typeof animate>) {
+          if (this.classList.contains('lc-data-table__scroll')) shift = 40;
+          return animate.apply(this, args);
+        };
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+          const base = (document.querySelector('.lc-data-table__chip') ? 60 : 20) + shift;
+          return { top: this.classList.contains('lc-data-table__scroll') ? base : [...document.querySelectorAll('tbody tr')].indexOf(this) * 40 + base } as DOMRect;
+        });
+        await click(el.querySelector<HTMLButtonElement>('.lc-data-table__chip-remove')!);
+        await stable();
+        const slides = calls.filter((call) => call.row.classList.contains('lc-data-table__scroll'));
+        expect(slides).toHaveLength(1);
+        expect(slides[0].keyframes['transform']).toEqual(['translateY(40px)', 'none']);
+        expect(slides[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
+        // Bloc + ligne partent de l'ancienne place de la ligne (7 lignes ajoutées en fondu, 3 conservées) : la ligne ne rattrape pas deux fois le décalage de 40 px.
+        expect(calls.filter((call) => 'transform' in call.keyframes && call.row !== slides[0].row).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
+      });
+
+      it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {
+        await setup();
+        stubLayout(true);
+        tokens();
+        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
+        const animationComplete = vi.fn();
+        component.fadeOut({ target: rowNodes()[0], animationComplete });
+        expect(animationComplete).toHaveBeenCalledOnce();
+        expect(calls).toHaveLength(0);
+      });
+    });
+
+    it('panneau : une première attente ne ferme pas le dialogue rouvert puis refermé pendant la seconde', async () => {
+      await setup({ narrow: true });
+      const dialog = await openPanel();
+      const finishFirst = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
+      await click(el.querySelector<HTMLButtonElement>('[id$="-filters"]')!); // rouvre pendant le fondu
+      const finishSecond = animate(dialog);
+      await click(dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!);
+      expect(dialog.hasAttribute('data-closing')).toBe(true);
+      finishFirst();
+      await stable();
+      expect(dialog.close).not.toHaveBeenCalled();
+      finishSecond();
+      await stable();
+      expect(dialog.close).toHaveBeenCalledOnce();
+    });
+
+    it('menu de filtre : Échap passe par la fermeture en fondu (contenu présent, focus rendu à l\'entonnoir, rien d\'appliqué)', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      // keyCode comme un vrai navigateur : le CDK s'y fie pour détacher lui-même le panneau sans `disableClose`.
+      (document.activeElement ?? menu()!).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true, cancelable: true }));
+      await stable();
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      expect(menu()).not.toBeNull();
+      finish();
+      await stable();
+      expect(menu()).toBeNull();
+      expect(document.activeElement).toBe(funnel('state'));
+      expect(host.emitted).toHaveLength(0);
+    });
+
+    it('menu de filtre : rouvrir la même colonne pendant le fondu annule la fermeture', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      await click(applyBtn());
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      await open('state');
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+      finish();
+      await stable();
+      expect(menu()).not.toBeNull();
+      expect(funnel('state').getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('menu de filtre : ouvrir une autre colonne pendant le fondu garde le menu, sur la nouvelle colonne', async () => {
+      await setup();
+      await open('state');
+      const pane = document.querySelector<HTMLElement>('.lc-data-table__overlay')!;
+      const finish = animate(pane);
+      await click(applyBtn());
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(true);
+      await open('city');
+      expect(pane.classList.contains('lc-overlay--closing')).toBe(false);
+      finish();
+      await stable();
+      expect(menu()).not.toBeNull();
+      expect(optionLabels()).toContain('Annecy');
+      expect(funnel('city').getAttribute('aria-expanded')).toBe('true');
     });
   });
 });

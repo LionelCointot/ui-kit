@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mouvement : trois réglages à comparer</title>
+<style>
+/* Valeurs de DESIGN.md (thème clair), recopiées ici car la page est autonome. */
+:root{
+  --primary:#1c5cab;--on-primary:#fff;--primary-container:#cde2fb;--on-primary-container:#0d366b;
+  --bg:#f9f9f7;--raised:#fff;--sunken:#f0efec;--ink:#0b0b0b;--muted:#52514e;
+  --border:#e1e0d9;--border-strong:#898781;--focus:#2a78d6;
+  --r-md:8px;--r-lg:12px;--ease:cubic-bezier(0.2,0,0,1);--stagger:50ms;
+  font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:1rem;line-height:1.5}
+main{max-width:80rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+h1{font-size:1.5rem;margin:0 0 .5rem}h2{font-size:1.125rem;margin:0}
+h3{font-size:.875rem;font-weight:500;color:var(--muted);margin:1.25rem 0 .5rem}
+p{margin:0 0 .75rem;max-width:60rem}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.banner{background:#fdf0d0;color:#5c3c00;border:1px solid #fab219;border-radius:var(--r-md);padding:.75rem 1rem;margin:0 0 1rem}
+.banner[hidden]{display:none}
+.top{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin:1rem 0}
+.btn{min-height:44px;padding:0 1rem;border-radius:var(--r-md);border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);font-weight:500}
+.btn.outline{background:transparent;color:var(--on-primary-container)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:60rem){.grid{grid-template-columns:1fr}}
+.col{background:var(--raised);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;min-width:0}
+.col header{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem}
+.vals{font-size:.875rem;color:var(--muted);margin:.25rem 0 0}
+/* Réglage de la colonne : durée, distance de descente, durée de fermeture */
+.col{--dur:200ms;--dist:8px;--dur-out:100ms}
+.col[data-s=discret]{--dur:150ms;--dist:4px;--dur-out:100ms}
+.col[data-s=marque]{--dur:350ms;--dist:12px;--dur-out:150ms}
+/* Onglets */
+.tabs{position:relative;display:flex;border-bottom:1px solid var(--border)}
+.tabs button{background:none;border:0;padding:0 .75rem;min-height:44px;color:var(--muted);font-weight:500}
+.tabs button[aria-current=true]{color:var(--on-primary-container)}
+.tabs .bar{position:absolute;left:0;bottom:-1px;height:2px;width:1px;background:var(--primary);transform-origin:left;
+  transition:transform var(--dur) var(--ease)}
+/* Nav latérale */
+.nav{position:relative;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r-md);padding:4px}
+.nav .bg{position:absolute;left:4px;right:4px;top:4px;height:44px;background:var(--primary-container);border-radius:var(--r-md);
+  transition:transform var(--dur) var(--ease)}
+.nav button{position:relative;height:44px;text-align:left;background:none;border:0;padding:0 .75rem;border-radius:var(--r-md)}
+.nav button[aria-current=true]{color:var(--on-primary-container);font-weight:500}
+/* Bouton : appui */
+.press:active,.press.sim{transform:scale(.97)}
+.press{transition:transform var(--dur) var(--ease)}
+/* Champ + panneau */
+.field{position:relative}
+.field>button{width:100%;min-height:44px;text-align:left;background:var(--raised);border:1px solid var(--border-strong);border-radius:var(--r-md);padding:0 .75rem}
+.panel{position:absolute;z-index:2;left:0;right:0;top:calc(100% + 4px);background:var(--raised);border:1px solid var(--border);
+  border-radius:var(--r-md);box-shadow:0 4px 12px rgb(0 0 0/.12);padding:4px;display:none;transform-origin:top}
+.panel.open{display:block;animation:down var(--dur) var(--ease)}
+.panel.closing{display:block;animation:fade var(--dur-out) var(--ease) forwards}
+.panel button{display:block;width:100%;min-height:44px;text-align:left;background:none;border:0;padding:0 .75rem;border-radius:var(--r-md)}
+.panel button:hover{background:var(--sunken)}
+.spacer{height:10.5rem}
+@keyframes down{from{opacity:0;transform:translateY(calc(var(--dist) * -1))}}
+@keyframes fade{to{opacity:0}}
+/* Cartes en cascade */
+.cards{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}
+.cards li{background:var(--sunken);border:1px solid var(--border);border-radius:var(--r-lg);padding:.5rem .75rem}
+.cards.play li{animation:down var(--dur) var(--ease) backwards;animation-delay:calc(var(--i) * var(--stagger))}
+/* Section Cascade */
+.casc{margin-top:2rem}
+.casc .col{--dist:8px}
+.casc .cards{margin-top:.75rem}
+.casc .tag{font-size:.875rem;font-weight:500;color:var(--on-primary-container);background:var(--primary-container);border-radius:var(--r-md);padding:0 .5rem;white-space:nowrap}
+/* Section Déplacement : les courbes (ressorts amortis) et les durées sont calculées en JS, voir « Lois ». */
+.dep{margin-top:2rem}
+.dep .tag{font-size:.875rem;font-weight:500;color:var(--on-primary-container);background:var(--primary-container);border-radius:var(--r-md);padding:0 .5rem;white-space:nowrap}
+.dep .rows{display:grid;gap:.5rem;margin:.75rem 0 0;padding:0;list-style:none;min-height:calc(6*44px + 5*.5rem);align-content:start;position:relative}
+.dep .rows li{background:var(--sunken);border:1px solid var(--border);border-radius:var(--r-lg);padding:0 .75rem;min-height:44px;display:flex;align-items:center}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<main>
+<div class="banner" id="rm" role="status" hidden>Votre système demande de réduire les animations : elles sont coupées sur cette page, comme dans le kit.</div>
+<h1>Mouvement : trois réglages à comparer</h1>
+<p>Les trois colonnes ont la même courbe de mouvement (<code>cubic-bezier(0.2, 0, 0, 1)</code>) et le même décalage entre cartes (50 ms). Elles ne diffèrent que par la durée et la distance de descente. Cliquez dans chaque colonne, ou rejouez.</p>
+<div class="top"><button class="btn" id="all" type="button">Tout rejouer</button></div>
+<div class="grid" id="grid"></div>
+<section class="casc" aria-labelledby="casc-t">
+<h2 id="casc-t">Cascade</h2>
+<p>Réglage Standard pour le reste. Trois façons d'allonger la cascade de cartes : même courbe, descente de 8 px.</p>
+<div class="grid" id="casc"></div>
+</section>
+<section class="dep" aria-labelledby="dep-t">
+<h2 id="dep-t">Déplacement</h2>
+<p>Seuls les déplacements prennent un ressort ; les fondus gardent <code>cubic-bezier(0.2, 0, 0, 1)</code>. La durée dépend de la distance parcourue pour B et C. Cliquez sur Filtrer, sur un onglet ou sur un élément de navigation, ou rejouez.</p>
+<div class="grid" id="dep"></div>
+</section>
+</main>
+
+<template id="tpl">
+<section class="col">
+  <header>
+    <div><h2></h2><p class="vals"></p></div>
+    <button class="btn outline replay" type="button">Rejouer</button>
+  </header>
+  <h3>Onglets</h3>
+  <div class="tabs" role="group" aria-label="Onglets de démonstration"><span class="bar" aria-hidden="true"></span></div>
+  <h3>Navigation latérale</h3>
+  <div class="nav" role="group" aria-label="Navigation de démonstration"><span class="bg" aria-hidden="true"></span></div>
+  <h3>Bouton</h3>
+  <button class="btn press" type="button">Enregistrer</button>
+  <h3>Champ avec panneau déroulant</h3>
+  <div class="field"><button type="button" aria-expanded="false">Choisir une ville</button><div class="panel"></div></div>
+  <div class="spacer"></div>
+  <h3>Liste en cascade</h3>
+  <ul class="cards"></ul>
+</section>
+</template>
+
+<script>
+const SETS=[
+ {k:'discret',n:'Discret',d:'150 ms',p:'4 px',o:'fermeture 100 ms'},
+ {k:'standard',n:'Standard',d:'200 ms',p:'8 px',o:'fermeture 100 ms'},
+ {k:'marque',n:'Marqué',d:'350 ms',p:'12 px',o:'fermeture 150 ms'}];
+const TABS=['Résumé','Détail','Historique'],NAV=['Accueil','Documents','Réglages','Aide'],
+ CITIES=['Lyon','Nantes','Rennes'],CARDS=['Première carte','Deuxième carte','Troisième carte','Quatrième carte','Cinquième carte'];
+const rm=matchMedia('(prefers-reduced-motion: reduce)');
+const banner=document.getElementById('rm');
+const syncRm=()=>{banner.hidden=!rm.matches};rm.addEventListener('change',syncRm);syncRm();
+const mk=(tag,text,parent)=>{const e=document.createElement(tag);if(text)e.textContent=text;parent&&parent.append(e);return e};
+const reflow=e=>void e.offsetWidth;
+const players=[];
+
+function build(s){
+ const col=document.getElementById('tpl').content.firstElementChild.cloneNode(true);
+ col.dataset.s=s.k;
+ col.querySelector('h2').textContent=s.n;
+ col.querySelector('.vals').textContent=`${s.d} · descente ${s.p} · ${s.o}`;
+ const $=q=>col.querySelector(q);
+ // Onglets
+ const tabs=$('.tabs'),bar=$('.bar'),tb=TABS.map(t=>mk('button',t,tabs));tb.forEach(b=>b.type='button');
+ const selTab=i=>{tb.forEach((b,j)=>j===i?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current'));
+  bar.style.transform=`translateX(${tb[i].offsetLeft}px) scaleX(${tb[i].offsetWidth})`};
+ tb.forEach((b,i)=>b.onclick=()=>selTab(i));
+ // Nav
+ const nav=$('.nav'),bg=$('.bg'),nb=NAV.map(t=>mk('button',t,nav));nb.forEach(b=>b.type='button');
+ const selNav=i=>{nb.forEach((b,j)=>j===i?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current'));
+  bg.style.transform=`translateY(${i*44}px)`};
+ nb.forEach((b,i)=>b.onclick=()=>selNav(i));
+ // Bouton
+ const btn=$('.press');
+ // Panneau
+ const field=$('.field button'),panel=$('.panel');
+ CITIES.forEach(c=>{const b=mk('button',c,panel);b.type='button';b.onclick=()=>{field.textContent=c;close()}});
+ let t;
+ const open=()=>{clearTimeout(t);panel.classList.remove('closing','open');reflow(panel);panel.classList.add('open');field.setAttribute('aria-expanded','true')};
+ const close=()=>{if(!panel.classList.contains('open'))return;panel.classList.replace('open','closing');field.setAttribute('aria-expanded','false');
+  clearTimeout(t);t=setTimeout(()=>panel.classList.remove('closing'),rm.matches?0:parseFloat(getComputedStyle(col).getPropertyValue('--dur-out')))};
+ field.onclick=()=>panel.classList.contains('open')?close():open();
+ field.onkeydown=e=>{if(e.key==='Escape')close()};
+ panel.onkeydown=e=>{if(e.key==='Escape'){close();field.focus()}};
+ // Cartes
+ const cards=$('.cards');CARDS.forEach((c,i)=>{mk('li',c,cards).style.setProperty('--i',i)});
+ const cascade=()=>{cards.classList.remove('play');reflow(cards);cards.classList.add('play')};
+ const wait=ms=>new Promise(r=>setTimeout(r,rm.matches?0:ms));
+ const dur=parseFloat(s.d);
+ const replay=async()=>{
+  selTab(0);selNav(0);close();cascade();
+  await wait(dur+100);selTab(2);selNav(2);
+  btn.classList.add('sim');await wait(dur+50);btn.classList.remove('sim');
+  open();await wait(dur+900);close();
+ };
+ col.querySelector('.replay').onclick=replay;
+ // Position initiale sans animation
+ bar.style.transition=bg.style.transition='none';selTab(0);selNav(0);reflow(bar);bar.style.transition=bg.style.transition='';
+ cascade();
+ return {col,replay,init:()=>{bar.style.transition='none';selTab(tb.findIndex(b=>b.hasAttribute('aria-current')));reflow(bar);bar.style.transition=''}};
+}
+const grid=document.getElementById('grid');
+SETS.forEach(s=>{const p=build(s);players.push(p);grid.append(p.col)});
+// Les mesures des onglets ne sont fiables qu'une fois la colonne dans la page.
+players.forEach(p=>p.init());
+addEventListener('resize',()=>players.forEach(p=>p.init()));
+const CASC=[
+ {n:'A. Carte plus lente',d:350,g:50},
+ {n:'B. Écart plus grand',d:200,g:90},
+ {n:'C. Les deux',d:350,g:80,rec:true}];
+CASC.forEach(c=>{
+ const col=mk('section','',document.getElementById('casc'));col.className='col';
+ col.style.setProperty('--dur',c.d+'ms');col.style.setProperty('--stagger',c.g+'ms');
+ const h=mk('header','',col),w=mk('div','',h),t=mk('h2',c.n,w);
+ if(c.rec){const g=mk('span','Recommandé',t);g.className='tag';t.append(' ');t.append(g)}
+ mk('p',`${c.d} ms par carte · écart ${c.g} ms`,w).className='vals';
+ const r=mk('button','Rejouer',h);r.type='button';r.className='btn outline';
+ const ul=mk('ul','',col);ul.className='cards';
+ CARDS.forEach((x,i)=>{mk('li',x,ul).style.setProperty('--i',i)});
+ const replay=()=>{ul.classList.remove('play');reflow(ul);ul.classList.add('play')};
+ r.onclick=replay;replay();
+ players.push({replay,init(){}});
+});
+/* Lois. Ressort amorti : x(t) = 1 - e^(-ζωt)(cos ωd·t + (ζω/ωd) sin ωd·t), ωd = ω√(1-ζ²) ; ζ = 1 : x(t) = 1 - (1+ωt)e^(-ωt).
+   ω = 8/ζ (ζω = 8 : le ressort a fini à 0,3 % près en fin de durée), 56 points à pas égal sur [0, 1] -> linear().
+   Dépassement = e^(-πζ/√(1-ζ²)) : ζ 0,9 -> 0,15 % ; ζ 0,8 -> 1,5 %.
+   Durée B et C : clamp(300, 250 + distance en px, 550) ms. A : 500 ms fixe.
+   C : ζ 0,8 jusqu'à 195 px (dépassement <= 3 px), ζ 1 au-delà ; au-delà de 3 rangs la ligne s'efface sur place puis réapparaît. */
+const clamp=(a,x,b)=>Math.min(b,Math.max(a,x)),PITCH=52,FADE='cubic-bezier(0.2,0,0,1)';
+const curves=new Map();
+const spring=z=>{if(!curves.has(z)){const w=8/z,wd=w*Math.sqrt(1-z*z),
+ g=t=>z>=1?1-(1+w*t)*Math.exp(-w*t):1-Math.exp(-z*w*t)*(Math.cos(wd*t)+z*w/wd*Math.sin(wd*t)),p=[];
+ for(let i=0;i<=56;i++)p.push(i===56?1:+g(i/56).toFixed(4));curves.set(z,`linear(${p.join(', ')})`)}return curves.get(z)};
+const byDist=d=>clamp(300,250+d,550);
+const LAWS={a:{ms:()=>500,z:()=>1},b:{ms:byDist,z:()=>0.9},
+ c:{ms:byDist,z:d=>d<=195?0.8:1,seq:true,clip:true,cut:3}};
+const DEP=[
+ {k:'a',n:'A. Façon Apple',v:'sans rebond · 500 ms fixe'},
+ {k:'b',n:'B. Façon Material',v:'amortissement 0,9 · 300 à 550 ms selon la distance'},
+ {k:'c',n:'C. Kit : doux et contenu',v:'comme B · rebond de 3 px au plus · liste contenue',rec:true}];
+const ROWS0=['Facture de mars','Devis plomberie','Contrat d’assurance','Relevé bancaire','Taxe foncière','Bail signé'],
+ ROWS1=['Bail signé','Facture de mars','Avis d’imposition','Taxe foncière','Contrat d’assurance'];
+DEP.forEach(c=>{
+ const L=LAWS[c.k],T=d=>rm.matches?0:L.ms(d),EZ=d=>spring(L.z(d)),FD=()=>rm.matches?0:150;
+ const col=mk('section','',document.getElementById('dep'));col.className='col';col.dataset.s=c.k;
+ const h=mk('header','',col),w=mk('div','',h),t=mk('h2',c.n,w);
+ if(c.rec){t.append(' ');mk('span','Recommandé',t).className='tag'}
+ mk('p',c.v,w).className='vals';
+ const r=mk('button','Rejouer',h);r.type='button';r.className='btn outline';
+ // Liste
+ mk('h3','Liste filtrée',col);
+ const fb=mk('button','Filtrer',col);fb.type='button';fb.className='btn';
+ const ul=mk('ul','',col);ul.className='rows';
+ const items=new Map(),li=k=>items.get(k)||items.set(k,mk('li',k)).get(k);
+ let cur=ROWS0,busy=false,run=0;
+ const show=keys=>{ul.replaceChildren(...keys.map(li));cur=keys};
+ const filter=async to=>{
+  const id=++run;busy=true;if(L.clip)ul.style.overflow='clip';
+  const out=cur.filter(k=>!to.includes(k)).map(li),first=new Map(cur.map(li).map(e=>[e,e.getBoundingClientRect().top])),anims=[];
+  const fadeOut=e=>e.animate({opacity:[1,0]},{duration:FD(),easing:FADE,fill:'forwards'});
+  if(L.seq){ // C : les lignes retirées s'effacent sur place, puis les autres se resserrent
+   const fo=out.map(fadeOut);await Promise.allSettled(fo.map(a=>a.finished));if(id!==run)return;
+   out.forEach((e,i)=>{e.remove();fo[i].cancel()});
+  }else{ // A, B : sorties du flux, elles s'effacent pendant que les autres glissent
+   const top=ul.getBoundingClientRect().top;
+   out.forEach(e=>{e.style.cssText=`position:absolute;left:0;right:0;margin:0;top:${first.get(e)-top}px`;
+    const a=fadeOut(e);anims.push(a);a.finished.then(()=>{e.remove();a.cancel()},()=>{})});
+  }
+  const next=to.map(li);ul.append(...next);
+  // FLIP : les lignes conservées glissent (ressort), les nouvelles apparaissent en fondu (courbe habituelle).
+  next.forEach(e=>{
+   if(!first.has(e)){anims.push(e.animate({opacity:[0,1]},{duration:FD(),delay:rm.matches?0:100,easing:FADE,fill:'backwards'}));return}
+   const dy=first.get(e)-e.getBoundingClientRect().top,d=Math.abs(dy);if(!dy)return;
+   if(L.cut&&d/PITCH>L.cut){const o=`translateY(${dy}px)`;
+    anims.push(e.animate([{transform:o,opacity:1},{transform:o,opacity:0,offset:.5},{transform:'none',opacity:0,offset:.5},{transform:'none',opacity:1}],{duration:rm.matches?0:300,easing:FADE}))}
+   else anims.push(e.animate({transform:[`translateY(${dy}px)`,'none']},{duration:T(d),easing:EZ(d)}));
+  });
+  await Promise.allSettled(anims.map(a=>a.finished));if(id!==run)return;
+  ul.style.overflow='';cur=to;busy=false;fb.textContent=to===ROWS1?'Rétablir':'Filtrer';
+ };
+ fb.onclick=()=>{if(!busy)filter(cur===ROWS1?ROWS0:ROWS1)};
+ // Onglets et navigation : même loi que la colonne, selon la distance parcourue
+ let snap=false,tabX=0,navI=0;
+ const move=(el,d)=>el.style.transition=snap?'none':`transform ${T(d)}ms ${EZ(d)}`;
+ mk('h3','Trait d’onglets',col);
+ const tabs=mk('div','',col);tabs.className='tabs';tabs.setAttribute('role','group');tabs.setAttribute('aria-label','Onglets de démonstration');
+ const bar=mk('span','',tabs);bar.className='bar';bar.setAttribute('aria-hidden','true');
+ const tb=TABS.map(x=>mk('button',x,tabs));tb.forEach(b=>b.type='button');
+ const selTab=i=>{tb.forEach((b,j)=>j===i?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current'));
+  const x=tb[i].offsetLeft;move(bar,Math.abs(x-tabX));tabX=x;bar.style.transform=`translateX(${x}px) scaleX(${tb[i].offsetWidth})`};
+ tb.forEach((b,i)=>b.onclick=()=>selTab(i));
+ mk('h3','Fond de navigation',col);
+ const nav=mk('div','',col);nav.className='nav';nav.setAttribute('role','group');nav.setAttribute('aria-label','Navigation de démonstration');
+ const bg=mk('span','',nav);bg.className='bg';bg.setAttribute('aria-hidden','true');
+ const nb=NAV.map(x=>mk('button',x,nav));nb.forEach(b=>b.type='button');
+ const selNav=i=>{nb.forEach((b,j)=>j===i?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current'));
+  move(bg,Math.abs(i-navI)*44);navI=i;bg.style.transform=`translateY(${i*44}px)`};
+ nb.forEach((b,i)=>b.onclick=()=>selNav(i));
+ const still=f=>{snap=true;f();reflow(bar);reflow(bg);snap=false};
+ const reset=()=>{run++;items.forEach(e=>{e.getAnimations().forEach(a=>a.cancel());e.style.cssText=''});ul.style.overflow='';
+  show(ROWS0);fb.textContent='Filtrer';busy=false;still(()=>{selTab(0);selNav(0)})};
+ const wait=ms=>new Promise(r=>setTimeout(r,rm.matches?0:ms));
+ const replay=async()=>{reset();await wait(150);selTab(2);selNav(3);filter(ROWS1)};
+ r.onclick=replay;
+ show(ROWS0);
+ players.push({replay,init:()=>still(()=>{selTab(tb.findIndex(b=>b.hasAttribute('aria-current')));selNav(nb.findIndex(b=>b.hasAttribute('aria-current')))})});
+ still(()=>{selTab(0);selNav(0)});
+});
+players.forEach(p=>p.init());
+document.getElementById('all').onclick=()=>players.forEach(p=>p.replay());
+</script>
+</body>
+</html>

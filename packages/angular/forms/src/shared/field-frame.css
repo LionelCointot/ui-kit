@@ -21,8 +21,10 @@
   transition: border-color var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
 }
 
-:host(:hover:not(.lc-field--disabled):not(.lc-field--readonly):not(.lc-field--invalid)) {
-  --_border: var(--lc-sys-color-on-surface-muted);
+@media (hover: hover) {
+  :host(:hover:not(.lc-field--disabled):not(.lc-field--readonly):not(.lc-field--invalid)) {
+    --_border: var(--lc-sys-color-on-surface-muted);
+  }
 }
 
 :host(:focus-within) {
@@ -153,9 +155,11 @@
   border-inline-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }
 
-.lc-field__step:hover:not(:disabled) {
-  background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
-  color: var(--lc-sys-color-on-surface);
+@media (hover: hover) {
+  .lc-field__step:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+    color: var(--lc-sys-color-on-surface);
+  }
 }
 
 .lc-field__step:disabled {

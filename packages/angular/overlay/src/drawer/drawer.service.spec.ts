@@ -163,6 +163,7 @@ describe('LcDrawerService', () => {
       const ref = await open();
       expect(document.activeElement).not.toBe(opener);
       ref.close();
+      await ref.closed;
       await settle();
       expect(document.activeElement).toBe(opener);
     });
@@ -185,6 +186,7 @@ describe('LcDrawerService', () => {
       expect(panes[1].classList).toContain('lc-dialog-panel');
       pressEscape();
       await settle();
+      await settle();
       expect(overlayEl().querySelector('.lc-dialog-panel')).toBeNull();
       expect(overlayEl().querySelector('.lc-drawer-panel')).not.toBeNull();
     });
@@ -199,6 +201,31 @@ describe('LcDrawerService', () => {
       await expect(ref.closed).resolves.toBeUndefined();
       await settle();
       expect(overlayEl().querySelector('.lc-drawer-panel')).toBeNull();
+    });
+
+    it('close() est asynchrone : le panneau porte la classe de sortie jusqu\'à la fin, un second close() garde le premier résultat', async () => {
+      const ref = await open();
+      ref.close('premier');
+      ref.close('second');
+      expect(pane().classList).toContain('lc-overlay--closing');
+      expect(backdrop()!.classList).not.toContain('cdk-overlay-backdrop-showing');
+      await expect(ref.closed).resolves.toBe('premier');
+    });
+
+    it('la sortie attend les animations du panneau (sans les descendants)', async () => {
+      const ref = await open();
+      let finish!: () => void;
+      const animation = { effect: { getComputedTiming: () => ({ endTime: 200 }) }, finished: new Promise<void>((resolve) => (finish = resolve)) };
+      const getAnimations = vi.fn(() => [animation]);
+      pane().getAnimations = getAnimations as never;
+      let closed = false;
+      void ref.closed.then(() => (closed = true));
+      ref.close('ok');
+      await settle();
+      expect(getAnimations).toHaveBeenCalledWith({ subtree: false });
+      expect(closed).toBe(false);
+      finish();
+      await expect(ref.closed).resolves.toBe('ok');
     });
 
     it('un Échap avec modificateur est ignoré', async () => {

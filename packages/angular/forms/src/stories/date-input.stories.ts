@@ -8,7 +8,8 @@ import '../../../../tokens/dist/css/theme-default.css';
 import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
-import { commonArgTypes, fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, commonArgTypes, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent, LcDateInputComponent, LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
 
 @Component({
@@ -38,7 +39,7 @@ class DateInputDemoComponent {
 const meta: Meta<LcDateInputComponent> = {
   title: 'Forms/Date input',
   component: LcDateInputComponent,
-  decorators: [moduleMetadata({ imports: [DateInputDemoComponent, LcDateInputComponent, LcFormFieldComponent] })],
+  decorators: [moduleMetadata({ imports: [DateInputDemoComponent, LcDateInputComponent, LcFormFieldComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
   args: {
     min: undefined, max: undefined, disabled: false, readonly: false, required: false, invalid: false, touched: false,
     size: 'medium', fillMode: 'solid', rounded: 'medium', ariaLabel: 'Date',
@@ -299,4 +300,36 @@ export const NativeMode: Story = {
   parameters: fixedExample,
   render: () => ({ template: '<lc-date-input-demo />' }),
   decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'native' }] })],
+};
+
+const ANIMATION_CODE = `import { Component, signal } from '@angular/core';
+import { LcDateInputComponent, LcFormFieldComponent } from '@lionelcointot/ui-angular/forms';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcDateInputComponent, LcFormFieldComponent],
+  template: \`
+    <lc-form-field label="Date de début">
+      <lc-date-input [(value)]="date" />
+    </lc-form-field>\`,
+})
+export class ExampleComponent {
+  readonly date = signal<string | null>('2026-11-12');
+}`;
+
+/** The calendar fades in while moving down from the field (forced calendar mode), and fades out when it closes. "Rejouer" reopens it. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] })],
+  render: () => ({
+    props: { date: signal<string | null>('2026-11-12'), ...replayable({ play: (_later, root) => root.querySelector<HTMLElement>('button[aria-expanded]')?.click() }) },
+    template: `
+      <lc-story-motion-notice />
+      <div #root style="max-width:20rem;min-height:28rem">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+        @for (key of keys(); track key) {
+          <lc-form-field label="Date de début"><lc-date-input [(value)]="date" /></lc-form-field>
+        }
+      </div>`,
+  }),
 };

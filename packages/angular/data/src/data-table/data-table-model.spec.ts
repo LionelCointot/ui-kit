@@ -1,6 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 import {
-  LcDataColumn, LcTableQuery, cleanFilterValue, dateRangeBounds, filterRows, isDateRangeInverted, isFilterActive, lcLocalSource,
+  LcDataColumn, LcTableQuery, cleanFilterValue, filterRows, fromDateInterval, isDateRangeInverted, isFilterActive, lcLocalSource, toDateInterval,
   localDistinct, orderDistinct, withFilter,
 } from './data-table-model';
 
@@ -24,64 +24,41 @@ const columns: readonly LcDataColumn<Ticket>[] = [
   },
 ];
 
-/** Mardi 17 novembre 2026, midi heure locale. */
-const TODAY = new Date(2026, 10, 17, 12);
 const ids = (rows: readonly Ticket[]) => rows.map((row) => row.id);
 const query = (filters: LcTableQuery['filters']): LcTableQuery => ({ filters, sort: null });
 
 describe('data-table-model : filtrage local par type', () => {
   it('CA-5 multi : garde les lignes dont la valeur est cochée, valeur vide comprise', () => {
-    expect(ids(filterRows(tickets, columns, { state: ['Nouvelle'] }, undefined, TODAY))).toEqual([1, 3]);
-    expect(ids(filterRows(tickets, columns, { state: ['Close', ''] }, undefined, TODAY))).toEqual([4, 5]);
+    expect(ids(filterRows(tickets, columns, { state: ['Nouvelle'] }, undefined))).toEqual([1, 3]);
+    expect(ids(filterRows(tickets, columns, { state: ['Close', ''] }, undefined))).toEqual([4, 5]);
   });
 
   it('CA-9 text : inclusion sans accents ni casse, espaces de bord ignorés', () => {
-    expect(ids(filterRows(tickets, columns, { name: '  électricité ' }, undefined, TODAY))).toEqual([4]);
-    expect(ids(filterRows(tickets, columns, { name: 'ECLAIR' }, undefined, TODAY))).toEqual([2]);
-    expect(ids(filterRows(tickets, columns, { name: 'E' }, undefined, TODAY))).toEqual([1, 2, 3, 4, 5]);
+    expect(ids(filterRows(tickets, columns, { name: '  électricité ' }, undefined))).toEqual([4]);
+    expect(ids(filterRows(tickets, columns, { name: 'ECLAIR' }, undefined))).toEqual([2]);
+    expect(ids(filterRows(tickets, columns, { name: 'E' }, undefined))).toEqual([1, 2, 3, 4, 5]);
   });
 
   it('CA-10 single : `match` de l\'option, sinon égalité de valeur', () => {
-    expect(ids(filterRows(tickets, columns, { urgent: 'urgent' }, undefined, TODAY))).toEqual([1, 4]);
-    expect(ids(filterRows(tickets, columns, { urgent: 'non' }, undefined, TODAY))).toEqual([2, 3, 5]);
+    expect(ids(filterRows(tickets, columns, { urgent: 'urgent' }, undefined))).toEqual([1, 4]);
+    expect(ids(filterRows(tickets, columns, { urgent: 'non' }, undefined))).toEqual([2, 3, 5]);
   });
 
   it('CA-8 dateRange : bornes incluses, borne absente non limitante', () => {
-    expect(ids(filterRows(tickets, columns, { date: { from: '2026-11-10', to: '2026-11-11' } }, undefined, TODAY))).toEqual([2, 3]);
-    expect(ids(filterRows(tickets, columns, { date: { from: '2026-11-11' } }, undefined, TODAY))).toEqual([1, 2]);
-    expect(ids(filterRows(tickets, columns, { date: { to: '2026-10-19' } }, undefined, TODAY))).toEqual([4, 5]);
-  });
-
-  it('CA-8 raccourcis : 7 jours = du 11 au 17 novembre, 30 jours = du 19 octobre au 17 novembre (aujourd\'hui compris)', () => {
-    expect(dateRangeBounds({ preset: 7 }, TODAY)).toEqual({ from: '2026-11-11', to: '2026-11-17' });
-    expect(dateRangeBounds({ preset: 30 }, TODAY)).toEqual({ from: '2026-10-19', to: '2026-11-17' });
-    expect(ids(filterRows(tickets, columns, { date: { preset: 7 } }, undefined, TODAY))).toEqual([1, 2]);
-    expect(ids(filterRows(tickets, columns, { date: { preset: 30 } }, undefined, TODAY))).toEqual([1, 2, 3, 4]);
-  });
-
-  it('CA-8 raccourcis avec l\'horloge simulée (source locale, date du jour par défaut)', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 10, 12, 9));
-    try {
-      const page = await firstValueFrom(lcLocalSource(tickets, columns).rows(query({ date: { preset: 7 } })));
-      // Du 6 au 12 novembre : seules les demandes du 10 et du 11.
-      expect(ids(page.rows)).toEqual([2, 3]);
-      expect(page.total).toBe(5);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(ids(filterRows(tickets, columns, { date: { from: '2026-11-10', to: '2026-11-11' } }, undefined))).toEqual([2, 3]);
+    expect(ids(filterRows(tickets, columns, { date: { from: '2026-11-11' } }, undefined))).toEqual([1, 2]);
+    expect(ids(filterRows(tickets, columns, { date: { to: '2026-10-19' } }, undefined))).toEqual([4, 5]);
   });
 
   it('filtres combinés : intersection ; filtre inactif ignoré', () => {
-    expect(ids(filterRows(tickets, columns, { state: ['Nouvelle', 'Close'], urgent: 'urgent' }, undefined, TODAY))).toEqual([1, 4]);
-    expect(ids(filterRows(tickets, columns, { state: [], name: '  ' }, undefined, TODAY))).toEqual([1, 2, 3, 4, 5]);
+    expect(ids(filterRows(tickets, columns, { state: ['Nouvelle', 'Close'], urgent: 'urgent' }, undefined))).toEqual([1, 4]);
+    expect(ids(filterRows(tickets, columns, { state: [], name: '  ' }, undefined))).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('CA-8 période inversée détectée (pas pour un raccourci)', () => {
+  it('CA-8 période inversée détectée', () => {
     expect(isDateRangeInverted({ from: '2026-11-10', to: '2026-11-01' })).toBe(true);
     expect(isDateRangeInverted({ from: '2026-11-01', to: '2026-11-10' })).toBe(false);
     expect(isDateRangeInverted({ from: '2026-11-10' })).toBe(false);
-    expect(isDateRangeInverted({ preset: 7, from: '2026-11-10', to: '2026-11-01' })).toBe(false);
   });
 });
 
@@ -89,22 +66,22 @@ describe('data-table-model : valeurs distinctes', () => {
   it('CA-5 : `distinct` ignore le filtre de sa propre colonne mais applique les autres', () => {
     const q = query({ state: ['Close'], urgent: 'non' });
     // Non urgentes : 2 Qualifiée, 3 Nouvelle, 5 vide ; le filtre État (Close) n'est pas appliqué.
-    const values = localDistinct(tickets, columns, 'state', q, TODAY);
+    const values = localDistinct(tickets, columns, 'state', q);
     expect([...values].sort((a, b) => a.value.localeCompare(b.value))).toEqual([
       { value: '', count: 1 }, { value: 'Nouvelle', count: 1 }, { value: 'Qualifiée', count: 1 },
     ]);
   });
 
   it('CA-5 : comptes sans autre filtre', async () => {
-    const values = await firstValueFrom(lcLocalSource(tickets, columns, () => TODAY).distinct('state', query({ state: ['Close'] })));
+    const values = await firstValueFrom(lcLocalSource(tickets, columns).distinct('state', query({ state: ['Close'] })));
     const counts = Object.fromEntries(values.map((entry) => [entry.value, entry.count]));
     expect(counts).toEqual({ Nouvelle: 2, Qualifiée: 1, Close: 1, '': 1 });
   });
 
   it('colonne inconnue : liste vide ; `format` fournit le libellé', () => {
-    expect(localDistinct(tickets, columns, 'nope', query({}), TODAY)).toEqual([]);
+    expect(localDistinct(tickets, columns, 'nope', query({}))).toEqual([]);
     const formatted: LcDataColumn<Ticket>[] = [{ key: 'state', label: 'État', value: (row) => row.state, filter: { type: 'multi', format: (v) => v.toUpperCase() } }];
-    expect(localDistinct(tickets, formatted, 'state', query({}), TODAY).find((entry) => entry.value === 'Close')?.label).toBe('CLOSE');
+    expect(localDistinct(tickets, formatted, 'state', query({})).find((entry) => entry.value === 'Close')?.label).toBe('CLOSE');
   });
 
   it('ordre : vide d\'abord puis alphabétique des libellés (accents, casse, nombres)', () => {
@@ -129,13 +106,11 @@ describe('data-table-model : requête', () => {
     expect(isFilterActive({ from: '', to: '' })).toBe(false);
     expect(isFilterActive(['a'])).toBe(true);
     expect(isFilterActive('a')).toBe(true);
-    expect(isFilterActive({ preset: 7 })).toBe(true);
     expect(isFilterActive({ to: '2026-01-01' })).toBe(true);
   });
 
-  it('cleanFilterValue : texte rogné, raccourci réduit à `preset`, bornes vides retirées', () => {
+  it('cleanFilterValue : texte rogné, bornes vides retirées', () => {
     expect(cleanFilterValue('  abc ')).toBe('abc');
-    expect(cleanFilterValue({ preset: 30, from: '2026-01-01', to: '2026-01-30' })).toEqual({ preset: 30 });
     expect(cleanFilterValue({ from: '2026-01-01', to: '' })).toEqual({ from: '2026-01-01' });
     expect(cleanFilterValue([])).toBeUndefined();
   });
@@ -150,8 +125,34 @@ describe('data-table-model : requête', () => {
   });
 
   it('source locale : tri après filtrage, total sans filtre', async () => {
-    const page = await firstValueFrom(lcLocalSource(tickets, columns, () => TODAY).rows({ filters: { urgent: 'non' }, sort: { columnId: 'date', direction: 'asc' } }));
+    const page = await firstValueFrom(lcLocalSource(tickets, columns).rows({ filters: { urgent: 'non' }, sort: { columnId: 'date', direction: 'asc' } }));
     expect(ids(page.rows)).toEqual([5, 3, 2]);
     expect(page.total).toBe(5);
+  });
+});
+
+describe('data-table-model : adaptateur LcDateRange <-> LcDateInterval', () => {
+  it('toDateInterval : vide, début seul, fin seule, complète', () => {
+    expect(toDateInterval({})).toEqual({ from: null, to: null });
+    expect(toDateInterval({ from: '2026-11-03' })).toEqual({ from: '2026-11-03', to: null });
+    expect(toDateInterval({ to: '2026-11-04' })).toEqual({ from: null, to: '2026-11-04' });
+    expect(toDateInterval({ from: '2026-11-03', to: '2026-11-04' })).toEqual({ from: '2026-11-03', to: '2026-11-04' });
+  });
+
+  it('fromDateInterval : sans clé `null`, deux dates effacées donnent {}', () => {
+    expect(fromDateInterval({ from: '2026-11-03', to: null })).toEqual({ from: '2026-11-03' });
+    expect(fromDateInterval({ from: null, to: '2026-11-04' })).toEqual({ to: '2026-11-04' });
+    expect(fromDateInterval({ from: '2026-11-03', to: '2026-11-04' })).toEqual({ from: '2026-11-03', to: '2026-11-04' });
+    expect(fromDateInterval({ from: null, to: null })).toEqual({});
+    expect(cleanFilterValue(fromDateInterval({ from: null, to: null }))).toBeUndefined();
+  });
+
+  it('pas de boucle d\'écho : saisie, écho de la valeur, saisie rend le même objet au champ', () => {
+    const typed = { from: '2026-11-03', to: null };
+    const echoed = toDateInterval(fromDateInterval(typed), typed);
+    expect(echoed).toBe(typed);
+    const next = { from: '2026-11-03', to: '2026-11-04' };
+    expect(toDateInterval(fromDateInterval(next), echoed)).not.toBe(echoed);
+    expect(toDateInterval(fromDateInterval(next), next)).toBe(next);
   });
 });

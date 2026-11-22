@@ -93,11 +93,11 @@
       "$type": "color"
     },
     "duration": {
-      "$value": "{sys.duration.fast}",
+      "$value": "{overlay.enter-duration}",
       "$type": "duration"
     },
     "easing": {
-      "$value": "{sys.easing.standard}",
+      "$value": "{overlay.easing}",
       "$type": "cubicBezier"
     }
   }

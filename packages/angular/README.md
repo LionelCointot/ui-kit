@@ -49,7 +49,7 @@ bootstrapApplication(AppComponent, {
 | `…/forms` | `lc-form-field`, `input[lcInput]`, `textarea[lcInput]`, `select[lcSelect]`, `input[type=checkbox][lcCheckbox]`, `lc-radio-group` + `input[type=radio][lcRadio]`, `button[lcSwitch]`, `lc-money-input`, `lc-percent-input`, `lc-number-input`, `lc-date-input`, `lc-password-input`, `lc-segmented-control`, `lc-combobox` (+ `[lcComboboxOption]`, `lcHighlight`, `lcFilterOptions`), `lc-slider`, `lc-file-upload`, `lc-list-editor` |
 | `…/geo` | `provideLcGeo`, `LcGeoDataSource`, `lc-region-select`, `lc-department-select`, `lc-commune-input`, `lc-address-input` (régions, départements, communes et adresses françaises depuis les API officielles ; importe `forms` ; [README](geo/README.md)) |
 | `…/feedback` | `lc-alert`, `LcToastService` + `lc-toast-outlet`, `lc-badge`, `lc-status-badge`, `lc-progress-bar`, `lc-meter`, `lc-message`, `lc-empty-state`, `lc-error-state` |
-| `…/overlay` | `LcDialogService`, `lc-dialog`, `LC_DIALOG_DATA`, `LcDialogRef`, `[lcTooltip]` |
+| `…/overlay` | `LcDialogService`, `lc-dialog`, `LC_DIALOG_DATA`, `LcDialogRef`, `lc-sheet` (feuille du bas ; `<dialog>` modal dans la *top layer* : un panneau CDK ouvert depuis la feuille peut rester caché), `[lcTooltip]` |
 | `…/layout` | `lc-app-shell`, `lc-page`, `lc-stack`, `lc-grid` + `lc-grid-item`, `lc-card` + `lc-card-header`, `lc-divider` |
 | `…/navigation` | `lc-tabs` + `lc-tab` (`lcTabContent`), `lc-nav-list`, `lc-nav-group`, `a[lcNavItem]`, `lc-menu`, `[lcMenuTriggerFor]`, `button[lcMenuItem]` |
 | `…/data` | `lc-table` (+ `lcCell`), `lc-tree-table`, `lc-paginator` + `lcPageSlice`, `lc-code-block`, `lc-description-list`, `lc-kpi-card`, `ol[lcActivityFeed]` + `li[lcActivityItem]` |

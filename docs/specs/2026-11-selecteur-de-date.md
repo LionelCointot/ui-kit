@@ -90,7 +90,7 @@ forms/src/date-input/
   date-range-part.ts             (nouveau, interne : jeton LC_DATE_PART, par lequel le champ de période pilote ses deux champs)
   calendar-overlay.ts            (nouveau, interne : surcouche partagée par les deux champs)
   date-describe.ts               (nouveau, interne : phrase d'une période, « du 13 au 19 novembre 2026 »)
-  date-presets.ts                (nouveau, interne : les quatre raccourcis du kit)
+  date-presets.ts                (nouveau, interne : les raccourcis du kit ; cinq depuis le 2026-11-21, « La semaine dernière » ajouté par `2026-11-filtre-periode-tableau.md`)
 packages/tokens/src/components/calendar.tokens.json   (nouveau)
 ```
 
@@ -403,7 +403,7 @@ Ordre : T0, T1, puis T2 et T3 (indépendantes), T4 après T3, T5 après T2 et T4
 - T6 et T7 : un double clic rapide sur un même jour ne fait pas une période d'un jour (les clics répétés sont ignorés pour qu'un double clic sur un mois ne choisisse rien) ; deux clics distincts la font.
 - T6 et T7 : l'annonce « Période choisie » à la fermeture est retirée : le panneau disparaît au même instant ; le bouton calendrier, qui reprend le focus, dit la période.
 - T6 et T7 : pendant qu'on retape une date zone par zone, la valeur émise passe par des dates intermédiaires (et par « vide » tant qu'une zone est incomplète) avant la valeur finale. Un consommateur qui enregistre à chaque changement de valeur doit attendre la sortie du champ.
-- T6 et T7 : en mode natif à 390 px de large, les quatre raccourcis sont en une colonne (grille régulière), pas en deux colonnes.
+- T6 et T7 : en mode natif à 390 px de large, les raccourcis (quatre à l'époque, cinq depuis le 2026-11-21) sont en une colonne (grille régulière), pas en deux colonnes.
 - **Défaut livré puis corrigé** : la date simple fusionnée le 2026-11-20 ne prenait pas, dans un vrai navigateur, une date collée (zone sélectionnée) ni `fill()` de Playwright ; les tests sous jsdom écrivaient la valeur directement et ne le voyaient pas. Corrigé avec la période : tout texte inséré d'un coup qui se lit comme une date remplace le champ. Prouvé sous Chromium seulement.
 - Le catalogue généré ne liste que les composants : CA-40 est reformulé en ce sens.
 - Poids : le point d'entrée `forms` construit pèse 387 Ko non minifiés (`fesm2022/lionelcointot-ui-angular-forms.mjs`) après la livraison ; la mesure d'avant n'a pas été relevée, donc l'ajout exact n'est pas connu.

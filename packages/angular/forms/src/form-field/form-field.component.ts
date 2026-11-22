@@ -15,7 +15,7 @@ import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFieldStateLike, LcFormFieldCont
   selector: 'lc-form-field',
   imports: [LcIconComponent],
   template: `
-    <label class="lc-form-field__label" [id]="labelId" [attr.for]="labelFor()" (click)="focusUnlabelableControl()">
+    <label class="lc-form-field__label" [class.lc-visually-hidden]="labelHidden()" [id]="labelId" [attr.for]="labelFor()" (click)="focusUnlabelableControl()">
       {{ label() }}@if (isRequired()) {<span class="lc-form-field__required" aria-hidden="true">*</span>}
     </label>
     <div class="lc-form-field__body">
@@ -61,6 +61,8 @@ export class LcFormFieldComponent implements LcFormFieldContext {
   /** État du champ (FieldState de Signal Forms, ou objet compatible). */
   readonly state = input<LcFieldStateLike | null | undefined>(undefined);
   readonly layout = input<'stacked' | 'inline'>('stacked');
+  /** Vrai : le libellé est masqué à l'écran mais reste le nom accessible du contrôle (le contrôle porte alors son propre repère visuel). */
+  readonly labelHidden = input(false, { transform: booleanAttribute });
 
   readonly labelId = lcUniqueId('field-label');
   protected readonly hintId = lcUniqueId('field-hint');

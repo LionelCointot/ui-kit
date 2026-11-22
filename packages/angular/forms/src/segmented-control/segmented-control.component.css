@@ -62,8 +62,10 @@
   border-end-end-radius: inherit;
 }
 
-.lc-segmented-control__option:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--lc-sys-color-on-surface) calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+@media (hover: hover) {
+  .lc-segmented-control__option:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--lc-sys-color-on-surface) calc(var(--lc-sys-state-hover-opacity) * 100%), transparent);
+  }
 }
 
 /* Sélection : fond et anneau intérieur contrasté (l'anneau porte l'état au-delà de la teinte). */

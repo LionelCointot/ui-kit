@@ -17,13 +17,13 @@ import { LcNavListComponent } from '../nav-list/nav-list.component';
         <button type="button" class="lc-nav-group__title lc-nav-group__toggle" [id]="titleId"
           [attr.aria-expanded]="expanded()" [attr.aria-controls]="itemsId" (click)="expanded.set(!expanded())">
           <span class="lc-nav-group__label">{{ label() }}</span>
-          <lc-icon [name]="expanded() ? 'chevron-down' : 'chevron-right'" />
+          <lc-icon class="lc-nav-group__chevron" name="chevron-right" aria-hidden="true" />
         </button>
       } @else {
         <p class="lc-nav-group__title" [id]="titleId"><span class="lc-nav-group__label">{{ label() }}</span></p>
       }
-      <div class="lc-nav-group__items" [id]="itemsId" [hidden]="!isExpanded()">
-        <ng-content />
+      <div class="lc-nav-group__items" [id]="itemsId" [class.lc-nav-group__items--open]="isExpanded()" [attr.inert]="isExpanded() ? null : ''">
+        <div class="lc-nav-group__items-clip"><div class="lc-nav-group__items-body"><ng-content /></div></div>
       </div>
     </div>
   `,

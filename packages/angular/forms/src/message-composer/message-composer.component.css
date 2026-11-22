@@ -1,0 +1,393 @@
+/*
+ * Zone de saisie de message : un rectangle (texte, barre basse). Les tokens --lc-message-composer-* sont lus ici,
+ * sur l'élément interne, et jamais déclarés sur :host : une classe de l'application posée sur l'hôte l'emporte toujours.
+ */
+:host {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  --lc-icon-size: var(--lc-sys-icon-size-md);
+}
+
+.lc-message-composer__header {
+  margin-block-end: var(--lc-sys-space-2);
+}
+
+.lc-message-composer__header:empty {
+  display: none;
+}
+
+.lc-message-composer__box {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
+  border-width: var(--lc-message-composer-border-width, var(--lc-sys-border-width-thin));
+  border-style: var(--lc-message-composer-border-style, solid);
+  border-color: var(--lc-message-composer-border-color, var(--lc-sys-color-border-strong));
+  border-radius: var(--lc-sys-radius-lg);
+  background-color: var(--lc-message-composer-background, var(--lc-sys-color-surface-raised));
+  color: var(--lc-sys-color-on-surface);
+  font-size: max(1rem, var(--lc-sys-font-size-md));
+  transition:
+    border-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
+    border-width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
+    background-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-message-composer__box:focus-within {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: 0;
+}
+
+.lc-message-composer__box--invalid {
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-input-border-invalid, var(--lc-sys-color-error));
+}
+
+:host(.lc-message-composer--disabled) .lc-message-composer__box {
+  opacity: var(--lc-sys-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.lc-message-composer__text {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: var(--lc-sys-space-3);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: var(--lc-sys-font-line-height-normal);
+  resize: none;
+  overflow-y: auto;
+}
+
+.lc-message-composer__text::placeholder {
+  color: var(--lc-sys-color-on-surface-muted);
+  opacity: 1;
+}
+
+.lc-message-composer__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  padding: 0 var(--lc-sys-space-1) max(var(--lc-sys-space-1), env(safe-area-inset-bottom, 0px));
+}
+
+.lc-message-composer__attach,
+.lc-message-composer__send {
+  --lc-button-flat-primary-fg: var(--lc-sys-color-primary);
+  flex: none;
+  border: 0;
+  inline-size: var(--lc-sys-control-height-md);
+  min-block-size: var(--lc-sys-control-height-md);
+  padding: 0;
+}
+
+/* Filet vertical entre le trombone et les actions libres, seulement s'il y en a. */
+.lc-message-composer__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+}
+
+.lc-message-composer__actions:empty {
+  display: none;
+}
+
+.lc-message-composer__actions:not(:empty)::before {
+  content: '';
+  align-self: stretch;
+  inline-size: var(--lc-sys-border-width-thin);
+  margin-block: var(--lc-sys-space-2);
+  background: var(--lc-sys-color-border);
+}
+
+.lc-message-composer__counter {
+  margin-inline-start: auto;
+  padding-inline: var(--lc-sys-space-2);
+  font-size: var(--lc-sys-font-size-sm);
+  color: var(--lc-sys-color-on-surface-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-message-composer__counter--full {
+  color: var(--lc-sys-color-error);
+}
+
+.lc-message-composer__send {
+  margin-inline-start: auto;
+}
+
+.lc-message-composer__counter + .lc-message-composer__send {
+  margin-inline-start: 0;
+}
+
+/* Attente : anneau de la taille de l'icône, couleur du bouton. */
+.lc-message-composer__ring {
+  box-sizing: border-box;
+  inline-size: var(--lc-sys-icon-size-md);
+  block-size: var(--lc-sys-icon-size-md);
+  border: var(--lc-sys-border-width-thick) solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: lc-message-composer-spin var(--lc-sys-duration-move) linear infinite;
+}
+
+@keyframes lc-message-composer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Vignettes des pièces jointes. */
+.lc-message-composer__thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lc-sys-space-2);
+  margin: 0;
+  padding: var(--lc-sys-space-2) var(--lc-sys-space-2) 0;
+  list-style: none;
+}
+
+.lc-message-composer__thumb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  box-sizing: border-box;
+  inline-size: var(--lc-message-composer-thumb-width);
+  min-inline-size: 0;
+  padding: var(--lc-sys-space-2);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-sys-radius-md);
+  background: var(--lc-sys-color-surface-raised);
+  font-size: var(--lc-sys-font-size-sm);
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
+    transform var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+/* Apparition : fondu, 0,96 → 1 et léger décalage. */
+@starting-style {
+  .lc-message-composer__thumb {
+    opacity: 0;
+    transform: translateY(var(--lc-sys-motion-offset)) scale(var(--lc-message-composer-enter-scale, 1));
+  }
+}
+
+.lc-message-composer__thumb--error {
+  border-color: var(--lc-sys-color-error);
+}
+
+.lc-message-composer__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--lc-message-composer-thumb-preview-height);
+  overflow: hidden;
+  border-radius: var(--lc-sys-radius-sm);
+  background: var(--lc-sys-color-surface-sunken);
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-message-composer__preview img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.lc-message-composer__name {
+  display: block;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lc-message-composer__meta {
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+.lc-message-composer__progress {
+  position: relative;
+  overflow: hidden;
+  inline-size: 100%;
+  block-size: calc(var(--lc-sys-border-width-thin) * 3);
+  border-radius: var(--lc-sys-radius-full);
+  background: var(--lc-sys-color-surface-sunken);
+}
+
+.lc-message-composer__progress-fill {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--lc-sys-color-primary);
+  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+}
+
+.lc-message-composer__progress--indeterminate .lc-message-composer__progress-fill {
+  inline-size: 40%;
+  animation: lc-message-composer-slide calc(var(--lc-sys-duration-slow) * 5) var(--lc-sys-easing-standard) infinite;
+}
+
+@keyframes lc-message-composer-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* ✕ : zone de clic de la hauteur des contrôles, disque visible de `remove-size`. */
+.lc-message-composer__remove {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  inline-size: var(--lc-sys-control-height-md);
+  min-block-size: var(--lc-sys-control-height-md);
+  padding: 0;
+  isolation: isolate;
+}
+
+.lc-message-composer__remove::before {
+  content: '';
+  position: absolute;
+  inset: calc((var(--lc-sys-control-height-md) - var(--lc-message-composer-remove-size)) / 2);
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--lc-sys-color-surface-raised);
+  box-shadow: 0 0 0 var(--lc-sys-border-width-thin) var(--lc-sys-color-border);
+}
+
+.lc-message-composer__failed {
+  display: flex;
+  align-items: center;
+  gap: var(--lc-sys-space-1);
+  color: var(--lc-sys-color-error);
+}
+
+.lc-message-composer__retry {
+  min-block-size: var(--lc-sys-control-height-md);
+}
+
+/* Calque de dépôt : sur tout le rectangle, sans capter le pointeur (le glisser ne clignote pas entre enfants). */
+.lc-message-composer__drop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: var(--lc-sys-border-width-thick) solid var(--lc-sys-color-primary);
+  border-radius: inherit;
+  background: var(--lc-sys-color-primary-container);
+  color: var(--lc-sys-color-on-primary-container);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lc-sys-duration-fast) var(--lc-sys-easing-standard);
+}
+
+.lc-message-composer__box--dragging .lc-message-composer__drop {
+  opacity: 1;
+}
+
+/* Refus : sous le rectangle. */
+.lc-message-composer__refusal {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lc-sys-space-2);
+  margin-block-start: var(--lc-sys-space-2);
+  color: var(--lc-sys-color-error);
+  font-size: var(--lc-sys-font-size-sm);
+}
+
+.lc-message-composer__refusal p {
+  margin: 0;
+}
+
+.lc-message-composer__box--shake {
+  animation: lc-message-composer-shake var(--lc-message-composer-shake-duration, var(--lc-sys-duration-normal)) linear;
+}
+
+@keyframes lc-message-composer-shake {
+  20%,
+  60% {
+    transform: translateX(calc(-1 * var(--lc-message-composer-shake-distance, var(--lc-sys-space-1))));
+  }
+
+  40%,
+  80% {
+    transform: translateX(var(--lc-message-composer-shake-distance, var(--lc-sys-space-1)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-message-composer__box {
+    transition: none;
+  }
+
+  .lc-message-composer__ring,
+  .lc-message-composer__box--shake {
+    animation: none;
+  }
+
+  /* Barre indéterminée : pleine largeur et atténuée, pas figée à 40 % (on y lirait une vraie progression). */
+  .lc-message-composer__progress--indeterminate .lc-message-composer__progress-fill {
+    inline-size: 100%;
+    opacity: var(--lc-sys-state-disabled-opacity);
+    animation: none;
+  }
+
+  /* Vignette en fondu seul, calque immédiat. */
+  .lc-message-composer__thumb {
+    transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+  }
+
+  .lc-message-composer__drop {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-message-composer__box {
+    border-color: CanvasText;
+  }
+
+  /* Le filet intérieur (box-shadow) disparaît : la bordure garde l'indice d'invalidité. */
+  .lc-message-composer__box--invalid {
+    border-color: Mark;
+  }
+
+  .lc-message-composer__drop {
+    border-color: Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .lc-message-composer__progress-fill {
+    background: Highlight;
+  }
+
+  .lc-message-composer__send {
+    color: ButtonText;
+  }
+
+  .lc-message-composer__send:focus-visible {
+    outline: var(--lc-sys-focus-ring-width) solid Highlight;
+  }
+
+  @media (hover: hover) {
+    .lc-message-composer__send:hover {
+      outline: var(--lc-sys-focus-ring-width) solid Highlight;
+    }
+  }
+}

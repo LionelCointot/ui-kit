@@ -232,6 +232,8 @@ export const BASE_VALUES = {
     "duration.fast": "100ms",
     "duration.normal": "200ms",
     "duration.slow": "300ms",
+    "duration.long": "350ms",
+    "duration.move": "500ms",
     "easing.standard": "cubic-bezier(0.2, 0, 0, 1)",
     "easing.emphasized": "cubic-bezier(0.3, 0, 0, 1)",
     "z.dropdown": "1000",
@@ -287,7 +289,9 @@ export const BASE_VALUES = {
     "chart.sequential-warm.600": "#9a3913",
     "chart.sequential-warm.700": "#6b280d",
     "border.width.thin": "1px",
-    "border.width.thick": "2px"
+    "border.width.thick": "2px",
+    "motion.stagger": "80ms",
+    "motion.offset": "8px"
   },
   "dark": {
     "color.primary": "#6da7ec",
@@ -378,6 +382,8 @@ export const BASE_VALUES = {
     "duration.fast": "100ms",
     "duration.normal": "200ms",
     "duration.slow": "300ms",
+    "duration.long": "350ms",
+    "duration.move": "500ms",
     "easing.standard": "cubic-bezier(0.2, 0, 0, 1)",
     "easing.emphasized": "cubic-bezier(0.3, 0, 0, 1)",
     "z.dropdown": "1000",
@@ -433,7 +439,9 @@ export const BASE_VALUES = {
     "chart.sequential-warm.600": "#e6bdac",
     "chart.sequential-warm.700": "#f1ded7",
     "border.width.thin": "1px",
-    "border.width.thick": "2px"
+    "border.width.thick": "2px",
+    "motion.stagger": "80ms",
+    "motion.offset": "8px"
   }
 };
 

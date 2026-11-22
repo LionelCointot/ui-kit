@@ -2,7 +2,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { Injectable, Type, inject } from '@angular/core';
 import { lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcConfirmDialogComponent } from './confirm-dialog.component';
-import { LC_DIALOG_CONTEXT, LC_DIALOG_DATA, LcDialogContext, LcDialogRef } from './dialog-ref';
+import { LC_DIALOG_CONTEXT, LC_DIALOG_DATA, LcDialogContext, LcDialogRef, lcCloseOnDismiss } from './dialog-ref';
 
 export interface LcDialogConfig<D> {
   readonly data?: D;
@@ -61,11 +61,13 @@ export class LcDialogService {
       ariaLabel: config.ariaLabel ?? null,
       ariaLabelledBy: config.ariaLabel ? null : context.titleId,
       ariaDescribedBy: config.ariaDescribedBy ?? null,
-      disableClose: !context.dismissible,
+      // Échap et fond gérés ici (sortie animée), comme le tiroir.
+      disableClose: true,
       panelClass: ['lc-dialog-panel', `lc-dialog-panel--${config.size ?? 'medium'}`],
       backdropClass: 'lc-dialog-backdrop',
       providers: (cdkRef) => {
         lcRef = new LcDialogRef<R>(cdkRef);
+        lcCloseOnDismiss(cdkRef, lcRef, { escape: context.dismissible, backdrop: context.dismissible });
         return [
           { provide: LcDialogRef, useValue: lcRef },
           { provide: LC_DIALOG_DATA, useValue: config.data },
