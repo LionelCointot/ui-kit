@@ -39,7 +39,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-data-table` | LcDataTableComponent | composant | source (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, query (model), chips, emptyMessage | – |
 | `lc-description-list` | LcDescriptionListComponent | composant | items (requis), layout | itemAction |
 | `lc-kpi-card` | LcKpiCardComponent | composant | label (requis), value, format, valueText, delta, hint, loading, stale | – |
-| `lc-table` | LcTableComponent | composant | data (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), isRowSelectable, rowSelectionLabel, selectionLabel, selectAllHint, rowClass | groupToggled |
+| `lc-table` | LcTableComponent | composant | data (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), rowClass | groupToggled |
 | `lc-timeline-bar` | LcTimelineBarComponent | composant | segments, lanes, axisEnd, reference, axisLabel, label (requis), description (requis), startLabel, endLabel, minLabelShare, emptyMessage, stale, loading, ticks | – |
 | `lc-tree-table` | LcTreeTableComponent | composant | data (requis), children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
 | `li[lcActivityItem]` | LcActivityItemComponent | composant | heading (requis), icon, date, dateTime | – |

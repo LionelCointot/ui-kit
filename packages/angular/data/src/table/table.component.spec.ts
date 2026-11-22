@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LC_DEFAULT_ICONS, LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from './cell.directive';
@@ -245,7 +245,7 @@ describe('LcTableComponent : tri de colonne (D4)', () => {
       const asc = renderedIcon(0);
       await click(0);
       const desc = renderedIcon(0);
-      expect([none, asc, desc], mode).toEqual([iconShapes('arrow-up-down'), iconShapes('chevron-up'), iconShapes('chevron-down')]);
+      expect([none, asc, desc], mode).toEqual([iconShapes('arrow-up-down'), iconShapes('arrow-up'), iconShapes('arrow-down')]);
       expect(new Set([none, asc, desc]).size, mode).toBe(3);
       await click(0);
       expect(renderedIcon(0), mode).toBe(none);
@@ -257,7 +257,7 @@ describe('LcTableComponent : tri de colonne (D4)', () => {
     const { click, iconShapes, renderedIcon } = await setup();
     await click(0);
     expect(renderedIcon(1)).toBe(iconShapes('arrow-up-down'));
-    expect(renderedIcon(0)).toBe(iconShapes('chevron-up'));
+    expect(renderedIcon(0)).toBe(iconShapes('arrow-up'));
   });
 
   it('CA-D4 : table vide avec colonne triable : en-tête activable, aria-sort cohérent, message d\'absence de données', async () => {
@@ -422,7 +422,7 @@ describe('LcTableComponent', () => {
   imports: [LcTableComponent],
   template: `
     <lc-table caption="Lignes" [data]="data()" [columns]="columns" [trackBy]="trackBy" [groupBy]="grouping()" [(sort)]="sort"
-      [selectable]="selectable()" [(selection)]="selection" [isRowSelectable]="canSelect" selectAllHint="Agit sur tout le jeu"
+      [selectable]="options()" [(selection)]="selection"
       [rowClass]="tone" [footer]="{ amount: 1 }" />
   `,
 })
@@ -434,6 +434,7 @@ class SelectionHostComponent {
   ];
   readonly trackBy = (row: Row) => row.id;
   readonly selectable = signal(true);
+  readonly options = computed(() => (this.selectable() ? { isRowSelectable: this.canSelect, selectAllHint: 'Agit sur tout le jeu' } : false));
   readonly selection = signal<ReadonlySet<unknown>>(new Set());
   readonly sort = signal<LcSort | null>(null);
   readonly grouping = signal<LcTableGrouping<Row> | undefined>(undefined);
@@ -576,5 +577,31 @@ describe('LcTableComponent : sélection et teinte (K1, K4)', () => {
     expect(trs[0].classList.contains('a')).toBe(true);
     expect(trs[1].classList.contains('b') && trs[1].classList.contains('c')).toBe(true);
     expect(trs[2].className).toBe('');
+  });
+});
+
+@Component({
+  imports: [LcTableComponent],
+  template: `
+    <lc-table #bare caption="Nu" [data]="data" [columns]="columns" [trackBy]="trackBy" selectable />
+    <lc-table caption="Réglé" [data]="data" [columns]="columns" [trackBy]="trackBy"
+      [selectable]="{ label: 'Tout cocher', rowLabel: rowLabel }" />
+  `,
+})
+class SelectableFormsHostComponent {
+  readonly data: readonly Row[] = rows;
+  readonly columns: readonly LcTableColumn<Row>[] = [{ id: 'name', header: 'Nom', value: (row) => row.name }];
+  readonly trackBy = (row: Row) => row.id;
+  readonly rowLabel = (row: Row) => `Cocher ${row.name}`;
+}
+
+describe('LcTableComponent selectable (ADR 0010)', () => {
+  it('l\'attribut nu active les défauts ; un objet règle les noms accessibles', async () => {
+    const fixture = TestBed.createComponent(SelectableFormsHostComponent);
+    await fixture.whenStable();
+    const [bare, custom] = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('lc-table'));
+    expect(bare.querySelectorAll('input.lc-checkbox').length).toBe(rows.length + 1);
+    expect(custom.querySelector('thead input')!.getAttribute('aria-label')).toBe('Tout cocher');
+    expect(custom.querySelector('tbody input')!.getAttribute('aria-label')).toBe(`Cocher ${rows[0].name}`);
   });
 });

@@ -157,18 +157,18 @@ function installTones(): true {
   return true;
 }
 
-/** Selection column (`selectable`, `[(selection)]`): Bob's row cannot be ticked (`isRowSelectable`), the header box is partial when only some rows are ticked, and The selection column and the first data column both stay sticky while the table scrolls sideways (narrow container). `rowClass` adds classes to data rows; here the story's own stylesheet tints them with `--lc-table-row-background` (kit tokens only; colour is never the only cue: the status column says it too). Check it in both themes. */
+/** Selection column (`[selectable]="{ … }"` settings, `[(selection)]`): Bob's row cannot be ticked (`isRowSelectable`), the header box is partial when only some rows are ticked, and The selection column and the first data column both stay sticky while the table scrolls sideways (narrow container). `rowClass` adds classes to data rows; here the story's own stylesheet tints them with `--lc-table-row-background` (kit tokens only; colour is never the only cue: the status column says it too). Check it in both themes. */
 export const SelectionAndTones: Story = {
   parameters: fixedExample,
   render: () => ({
     props: {
       data: orders.slice(0, 6), columns, trackBy, tonesInstalled: installTones(),
       selection: new Set<unknown>([1, 2]),
-      canSelect: (row: Order) => row.id !== 3,
+      selectable: { isRowSelectable: (row: Order) => row.id !== 3, selectAllHint: 'La case en haut du tableau agit sur toutes les commandes.' },
       tone: (row: Order) => (row.id <= 4 ? `story-tone story-tone--${['success', 'info', 'error', 'warning'][row.id - 1]}` : null),
     },
-    template: `<div style="max-inline-size: 28rem"><lc-table caption="Commandes à traiter" [data]="data" [columns]="columns" [trackBy]="trackBy" [selectable]="true" [(selection)]="selection"
-      [isRowSelectable]="canSelect" [rowClass]="tone" selectAllHint="La case en haut du tableau agit sur toutes les commandes." /></div>
+    template: `<div style="max-inline-size: 28rem"><lc-table caption="Commandes à traiter" [data]="data" [columns]="columns" [trackBy]="trackBy" [selectable]="selectable" [(selection)]="selection"
+      [rowClass]="tone" /></div>
       <p>{{ selection.size }} sélectionnée(s)</p>`,
   }),
 };

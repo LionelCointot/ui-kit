@@ -26,6 +26,18 @@ export interface LcTableGrouping<T> {
   readonly initiallyExpanded?: boolean;
 }
 
+/** Réglages de la colonne de sélection de `lc-table` (`[selectable]`) ; chaque champ absent prend son défaut. */
+export interface LcTableSelectable<T> {
+  /** Une ligne peut-elle être cochée (défaut : toutes). */
+  readonly isRowSelectable?: (row: T) => boolean;
+  /** Nom accessible de la case d'une ligne (défaut : libellé du kit). */
+  readonly rowLabel?: (row: T) => string;
+  /** Nom accessible de la case d'en-tête (défaut : libellé du kit). */
+  readonly label?: string;
+  /** Aide sous le tableau, reliée à la case d'en-tête (`aria-describedby`). */
+  readonly selectAllHint?: string;
+}
+
 export interface LcSort {
   readonly columnId: string;
   readonly direction: 'asc' | 'desc';

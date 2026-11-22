@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
 import { LcTableComponent } from './table.component';
@@ -10,8 +10,8 @@ interface Row { id: string; name: string; group: string; locked?: boolean }
 
 @Component({
   imports: [LcTableComponent],
-  template: `<lc-table caption="Lots" [data]="data()" [columns]="columns" [trackBy]="trackBy" [selectable]="selectable()"
-    [(selection)]="selection" [isRowSelectable]="can" [selectAllHint]="hint()" [rowClass]="cls" [groupBy]="grouping()" [(sort)]="sort" />`,
+  template: `<lc-table caption="Lots" [data]="data()" [columns]="columns" [trackBy]="trackBy" [selectable]="options()"
+    [(selection)]="selection" [rowClass]="cls" [groupBy]="grouping()" [(sort)]="sort" />`,
 })
 class HostComponent {
   readonly data = signal<readonly Row[]>([
@@ -24,6 +24,7 @@ class HostComponent {
   readonly selection = signal<ReadonlySet<unknown>>(new Set());
   readonly can = (r: Row) => !r.locked;
   readonly hint = signal<string | undefined>(undefined);
+  readonly options = computed(() => (this.selectable() ? { isRowSelectable: this.can, selectAllHint: this.hint() } : false));
   readonly grouping = signal<LcTableGrouping<Row> | undefined>(undefined);
   readonly sort = signal<LcSort | null>(null);
   readonly cls = (r: Row): string | readonly string[] | null => (r.id === 'a' ? 'tone-new' : r.id === 'b' ? ['tone-a', 'tone-b'] : r.id === 'c' ? '' : null);

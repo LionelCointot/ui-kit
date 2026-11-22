@@ -3,8 +3,9 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, computed, content
 import { LC_LABELS, LcFormatService, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from './cell.directive';
 import {
-  LC_TABLE_MAX_ROWS, LcSort, LcTableColumn, LcTableGrouping, buildTableModel, columnAlign, nextSort,
+  LC_TABLE_MAX_ROWS, LcSort, LcTableColumn, LcTableGrouping, LcTableSelectable, buildTableModel, nextSort,
 } from './table-model';
+import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from './table-shared';
 
 let nextId = 0;
 
@@ -23,21 +24,21 @@ let nextId = 0;
         <caption class="lc-table__caption" [class.lc-table__caption--hidden]="captionHidden()">{{ caption() }}</caption>
         <thead>
           <tr>
-            @if (selectable()) {
+            @if (selectSettings()) {
               <th scope="col" class="lc-table__cell lc-table__select">
                 <label class="lc-table__select-hit">
-                  <input type="checkbox" class="lc-checkbox" [attr.aria-label]="selectionLabel() ?? labels.selectAll"
-                    [attr.aria-describedby]="selectAllHint() ? hintId : null" [checked]="headerState().checked"
+                  <input type="checkbox" class="lc-checkbox" [attr.aria-label]="selectSettings()?.label ?? labels.selectAll"
+                    [attr.aria-describedby]="selectSettings()?.selectAllHint ? hintId : null" [checked]="headerState().checked"
                     [indeterminate]="headerState().indeterminate" [disabled]="selectableKeys().length === 0" (change)="toggleAll()" />
                 </label>
               </th>
             }
             @for (column of columns(); track column.id) {
-              <th scope="col" [class]="cellClass(column)" [style.width]="column.width ?? null" [attr.aria-sort]="ariaSort(column)">
+              <th scope="col" [class]="cellClass(column)" [style.width]="column.width ?? null" [attr.aria-sort]="ariaSort(sortDirection(column))">
                 @if (column.sortable) {
                   <button type="button" class="lc-table__sort" (click)="toggleSort(column)">
                     <span>{{ column.header }}</span>
-                    <lc-icon class="lc-table__sort-icon" [name]="sortIcon(column)" />
+                    <lc-icon class="lc-table__sort-icon" [name]="sortIcon(sortDirection(column))" />
                   </button>
                 } @else {
                   {{ column.header }}
@@ -50,7 +51,7 @@ let nextId = 0;
           @for (item of model().items; track item.id) {
             @if (item.kind === 'group') {
               <tr class="lc-table__group">
-                @if (selectable()) {
+                @if (selectSettings()) {
                   <td class="lc-table__cell lc-table__select"></td>
                 }
                 @for (column of columns(); track column.id; let first = $first) {
@@ -70,11 +71,11 @@ let nextId = 0;
               </tr>
             } @else {
               <tr [class]="rowClasses(item.row)">
-                @if (selectable()) {
+                @if (selectSettings()) {
                   <td class="lc-table__cell lc-table__select">
                     <label class="lc-table__select-hit">
-                      <input type="checkbox" class="lc-checkbox" [attr.aria-label]="rowSelectionLabel()?.(item.row) ?? labels.selectRow"
-                        [checked]="selection().has(trackBy()(item.row))" [disabled]="!isRowSelectable()(item.row)" (change)="toggleRow(item.row)" />
+                      <input type="checkbox" class="lc-checkbox" [attr.aria-label]="selectSettings()?.rowLabel?.(item.row) ?? labels.selectRow"
+                        [checked]="selection().has(trackBy()(item.row))" [disabled]="!(selectSettings()?.isRowSelectable?.(item.row) ?? true)" (change)="toggleRow(item.row)" />
                     </label>
                   </td>
                 }
@@ -83,7 +84,7 @@ let nextId = 0;
                     @if (cellTemplates().get(column.id); as template) {
                       <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item.row, column: column }" />
                     } @else {
-                      {{ cellText(column, item.row) }}
+                      {{ cellText(format, column, item.row) }}
                     }
                   </td>
                 }
@@ -91,14 +92,14 @@ let nextId = 0;
             }
           } @empty {
             <tr class="lc-table__empty">
-              <td [attr.colspan]="columns().length + (selectable() ? 1 : 0)">{{ emptyMessage() ?? labels.noData }}</td>
+              <td [attr.colspan]="columns().length + (selectSettings() ? 1 : 0)">{{ emptyMessage() ?? labels.noData }}</td>
             </tr>
           }
         </tbody>
         @if (footer(); as totals) {
           <tfoot>
             <tr>
-              @if (selectable()) {
+              @if (selectSettings()) {
                 <td class="lc-table__cell lc-table__select"></td>
               }
               @for (column of columns(); track column.id; let first = $first) {
@@ -115,8 +116,8 @@ let nextId = 0;
         }
       </table>
     </div>
-    @if (selectable()) {
-      @if (selectAllHint(); as hint) {
+    @if (selectSettings()) {
+      @if (selectSettings()?.selectAllHint; as hint) {
         <p class="lc-table__notice" [id]="hintId">{{ hint }}</p>
       }
       <p class="lc-table__sr-only" aria-live="polite">{{ announcement() }}</p>
@@ -130,13 +131,17 @@ let nextId = 0;
   host: {
     class: 'lc-table',
     '[class.lc-table--sticky-header]': 'stickyHeader()',
-    '[class.lc-table--selectable]': 'selectable()',
+    '[class.lc-table--selectable]': 'selectSettings()',
     '[class.lc-table--compact]': "density() === 'compact'",
   },
 })
 export class LcTableComponent<T> {
   protected readonly labels = inject(LC_LABELS);
-  private readonly format = inject(LcFormatService);
+  protected readonly format = inject(LcFormatService);
+  protected readonly cellClass = cellClass;
+  protected readonly ariaSort = ariaSort;
+  protected readonly cellText = cellText;
+  protected readonly sortIcon = sortIcon;
 
   readonly data = input.required<readonly T[]>();
   readonly columns = input.required<readonly LcTableColumn<T>[]>();
@@ -151,14 +156,17 @@ export class LcTableComponent<T> {
   readonly stickyHeader = input(false, { transform: booleanAttribute });
   readonly density = input<'comfortable' | 'compact'>('comfortable');
   readonly emptyMessage = input<string>();
-  /** Colonne de cases à cocher en tête ; `selection` porte les clés `trackBy` des lignes cochées (nouveau `Set` à chaque changement). */
-  readonly selectable = input(false, { transform: booleanAttribute });
+  /** Colonne de cases à cocher en tête : `true` (défauts), `false`, ou réglages (`LcTableSelectable`). L'attribut nu `selectable` vaut `true`. */
+  readonly selectable = input<boolean | LcTableSelectable<T>, boolean | LcTableSelectable<T> | ''>(false, {
+    transform: (value) => (value === '' ? true : value),
+  });
+  /** Clés `trackBy` des lignes cochées (nouveau `Set` à chaque changement). */
   readonly selection = model<ReadonlySet<unknown>>(new Set());
-  readonly isRowSelectable = input<(row: T) => boolean>(() => true);
-  readonly rowSelectionLabel = input<(row: T) => string>();
-  readonly selectionLabel = input<string>();
-  /** Aide sous le tableau, reliée à la case d'en-tête (`aria-describedby`). */
-  readonly selectAllHint = input<string>();
+  /** Réglages de sélection actifs, ou `null` si la colonne est coupée. */
+  protected readonly selectSettings = computed<LcTableSelectable<T> | null>(() => {
+    const value = this.selectable();
+    return value === false ? null : value === true ? {} : value;
+  });
   /** Classes posées sur la ligne de données (pas sur les groupes ni le pied). Pour un fond, poser `--lc-table-row-background` : le survol du kit s'y mélange. */
   readonly rowClass = input<(row: T) => string | readonly string[] | null>();
   readonly groupToggled = output<{ key: string; expanded: boolean }>();
@@ -169,7 +177,7 @@ export class LcTableComponent<T> {
   /** Clés des lignes cochables de tout `data` (groupes repliés compris). */
   protected readonly selectableKeys = computed(() => {
     const keyOf = this.trackBy();
-    const test = this.isRowSelectable();
+    const test = this.selectSettings()?.isRowSelectable ?? (() => true);
     const keys = this.data().filter((row) => test(row)).map((row) => keyOf(row));
     return keys;
   });
@@ -179,7 +187,7 @@ export class LcTableComponent<T> {
     return { checked: count > 0 && count === this.selectableKeys().length, indeterminate: count > 0 && count < this.selectableKeys().length };
   });
   private readonly warnDuplicateKeys = effect(() => {
-    if (!isDevMode() || !this.selectable()) return;
+    if (!isDevMode() || !this.selectSettings()) return;
     const keyOf = this.trackBy();
     const keys = this.data().map((row) => keyOf(row));
     if (new Set(keys).size !== keys.length) console.warn('lc-table: `trackBy` renvoie deux fois la même clé, la sélection est ambiguë.');
@@ -221,30 +229,13 @@ export class LcTableComponent<T> {
     return this.rowClass()?.(row) ?? null;
   }
 
-  protected cellClass(column: LcTableColumn<T>): string {
-    const sticky = column.sticky ? ` lc-table__cell--sticky-${column.sticky}` : '';
-    return `lc-table__cell lc-table__cell--${columnAlign(column)}${sticky}`;
-  }
-
-  protected cellText(column: LcTableColumn<T>, row: T): string {
-    return this.format.format(column.value(row), column.format);
-  }
-
   protected summaryText(column: LcTableColumn<T>, values: Readonly<Record<string, unknown>>): string {
     const value = values[column.id];
     return value === undefined ? '' : this.format.format(value, column.format);
   }
 
-  protected ariaSort(column: LcTableColumn<T>): 'ascending' | 'descending' | null {
-    const sort = this.sort();
-    if (!column.sortable || sort?.columnId !== column.id) return null;
-    return sort.direction === 'asc' ? 'ascending' : 'descending';
-  }
-
-  protected sortIcon(column: LcTableColumn<T>): string {
-    const sort = this.sort();
-    if (sort?.columnId !== column.id) return 'arrow-up-down';
-    return sort.direction === 'asc' ? 'chevron-up' : 'chevron-down';
+  protected sortDirection(column: LcTableColumn<T>): LcSort['direction'] | null {
+    return column.sortable ? sortDirection(this.sort(), column.id) : null;
   }
 
   protected toggleSort(column: LcTableColumn<T>): void {

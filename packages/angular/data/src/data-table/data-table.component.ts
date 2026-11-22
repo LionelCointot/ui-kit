@@ -16,6 +16,7 @@ import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angul
 import { LcSheetComponent, LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
 import { LcCellDirective } from '../table/cell.directive';
 import { LC_TABLE_MAX_ROWS, LcSort, columnAlign, nextSort } from '../table/table-model';
+import { ariaSort, cellText, sortIcon } from '../table/table-shared';
 import { LcColumnFilterComponent, LcNativeDatePickerDirective } from './column-filter.component';
 import {
   LC_EMPTY_QUERY, LcDataColumn, LcDataSource, LcDateRange, LcDistinctValue, LcFilterValue, LcPage, LcTableQuery,
@@ -152,14 +153,15 @@ export class LcDataTableComponent<T> {
     const value = this.query().filters[column.key];
     const active = !!column.filter && isFilterActive(value);
     const sort = this.query().sort;
-    const sortState = sort?.columnId === column.key ? sort.direction : 'none';
+    const direction = sort?.columnId === column.key ? sort.direction : null;
+    const sortState = direction ?? 'none';
     const summary = active ? this.summary(column, value) : '';
     const state = !active ? null : column.filter?.type === 'multi' ? this.text.valuesChosen((value as readonly string[]).length) : summary;
     const cut = column.label.lastIndexOf(' ') + 1;
     return {
       column, active, sortState, labelHead: column.label.slice(0, cut), labelTail: column.label.slice(cut),
-      ariaSort: sortState === 'asc' ? 'ascending' : sortState === 'desc' ? 'descending' : null,
-      sortIcon: sortState === 'asc' ? 'arrow-up' : sortState === 'desc' ? 'arrow-down' : 'arrow-up-down',
+      ariaSort: ariaSort(direction),
+      sortIcon: sortIcon(direction),
       funnelLabel: this.text.filterColumn(column.label, state),
       funnelTip: active ? this.text.activeFilterTooltip(this.summary(column, value, true)) : this.text.filterTooltip,
     };
@@ -364,7 +366,7 @@ export class LcDataTableComponent<T> {
   }
 
   protected cellText(column: LcDataColumn<T>, row: T): string {
-    return this.format.format(column.value?.(row), column.format);
+    return cellText(this.format, column, row);
   }
 
   protected align(column: LcDataColumn<T>): string {
