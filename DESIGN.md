@@ -128,7 +128,7 @@ components:
 
 **Creative North Star : « L'outil posé »**
 
-Un outil de travail calme : papier chaud et neutre, encre presque noire, un seul bleu pour ce qui est actionnable, des filets fins plutôt que des ombres. L'écran aide à décider ou à surveiller ; il ne cherche ni à séduire ni à alarmer. La couleur saturée est réservée au sens (statut, série, élément actif).
+Un outil de travail calme : papier chaud et neutre, encre presque noire, un seul bleu pour ce qui est actionnable, des filets fins plutôt que des ombres. L'écran aide à décider ou à surveiller ; il ne cherche pas à alarmer, et son mouvement, soigné et expressif, rend chaque geste agréable sans jamais porter l'information. La couleur saturée est réservée au sens (statut, série, élément actif).
 
 Surface **Operate** : l'utilisateur règle, lit, compare. L'ambition se mesure en cohérence : une même action a toujours la même icône, le même style et le même nom, d'une application à l'autre.
 
@@ -236,7 +236,9 @@ Tous les composants viennent du ui-kit ; une application ne redéfinit ni un tok
 - **Don't** utiliser `themeColor="error"` ailleurs que sur le bouton de confirmation d'une action à fort impact, ni un second accent, un dégradé, une ombre décorative.
 - **Don't** laisser un bouton icône sans nom accessible ; un bouton désactivé sans raison lisible.
 - **Don't** écrire de couleur, taille ou durée en dur ; ne pas utiliser `innerHTML` pour des contenus non fiables.
-- **Don't** animer plus de 200 ms, sauf la cascade `lcReveal` (attribut lu par la feuille globale, 350 ms par élément) et les déplacements (500 ms) ; avec `prefers-reduced-motion`, aucune animation.
+- **Don't** écrire de durée ni de courbe de mouvement en dur : elles viennent des rôles `--lc-sys-duration-*` et `--lc-sys-easing-*`. Le mouvement n'ajoute jamais d'information, il montre d'où vient et où va un élément ; avec `prefers-reduced-motion`, aucune animation.
+- **Don't** animer `lc-status-badge`, `lc-tooltip`, le survol d'une ligne ou la sélection d'une date : ils changent d'un coup, exprès, pour ne pas distraire d'une information importante.
+- **Exception** : le point « live » (`.lc-pulse`) boucle sans fin : il est décoratif, jamais seul porteur d'information, et le mouvement réduit l'arrête (WCAG 2.2.2).
 
 ## Actions et icônes
 
