@@ -1,0 +1,21 @@
+body { margin: 0; font: 16px/1.4 system-ui, sans-serif; background: #f4f4f6; }
+.hdr { position: sticky; top: 0; z-index: 10; height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #fff; border-bottom: 1px solid #ddd; }
+.body { display: flex; }
+.side { position: sticky; top: 48px; align-self: flex-start; width: 200px; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #fff; min-height: calc(100vh - 48px); z-index: 5; }
+.side a.act { font-weight: 700; }
+main { flex: 1; min-width: 0; }
+.sp-page { display: block; padding: 16px 24px; background: #f4f4f6; min-height: calc(100vh - 48px); box-sizing: border-box; }
+.sp-grid { display: grid; }
+.sp-grid > * { grid-area: 1 / 1; }
+.sp-dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+.sp-edge { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 20px; z-index: 50; touch-action: none; }
+@media (max-width: 759px) { .side { display: none; } .sp-edge { display: block; } .sp-page { padding: 12px; } }
+@media (min-width: 760px) { .back { display: none; } }
+
+/* Technique A : animate.leave sur l'hote du composant routé. */
+html[data-tech='a'] .sp-leave, html[data-tech='w'] .sp-leave { animation: sp-out 190ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+html[data-tech='a'] [data-dir='forward'] .sp-leave { --x: -16px; }
+html[data-tech='a'] [data-dir='back'] .sp-leave { --x: 16px; }
+html[data-tech='a'] [data-dir='same'] .sp-leave, html[data-tech='a'] [data-dir='init'] .sp-leave { --x: 0px; }
+@keyframes sp-out { to { opacity: 0; transform: translateX(var(--x, 0)); } }
+@media (prefers-reduced-motion: reduce) { html[data-tech='a'] .sp-leave { animation: none; } }
