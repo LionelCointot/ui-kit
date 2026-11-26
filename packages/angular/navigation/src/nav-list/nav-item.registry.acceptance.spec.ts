@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import * as kit from '@lionelcointot/ui-angular';
@@ -32,7 +32,34 @@ class BlankComponent {}
 })
 class NavHostComponent {}
 
+@Component({
+  imports: [LcNavListComponent, LcNavItemComponent, RouterLink],
+  template: `
+    <lc-nav-list>
+      @for (page of pages(); track page) {
+        <a lcNavItem [routerLink]="'/' + page" icon="landmark">{{ page }}</a>
+      }
+    </lc-nav-list>
+  `,
+})
+class ReorderHostComponent {
+  readonly pages = signal(['credit', 'budget', 'parametres']);
+}
+
 describe('T2 : a[lcNavItem] et LcNavRegistry', () => {
+  it('l\'ordre de items() suit celui du DOM quand un @for réordonne les entrées après une première lecture', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(ReorderHostComponent);
+    await fixture.whenStable();
+    expect(entries().map((e) => e.url)).toEqual(['/credit', '/budget', '/parametres']); // première lecture
+    fixture.componentInstance.pages.set(['parametres', 'budget', 'credit']);
+    await fixture.whenStable();
+    const dom = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).map((a) => a.textContent!.trim());
+    expect(dom).toEqual(['parametres', 'budget', 'credit']);
+    expect(entries().map((e) => e.url)).toEqual(['/parametres', '/budget', '/credit']);
+    expect(entries().map((e) => e.label)).toEqual(dom);
+  });
+
   const setup = async () => {
     TestBed.configureTestingModule({ providers: [provideRouter(['credit', 'budget', 'parametres', 'aide'].map((path) => ({ path, component: BlankComponent })))] });
     const fixture = TestBed.createComponent(NavHostComponent);
