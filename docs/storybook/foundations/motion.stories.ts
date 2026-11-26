@@ -21,7 +21,7 @@ export const Motion: StoryObj = {
 @Component({
   selector: 'app-example',
   template: '<div class="panel">Panneau</div>',
-  styles: '.panel { animation: enter var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); } @keyframes enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset))); } }',
+  styles: '.panel { animation: enter var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); } @keyframes enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset-sm))); } }',
 })
 export class ExampleComponent {}`,
       },

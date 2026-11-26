@@ -369,6 +369,10 @@
         "$value": "{ref.duration.fast}",
         "$type": "duration"
       },
+      "exit": {
+        "$value": "{ref.duration.exit}",
+        "$type": "duration"
+      },
       "normal": {
         "$value": "{ref.duration.normal}",
         "$type": "duration"
@@ -377,12 +381,28 @@
         "$value": "{ref.duration.slow}",
         "$type": "duration"
       },
-      "long": {
-        "$value": "{ref.duration.long}",
+      "enter": {
+        "$value": "{ref.duration.enter}",
         "$type": "duration"
       },
       "move": {
         "$value": "{ref.duration.move}",
+        "$type": "duration"
+      },
+      "long": {
+        "$value": "{ref.duration.long}",
+        "$type": "duration"
+      },
+      "view": {
+        "$value": "{ref.duration.view}",
+        "$type": "duration"
+      },
+      "title": {
+        "$value": "{ref.duration.title}",
+        "$type": "duration"
+      },
+      "draw": {
+        "$value": "{ref.duration.draw}",
         "$type": "duration"
       }
     },
@@ -393,6 +413,50 @@
       },
       "emphasized": {
         "$value": "{ref.easing.emphasized}",
+        "$type": "cubicBezier"
+      },
+      "entrance": {
+        "$value": "{ref.easing.entrance}",
+        "$type": "cubicBezier"
+      },
+      "fill": {
+        "$value": "{ref.easing.fill}",
+        "$type": "cubicBezier"
+      },
+      "soft": {
+        "$value": "{ref.easing.soft}",
+        "$type": "cubicBezier"
+      },
+      "out": {
+        "$value": "{ref.easing.out}",
+        "$type": "cubicBezier"
+      },
+      "pop": {
+        "$value": "{ref.easing.pop}",
+        "$type": "cubicBezier"
+      },
+      "pop-strong": {
+        "$value": "{ref.easing.pop-strong}",
+        "$type": "cubicBezier"
+      },
+      "title": {
+        "$value": "{ref.easing.title}",
+        "$type": "cubicBezier"
+      },
+      "draw": {
+        "$value": "{ref.easing.draw}",
+        "$type": "cubicBezier"
+      },
+      "inout": {
+        "$value": "{ref.easing.inout}",
+        "$type": "cubicBezier"
+      },
+      "exit": {
+        "$value": "{ref.easing.exit}",
+        "$type": "cubicBezier"
+      },
+      "stack": {
+        "$value": "{ref.easing.stack}",
         "$type": "cubicBezier"
       }
     },
@@ -639,12 +703,56 @@
       }
     },
     "motion": {
-      "stagger": {
-        "$value": "{ref.motion.stagger}",
+      "offset-sm": {
+        "$value": "{ref.motion.offset-sm}",
+        "$type": "dimension"
+      },
+      "offset-md": {
+        "$value": "{ref.motion.offset-md}",
+        "$type": "dimension"
+      },
+      "offset-lg": {
+        "$value": "{ref.motion.offset-lg}",
+        "$type": "dimension"
+      },
+      "offset-xl": {
+        "$value": "{ref.motion.offset-xl}",
+        "$type": "dimension"
+      },
+      "stagger-fine": {
+        "$value": "{ref.motion.stagger-fine}",
         "$type": "duration"
       },
-      "offset": {
-        "$value": "{sys.space.2}",
+      "stagger-normal": {
+        "$value": "{ref.motion.stagger-normal}",
+        "$type": "duration"
+      },
+      "stagger-cards": {
+        "$value": "{ref.motion.stagger-cards}",
+        "$type": "duration"
+      },
+      "stagger-chars": {
+        "$value": "{ref.motion.stagger-chars}",
+        "$type": "duration"
+      },
+      "stagger-cap": {
+        "$value": "{ref.motion.stagger-cap}",
+        "$type": "number"
+      },
+      "scale-pop": {
+        "$value": "{ref.motion.scale-pop}",
+        "$type": "number"
+      },
+      "scale-enter": {
+        "$value": "{ref.motion.scale-enter}",
+        "$type": "number"
+      },
+      "rotate-tilt": {
+        "$value": "{ref.motion.rotate-tilt}",
+        "$type": "dimension"
+      },
+      "rotate-char": {
+        "$value": "{ref.motion.rotate-char}",
         "$type": "dimension"
       }
     }

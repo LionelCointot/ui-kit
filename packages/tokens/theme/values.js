@@ -71,6 +71,26 @@ export function isValidValue(type, value, knownFontStacks) {
   }
 }
 
+// Nombres sans ambiguïté de retour arrière : chaque motif consomme ses caractères d'une seule façon.
+const SIGNED = '-?(?:\\d+(?:\\.\\d+)?|\\.\\d+)';
+const UNIT_FAMILIES = {
+  length: new RegExp(`^(?:0|${SIGNED}(?:px|rem|em|%|dvh))$`),
+  angle: new RegExp(`^${SIGNED}(?:deg|turn)$`),
+};
+const X = '(?:0(?:\\.\\d+)?|1(?:\\.0+)?|\\.\\d+)'; // abscisse d'un point de contrôle : de 0 à 1
+const CUBIC_BEZIER = new RegExp(`^cubic-bezier\\(\\s*${X}\\s*,\\s*${SIGNED}\\s*,\\s*${X}\\s*,\\s*${SIGNED}\\s*\\)$`);
+
+/**
+ * Valeur d'un token de mouvement : mêmes garde-fous que isValidValue, plus des distances signées, des %, des angles
+ * (`unit` : famille d'unité de la valeur de base du token) et la courbe `cubic-bezier()` (x dans [0, 1], y libres).
+ */
+export function isValidMotionValue(type, value, unit = 'length') {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_VALUE_LENGTH || FORBIDDEN.test(value)) return false;
+  if (type === 'dimension') return UNIT_FAMILIES[unit].test(value);
+  if (type === 'cubicBezier') return CUBIC_BEZIER.test(value);
+  return isValidValue(type, value, new Set());
+}
+
 /** Dernier garde-fou avant écriture dans une feuille de style (les piles de la base contiennent des apostrophes). */
 export function isSafeCssValue(value) {
   return typeof value === 'string' && !FORBIDDEN.test(value) && !/[\r\n"]/.test(value);

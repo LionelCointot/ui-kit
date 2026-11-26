@@ -248,7 +248,7 @@
 
 .lc-file-upload__bar--indeterminate .lc-file-upload__bar-fill {
   width: 40%;
-  animation: lc-file-upload-slide calc(var(--lc-sys-duration-slow) * 5) var(--lc-sys-easing-standard) infinite;
+  animation: lc-file-upload-slide var(--lc-file-upload-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 
 @keyframes lc-file-upload-slide {

@@ -21,7 +21,7 @@
   border: var(--lc-sys-border-width-thick) solid color-mix(in srgb, currentColor 20%, transparent);
   border-top-color: currentColor;
   border-radius: var(--lc-sys-radius-full);
-  animation: lc-spinner-spin calc(var(--lc-sys-duration-slow) * 3) linear infinite;
+  animation: lc-spinner-spin var(--lc-spinner-duration) linear infinite;
 }
 
 @keyframes lc-spinner-spin {
@@ -40,7 +40,7 @@
 @media (prefers-reduced-motion: reduce) {
   .lc-spinner__ring {
     border-color: currentColor;
-    animation: lc-spinner-pulse calc(var(--lc-sys-duration-slow) * 5) ease-in-out infinite;
+    animation: lc-spinner-pulse var(--lc-spinner-pulse-duration) ease-in-out infinite;
   }
 }
 

@@ -1,6 +1,6 @@
 // Cœur de thème indépendant du framework : schéma, validation stricte, résolution, rendu CSS, contraste, DTCG.
 // Aucun import Node : le module s'exécute dans le navigateur comme sous Node (CLI lc-tokens).
-import { baseValuesByName, fontStacks, groups, isBaseName, schema } from './model.js';
+import { baseValuesByName, fontStacks, groups, isBaseName, motionSchema, schema } from './model.js';
 
 export { THEME_NAME_PATTERN, validateTheme } from './validate.js';
 export { overrideVars, renderThemeCss, resolveTheme } from './resolve.js';
@@ -12,6 +12,8 @@ export { cssVarOf } from './paths.js';
 
 /** Tokens `sys` éditables, dans l'ordre de la source. */
 export const themeSchema = schema;
+/** Tokens de mouvement qu'un thème peut surcharger sans qu'ils soient dans le builder : rôles `sys` et tokens composant. */
+export { motionSchema };
 /** Groupes d'édition, dans l'ordre d'affichage. */
 export const themeGroups = groups;
 /** Piles de polices proposées (valeurs exactes acceptées par validateTheme, en plus de noms simples). */

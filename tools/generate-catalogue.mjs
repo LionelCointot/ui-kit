@@ -153,7 +153,8 @@ function build() {
     console.log(`${n} : ${decls.length}`);
     return { name: n, decls };
   });
-  return renderCatalogue(version, entryPoints);
+  // Tokens supprimés ou renommés : note écrite à la main, ajoutée telle quelle à la fin du catalogue.
+  return renderCatalogue(version, entryPoints) + '\n' + readFileSync(path.join(ROOT, 'tools', 'catalogue-motion-v2.md'), 'utf8');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -20,7 +20,8 @@ const bare = (v) => { let s = v.replace(/\/\*[\s\S]*?\*\//g, ''); for (let p; p 
 test('CA-C10 : tokens du composant (valeurs par défaut de la spec 5.2)', () => {
   const f = path.join(PACKAGE_ROOT, 'src/components/message-composer.tokens.json');
   assert.ok(existsSync(f), 'message-composer.tokens.json absent : en attente du code');
-  const t = JSON.parse(readFileSync(f, 'utf8'))['message-composer'];
+  // Les tokens de mouvement (shake-duration…) vivent dans components/motion.tokens.json.
+  const t = { ...JSON.parse(readFileSync(f, 'utf8'))['message-composer'], ...JSON.parse(readFileSync(path.join(PACKAGE_ROOT, 'src/components/motion.tokens.json'), 'utf8'))['message-composer'] };
   // Le nom CSS fait foi (--lc-sys-border-width-thin) : le chemin DTCG sépare ses segments par des points.
   const expected = { 'border-style': 'solid', 'border-width': 'sys-border-width-thin', background: 'sys-color-surface-raised', 'shake-distance': 'sys-space-1', 'shake-duration': 'sys-duration-normal' };
   for (const [k, v] of Object.entries(expected)) assert.equal(k === 'border-style' ? t?.[k]?.$value : t?.[k]?.$value?.replace(/^\{|\}$/g, '').replaceAll('.', '-'), v, k);

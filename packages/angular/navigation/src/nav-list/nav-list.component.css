@@ -25,14 +25,14 @@
 
 :host(.lc-nav-list--ready) .lc-nav-list__indicator {
   transition:
-    transform var(--lc-nav-item-indicator-duration) var(--lc-nav-item-indicator-easing),
-    height var(--lc-nav-item-indicator-duration) var(--lc-nav-item-indicator-easing),
-    opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-easing);
+    transform var(--lc-nav-item-indicator-front-duration) var(--lc-nav-item-indicator-front-easing),
+    height var(--lc-nav-item-indicator-front-duration) var(--lc-nav-item-indicator-front-easing),
+    opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-front-easing);
 }
 
 /* Remesure non liée à une sélection, ou réapparition : fondu seul, sans glissement. */
 :host(.lc-nav-list--ready) .lc-nav-list__indicator--instant {
-  transition: opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-easing);
+  transition: opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-front-easing);
 }
 
 @media (forced-colors: active) {

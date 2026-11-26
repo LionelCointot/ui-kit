@@ -20,6 +20,13 @@ export const THEME_GROUPS = [
 
 /** Tokens `sys` hors du builder (socle des tokens § 5.2 ; mouvement : spec 2026-11-mouvement) : z-index, durées, courbes, cascade et décalage. */
 const EXCLUDED_ROOTS = new Set(['z', 'duration', 'easing', 'motion']);
+/** Rôles de mouvement : exclus du builder, mais un thème `.tokens.json` peut les surcharger (MOTION_SCHEMA, CA-1b). */
+const MOTION_ROOTS = new Set([...EXCLUDED_ROOTS].filter((root) => root !== 'z'));
+/** Tokens de components/motion.tokens.json qu'un thème ne règle pas : seuil de geste (ADR 0011 décision 6) et mise en page. */
+const NOT_THEMEABLE = new Set([
+  'sheet.dismiss-ratio', 'sheet.card-width', 'sheet.card-max-height', 'sheet.top-gap', 'sheet.radius', 'sheet.top-radius', 'sheet.max-height',
+  'dialog.sheet-radius', 'toast.tabbar-gap',
+]);
 const EDITABLE_TYPES = new Set(['color', 'dimension', 'fontFamily', 'number', 'shadow']);
 const SIMPLE_PATHS = new Set(['color.primary', 'color.secondary', 'color.neutral', 'color.surface', 'color.background', 'radius.md', 'font.family.base']);
 const BRAND_COLORS = /^color\.(on-)?(primary|secondary|neutral)(-container)?$/;
@@ -71,6 +78,20 @@ export async function buildThemeData() {
     const entry = { path: tokenPath, cssVar: `--lc-sys-${tokenPath.replaceAll('.', '-')}`, type: token.$type, group: groupOf(tokenPath), label: labelOf(tokenPath) };
     schema.push(isSimple(tokenPath) ? { ...entry, simple: true } : entry);
   }
+  // Mouvement : rôles `sys` puis tokens composant de components/motion.tokens.json (chemin complet). Une distance ou un angle garde sa famille d'unité (`unit`), lue sur sa valeur de base.
+  const motion = [];
+  const resolved = await resolvedTokens('default');
+  const addMotion = (tokenPath, cssVar, token, resolvedPath) => {
+    const unit = token.$type === 'dimension' ? { unit: /(?:deg|turn)$/.test(String(resolved.get(resolvedPath))) ? 'angle' : 'length' } : {};
+    motion.push({ path: tokenPath, cssVar, type: token.$type, ...unit });
+  };
+  for (const [tokenPath, token] of leaves(defaultTree.sys)) {
+    if (MOTION_ROOTS.has(tokenPath.split('.')[0])) addMotion(tokenPath, `--lc-sys-${tokenPath.replaceAll('.', '-')}`, token, `sys.${tokenPath}`);
+  }
+  const components = JSON.parse(await readFile(path.join(PACKAGE_ROOT, 'src', 'components', 'motion.tokens.json'), 'utf8'));
+  for (const [tokenPath, token] of leaves(components)) {
+    if (!NOT_THEMEABLE.has(tokenPath)) addMotion(tokenPath, `--lc-${tokenPath.replaceAll('.', '-')}`, token, tokenPath);
+  }
   const base = {};
   for (const theme of BASE_THEMES) {
     base[theme] = {};
@@ -79,10 +100,10 @@ export async function buildThemeData() {
     }
   }
   const { pairs } = JSON.parse(await readFile(path.join(PACKAGE_ROOT, 'src', 'checks', 'contrast-pairs.json'), 'utf8'));
-  return { groups: THEME_GROUPS, schema, base, pairs };
+  return { groups: THEME_GROUPS, schema, motion, base, pairs };
 }
 
-export function renderThemeData({ groups, schema, base, pairs }) {
+export function renderThemeData({ groups, schema, motion, base, pairs }) {
   // Une entrée par ligne : diffs lisibles quand un token change.
   const lines = (entries) => `[\n${entries.map((entry) => `  ${JSON.stringify(entry)}`).join(',\n')}\n]`;
   const constant = (name, value) => `export const ${name} = ${Array.isArray(value) ? lines(value) : JSON.stringify(value, null, 2)};\n`;
@@ -90,6 +111,7 @@ export function renderThemeData({ groups, schema, base, pairs }) {
     '// Fichier généré par lib/theme-data.mjs (npm run build) à partir de src/sys, src/ref et src/checks : ne pas modifier à la main.\n',
     constant('THEME_GROUPS', groups),
     constant('THEME_SCHEMA', schema),
+    constant('MOTION_SCHEMA', motion),
     constant('BASE_VALUES', base),
     constant('CONTRAST_PAIRS', pairs),
   ].join('\n');

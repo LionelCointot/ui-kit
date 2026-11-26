@@ -91,14 +91,6 @@
     "zone-text": {
       "$value": "{sys.color.on-primary}",
       "$type": "color"
-    },
-    "duration": {
-      "$value": "{overlay.enter-duration}",
-      "$type": "duration"
-    },
-    "easing": {
-      "$value": "{overlay.easing}",
-      "$type": "cubicBezier"
     }
   }
 }

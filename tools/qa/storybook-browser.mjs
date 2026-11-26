@@ -834,7 +834,7 @@ async function motionIndicators(context, base, name, tag, width, check) {
       const list = ind.getAnimations().filter((a) => a instanceof CSSTransition);
       const info = list.map((a) => ({ p: a.transitionProperty, d: a.effect.getTiming().duration, delay: a.effect.getTiming().delay, e: a.effect.getTiming().easing }));
       const css = getComputedStyle(ind);
-      const out = { info, cssDuration: css.transitionDuration, cssProp: css.transitionProperty, ms: q.tokenMs('--lc-tabs-indicator-duration'), move: q.tokenMs('--lc-sys-duration-move'), ease: q.easing('--lc-tabs-indicator-easing'), left: css.left };
+      const out = { info, cssDuration: css.transitionDuration, cssProp: css.transitionProperty, ms: q.tokenMs('--lc-tabs-indicator-front-duration'), move: q.tokenMs('--lc-sys-duration-move'), ease: q.easing('--lc-tabs-indicator-front-easing'), left: css.left };
       list.forEach((a) => a.finish());
       out.rect = q.rect(ind); out.tab = q.rect(tab);
       return out;
@@ -949,7 +949,7 @@ async function motionIndicators(context, base, name, tag, width, check) {
       document.querySelector('#item-b').click(); await q.frames(2);
       const list = ind.getAnimations().filter((a) => a instanceof CSSTransition);
       const info = list.map((a) => ({ p: a.transitionProperty, d: a.effect.getTiming().duration, delay: a.effect.getTiming().delay, e: a.effect.getTiming().easing }));
-      const out = { info, cssDuration: getComputedStyle(ind).transitionDuration, ms: q.tokenMs('--lc-nav-item-indicator-duration'), move: q.tokenMs('--lc-sys-duration-move'), ease: q.easing('--lc-nav-item-indicator-easing') };
+      const out = { info, cssDuration: getComputedStyle(ind).transitionDuration, ms: q.tokenMs('--lc-nav-item-indicator-front-duration'), move: q.tokenMs('--lc-sys-duration-move'), ease: q.easing('--lc-nav-item-indicator-front-easing') };
       list.forEach((a) => a.finish());
       return out;
     });
@@ -1187,7 +1187,7 @@ async function motion(browser, base) {
         const rows = await page.evaluate(() => window.__qa.reveal);
         const staggerMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-stagger'));
         const durationMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-duration'));
-        const offset = await page.evaluate(() => window.__qa.tokenPx('--lc-sys-motion-offset'));
+        const offset = await page.evaluate(() => window.__qa.tokenPx('--lc-sys-motion-offset-sm'));
         const expected = { 0: 0, 3: 3, 7: 7 };
         for (const row of rows) {
           const rank = expected[row.index];
@@ -1215,7 +1215,7 @@ async function motion(browser, base) {
           await page.waitForFunction(() => window.__qa.enter !== null);
           const got = await page.evaluate((host) => {
             const q = window.__qa;
-            return { enter: q.enter, rect: q.enterRect, classAtAttach: q.classAtAttach, hostRect: document.querySelector(host).getBoundingClientRect().toJSON(), enterMs: q.tokenMs('--lc-overlay-enter-duration'), offset: q.tokenPx('--lc-sys-motion-offset') };
+            return { enter: q.enter, rect: q.enterRect, classAtAttach: q.classAtAttach, hostRect: document.querySelector(host).getBoundingClientRect().toJSON(), enterMs: q.tokenMs('--lc-overlay-enter-duration'), offset: q.tokenPx('--lc-sys-motion-offset-sm') };
           }, spec.host);
           const e = got.enter;
           if (reduced) {

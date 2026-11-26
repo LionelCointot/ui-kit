@@ -269,8 +269,8 @@ const MOTION_VALUES = [
   { key: 'duration.normal', use: 'Panels and menus opening' },
   { key: 'duration.long', use: 'Each item of a list appearing one after another (lcReveal attribute)' },
   { key: 'duration.move', use: 'Things moving to a new place: list rows, tab and nav indicators' },
-  { key: 'motion.stagger', use: 'Delay between two items of such a list' },
-  { key: 'motion.offset', use: 'How far an element travels when it appears' },
+  { key: 'motion.stagger-normal', use: 'Delay between two items of such a list' },
+  { key: 'motion.offset-sm', use: 'How far an element travels when it appears' },
 ].map(({ key, use }) => ({ key, cssVar: cssVarOf(key), value: light[key], use }));
 
 const MOTION_CURVE = {
@@ -282,10 +282,19 @@ const MOTION_CURVE = {
 
 const MOTION_OFF_CSS = `:root {
   --lc-sys-duration-fast: 0ms;
+  --lc-sys-duration-exit: 0ms;
   --lc-sys-duration-normal: 0ms;
-  --lc-sys-duration-long: 0ms;
+  --lc-sys-duration-slow: 0ms;
+  --lc-sys-duration-enter: 0ms;
   --lc-sys-duration-move: 0ms;
-  --lc-sys-motion-stagger: 0ms;
+  --lc-sys-duration-long: 0ms;
+  --lc-sys-duration-view: 0ms;
+  --lc-sys-duration-title: 0ms;
+  --lc-sys-duration-draw: 0ms;
+  --lc-sys-motion-stagger-fine: 0ms;
+  --lc-sys-motion-stagger-normal: 0ms;
+  --lc-sys-motion-stagger-cards: 0ms;
+  --lc-sys-motion-stagger-chars: 0ms;
 }`;
 
 interface CurveTrace { path: string; mid: number }
@@ -396,7 +405,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     .demos section > .row + .row { margin-top: var(--lc-sys-space-2); }
     .panel { line-height: var(--lc-sys-font-line-height-relaxed); box-shadow: var(--lc-sys-shadow-2);
       animation: panel-enter var(--lc-sys-duration-normal) var(--lc-sys-easing-standard) both; }
-    @keyframes panel-enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset))); } }
+    @keyframes panel-enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset-sm))); } }
     `,
   ],
 })

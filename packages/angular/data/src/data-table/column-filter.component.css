@@ -109,7 +109,7 @@
 }
 
 .lc-column-filter__spin {
-  animation: lc-column-filter-spin calc(var(--lc-sys-duration-slow) * 3) linear infinite;
+  animation: lc-column-filter-spin var(--lc-table-filter-spinner-duration) linear infinite;
 }
 
 @keyframes lc-column-filter-spin {
