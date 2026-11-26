@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, cssMs, isSafePreviewUrl, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
 import { LC_STATUS_ICONS } from '../status-icons';
@@ -276,7 +276,7 @@ export class LcMessageThreadComponent {
     if (typeof this.host.animate !== 'function') return;
     const style = getComputedStyle(this.host);
     const reduced = lcPrefersReducedMotion();
-    const move = cssMs(style, '--lc-list-move-duration');
+    const move = lcCssMs(style, '--lc-list-move-duration');
     if (!reduced && move > 0) {
       const easing = style.getPropertyValue('--lc-list-move-easing').trim() || undefined;
       for (const [el, bottom] of before) {
@@ -284,9 +284,9 @@ export class LcMessageThreadComponent {
         if (Math.abs(delta) >= MOVE_THRESHOLD_PX) this.glides.set(el, el.animate({ translate: [`0px ${delta}px`, '0px 0px'] }, { duration: move, easing }));
       }
     }
-    const fade = cssMs(style, '--lc-message-thread-enter-fade-duration');
-    const grow = cssMs(style, '--lc-message-thread-enter-duration');
-    const stagger = cssMs(style, '--lc-message-thread-enter-stagger') || 0;
+    const fade = lcCssMs(style, '--lc-message-thread-enter-fade-duration');
+    const grow = lcCssMs(style, '--lc-message-thread-enter-duration');
+    const stagger = lcCssMs(style, '--lc-message-thread-enter-stagger') || 0;
     const entering = Array.from(log.querySelectorAll<HTMLElement>(ENTERING)).filter((el) => arrived.has(el.dataset['messageId'] ?? el.dataset['key'] ?? ''));
     entering.forEach((el, i) => {
       const timing = { delay: staggerDelay(i, entering.length, stagger), fill: 'backwards' } as const;

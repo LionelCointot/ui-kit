@@ -20,6 +20,15 @@ describe('lcAnimate', () => {
     expect(animate).toHaveBeenCalledWith(KEYFRAMES, { duration: 450, easing: 'ease-out', delay: 40, fill: 'backwards' });
   });
 
+  it('accepte un token composant et une valeur de fill', () => {
+    const animate = vi.fn();
+    (Element.prototype as { animate?: unknown }).animate = animate;
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: (name: string) => ({ '--lc-page-exit-duration': '190ms', '--lc-sheet-spring-easing': 'ease-in' })[name] ?? '' }));
+    lcAnimate(document.createElement('div'), KEYFRAMES, { duration: '--lc-page-exit-duration', easing: '--lc-sheet-spring-easing', fill: 'both' });
+    expect(animate).toHaveBeenCalledWith(KEYFRAMES, { duration: 190, easing: 'ease-in', delay: 0, fill: 'both' });
+  });
+
   it('mouvement réduit : rien ne joue, l\'animation rendue est finie et attendable', async () => {
     const animate = vi.fn();
     (Element.prototype as { animate?: unknown }).animate = animate;

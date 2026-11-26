@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cssMs, lcReadMotion } from './motion-tokens';
+import { lcCssMs, lcReadMotion } from './motion-tokens';
 
 const style = (value: string) => ({ getPropertyValue: () => value }) as unknown as CSSStyleDeclaration;
 
-describe('cssMs', () => {
+describe('lcCssMs', () => {
   it('lit des millisecondes et des secondes', () => {
-    expect(cssMs(style('450ms'), '--x')).toBe(450);
-    expect(cssMs(style(' 0.35s '), '--x')).toBe(350);
+    expect(lcCssMs(style('450ms'), '--x')).toBe(450);
+    expect(lcCssMs(style(' 0.35s '), '--x')).toBe(350);
   });
 
-  it('est NaN sans valeur', () => expect(cssMs(style(''), '--x')).toBeNaN());
+  it('est NaN sans valeur', () => expect(lcCssMs(style(''), '--x')).toBeNaN());
 });
 
 describe('lcReadMotion', () => {
@@ -26,8 +26,14 @@ describe('lcReadMotion', () => {
     expect(read).toHaveBeenCalledTimes(1);
   });
 
+  it('accepte un token composant à la place d\'un rôle, pour la durée comme pour la courbe', () => {
+    stub({ '--lc-page-exit-duration': '0.19s', '--lc-sheet-spring-easing': 'cubic-bezier(0.34, 1.7, 0.64, 1)', '--lc-sys-duration-enter': '450ms' });
+    expect(lcReadMotion(document.createElement('div'), '--lc-page-exit-duration', '--lc-sheet-spring-easing')).toEqual({ duration: 190, easing: 'cubic-bezier(0.34, 1.7, 0.64, 1)' });
+  });
+
   it('jeton absent : durée 0 et courbe linear', () => {
     stub({});
     expect(lcReadMotion(document.createElement('div'), 'draw', 'pop')).toEqual({ duration: 0, easing: 'linear' });
+    expect(lcReadMotion(document.createElement('div'), '--lc-x-duration', '--lc-x-easing')).toEqual({ duration: 0, easing: 'linear' });
   });
 });
