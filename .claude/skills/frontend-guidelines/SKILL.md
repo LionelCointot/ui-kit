@@ -14,7 +14,7 @@ Qui fait quoi :
   - Finition : `/impeccable polish`, `/impeccable harden` (états d'erreur, textes longs, cas limites).
   - Le hook d'impeccable vérifie automatiquement chaque fichier UI modifié par Claude.
 - **Règles d'interface détaillées** (icônes, cibles tactiles, responsive, mode sombre, formulaires) : skill `ui-ux-pro-max` s'il est présent dans le projet, pour ses règles seulement ; ses palettes et ses polices ne s'appliquent pas, `DESIGN.md` fait foi.
-- **Rôle** : le sous-agent `ui-ux-designer` porte ce travail (triage, exploration, conception, conformité) dans `delivery-workflow` ; le sous-agent `novice-user` vérifie que l'écran se comprend sans connaître le domaine.
+- **Rôle** : le sous-agent `ui-ux-designer` porte ce travail (triage, exploration, conception, conformité) dans `delivery-workflow` ; l'utilisateur juge que l'écran se comprend.
 - **Cadre visuel** (composants et tokens disponibles, quoi faire quand il en manque) : skill `ui-kit`, s'il est présent dans le projet.
 - **Ce skill** : le socle non négociable ci-dessous, quel que soit le design.
 
@@ -30,7 +30,7 @@ Il y a impact UI dès que la tâche change ce que l'utilisateur voit ou manipule
 - **Dire ce qui compte** : nommer les deux ou trois valeurs qui changent vraiment le résultat, au lieu de présenter tous les réglages à égalité.
 - **Mots de tous les jours** : aucun terme de métier ni sigle non expliqué sur le chemin principal. `PRODUCT.md` tient le tableau « Mots de l'écran » (notion du code → mots affichés) ; le code et la spec gardent les termes du métier.
 - **S'adresser à la personne** (« vous payez », « vous possédez »), phrases de moins de 20 mots, un chiffre important par phrase.
-- **Vérification** : le test `novice-user` (textes du brief, puis captures de l'écran réel) fait partie des portes de `delivery-workflow`.
+- **Vérification** : l'utilisateur juge la compréhension de l'écran sur les maquettes, Storybook ou captures que la session principale lui montre (porte de `delivery-workflow`).
 
 ## Structure
 - Composants petits, à responsabilité unique ; présentation séparée de la logique (store / services).
@@ -93,7 +93,7 @@ Source d'inspiration de cette liste : les *Web Interface Guidelines* de Vercel, 
 ## Contrôles automatiques
 Ce qui peut se vérifier par une commande ne repose pas sur un regard :
 - Les parcours de bout en bout se jouent aussi à 360 px pour les écrans du grand public, et vérifient l'absence de défilement horizontal (`document.documentElement.scrollWidth <= clientWidth`).
-- Si le projet a un contrôle d'accessibilité automatique (axe dans Playwright ou dans Storybook), il fait partie du contrôle complet (`scripts/check.sh`). Il ne remplace ni la navigation au clavier ni le test `novice-user`.
+- Si le projet a un contrôle d'accessibilité automatique (axe dans Playwright ou dans Storybook), il fait partie du contrôle complet (`scripts/check.sh`). Il ne remplace pas la navigation au clavier.
 - Couleurs et tailles en dur : test d'architecture du front, quand le projet en a un.
 
 ## Performance

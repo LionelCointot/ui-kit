@@ -1,6 +1,6 @@
 ---
 name: delivery-workflow
-description: Workflow de livraison orchestré par la session principale avec huit rôles (cadreur, architect, ui-ux-designer, novice-user, security-reviewer, senior-developer, qa-engineer, code-reviewer), appelés selon un tri de départ, du cadrage à la PR. À utiliser dès qu'une tâche modifie le repo (feature, correctif, refactoring, évolution d'API ou d'écran), quand l'utilisateur dit "implémente", "corrige", "livre", "développe", "fais la tâche Tn de la spec", ou demande qui fait quoi entre les rôles.
+description: Workflow de livraison orchestré par la session principale avec sept rôles (cadreur, architect, ui-ux-designer, security-reviewer, senior-developer, qa-engineer, code-reviewer), appelés selon un tri de départ, du cadrage à la PR. À utiliser dès qu'une tâche modifie le repo (feature, correctif, refactoring, évolution d'API ou d'écran), quand l'utilisateur dit "implémente", "corrige", "livre", "développe", "fais la tâche Tn de la spec", ou demande qui fait quoi entre les rôles.
 ---
 
 # Delivery Workflow
@@ -19,7 +19,6 @@ description: Workflow de livraison orchestré par la session principale avec hui
 | `cadreur` | gardien du besoin : compare la fiche de cadrage, puis la spec, puis le résultat à la demande mot pour mot | parler à l'utilisateur, rédiger, coder |
 | `architect` | relit la conception puis le code : frontières, interfaces, données, extensibilité, simplicité | écrire la spec à la place de son auteur, coder |
 | `ui-ux-designer` | triage UI, exploration (2 ou 3 directions), brief (`impeccable`), conformité des écrans | code métier, trancher entre les directions |
-| `novice-user` | parcourt le brief puis l'écran réel comme une personne qui ne connaît pas le domaine | lire le code ou la spec, proposer une solution |
 | `security-reviewer` | données, droits, cas d'abus : critères testables avant le code, revue du diff après | corriger le code, accepter un risque |
 | `senior-developer` | code de production et **ses tests unitaires**, une tâche par appel | toucher aux tests d'acceptation, valider sa livraison |
 | `qa-engineer` | plan de test, **tests d'acceptation (`CA-n`) et de bout en bout**, preuve de chaque critère, verdict GO / NO-GO | code de production, juger la qualité du code |
@@ -45,7 +44,7 @@ Un changement de texte affiché ou d'ordre des informations n'est pas un correct
 | Angle | S'ouvre quand | Rôle |
 |---|---|---|
 | Architecture | nouveau module, nouvelle dépendance ou interface, changement du modèle de données ou d'un contrat d'API, décision structurante | `architect` |
-| Écran | la tâche change ce que l'utilisateur voit ou manipule (définition dans `frontend-guidelines`) | `ui-ux-designer`, `novice-user` |
+| Écran | la tâche change ce que l'utilisateur voit ou manipule (définition dans `frontend-guidelines`) | `ui-ux-designer` |
 | Sécurité et données | entrée utilisateur, authentification, droits, fichiers, données personnelles, secrets, service extérieur, stockage | `security-reviewer` |
 
 Dans le doute, l'angle est ouvert. Un angle fermé se justifie en une ligne dans la spec.
@@ -55,9 +54,9 @@ Dans le doute, l'angle est ouvert. Un angle fermé se justifie en une ligne dans
 | # | Phase | Qui | Porte de sortie |
 |---|---|---|---|
 | 1 | Cadrage | session principale avec l'utilisateur, puis `cadreur` (mode cadrage) | fiche de cadrage confirmée par l'utilisateur ; s'il y a un écran : utilisateur principal confirmé dans `PRODUCT.md` |
-| 2 | Conception | session principale (skill `spec-writer`, `adr`) ; relectures en parallèle du brouillon : `architect`, `security-reviewer`, `qa-engineer` (plan de test), `cadreur` (mode spec) ; écran : `ui-ux-designer` puis `novice-user` sur le brief | constats intégrés ou tranchés ; **spec validée par l'utilisateur**, ADR acceptés |
+| 2 | Conception | session principale (skill `spec-writer`, `adr`) ; relectures en parallèle du brouillon : `architect`, `security-reviewer`, `qa-engineer` (plan de test), `cadreur` (mode spec) ; écran : `ui-ux-designer` | constats intégrés ou tranchés ; **spec validée par l'utilisateur**, ADR acceptés |
 | 3 | Réalisation | `qa-engineer` (tests d'acceptation de la tâche) et `senior-developer` (code et tests unitaires), une tâche par appel, une branche par tâche | `FAIT` avec la sortie du contrôle complet ; tests d'acceptation de la tâche écrits |
-| 4 | Vérification | en parallèle sur le diff : `qa-engineer` (vérification), `code-reviewer`, et les rôles des angles ouverts | `GO` de la QA, `APPROUVÉ` du relecteur, aucun bloquant des angles ; écran : `CONFORME` et test novice `COMPRIS` |
+| 4 | Vérification | en parallèle sur le diff : `qa-engineer` (vérification), `code-reviewer`, et les rôles des angles ouverts | `GO` de la QA, `APPROUVÉ` du relecteur, aucun bloquant des angles ; écran : `CONFORME`, et l'utilisateur juge la compréhension sur les captures que la session principale lui montre |
 | 5 | Livraison | `cadreur` (mode livraison, une fois par fonctionnalité), `code-reviewer` (audit de simplification, une fois par fonctionnalité), puis session principale | critères `CA-n` cochés dans la spec avec leur preuve, écarts écrits ; liste de ce que la fonctionnalité a rendu inutile, une preuve par recommandation (skill `simplification-audit`), soumise à l'utilisateur ; PR décrite (`pr-description`) ; commit et push selon l'accord de l'utilisateur |
 
 ### Phase 1 : cadrage
@@ -97,15 +96,14 @@ Recopier dans chaque fiche d'un rôle qui explore du code : « Si `graphify-out/
 
 **Sortie (tout rôle)** : une ligne de statut, le détail défini dans l'agent, puis **Questions pour l'utilisateur** (ou « aucune »). Une preuve est une sortie réelle de commande, jamais « les tests passent ».
 
-## Écrans : exploration et test novice
-- **Pourquoi** : un écran exact peut rester incompréhensible. Sans utilisateur confirmé, sans alternative et sans regard neuf, le designer conçoit pour un expert.
+## Écrans : exploration et compréhension
+- **Pourquoi** : un écran exact peut rester incompréhensible. Sans utilisateur confirmé et sans alternative, le designer conçoit pour un expert.
 - **Exploration** : obligatoire pour un nouvel écran, un nouveau parcours ou une refonte ; inutile pour une retouche. Les directions diffèrent par leur structure. Maquettes HTML dans `docs/design/explorations/<AAAA-MM>-<slug>/` ; la session principale les montre à l'utilisateur et attend son choix.
 - **Cadre visuel** : si le projet a le skill `ui-kit`, le designer et le développeur partent du catalogue du kit ; un composant générique manquant se demande au kit.
-- **Test novice** : une mise en situation concrète et, dans l'ordre du parcours, les textes du brief ou les captures de l'écran (360 et 1280 px, une par étape). Chaque test se fait avec un **agent neuf**. `novice-user` ne reçoit ni la spec, ni `PRODUCT.md`, ni le code.
+- **Compréhension** : c'est l'utilisateur qui juge si l'écran se comprend, sur les maquettes, Storybook ou captures (360 et 1280 px, une par étape) que la session principale lui montre. Ses remarques reviennent au brief (avant le code) ou au développeur (après).
 
 ## Boucles de retour
 - **NO-GO, `CHANGEMENTS REQUIS`, non-conformité ou risque bloquant** → `senior-developer` reçoit les constats numérotés **tels quels**, ne corrige que ceux-là → les rôles qui avaient un bloquant revérifient. Après 3 allers-retours : arrêt et escalade à l'utilisateur.
-- **Test novice `BLOQUÉ`** → avant le code : `ui-ux-designer` corrige le brief ; après le code : `senior-developer` avec les constats → test refait avec un agent neuf.
 - **Écart de spec** découvert par un rôle (`BLOQUÉ`) → la session principale amende la spec avec l'utilisateur.
 - **`cadreur` rend `ÉCARTS`** → retour à la phase concernée ; un ajout non demandé se retire ou se fait valider par l'utilisateur.
 

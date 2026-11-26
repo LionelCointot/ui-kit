@@ -41,7 +41,7 @@
 [Endpoints, payloads, codes d'erreur, ou signatures de fonctions.]
 
 ### 5.4 Interface utilisateur
-[Direction choisie par l'utilisateur et lien vers les maquettes d'exploration (nouvel écran ou refonte). Brief de `ui-ux-designer` (`/impeccable shape`) : écrans, composants du kit utilisés, textes affichés, états (chargement, vide, erreur), accessibilité. Résultat du test `novice-user`. Ou « Pas d'impact UI » et pourquoi.]
+[Direction choisie par l'utilisateur et lien vers les maquettes d'exploration (nouvel écran ou refonte). Brief de `ui-ux-designer` (`/impeccable shape`) : écrans, composants du kit utilisés, textes affichés, états (chargement, vide, erreur), accessibilité. Ou « Pas d'impact UI » et pourquoi.]
 
 ## 6. Cas limites et gestion des erreurs
 - [...]

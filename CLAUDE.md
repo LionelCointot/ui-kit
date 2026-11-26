@@ -31,10 +31,10 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 
 ## Workflow (spec d'abord, code ensuite : skill `delivery-workflow`)
 La session principale cadre avec l'utilisateur, écrit la spec, orchestre et vérifie ; elle délègue aux agents et choisit le modèle selon la tâche (sonnet par défaut ; haiku : recherche, triage ; opus seulement sur accord de l'utilisateur). Le travail mécanique passe par un script relu, pas par un agent.
-Mode **`ponytail`** (skill recopié dans `.claude/skills/ponytail/`) actif par défaut : niveau full pour la session principale, `senior-developer`, `qa-engineer` et `ui-ux-designer` ; niveau ultra pour `cadreur` et `architect` ; contrôlé par `code-reviewer` ; jamais pour `security-reviewer` ni `novice-user`. En cas de conflit, ce fichier et `delivery-workflow` priment sur les skills tiers.
+Mode **`ponytail`** (skill recopié dans `.claude/skills/ponytail/`) actif par défaut : niveau full pour la session principale, `senior-developer`, `qa-engineer` et `ui-ux-designer` ; niveau ultra pour `cadreur` et `architect` ; contrôlé par `code-reviewer` ; jamais pour `security-reviewer`. En cas de conflit, ce fichier et `delivery-workflow` priment sur les skills tiers.
 0. Tri : taille (correctif, tâche, fonctionnalité) et angles ouverts (architecture, écran, sécurité et données). Les angles décident des rôles appelés.
 1. Cadrage : questions une à la fois ; fiche de cadrage en tête de la spec, avec la demande mot pour mot ; `cadreur` relève les ambiguïtés.
-2. Conception : spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), ADR dans `docs/adr/` (skill `adr`), relue en parallèle par `architect`, `security-reviewer`, `qa-engineer` (plan de test) et `cadreur` selon les angles. Écran : 2 ou 3 directions maquettées, **l'utilisateur choisit**, brief de `ui-ux-designer`, test `novice-user`. **Spec validée par l'utilisateur avant de coder.**
+2. Conception : spec dans `docs/specs/` (skill `spec-writer`, critères `CA-n`), ADR dans `docs/adr/` (skill `adr`), relue en parallèle par `architect`, `security-reviewer`, `qa-engineer` (plan de test) et `cadreur` selon les angles. Écran : 2 ou 3 directions maquettées, **l'utilisateur choisit**, brief de `ui-ux-designer` ; l'utilisateur juge la compréhension sur les maquettes, Storybook ou captures. **Spec validée par l'utilisateur avant de coder.**
 3. Réalisation : `qa-engineer` écrit les tests d'acceptation (`CA-n`) à partir de la spec ; `senior-developer` écrit le code et ses tests unitaires, une tâche par appel, une branche par tâche (`feat/...`, `fix/...`, `chore/...`).
 4. Vérification, en parallèle : `qa-engineer` (GO / NO-GO avec preuves), `code-reviewer`, et les rôles des angles ouverts ; un bloquant renvoie au développeur.
 5. Livraison : `cadreur` compare le résultat à la spec ; critères cochés et écarts écrits dans la spec ; pour une fonctionnalité, `code-reviewer` audite ce qu'elle a rendu inutile (skill `simplification-audit` : une preuve par recommandation, le plus petit changement qui garde le fonctionnement) ; PR décrite avec `pr-description`.
@@ -42,7 +42,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 
 ## Agents (`.claude/agents/`)
 - Besoin et conception : `cadreur` (gardien du besoin), `architect` (relecteur d'architecture), `security-reviewer` (sécurité et données personnelles).
-- Écrans : `ui-ux-designer` (`impeccable`), `novice-user` (regard d'un débutant sur les écrans).
+- Écrans : `ui-ux-designer` (`impeccable`).
 - Réalisation et vérification : `senior-developer` (code et tests unitaires), `qa-engineer` (tests d'acceptation, verdict), `code-reviewer` (qualité du code).
 - Design : `impeccable-*` (lancés par la session principale à la demande du playbook impeccable).
 - Tous en sonnet, identiques dans tous les dépôts : les modifier dans `project-template`, puis `scripts/sync-skills.sh`.

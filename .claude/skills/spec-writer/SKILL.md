@@ -11,7 +11,7 @@ description: Rédige une spécification technique complète. À utiliser dès qu
 3. **Rédaction** : remplis TOUTES les sections (écris « N/A » avec une raison si une section ne s'applique pas).
 4. **Challenge** : liste les alternatives sérieuses et justifie le choix. Signale les risques et questions ouvertes.
 5. **Relectures** (en parallèle, selon les angles ouverts) : `architect` (section 5), `security-reviewer` (section 7), `qa-engineer` en mode plan de test (sections 9 et 10), `cadreur` en mode spec. Intègre leurs constats ; un désaccord devient une question pour l'utilisateur. Note chaque relecture dans la section 13.
-6. **Interface** : la §5.4 est remplie par `ui-ux-designer` (brief `/impeccable shape`) ou porte explicitement « Pas d'impact UI » avec la raison. Elle cite la direction choisie et les maquettes, et la spec porte un critère d'acceptation sur le test `novice-user`.
+6. **Interface** : la §5.4 est remplie par `ui-ux-designer` (brief `/impeccable shape`) ou porte explicitement « Pas d'impact UI » avec la raison. Elle cite la direction choisie et les maquettes.
 7. **Validation** : présente un résumé de 10 lignes maximum et demande la validation explicite avant toute implémentation (porte de `delivery-workflow`). Statut de la spec → « Validée ».
 8. **À la livraison** : coche chaque `CA-n` prouvé, chaque tâche livrée, et écris les écarts dans la section 13. Une spec livrée dont les critères restent décochés est un défaut de suivi.
 

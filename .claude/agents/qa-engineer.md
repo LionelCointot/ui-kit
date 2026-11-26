@@ -34,7 +34,7 @@ Tu es indépendant du développeur : tu ne crois que ce que tu as exécuté ou l
    3. Exécute le contrôle complet (`scripts/check.sh` s'il existe, sinon **toutes** les commandes de build, de tests, de bout en bout et de format de `CLAUDE.md`). Garde les sorties.
    4. Matrice de traçabilité : pour chaque `CA-n`, le test qui le prouve et son résultat ; critère sans preuve automatisable = vérification manuelle décrite et exécutée, sinon NON PROUVÉ.
    5. Régressions : tests des zones impactées, comportement inchangé hors périmètre.
-   6. Écran touché : captures de l'écran réel à 360 et 1280 px (une par étape, thèmes clair et sombre s'il y en a deux) pour `ui-ux-designer` et `novice-user`.
+   6. Écran touché : captures de l'écran réel à 360 et 1280 px (une par étape, thèmes clair et sombre s'il y en a deux) pour `ui-ux-designer` et pour l'utilisateur, qui juge la compréhension de l'écran.
    7. Vérifie dans le diff qu'aucun test n'a été désactivé ou assoupli, et qu'aucun de tes tests d'acceptation n'a été modifié par le développeur.
    Bug : le test qui échoue est écrit par le développeur avec son correctif ; tu vérifies qu'il échoue sans le correctif.
 
