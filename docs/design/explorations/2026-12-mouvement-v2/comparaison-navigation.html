@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparaison des transitions de navigation</title>
+<style>
+/* Page autonome (HTML + CSS + JS inline). Valeurs de mouvement = variables --lc-ab-* ; le JS les lit.
+   --lc-ab-motion : 0 si « réduire les animations » est demandé au système (changement instantané).
+   --lc-ab-time-scale : posée par le sélecteur de vitesse (1, 2, 4) ; multiplie toutes les durées. */
+:root{
+  --bg:#1b1714; --surface:#25201c; --surface-2:#2e2823; --text:#f4ece3; --muted:#b3a89b;
+  --border:#3b332c; --accent:#e8a35c; --on-accent:#1b1714; --focus:#f2c48a; --teal:#8fd3c0;
+  --lc-ab-motion:1;
+
+  /* Q1 A : fondu */
+  --lc-ab-fade-out-ms:190; --lc-ab-fade-min:.1;
+  --lc-ab-fade-in-ms:350; --lc-ab-fade-shift:8px; --lc-ab-fade-ease:cubic-bezier(0.16,1,0.3,1);
+  --lc-ab-card-ms:350; --lc-ab-card-shift:12px; --lc-ab-card-delay-ms:120; --lc-ab-card-stagger-ms:70;
+  /* Q1 B : empilement */
+  --lc-ab-stack-ms:500; --lc-ab-stack-ease:cubic-bezier(0.32,0.72,0,1);
+  --lc-ab-stack-parallax:30%; --lc-ab-stack-dim:.12; --lc-ab-stack-title-shift:36px;
+  /* Q2 A : fondu enchaîné */
+  --lc-ab-cross-ms:350;
+  /* Q2 B : glissement */
+  --lc-ab-slide-out-ms:190; --lc-ab-slide-out-shift:16px; --lc-ab-slide-out-ease:cubic-bezier(0.4,0,1,1);
+  --lc-ab-slide-in-ms:700;  --lc-ab-slide-in-shift:26px;  --lc-ab-slide-in-ease:cubic-bezier(0.16,1,0.3,1);
+}
+@media (prefers-reduced-motion:reduce){:root{--lc-ab-motion:0}}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:#120f0d;color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+/* ---- Page de comparaison ---- */
+.intro{max-width:1440px;margin:0 auto;padding:20px 24px 0}
+.intro h1{margin:0 0 4px;font-size:1.5rem}
+.intro p{margin:0;color:var(--muted);max-width:80ch}
+.q{--lc-ab-time-scale:1;max-width:1440px;margin:0 auto;padding:28px 24px 12px;border-bottom:1px solid var(--border)}
+.q h2{margin:0 0 2px;font-size:1.25rem}
+.q>p{margin:0 0 14px;color:var(--muted)}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:16px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.ctl button{min-height:40px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);cursor:pointer}
+.ctl button:hover:not(:disabled){border-color:var(--muted)}
+.ctl button:disabled{opacity:.45;cursor:default}
+.ctl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.ctl .go[aria-pressed="true"]{background:var(--surface-2);border-color:var(--accent);color:var(--accent)}
+.ctl .grp{display:flex;align-items:center;gap:6px;margin-left:auto;color:var(--muted);font-size:.875rem}
+.ctl .grp button{min-width:56px}
+.ctl .sep{width:1px;height:24px;background:var(--border)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.side-ab{min-width:0;display:flex;flex-direction:column;gap:12px}
+.lab{display:flex;gap:14px;align-items:flex-start;min-height:92px}
+.tag{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:14px;font-size:1.75rem;font-weight:800;color:var(--on-accent);background:var(--accent)}
+.b .tag{background:var(--teal)}
+.lab h3{margin:0;font-size:1.125rem}
+.lab h3 small{color:var(--muted);font-weight:400;font-size:.875rem}
+.lab p{margin:2px 0 0;color:var(--muted);font-size:.875rem;max-width:62ch}
+.phones{justify-items:center}
+.phones .side-ab{align-items:center}
+.phones .lab{align-self:stretch;max-width:390px;margin:0 auto;width:100%}
+.fit{position:relative;width:100%}
+.fit>.desk{position:absolute;left:0;top:0;width:960px;height:580px;transform-origin:0 0}
+@media (max-width:860px){.pair{grid-template-columns:1fr}.ctl .grp{margin-left:0}}
+
+/* ---- Contenu commun ---- */
+.card{display:block;width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-align:left}
+.card b{display:block;font-size:1.5rem;color:var(--accent)}
+.lede{margin:0 0 18px;color:var(--muted)}
+h1.pg-t{margin:0 0 4px;font-size:1.625rem;line-height:1.2;font-weight:650}
+.meta{color:var(--muted);font-size:.8125rem}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:.8125rem;font-weight:600;background:rgb(232 163 92 / .16);color:#f0b87a;white-space:nowrap}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge.t{background:rgb(143 211 192 / .15);color:var(--teal)}
+svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- Téléphone ---- */
+.phone{position:relative;display:grid;grid-template-rows:48px 1fr 60px;width:390px;height:720px;background:var(--bg);border:6px solid #000;border-radius:36px;overflow:hidden}
+.m-top{position:relative;background:var(--surface);overflow:hidden}
+.m-nav{position:absolute;inset:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 4px}
+.m-title{font-weight:600}
+.back{display:inline-flex;align-items:center;min-height:44px;padding:0 8px 0 2px;border:0;background:none;color:var(--accent);cursor:pointer;justify-self:start}
+.back svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
+.phone .stage{position:relative;overflow:hidden}
+.phone .pg{position:absolute;inset:0;overflow:hidden;padding:16px;background:var(--bg);display:grid;gap:12px;align-content:start}
+.phone .pg.over{box-shadow:-8px 0 20px rgb(0 0 0 / .4)}
+.dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+.phone .lede{margin:0}
+.row{display:grid;gap:6px;cursor:pointer;color:inherit}
+.row:hover{background:var(--surface-2)}
+.row.static{cursor:default}.row.static:hover{background:var(--surface)}
+.row .t{font-weight:600;font-size:1.0625rem}.row .t small{font-weight:400;color:var(--muted);margin-left:6px}
+.row .badge{justify-self:start}
+.det-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:650;font-size:1.375rem}
+.steps{position:relative;display:grid;grid-template-columns:repeat(5,1fr);list-style:none;margin:0;padding:0}
+.steps::before{content:'';position:absolute;top:15px;left:10%;right:10%;height:2px;background:var(--border)}
+.steps li{position:relative;text-align:center;padding:0 2px;font-size:.6875rem;color:var(--muted)}
+.dot{display:grid;place-items:center;width:32px;height:32px;margin:0 auto 6px;border-radius:50%;background:var(--surface);border:2px solid var(--border);font-weight:600;font-size:.875rem}
+.steps li.done{color:var(--text)}.steps li.done .dot{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.phone .card p{margin:0 0 8px}.phone .card p:last-child{margin:0}
+.m-tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--border)}
+.m-tabs span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.6875rem;color:var(--muted)}
+.m-tabs span[aria-current]{color:var(--accent)}
+
+/* ---- Ordinateur (960 x 580, mis à l'échelle) ---- */
+.desk{display:grid;grid-template-columns:190px 1fr;grid-template-rows:52px 1fr;background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.nav{grid-row:1/3;display:flex;flex-direction:column;gap:22px;padding:18px 10px;background:var(--surface);border-right:1px solid var(--border)}
+.brand{padding:0 10px;font-weight:700}.brand small{display:block;font-weight:400;color:var(--muted);font-size:.75rem}
+.nav ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;text-align:left}
+.nav button:hover{background:var(--surface-2);color:var(--text)}
+.nav button[aria-current="page"]{background:var(--surface-2);color:var(--text);box-shadow:inset 3px 0 var(--accent)}
+.hd{grid-column:2;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);font-size:.875rem;color:var(--muted)}
+.av{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface-2);color:var(--text);font-size:.75rem;font-weight:600}
+.desk .stage{grid-column:2;position:relative;overflow:hidden}
+.desk .pg{position:absolute;inset:0;overflow:hidden;padding:26px 28px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.tw{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:.9375rem}
+th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--border)}
+th{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td small{color:var(--muted);margin-left:6px}
+</style>
+</head>
+<body>
+<svg class="sr" aria-hidden="true"><defs>
+  <symbol id="i-accueil" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+  <symbol id="i-demandes" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"/></symbol>
+  <symbol id="i-immeuble" viewBox="0 0 24 24"><path d="M5 21V4h10v17M15 9h4v12M3 21h18M8 8h4M8 12h4M8 16h4"/></symbol>
+  <symbol id="i-notifications" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+</defs></svg>
+
+<header class="intro">
+  <h1>Comparaison des transitions de navigation</h1>
+  <p>Deux questions, deux comportements chacune, joués en même temps sur le même contenu (valeurs d'exemple). Les boutons pilotent A et B ensemble ; un clic dans un cadre est répercuté sur l'autre. Passez en ×0,25 pour bien voir la différence. Si votre système demande de réduire les animations, tout est instantané.</p>
+</header>
+
+<section class="q" id="q1" aria-labelledby="q1t">
+  <h2 id="q1t">Question 1 — Changer de page sur téléphone (liste, détail, retour)</h2>
+  <p>Que préférez-vous quand on ouvre une demande, puis qu'on revient à la liste ?</p>
+  <div class="ctl">
+    <button type="button" class="act" data-go="detail">Ouvrir la demande</button>
+    <button type="button" class="act" data-go="list">Retour</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="go" data-auto aria-pressed="false">Lecture auto</button>
+    <div class="grp" role="group" aria-label="Vitesse">Vitesse
+      <button type="button" data-speed="1" aria-pressed="true">×1</button><button type="button" data-speed="0.5" aria-pressed="false">×0,5</button><button type="button" data-speed="0.25" aria-pressed="false">×0,25</button></div>
+  </div>
+  <div class="pair phones">
+    <div class="side-ab a">
+      <div class="lab"><span class="tag" aria-hidden="true">A</span><div><h3>Option A — Fondu <small>(Talmo mobile)</small></h3><p>L'ancienne page s'efface (190 ms), puis la nouvelle apparaît en montant de 8 px (350 ms) et ses cartes se posent l'une après l'autre. Jamais deux pages à l'écran ; même animation pour avancer et reculer.</p></div></div>
+      <div class="phone" data-frame="fade" role="group" aria-label="Téléphone, option A"></div>
+    </div>
+    <div class="side-ab b">
+      <div class="lab"><span class="tag" aria-hidden="true">B</span><div><h3>Option B — Empilement <small>(iOS)</small></h3><p>La nouvelle page arrive par la droite pendant que l'ancienne recule de 30 % sous un voile (500 ms). Reculer fait le chemin inverse ; le bouton « Mes demandes » ramène à la liste.</p></div></div>
+      <div class="phone" data-frame="stack" role="group" aria-label="Téléphone, option B"></div>
+    </div>
+  </div>
+</section>
+
+<section class="q" id="q2" aria-labelledby="q2t">
+  <h2 id="q2t">Question 2 — Changer de rubrique sur ordinateur (même niveau)</h2>
+  <p>Que préférez-vous quand on clique une autre rubrique de la barre latérale ? La barre latérale et l'en-tête restent fixes.</p>
+  <div class="ctl">
+    <button type="button" class="act" data-go="accueil">Accueil</button>
+    <button type="button" class="act" data-go="demandes">Mes demandes</button>
+    <button type="button" class="act" data-go="immeuble">Mon immeuble</button>
+    <button type="button" class="act" data-go="notifications">Notifications</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="go" data-auto aria-pressed="false">Lecture auto</button>
+    <div class="grp" role="group" aria-label="Vitesse">Vitesse
+      <button type="button" data-speed="1" aria-pressed="true">×1</button><button type="button" data-speed="0.5" aria-pressed="false">×0,5</button><button type="button" data-speed="0.25" aria-pressed="false">×0,25</button></div>
+  </div>
+  <div class="pair">
+    <div class="side-ab a">
+      <div class="lab"><span class="tag" aria-hidden="true">A</span><div><h3>Option A — Fondu</h3><p>Fondu enchaîné simple : l'ancien contenu s'efface pendant que le nouveau apparaît (350 ms). Identique dans les deux sens.</p></div></div>
+      <div class="fit"><div class="desk" data-frame="fade" role="group" aria-label="Ordinateur, option A"></div></div>
+    </div>
+    <div class="side-ab b">
+      <div class="lab"><span class="tag" aria-hidden="true">B</span><div><h3>Option B — Glissement selon l'ordre du menu <small>(Talmo)</small></h3><p>Rubrique plus bas dans le menu : l'ancien contenu sort (190 ms, fondu et −16 px), le nouveau arrive de +26 px (700 ms). Rubrique plus haut : sens inverse.</p></div></div>
+      <div class="fit"><div class="desk" data-frame="slide" role="group" aria-label="Ordinateur, option B"></div></div>
+    </div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const ico = id => `<svg class="i" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+
+  /* Durées lues dans les variables CSS, multipliées par (mouvement 0/1) x (échelle de vitesse). */
+  const motion = host => {
+    const cs = getComputedStyle(host);
+    const num = n => parseFloat(cs.getPropertyValue(n));
+    return { num, str: n => cs.getPropertyValue(n).trim(), k: () => num('--lc-ab-motion') * num('--lc-ab-time-scale') };
+  };
+  const an = (m, el, kf, ms, ease, o = {}) =>
+    el.animate(kf, { duration: ms * m.k(), easing: ease, ...o, delay: (o.delay || 0) * m.k() }).finished.catch(() => {});
+  const gone = (p, ...els) => p.then(() => els.forEach(e => e.remove()));
+  const reset = host => {
+    host.getAnimations({ subtree: true }).forEach(a => a.finish());
+    host.querySelectorAll('[data-leaving]').forEach(e => e.remove());
+  };
+
+  /* ---------- Question 1 : téléphone ---------- */
+  const STEPS = ['Reçue', 'Lue par le gestionnaire', 'Prise en charge', 'Réglée', 'Terminée'];
+  const pages = {
+    list: `<p class="lede" data-c>Suivez ce que vous avez signalé au syndic.</p>
+      <button type="button" class="card row" data-open data-c><span class="t">Test<small>n° 3</small></span><span class="badge">Reçue</span><span class="meta">Moi et le gestionnaire · 26 nov. 2026</span></button>
+      <div class="card row static" data-c><span class="t">Panne ascenseur G1<small>n° 1</small></span><span class="badge t">Prise en charge</span><span class="meta">Tout le bâtiment G · 9 nov. 2026</span></div>`,
+    detail: `<div class="card" data-c><div class="det-h">Test <span class="badge">Reçue</span></div><p class="meta">Demande n° 3</p></div>
+      <div class="card" data-c><ol class="steps" aria-label="Étape 1 sur 5 : Reçue">${STEPS.map((s, i) => `<li class="${i < 1 ? 'done' : ''}"><span class="dot">${i + 1}</span>${s}</li>`).join('')}</ol></div>
+      <div class="card" data-c><p>Demande de test pour vérifier le suivi.</p><p class="meta">Visible par : Moi et le gestionnaire.</p></div>`,
+  };
+  const navs = {
+    list: `<div></div><span class="m-title">Mes demandes</span><div></div>`,
+    detail: `<div><button type="button" class="back"><svg aria-hidden="true"><use href="#i-chev"/></svg>Mes demandes</button></div><span class="m-title">Test</span><div></div>`,
+  };
+
+  function phone(host, variant, act) {
+    host.innerHTML = `<div class="m-top"></div><main class="stage"></main><nav class="m-tabs" aria-label="Navigation principale">
+      <span>${ico('accueil')}Accueil</span><span aria-current="page">${ico('demandes')}Mes demandes</span><span>${ico('immeuble')}Mon immeuble</span><span>${ico('notifications')}Notifications</span></nav>`;
+    const top = $('.m-top', host), stage = $('.stage', host), m = motion(host);
+    let view, pg, nv;
+    const mk = v => {
+      const p = document.createElement('section'); p.className = 'pg'; p.innerHTML = pages[v] + '<i class="dim"></i>';
+      const n = document.createElement('div'); n.className = 'm-nav'; n.innerHTML = navs[v];
+      stage.append(p); top.append(n); pg = p; nv = n; view = v; host.dataset.view = v;
+    };
+    host.addEventListener('click', e => {
+      if (e.target.closest('[data-open]')) act('detail'); else if (e.target.closest('.back')) act('list');
+    });
+
+    function fade(oldP, oldN, newP, newN) {
+      const out = m.num('--lc-ab-fade-out-ms'), inn = m.num('--lc-ab-fade-in-ms'), ease = m.str('--lc-ab-fade-ease');
+      const gap = m.num('--lc-ab-card-delay-ms'), step = m.num('--lc-ab-card-stagger-ms');
+      const o = [{ opacity: 1 }, { opacity: m.num('--lc-ab-fade-min') }];
+      return [
+        gone(an(m, oldP, o, out, 'linear', { fill: 'forwards' }), oldP),
+        gone(an(m, oldN, o, out, 'linear', { fill: 'forwards' }), oldN),
+        an(m, newP, [{ opacity: 0, transform: `translateY(${m.str('--lc-ab-fade-shift')})` }, { opacity: 1, transform: 'none' }], inn, ease, { delay: out, fill: 'backwards' }),
+        an(m, newN, [{ opacity: 0 }, { opacity: 1 }], inn, ease, { delay: out, fill: 'backwards' }),
+        ...[...newP.querySelectorAll('[data-c]')].map((c, i) =>
+          an(m, c, [{ opacity: 0, transform: `translateY(${m.str('--lc-ab-card-shift')})` }, { opacity: 1, transform: 'none' }],
+            m.num('--lc-ab-card-ms'), ease, { delay: out + gap + i * step, fill: 'backwards' })),
+      ];
+    }
+    function stack(fwd, oldP, oldN, newP, newN) {
+      const ms = m.num('--lc-ab-stack-ms'), ease = m.str('--lc-ab-stack-ease'), par = m.str('--lc-ab-stack-parallax');
+      const dim = m.num('--lc-ab-stack-dim'), sh = m.str('--lc-ab-stack-title-shift'), s = fwd ? 1 : -1;
+      const under = fwd ? oldP : newP, over = fwd ? newP : oldP;
+      under.style.zIndex = 1; over.style.zIndex = 2; over.classList.add('over');
+      const A = (e, kf) => an(m, e, kf, ms, ease, { fill: 'forwards' });
+      const back = `translateX(calc(-1 * ${par}))`;
+      return [
+        A(over, [{ transform: fwd ? 'translateX(100%)' : 'none' }, { transform: fwd ? 'none' : 'translateX(100%)' }]),
+        A(under, [{ transform: fwd ? 'none' : back }, { transform: fwd ? back : 'none' }]),
+        A($('.dim', under), [{ opacity: fwd ? 0 : dim }, { opacity: fwd ? dim : 0 }]),
+        A(oldN, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(calc(${-s} * ${sh}))` }]),
+        A(newN, [{ opacity: 0, transform: `translateX(calc(${s} * ${sh}))` }, { opacity: 1, transform: 'none' }]),
+      ];
+    }
+    function show(v) {
+      if (v === view) return Promise.resolve();
+      reset(host);
+      const oldP = pg, oldN = nv;
+      [...stage.children].forEach(p => { p.style.zIndex = ''; p.classList.remove('over'); });
+      mk(v);
+      if (m.k() === 0) { oldP.remove(); oldN.remove(); return Promise.resolve(); }
+      oldP.dataset.leaving = oldN.dataset.leaving = 1; oldP.inert = true; oldP.setAttribute('aria-hidden', 'true');
+      const list = variant === 'fade' ? fade(oldP, oldN, pg, nv) : stack(v === 'detail', oldP, oldN, pg, nv);
+      return Promise.all(list).then(() => { oldP.remove(); oldN.remove(); });
+    }
+    mk('list');
+    return { show };
+  }
+
+  /* ---------- Question 2 : ordinateur ---------- */
+  const RUB = [['accueil', 'Accueil'], ['demandes', 'Mes demandes'], ['immeuble', 'Mon immeuble'], ['notifications', 'Notifications']];
+  const content = {
+    accueil: `<h1 class="pg-t">Bonjour Marie</h1><p class="lede">L'essentiel de votre copropriété.</p>
+      <div class="cards"><div class="card"><b>2</b>demandes en cours</div><div class="card">Dernière demande<b style="font-size:1rem">Test</b></div><div class="card">Notifications<b style="font-size:1rem">3 non lues</b></div></div>`,
+    demandes: `<h1 class="pg-t">Mes demandes</h1><p class="lede">Suivez ce que vous avez signalé au syndic.</p>
+      <div class="tw"><table><thead><tr><th scope="col">Demande</th><th scope="col">Qui peut la voir</th><th scope="col">État</th></tr></thead><tbody>
+      <tr><td><b>Test</b><small>n° 3</small></td><td>Moi et le gestionnaire</td><td><span class="badge">Reçue</span></td></tr>
+      <tr><td><b>Panne ascenseur G1</b><small>n° 1</small></td><td>Tout le bâtiment G</td><td><span class="badge t">Prise en charge</span></td></tr></tbody></table></div>`,
+    immeuble: `<h1 class="pg-t">Mon immeuble</h1><p class="lede">Résidence Les Tilleuls, bâtiment G.</p>
+      <div class="cards"><div class="card"><b>48</b>lots</div><div class="card"><b>2</b>ascenseurs</div><div class="card"><b style="font-size:1.125rem">Mme Roux</b>gestionnaire</div></div>`,
+    notifications: `<h1 class="pg-t">Notifications</h1><p class="lede">Ce qui a changé depuis votre dernière visite.</p>
+      <div class="cards"><div class="card">Demande n° 1 prise en charge</div><div class="card">Assemblée générale : convocation</div><div class="card">Test reçu</div></div>`,
+  };
+
+  function desk(host, variant, act) {
+    host.innerHTML = `<aside class="nav"><div class="brand">Syndic en ligne<small>Résidence Les Tilleuls</small></div><ul>
+      ${RUB.map(([k, l]) => `<li><button type="button" data-top="${k}">${ico(k)}${l}</button></li>`).join('')}</ul></aside>
+      <header class="hd"><span>Résidence Les Tilleuls · Bâtiment G</span><span class="av" aria-hidden="true">MR</span></header><main class="stage"></main>`;
+    const stage = $('.stage', host), m = motion(host);
+    let view, pg;
+    const mk = v => {
+      const p = document.createElement('section'); p.className = 'pg'; p.innerHTML = content[v];
+      stage.append(p); pg = p; view = v; host.dataset.view = v;
+      host.querySelectorAll('[data-top]').forEach(b => b.toggleAttribute('aria-current', b.dataset.top === v));
+      host.querySelectorAll('[aria-current]').forEach(b => b.setAttribute('aria-current', 'page'));
+    };
+    host.addEventListener('click', e => { const b = e.target.closest('[data-top]'); if (b) act(b.dataset.top); });
+
+    function show(v, dir) {
+      if (v === view) return Promise.resolve();
+      reset(host);
+      const oldP = pg; mk(v);
+      if (m.k() === 0) { oldP.remove(); return Promise.resolve(); }
+      oldP.dataset.leaving = 1; oldP.inert = true; oldP.setAttribute('aria-hidden', 'true');
+      if (variant === 'fade') {
+        const ms = m.num('--lc-ab-cross-ms');
+        return Promise.all([
+          gone(an(m, oldP, [{ opacity: 1 }, { opacity: 0 }], ms, 'ease-in-out', { fill: 'forwards' }), oldP),
+          an(m, pg, [{ opacity: 0 }, { opacity: 1 }], ms, 'ease-in-out', { fill: 'backwards' }),
+        ]);
+      }
+      const out = m.num('--lc-ab-slide-out-ms'), s = dir === 'down' ? 1 : -1;
+      return Promise.all([
+        gone(an(m, oldP, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(calc(${-s} * ${m.str('--lc-ab-slide-out-shift')}))` }],
+          out, m.str('--lc-ab-slide-out-ease'), { fill: 'forwards' }), oldP),
+        an(m, pg, [{ opacity: 0, transform: `translateX(calc(${s} * ${m.str('--lc-ab-slide-in-shift')}))` }, { opacity: 1, transform: 'none' }],
+          m.num('--lc-ab-slide-in-ms'), m.str('--lc-ab-slide-in-ease'), { delay: out, fill: 'backwards' }),
+      ]);
+    }
+    mk('accueil');
+    return { show };
+  }
+
+  /* ---------- Pilotage commun : un état, deux cadres ---------- */
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  function question(id, make, init, seq, dirOf) {
+    const sec = $('#' + id), btns = [...sec.querySelectorAll('.act')], autoBtn = $('[data-auto]', sec);
+    let state = init, tok = 0;
+    const sync = () => btns.forEach(b => {
+      if (b.dataset.go === 'detail' || b.dataset.go === 'list') b.disabled = b.dataset.go === state;
+      else b.setAttribute('aria-pressed', b.dataset.go === state);
+    });
+    const go = to => {
+      if (to === state) return Promise.resolve();
+      const dir = dirOf(state, to); state = to; sync();
+      return Promise.all(apps.map(a => a.show(to, dir)));
+    };
+    const stop = () => { tok++; autoBtn.setAttribute('aria-pressed', 'false'); };
+    const manual = to => { stop(); go(to); };
+    const apps = [...sec.querySelectorAll('[data-frame]')].map(f => make(f, f.dataset.frame, manual));
+    btns.forEach(b => b.addEventListener('click', () => manual(b.dataset.go)));
+    autoBtn.addEventListener('click', async () => {
+      if (autoBtn.getAttribute('aria-pressed') === 'true') return stop();
+      const t = ++tok; autoBtn.setAttribute('aria-pressed', 'true');
+      while (t === tok) for (const s of seq) { if (t !== tok) return; await go(s); if (t !== tok) return; await wait(1300); }
+    });
+    sec.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
+      sec.style.setProperty('--lc-ab-time-scale', 1 / parseFloat(b.dataset.speed));
+      sec.querySelectorAll('[data-speed]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    }));
+    sync();
+  }
+  question('q1', phone, 'list', ['detail', 'list'], (a, b) => b);
+  const idx = k => RUB.findIndex(r => r[0] === k);
+  question('q2', desk, 'accueil', ['demandes', 'immeuble', 'accueil'], (a, b) => idx(b) > idx(a) ? 'down' : 'up');
+
+  /* Mise à l'échelle des cadres ordinateur */
+  document.querySelectorAll('.fit').forEach(f => {
+    const d = f.firstElementChild, upd = () => { const s = f.clientWidth / 960; d.style.transform = `scale(${s})`; f.style.height = 580 * s + 'px'; };
+    new ResizeObserver(upd).observe(f); upd();
+  });
+})();
+</script>
+</body>
+</html>

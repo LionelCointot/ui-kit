@@ -1,0 +1,210 @@
+{
+  "scope": "Vues TEAM et REPORTS de https://demo.codeandchill.store/talmo/ (SPA React, user maren) + toutes leurs interactions internes : entrée des vues, onglets People/Capacity, heatmap, modale membre, recherche/chips, hover cartes, changement Measure/Period, graphe area + barres, pills delta, hover barres, Export CSV/toast.",
+  "site": "https://demo.codeandchill.store/talmo/ — vue par défaut au chargement = Studio ; Team et Reports atteints via la nav supérieure (routing client-side).",
+  "method": "Playwright chromium (channel chrome, headless, viewport 1440×900), navigation RÉELLE (clics, hovers, clavier Échap, saisie) le 2026-11-26. Moteur d'animation : tout est piloté en JS rAF (style framer-motion — transforms inline « scale(1, 0.8693); translate: none; rotate: none; scale: none; »), donc document.getAnimations() est quasi vide (seul le pulse global span.live y apparaît) ; la preuve vient de l'échantillonnage in-page à 25-40 ms + getComputedStyle + frames. Par interaction : 2 captures pendant + 1 stable. Données brutes : inv2c/data-team2c.json, inv2c/data-reports2c.json ; logs : /tmp/talmo-deep/logs/{recon2c,team2c,reports2c,probe2c}.log ; scripts : team2c.js, reports2c.js, probe2c.js, recon2c.js. 54 PNG dans inv2c/.",
+  "animations": [
+    {
+      "location": "TEAM — h1.phead__title > span.word > span.ch (titre de page « Team »)",
+      "trigger": "clic nav « Team » (entrée de la vue) ; rejoué à CHAQUE switch d'onglet People↔Capacity (remount du header)",
+      "description": "Reveal CARACTÈRE PAR CARACTÈRE : chaque span .ch part d'une légère rotation (~6°) et translateY +44,8 px derrière un masque (overflow hidden), opacité constante 1 ; les lettres de gauche finissent avant celles de droite. Mesuré : t+227 ms toutes à l'initial (6°/44,8 px), t+520 ms premières ~85 % faites (restes 0,7-1,2° / ty 5-9 px, la dernière en retard), t+908 ms stabilisées.",
+      "timing": "~350-400 ms ease-out par lettre, stagger ~25-35 ms/lettre gauche→droite, total ~700 ms",
+      "evidence": "inv2c/t-t-enter-f1.png ; courbe chs dans inv2c/data-team2c.json (t-enter) ; rejouée : t-people-back"
+    },
+    {
+      "location": "TEAM — .phead__mark (trait soulignant le titre)",
+      "trigger": "même entrée que le reveal des lettres",
+      "description": "scaleX 0→1 (dessin du trait de gauche à droite), démarre APRÈS les lettres (~t+600 ms) : 0 à t+520, 0,57 à t+908, 1 à t+1454.",
+      "timing": "~700-800 ms ease-out, retardé sur les lettres",
+      "evidence": "champ mark dans inv2c/data-team2c.json (t-enter) ; trait partiel visible sur inv2c/t-t-capacity-tab-f1.png"
+    },
+    {
+      "location": "TEAM — .mcard (cartes membres, grille People)",
+      "trigger": "entrée de la vue (clic nav « Team ») et retour onglet « People »",
+      "description": "CASCADE haut→bas : opacité 0→1 + translateY 26→0 px par carte. À t+520 ms les opacités sont [82,72,57,34,0,0,0] % — la 1re presque posée, la 5e pas encore démarrée ; toutes stabilisées ~t+1200 ms.",
+      "timing": "~330 ms ease-out par carte, stagger ~50-55 ms/carte (haut→bas), démarrage ~250 ms après le mount, total ~900 ms",
+      "evidence": "inv2c/t-t-enter-f1.png (cartes du bas absentes) ; courbe cards dans inv2c/data-team2c.json (t-enter, t-people-back)"
+    },
+    {
+      "location": "TEAM — barre de charge en pied de chaque .mcard",
+      "trigger": "entrée de la vue (même déclencheur que la cascade)",
+      "description": "Largeur 0→finale (~190-270 px selon le membre), toutes les cartes SIMULTANÉMENT (pas de stagger) : 0 à t+275, ~23-33 px à t+400, ~224-270 px stabilisés à t+1028. La barre de Kofi est ambrée (sur-alloué), les autres noires.",
+      "timing": "~800 ms ease-out",
+      "evidence": "courbe METERS dans /tmp/talmo-deep/logs/probe2c.log ; barres remplies sur inv2c/t-t-enter-end.png et inv2c/t-t-member-modal-f0.png"
+    },
+    {
+      "location": "TEAM — .mcard survolée",
+      "trigger": "survol souris d'une carte membre",
+      "description": "Léger soulèvement translateY 0→-4 px, opacité inchangée. Courbe : -2,52 à t+135, -3,97 à t+343, -4 stabilisé à t+552 (box-shadow non différentiable sur l'échantillon tronqué).",
+      "timing": "~350 ms ease-out",
+      "evidence": "inv2c/t-t-card-hover-f0/f1.png ; courbe dans inv2c/data-team2c.json (t-card-hover)"
+    },
+    {
+      "location": "TEAM — recherche « Search people » → liste .mcard",
+      "trigger": "saisie dans le champ de recherche (ex. « kofi »)",
+      "description": "Suppression INSTANTANÉE du DOM des cartes non conformes (aucune animation de sortie détectée à 25 ms) : 7→2 cartes après « k », →1 après « kofi » ; les restantes restent opacité 1. À l'EFFACEMENT, réinsertion instantanée SANS cascade d'entrée (tous les échantillons op 100) — comportement différent du filtrage par chips.",
+      "timing": "suppression/réinsertion < 25 ms (instantané)",
+      "evidence": "inv2c/data-team2c.json (t-search, t-search-clear) ; inv2c/t-t-search-f0/f1.png"
+    },
+    {
+      "location": "TEAM — chips de filtre (Architecture / Interiors / Landscape / Everyone)",
+      "trigger": "clic sur un chip (ex. « Architecture »)",
+      "description": "Les cartes non conformes sont retirées instantanément ; les cartes CONFORMES re-jouent la cascade d'entrée : opacité 0→1 + translateY 26→0. À t+173 ms : [35,0,0,0] % → t+416 ms : [92,87,79,68] %.",
+      "timing": "~330 ms par carte, stagger ~50 ms (haut→bas), total ~700 ms",
+      "evidence": "inv2c/t-t-chip-arch-f0/f1.png ; courbe dans inv2c/data-team2c.json (t-chip-arch)"
+    },
+    {
+      "location": "TEAM — drawer profil membre (panneau droit .drawer)",
+      "trigger": "clic sur une carte membre",
+      "description": "Le panneau glisse depuis HORS-ÉCRAN DROITE vers sa position finale (x 1440→950 px) ; le contenu (nom « Maren Holt », rôle) est visible pendant le glissement. x=1036 à t+172, x=952 à t+415, posé à t+737.",
+      "timing": "~350-400 ms ease-out",
+      "evidence": "inv2c/t-t-member-modal-f0.png (bord gauche à ~1283 px, mi-glissement) ; courbe m.x dans inv2c/data-team2c.json (t-member-modal)"
+    },
+    {
+      "location": "TEAM — voile sombre (scrim) derrière la modale",
+      "trigger": "même clic carte membre",
+      "description": "Opacité 0→1 pendant le glissement du drawer : 0,76 à t+172, 1 à t+415.",
+      "timing": "~300-400 ms",
+      "evidence": "inv2c/t-t-member-modal-f0.png (page grisée) ; courbe scrim dans inv2c/data-team2c.json"
+    },
+    {
+      "location": "TEAM — meters de charge DANS la modale membre",
+      "trigger": "ouverture de la modale (démarrage différé ~150 ms après le slide)",
+      "description": "Largeur du fill 4→325 px : 269 à t+415, 321 à t+737, 325 stabilisé à t+1199. Zone vide sur la frame f0/f1, remplie sur la frame stable.",
+      "timing": "~1,1-1,2 s ease-out (ralentissement marqué en fin de course)",
+      "evidence": "inv2c/t-t-member-modal-f1.png vs -end.png ; courbe meters dans inv2c/data-team2c.json"
+    },
+    {
+      "location": "TEAM — drawer + scrim à la fermeture",
+      "trigger": "touche Échap",
+      "description": "Le drawer glisse vers la DROITE (x 950→hors écran) et le scrim fonce : x=1028 à t+200, scrim 0,87→0,04 entre t+10 et t+200, drawer retiré du DOM à t+457.",
+      "timing": "~300 ms (slide) / ~250 ms (scrim)",
+      "evidence": "inv2c/t-t-modal-escape-f0/f1.png ; courbe dans inv2c/data-team2c.json (t-modal-escape)"
+    },
+    {
+      "location": "TEAM / onglet Capacity — carte KPI sombre « Studio booked X % »",
+      "trigger": "clic onglet « Capacity »",
+      "description": "L'onglet se monte à ~t+400 ms puis le pourcentage COMPTE de 4 % à 75 % : 39 % à t+417, 68 % à t+740, 75 % stabilisé à t+1064. Les autres cartes KPI (Free hours 55,4 h, Over-booked 0, Week of 16 Nov) sont statiques.",
+      "timing": "count-up ~850 ms ease-out après le mount",
+      "evidence": "inv2c/t-t-capacity-tab-f1.png (« 70 % » visible en cours) ; courbe kpis dans inv2c/data-team2c.json (t-capacity-tab)"
+    },
+    {
+      "location": "TEAM / Capacity — .cap__cell > .cap__fill (heatmap « Hours per day », 5 membres × 5 jours + colonne Week %)",
+      "trigger": "clic onglet « Capacity » (~300 ms après le mount des cellules)",
+      "description": "CHAQUE fill se remplit VERTICALEMENT DE BAS EN HAUT : transform scaleY 0→var(--f) avec transform-origin en bas (mesuré 102,6 px/54 px ; état final matrix(1,0,0,0.867,0,0) = scaleY(var(--f))). Vague de STAGGER depuis le haut-gauche : ligne 1 démarre à t+713 ms, ligne 2 à t+768 ms (~50-60 ms/ligne), et dans une ligne la colonne gauche précède la droite (à t+740 : [0,19 / 0,08 / 0,07 / 0 / 0]). Les libellés des lignes membres apparaissent en fondu haut→bas (lignes du bas estompées sur la frame mi-course).",
+      "timing": "~450 ms ease-out par cellule, stagger ~50-60 ms/ligne + ~20-30 ms/colonne",
+      "evidence": "inv2c/t-t-capacity-tab-f1.png (fills mi-hauteur, lignes basses estompées) ; courbes cell0/cell5 dans inv2c/data-team2c.json ; FILL CS dans /tmp/talmo-deep/logs/probe2c.log"
+    },
+    {
+      "location": "TEAM — nav.tabs (People/Capacity)",
+      "trigger": "switch d'onglet",
+      "description": "La barre de tabs subit un léger RE-LAYOUT type FLIP : x 28→25→44→33 px sur ~400 ms. Pas d'élément DOM d'indicateur dédié (le soulignement est un pseudo-élément de l'onglet actif) — pas de slide d'indicateur détectable.",
+      "timing": "~400 ms",
+      "evidence": "courbes TABS STRUCT / TABS switch dans /tmp/talmo-deep/logs/probe2c.log"
+    },
+    {
+      "location": "TEAM / Capacity — cellule .cap__cell survolée",
+      "trigger": "survol d'une cellule de la heatmap",
+      "description": "FINDING NÉGATIF : AUCUNE animation — pas de tooltip, aucun changement filter/background/transform/opacité/couleur du label pendant 1,3 s (tous les échantillons identiques).",
+      "timing": "n/a",
+      "evidence": "inv2c/t-t-heat-hover-f0/f1.png ; courbe constante dans inv2c/data-team2c.json (t-heat-hover)"
+    },
+    {
+      "location": "TEAM — header + liste à la ré-entrée People",
+      "trigger": "clic onglet « People » depuis Capacity",
+      "description": "Le contenu se remonte à ~t+300 ms et RE-JOUE les animations d'entrée complètes : reveal des lettres du titre (restes 0,8°/5,9 px → 1,4°/10,2 px visibles à t+495) + cascade des cartes [80,68,51,25,0,0,0] % à t+495.",
+      "timing": "identique à l'entrée (~350 ms lettres / ~330 ms cartes + staggers)",
+      "evidence": "courbe dans inv2c/data-team2c.json (t-people-back) ; inv2c/t-t-people-back-f1.png"
+    },
+    {
+      "location": "REPORTS — .rp__main (bloc chartes + barres)",
+      "trigger": "clic nav « Reports » (entrée de la vue)",
+      "description": "translateY 26→0 px du bloc principal : 26 à t+433, 2,5 à t+758, 0 à t+1215.",
+      "timing": "~700-800 ms ease-out",
+      "evidence": "courbe mainTy dans inv2c/data-reports2c.json (r-enter)"
+    },
+    {
+      "location": "REPORTS — .kpi__value (Total · Hours logged / Best week / Latest week / Hours per person)",
+      "trigger": "entrée de la vue",
+      "description": "Compteurs DEPUIS 0 : 0 h à t+243, 406 h à t+269, 1 801 h à t+433, 2 637 h (frame), 2 841 h stabilisé à t+1053. Les valeurs KPI comptent en parallèle.",
+      "timing": "~810 ms ease-out (démarrage rapide)",
+      "evidence": "inv2c/r-r-enter-f1.png (« 2,637h ») ; courbe kpi0 dans inv2c/data-reports2c.json"
+    },
+    {
+      "location": "REPORTS — cartes .kpi + section « Fee burn by project »",
+      "trigger": "entrée de la vue",
+      "description": "FONDU EN CHAÎNE des blocs : à t+~530 ms la 4e carte KPI (« Hours per person 31,4 h ») est encore estompée tandis que les 3 premières sont posées ; la section inférieure « Fee burn by project » apparaît plus tard (encore translucide à t+530, opaque sur la frame stable).",
+      "timing": "stagger ~150-250 ms entre blocs, fondu ~400 ms",
+      "evidence": "inv2c/r-r-enter-f1.png (carte 4 + section basse estompées) vs inv2c/r-r-enter-end.png"
+    },
+    {
+      "location": "REPORTS — .bars__bar (graphe « By week », 12 barres)",
+      "trigger": "entrée de la vue",
+      "description": "scaleY 0→finale (~0,85-0,87) avec STAGGER GAUCHE→DROITE : barre 0 démarre à t+~400 (21 px @406 → 182 @1027), barre 7 à t+~650 (28 @651 → 179 @1215) — écart ~35 ms/barre.",
+      "timing": "~560-620 ms ease-out par barre, stagger ~35 ms",
+      "evidence": "inv2c/r-r-enter-f1.png (barres de droite plus courtes) ; courbes bars0/bars7 dans inv2c/data-reports2c.json"
+    },
+    {
+      "location": "REPORTS — svg .rp__main : .area__line + .area__fill + .area__cmp (pointillés)",
+      "trigger": "entrée de la vue",
+      "description": "Les 3 paths partent À PLAT en bas du SVG (y=234) et MORPHENT vers leur forme finale (tween des attributs d — PAS stroke-dash : getTotalLength 771→779). Ligne montante + aire grise + ligne de comparaison pointillée se dessinent en ~800 ms. .area__cmp n'existe que pour la mesure « Hours logged ».",
+      "timing": "~800 ms, interpolation des points",
+      "evidence": "inv2c/r-r-enter-f1.png (ligne mi-hauteur) ; courbe area dans inv2c/data-reports2c.json (r-enter)"
+    },
+    {
+      "location": "REPORTS — .bars__bar au changement de Measure",
+      "trigger": "clic segmented control « Billable share » / « On time » / « Fees earned »",
+      "description": "Les 12 barres RE-TWEENENT leur scaleY de l'ancienne valeur vers la nouvelle, SIMULTANÉMENT (pas de stagger) : ex. Hours→Billable 0,87→0,67 en passant par 0,75-0,85 à t+410 ; Billable→On time 0,67→0,77/0,85. Confirmé sur 2 mesures distinctes.",
+      "timing": "~1,2 s ease-in-out",
+      "evidence": "inv2c/r-r-measure-billable-f0/f1.png ; courbes dans inv2c/data-reports2c.json (r-measure-billable, r-measure-ontime)"
+    },
+    {
+      "location": "REPORTS — paths .area__line/.area__fill au changement de Measure",
+      "trigger": "même clic Measure",
+      "description": "Le path MORPHENT de l'ancienne forme vers la nouvelle (tête de d : « M0,41,1 »→« M0,64,1 »→« M0,86,0 » sur ~1,2 s). La ligne pointillée .area__cmp est RETIRÉE pour les mesures autres que Hours logged (cd=null après switch).",
+      "timing": "~1,2 s",
+      "evidence": "courbe area dans inv2c/data-reports2c.json (r-measure-billable/ontime)"
+    },
+    {
+      "location": "REPORTS — .kpi__value au changement de Measure",
+      "trigger": "même clic Measure",
+      "description": "Les valeurs ré-animent vers les nouvelles cibles. Premier switch (Hours→Billable) : valeurs transitoires ÉNORMES observées (149 894 % → 35 540 % → 1 053 % → 75,8 %, décroissance rapide — interpolation entre échelles d'unités différentes). Switchs suivants : count-ups classiques courts (81 %→86 %, 88 %→96 %).",
+      "timing": "~1,2 s",
+      "evidence": "courbe kpis dans inv2c/data-reports2c.json (r-measure-billable dt172/410/734/1199)"
+    },
+    {
+      "location": "REPORTS — span.delta (delta--up / delta--down) « ↑ 10 % » / « ↓ 0,1 % »",
+      "trigger": "changement de Measure ou de Period",
+      "description": "Le texte + la flèche (+ classe --up/--down) changent INSTANTANÉMENT : « ↑ 10 % »→« ↓ 0,1 % » (billable), →« ↑ 2,1 % » (ontime), →« ↑ 0,6 % » (6 weeks). Aucun dip d'opacité détecté à 25 ms.",
+      "timing": "instantané (< 25 ms)",
+      "evidence": "courbe pills dans inv2c/data-reports2c.json"
+    },
+    {
+      "location": "REPORTS — .bars__bar au changement de Period (6/12 weeks)",
+      "trigger": "clic « 6 weeks » puis « 12 weeks »",
+      "description": "12→6 : les 6 barres en trop sont RETIRÉES instantanément, les 6 restantes re-tweennent leurs hauteurs (~600 ms). 6→12 : les 6 NOUVELLES barres montent à scaleY 0 puis grandissent (34 px @t+421 → finales) pendant que les existantes re-tweennent ; le path area se redessine avec un espacement plus large (points de contrôle 11,7→25,7).",
+      "timing": "re-tween ~600 ms ; croissance des nouvelles barres ~400-500 ms",
+      "evidence": "inv2c/r-r-period-6w-f0/f1.png, inv2c/r-r-period-12w-f0/f1.png ; courbes dans inv2c/data-reports2c.json (nBars 12→6 @dt176 ; nouvelles barres « 0:0.00 »→croissance)"
+    },
+    {
+      "location": "REPORTS — .bars__bar survolée + tooltip",
+      "trigger": "survol d'une barre du graphe « By week »",
+      "description": "La barre survolée passe GRIS→NOIR et un TOOLTIP sombre apparaît AU-DESSUS (valeur + jour de semaine, ex. « 91 % / 28 ») — visible dès le premier échantillon post-survol (< 40 ms, pas de fondu détecté à 40 ms). La barre de la semaine courante (16 Nov) est TOUJOURS noire en statique.",
+      "timing": "apparition < 40 ms",
+      "evidence": "inv2c/r-r-bar-hover-f0.png (tooltip + barre noire) ; courbe dans inv2c/data-reports2c.json (r-bar-hover)"
+    },
+    {
+      "location": "REPORTS — toast bas-centre « ✓ Exported 24 weeks »",
+      "trigger": "clic bouton « Export CSV »",
+      "description": "Le toast apparaît en bas au centre ; opacité = 1 dès le premier échantillon après le clic (~35 ms) — pas de fondu ni de slide détectés à 30 ms (apparition quasi instantanée).",
+      "timing": "< 35 ms (instantané)",
+      "evidence": "inv2c/r-r-export-csv-f0.png ; courbe dans inv2c/data-reports2c.json (null @dt8 → op1 @dt42)"
+    },
+    {
+      "location": "REPORTS — toast (auto-dismiss)",
+      "trigger": "auto après ~4 s",
+      "description": "Le toast est RETIRÉ du DOM en < 83 ms : visible opacité 1 à dt585, absent à dt668 (fenêtre de disparition mesurée à 80 ms) — pas d'animation de sortie détectable.",
+      "timing": "< 83 ms",
+      "evidence": "courbe dans inv2c/data-reports2c.json (r-toast-autodismiss) ; inv2c/r-r-toast-autodismiss-end.png (absent)"
+    }
+  ]
+}

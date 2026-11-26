@@ -33,3 +33,9 @@ TestResults/
 
 # CLI du paquet de tokens (le motif « bin/ » ci-dessus vise les sorties .NET)
 !packages/tokens/bin/
+
+# Captures d'écran de l'exploration mouvement v2 (155 Mo, en local seulement)
+docs/design/explorations/2026-12-mouvement-v2/captures/
+
+# Worktrees Claude Code
+.claude/worktrees/

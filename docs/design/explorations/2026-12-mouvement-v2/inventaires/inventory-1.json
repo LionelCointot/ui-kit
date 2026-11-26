@@ -1,0 +1,398 @@
+{
+  "scope": "Vues STUDIO, PLANNER, CALENDAR, TASKS de https://demo.codeandchill.store/talmo/ (SPA React, user maren / Halden & Moor) + leurs interactions internes : entrées de page, hovers, clics, segmented controls, drags timeline/board, clavier, modales/drawers. Toutes les animations ci-dessous ont été re-vérifiées en navigation réelle le 2026-11-26 (Google Chrome headless via playwright-core, viewport 1440x900) : clics, hovers, mouse.down/move/up, clavier. PNG dans /tmp/talmo-deep/inv1/ (préfixes v3-* = preuves de cette passe ; sans préfixe = passe précédente conservée), logs bruts /tmp/talmo-deep/v3-*.log et s*.log.",
+  "animations": [
+    {
+      "location": "Nav globale (top bar) — pill d'onglet actif",
+      "trigger": "Clic sur un onglet de nav (Studio/Planner/Calendar/Tasks)",
+      "description": "Le pill sombre arrondi glisse horizontalement de l'onglet courant vers le nouvel onglet pendant que la vue change. Piloté rAF (aucune animation CSS dans getAnimations() pendant la transition).",
+      "timing": "~150-250 ms, easing non lisible (rAF)",
+      "evidence": "v3-title-0.png (pill en position intermédiaire Studio→Planner à ~50 ms), s2-Planner-nav0.png"
+    },
+    {
+      "location": "Titre de page h1 (.phead__title, toutes vues) — reveal lettre à lettre",
+      "trigger": "Changement de vue (clic nav) ou chargement initial",
+      "description": "Mécanisme exact mesuré : (1) l'ancien titre FADE-OUT en opacité (~80 ms) ; (2) court blanc ; (3) les lettres du nouveau titre apparaissent UNE À UNE de gauche à droite (~30 ms/lettre, mot complet ~250 ms), chaque lettre .ch partant d'une rotation +6° (matrix(0.9945, 0.1045, …)) qu'elle dissipe vers 0 avec un stagger gauche→droite (~25-30 ms/lettre, décroissance ~900 ms, rAF inline) ; (4) le h1 contient des spans .ch (data-split) — pas de scramble, le texte DOM est final dès le montage. Un 2e h1 dans le header (top bar) met à jour son texte instantanément.",
+      "timing": "sortie ~80 ms + entrée lettres ~250 ms + settle rotation ~900 ms",
+      "evidence": "v3-title4.log (matrices par span à 15 ms : 6° → 0), v3-tf-grid.png (planche contact 24 frames), v3-title-0/1/2/3.png, HTML repos dans v3-title4.log"
+    },
+    {
+      "location": "Titre de page — soulignement (.phead__mark)",
+      "trigger": "Changement de vue / chargement initial (après les lettres)",
+      "description": "La barre sous le titre se dessine de gauche à droite : scaleX 0 → 1 (matrix(0.0014,0,0,1) → matrix(1,0,0,1)) sur le span .phead__mark, rAF inline.",
+      "timing": "~600 ms (t+575 → t+1175 ms après le clic), démarre ~400 ms après l'apparition des lettres, courbe ease-out",
+      "evidence": "v3-title4.log (premier span : séquence complète de scaleX), v3-st-entry-*.png"
+    },
+    {
+      "location": "Nav top bar — items en stagger au chargement initial",
+      "trigger": "Chargement initial de la page",
+      "description": "Les items de nav (Studio→Reports) fondent en cascade gauche→droite : à ~330 ms 'Projects' est déjà semi-transparent, 'Team' plus pâle, 'Reports' presque invisible.",
+      "timing": "~20-40 ms par item",
+      "evidence": "v3-st-entry-2.png (t+~330 ms, dégradé d'opacité visible sur la nav)"
+    },
+    {
+      "location": "STUDIO — point 'live' du panneau Next up (span.live)",
+      "trigger": "Continu (aucune action, tourne en permanence)",
+      "description": "Le petit point en haut à droite du panneau 'Next up' respire : opacity 0.1 → 0.45 → 0.1. L'une des seules animations pilotées par @keyframes CSS (vérifiée au runtime).",
+      "timing": "2000 ms, ease-in-out, infinite — keyframes live : [{opacity:0.1},{opacity:0.45}]",
+      "evidence": "getAnimations() dans tous les probes : 'breathe@…(span[live])' (v3-studio.log, v3-final.log), keyframes extraits dans v3-cssom2.log"
+    },
+    {
+      "location": "STUDIO — chorégraphie d'entrée de page (ensemble)",
+      "trigger": "Chargement initial / retour sur la vue",
+      "description": "Séquence complète : nav en stagger → titre lettre à lettre + soulignement → cartes KPI qui montent/fondent en stagger GAUCHE→DROITE (carte 1 pleine, carte 2 quasi, carte 3 semi, carte 4 absente à ~625 ms) → compteurs qui tournent → sparkline tracée → lignes de timeline en cascade HAUT→BAS → barres fantômes semi-transparentes → liens SVG tracés au milieu de la grille → panneau 'Next up' en fondu. Le tout rAF-driven.",
+      "timing": "~1 s au total ; stagger KPI ~80-100 ms/carte, lignes ~80-100 ms/ligne",
+      "evidence": "v3-st-entry-0.png (nav seule), v3-st-entry-2.png (~330 ms), v3-st-entry-4.png (~625 ms : KPI 1/2/3 en cascade, barres fantômes, flèches partielles), v3-st-entry-final.png"
+    },
+    {
+      "location": "STUDIO — compteurs KPI (kpi__value, 4 cartes)",
+      "trigger": "Entrée de page",
+      "description": "Compteurs qui montent : 'Booked this week' 0→181 (/240h), 'Open tasks' 0→17, 'Files this week' 0→14, 'Fees, last 3 weeks' £0→£58,948. Courbe mesurée à 25 ms sur la carte 1 : 18(t+325) → 60(t+408) → 110(t+547) → 147(t+717) → 165(t+~850) → 177(t+1021) → 180(t+1186) → 181(t+1495).",
+      "timing": "~1,5-1,7 s, ease-out (montée rapide puis plateau), rAF",
+      "evidence": "v3-kpitest.log (courbe complète à 25 ms), v3-studio.log (échantillons 45→99→138→166→177→180→181)"
+    },
+    {
+      "location": "STUDIO — sparkline de la carte KPI 'Booked this week'",
+      "trigger": "Entrée de page",
+      "description": "Le tracé du mini-graphique (path SVG) se dessine de gauche à droite avec son aire remplie, synchronisé avec le compteur. À ~625 ms le tracé est à ~70 %.",
+      "timing": "~800-1000 ms, rAF (dashoffset)",
+      "evidence": "v3-st-entry-4.png (tracé partiel), v3-st-entry-final.png (complet)"
+    },
+    {
+      "location": "STUDIO — timeline 'Today on the floor', lignes équipe (.tl__track)",
+      "trigger": "Entrée de page",
+      "description": "Les 7 lignes (Maren→Sadie) apparaissent en cascade de haut en bas ; à ~625 ms : Maren/Kofi quasi visibles, Lucia plus pâle, Theo/Aiko/Ravi à peine perceptibles. Chaque ligne : fond + avatar d'abord, puis ses barres.",
+      "timing": "~80-100 ms de stagger par ligne",
+      "evidence": "v3-st-entry-4.png (dégradé haut→bas net), s1-load-2.png"
+    },
+    {
+      "location": "STUDIO — timeline, barres de sessions (.tl__bar)",
+      "trigger": "Entrée de page",
+      "description": "Chaque barre apparaît avec fondu + croissance ancrée à gauche (transform-origin: 0% 50%, width en px inline écrit par le moteur rAF) ; à ~625 ms elles sont des fantômes semi-transparentes. Barres 'done' (grises), 'pencilled' (blanches) et 'maybe' (contour) même chorégraphie.",
+      "timing": "~300-400 ms par barre, décalées selon la ligne",
+      "evidence": "v3-st-entry-4.png (barres fantômes), styles inline dumpés dans v3-planner.log (width/top/translate/transform-origin)"
+    },
+    {
+      "location": "STUDIO — timeline, labels des barres",
+      "trigger": "Entrée de page (après les barres)",
+      "description": "Le texte + icône de chaque barre font un fondu APRÈS que la forme est posée : à ~800 ms toutes les formes existent mais beaucoup de labels sont encore vides.",
+      "timing": "~200-300 ms de fondu, retardé ~200 ms après la barre",
+      "evidence": "s1-load-4.png (barres pleines sans labels), s1-bottom.png (labels complets)"
+    },
+    {
+      "location": "STUDIO — timeline, liens SVG entre sessions ('follows', .tl__link)",
+      "trigger": "Entrée de page",
+      "description": "Les connecteurs avec flèche reliant les sessions successives se tracent pendant l'entrée (dashoffset rAF) ; à ~625 ms des flèches partielles sont visibles au milieu de la grille.",
+      "timing": "~400-600 ms",
+      "evidence": "v3-st-entry-4.png (flèches partielles), v3-pl-entry-2.png (idem côté Planner)"
+    },
+    {
+      "location": "STUDIO — timeline, now-line (.tl__now) + pastille horaire",
+      "trigger": "Entrée de page",
+      "description": "La ligne verticale 'maintenant' avec sa pastille '10:24' en haut apparaît avec la timeline et reste fixe ensuite (position inline). Absente sur les jours non actuels (Planner Wed : pas de now-line).",
+      "timing": "apparaît ~400 ms, statique par la suite",
+      "evidence": "v3-st-seg-end.png (pastille 10:24), v3-pl-day-end.png (absente sur Wed)"
+    },
+    {
+      "location": "STUDIO — section 'Portfolio progress' (bas de page)",
+      "trigger": "Entrée de page",
+      "description": "Le pourcentage compte 0 → 62,0 % ; les barres disciplines (Architecture/Interiors/Landscape) grandissent en largeur depuis 0 ; la double sparkline Billable/Logged se trace.",
+      "timing": "compteur ~800 ms, barres ~600-900 ms",
+      "evidence": "s1-load-2.png (57,7 % en cours), s1-mid.png (62,0 % final + barres pleines)"
+    },
+    {
+      "location": "STUDIO — section 'Live projects' (bas de page)",
+      "trigger": "Entrée de page",
+      "description": "Les 6 lignes projet fondent en cascade ; chaque ligne a un indicateur à points (● ● ● ● ○) qui se remplit progressivement + le pourcentage (95 %, 86 %…).",
+      "timing": "stagger ~60 ms/ligne, remplissage des points ~500 ms",
+      "evidence": "s1-mid.png (points partiellement remplis), v3-st-entry-final.png (état final)"
+    },
+    {
+      "location": "STUDIO — section 'Who has room this week' (.load__row)",
+      "trigger": "Entrée de page",
+      "description": "Les barres de charge par personne grandissent en largeur depuis 0 jusqu'à leur valeur (28,3h/37,5h etc.) ; la barre de Kofi est dorée (surcharge) et se remplit comme les autres.",
+      "timing": "~600-900 ms, stagger léger par ligne",
+      "evidence": "s1-mid.png (barres pleines), s1-load-* (sections absentes avant montage complet)"
+    },
+    {
+      "location": "STUDIO — carte KPI au HOVER : AUCUN effet (négatif vérifié)",
+      "trigger": "Hover sur une carte KPI",
+      "description": "CORRECTION de l'inventaire précédent : il n'y a PAS de re-tween du compteur au hover. Trois tests contrôlés : (1) hover avec compteur stable + échantillonnage continu à ~18 ms et pointerenter net → zéro déviation sur '181 / 240h' ; (2) hover en plein count-up → courbe parfaitement lisse, aucun saut au moment du survol ; (3) approche progressive lente → idem. L'observation précédente (161→180→181) était la queue du count-up initial qui se superposait au hover. Aucun lift/ombre non plus.",
+      "timing": "n.a. (aucune animation)",
+      "evidence": "v3-kpitest2.log (séquence 181 constante à 18 ms), v3-kpitest.log (courbe lisse, hover t+840 ms sans effet), v3-studio2.log"
+    },
+    {
+      "location": "STUDIO — panneau 'Next up', lignes (.next__row) au hover",
+      "trigger": "Hover sur une ligne ('Client call · Avonvale' / 'Fee proposal · loft')",
+      "description": "Fond de la ligne : transparent → rgba(255,255,255,0.06). INSTANTANÉ (transition-duration 0s ; valeur finale déjà lue à t+30 ms). Pas de déplacement.",
+      "timing": "instantané",
+      "evidence": "v3-hoverscan.log (mesure live rgba(0,0,0,0) → rgba(255,255,255,0.06)), v3-hoverfast.log (t+30 ms déjà final), règle CSSOM .next__row:hover"
+    },
+    {
+      "location": "STUDIO/PLANNER — hovers de lignes génériques (.prow, .load__row, .room__row, .frow, .ag__row, .cap__who, .table tbody tr.is-click)",
+      "trigger": "Hover sur une ligne des listes (Live projects, Who has room, Agenda, table List…)",
+      "description": "Fond de la ligne : transparent → var(--card-2). Tous INSTANTANÉS (transition 0s mesurée sur .prow/.load__row ; scan CSSOM exhaustif : aucune règle :hover animée dans tout le site).",
+      "timing": "instantané",
+      "evidence": "v3-hoverscan.log + v3-planner.log (liste complète des règles :hover), v3-hoverfast.log"
+    },
+    {
+      "location": "STUDIO — segmented Everyone/Mine (timeline)",
+      "trigger": "Clic sur 'Mine' (ou 'Everyone')",
+      "description": "Le thumb du segmented change d'état (rAF, transition CSS 0s) ; PUIS toute la timeline se vide (frame à ~100 ms : grille entièrement vide, seule la ligne Maren subsiste sans barre) et se reconstruit avec seulement la ligne de Maren et ses 4 sessions (ré-entrée en stagger). Inverse au retour sur Everyone.",
+      "timing": "vide ~150 ms, ré-entrée ~400-600 ms",
+      "evidence": "v3-st-seg-0.png (timeline vide juste après clic), v3-st-seg-end.png (seule Maren + pastille 10:24)"
+    },
+    {
+      "location": "STUDIO — drawer de session (clic sur une .tl__bar) — ENTRÉE",
+      "trigger": "Clic sur une barre de session",
+      "description": "Un drawer coulisse depuis le bord droit : à ~50 ms seul un liseré est visible à droite ('Roof o…' / 'Tue 17 Nov'), la page n'est pas encore voilée. Contenu : titre, hero (chip type + plage horaire + durée), steppers Start/Length (pas de 15 min), segmented Status, liste People, Note, boutons footer. getAnimations() vide pendant le slide → rAF.",
+      "timing": "~250-300 ms pour le slide-in",
+      "evidence": "v3-st-drawer-0.png (liseré à droite), v3-st-drawer-end.png (ouvert + page voilée), v3-studio.log ANIMS"
+    },
+    {
+      "location": "STUDIO/TASKS — drawer — SORTIE",
+      "trigger": "Échap ou bouton fermer sur un drawer ouvert",
+      "description": "Le drawer glisse vers la droite (translateX 0 → 14,6 px → 186 px en ~150 ms) puis est démonté du DOM (~200 ms au total). rAF (getAnimations vide).",
+      "timing": "~200 ms",
+      "evidence": "v3-close2.log (séquence de translateX), v3-dclose-*.png"
+    },
+    {
+      "location": "STUDIO — drawer, steppers Start/Length → timeline",
+      "trigger": "Clic sur 'Start +15m' ou 'Length +15m' dans le drawer",
+      "description": "La barre correspondante se déplace (Start : translate x 211,9→229,6 px) ou s'allonge (Length : width 101,9→119,6 px = +17,66 px = 15 min sur l'échelle ~80,5 px/h) en rAF ; le hero du drawer met à jour '11:00–12:30' → '11:15–12:45' avec un FLASH de couleur (.is-flash).",
+      "timing": "~200-300 ms pour le déplacement/redimensionnement ; flash ~950 ms",
+      "evidence": "s3d.log (styles avant/après + 'flash@217(b[sess__time.is-flash])'), s3d-start-0.png, v3-planner.log (flash re-vérifié)"
+    },
+    {
+      "location": "STUDIO/PLANNER — animation 'flash' des chiffres modifiés (.is-flash)",
+      "trigger": "Tout changement d'un chiffre clé (Hours booked au changement de jour, plage horaire dans le drawer)",
+      "description": "Le <b> modifié reçoit la classe .is-flash et joue @keyframes flash : color var(--accent) → inherit (le chiffre pulse en s'éclaircissant puis revient à l'encre). Keyframes lus au runtime. À noter : les keyframes tick-up (color var(--up)) et tick-down (color var(--down)) sont aussi définis dans le CSSOM mais n'ont PAS été observés déclenchés sur ce périmètre (scan DOM + MutationObserver 12 s : aucune classe .tick-*/.spin).",
+      "timing": "~950 ms (élaps mesurés 33→867 ms sur 6 frames, re-mesuré le 2026-11-26)",
+      "evidence": "v3-planner.log (flash@33…flash@867), s4.log (flash@50…917), keyframes dans v3-cssom2.log"
+    },
+    {
+      "location": "STUDIO — drawer, segmented Status → Pencilled",
+      "trigger": "Clic sur 'Pencilled' dans le drawer de session",
+      "description": "La barre de la timeline passe du style plein sombre au style 'pencilled' : pastille claire avec contour et texte sombre. Le thumb .seg__thumb glisse sur 'Pencilled'.",
+      "timing": "~200-300 ms pour le changement de style",
+      "evidence": "s3e-status-0.png (barre devenue claire/contour), s3d-start-0.png (avant, sombre)"
+    },
+    {
+      "location": "STUDIO — timeline, focus clavier + flèches (.tl__bar)",
+      "trigger": "Focus sur une barre (Tab ou programme) puis ArrowRight",
+      "description": "La barre focusée affiche un anneau de focus. Chaque ArrowRight décale la session de +15 min : la barre glisse à droite en rAF (+17,6 px/pas mesuré : translate 213,3→231,6→248,7 px) et l'aria-label se met à jour en direct ('Library massing review… 11:00 to 12:30' → '11:15 to 12:45' → '11:30 to 13:00' → '11:45 to 13:15'). Le focus reste sur la barre.",
+      "timing": "~150-250 ms par pas de 15 min",
+      "evidence": "v3-final.log (3 pressions mesurées), v3-st-keys.png (anneau de focus), s3e.log"
+    },
+    {
+      "location": "STUDIO — panneau 'Next up', boutons '+15 min' et 'Open'",
+      "trigger": "Clic sur '+15 min' ou 'Open' dans le hero du panneau Next up",
+      "description": "'+15 min' : la session est retardée de 15 min, sa barre glisse à droite (translate 211,9→229,6 px), même mécanique que le stepper Start du drawer. 'Open' : ouvre le même drawer de session (slide-in depuis la droite).",
+      "timing": "~300 ms rAF / ~250-300 ms drawer",
+      "evidence": "s3e.log ('avant +15'/'après +15', 'open → drawer ouvert')"
+    },
+    {
+      "location": "STUDIO — bouton 'Book a session' → modale centrée",
+      "trigger": "Clic sur '+ Book a session' (bouton magnétique, haut droit)",
+      "description": "Une MODALE CENTRÉE (.modal-wrap) apparaît en fondu + léger scale au-dessus du voile : 'Book a session — It lands on the planner straight away.' avec sélection Project, etc. getAnimations() vide pendant l'apparition → rAF.",
+      "timing": "~150-200 ms d'apparition",
+      "evidence": "v3-final.log (MODALE: modal-wrap 'Book a session…'), v3-book-*.png, ANIMS book ouvert"
+    },
+    {
+      "location": "Boutons primaires (.magnetic : 'Book a session', 'New', 'Add event', 'New task') — effet magnétique",
+      "trigger": "Approche du curseur (proximité ~90 px) avec déplacements lents",
+      "description": "Le bouton est attiré de 2-5 px vers le curseur : matrix(1,0,0,1,-2.85,-3.99) mesuré à l'étape 6 d'une approche (curseur ~20 px au-dessus-gauche), puis matrix(1,0,0,1,0.48,1.03) sur le bouton (lerp rAF). Note : avec des déplacements rapides (~40 ms/étape) l'effet n'est pas mesurable — il faut un approach lent (~120 ms/étape).",
+      "timing": "lerp rAF, ~100-200 ms pour rejoindre la position attirée",
+      "evidence": "v3-mag.log (re-measurement 2026-11-26), s8-mag-4/5.png, s8.log"
+    },
+    {
+      "location": "PLANNER — entrée de vue",
+      "trigger": "Clic nav 'Planner'",
+      "description": "Même chorégraphie que Studio : titre lettre à lettre + soulignement ; onglets jours (Mon 16…Fri 20) en stagger avec leurs jauges de charge sous chaque numéro (à ~390 ms : Mon/Tue visibles, Wed pâle, Thu/Fri absents) ; lignes timeline en cascade haut→bas ; barres ensuite ; panneau 'Tue in numbers' qui se remplit (Hours booked 42h of 48h (88 %), Sessions 17, Site visits 2, Reviews 1, Pencilled 4) ; 'Still has room' dont les lignes + barres de free-hours fondent en cascade.",
+      "timing": "~800-1000 ms au total",
+      "evidence": "v3-pl-entry-2.png (~390 ms : onglets + lignes en cascade, jauges partielles), v3-pl-entry-final.png (complet)"
+    },
+    {
+      "location": "PLANNER — onglets jours (.wk__day) au hover",
+      "trigger": "Hover sur un onglet jour non actif",
+      "description": "Fond de l'onglet : transparent → var(--card-2) + texte encre. INSTANTANÉ (transition 0s). Pas de lift.",
+      "timing": "instantané",
+      "evidence": "v3-planner.log (règle CSSOM .wk__day:hover), v3-hoverfast.log (transitions 0s)"
+    },
+    {
+      "location": "PLANNER — changement de jour (clic onglet)",
+      "trigger": "Clic sur 'Wed' (ou tout autre jour)",
+      "description": "Le pill sombre passe au jour cliqué (<80 ms). Les barres du jour sortant font un fondu sortant rapide (~100 ms, grille vide), puis les barres du nouveau jour entrent en cascade par ligne haut→bas avec labels retardés. Le panneau de numbers change ('Tue in numbers 42h' → 'Wed in numbers 35h of 48h (73 %)', Sessions 15, Pencilled 5) avec FLASH CSS sur le chiffre Hours booked. Un chip 'Today' apparaît dans la rangée de chips quand on n'est pas sur le jour actuel.",
+      "timing": "sortie ~100 ms, entrée ~400-600 ms, flash ~950 ms",
+      "evidence": "v3-pl-day-*.png (séquence), v3-planner.log (flash@33…867), v3-pl-day-end.png (Wed 35h + chip Today + toast persistant)"
+    },
+    {
+      "location": "PLANNER — DRAG d'une session sur la timeline (cas signature)",
+      "trigger": "Saisir une .tl__bar et la déplacer (mouse down + moves)",
+      "description": "Au grab : classe .is-drag, scale(1.03) + ombre portée (lift), transform-origin reste 0% 50%. Pendant le drag : la barre suit le curseur, son label interne ET l'aria-label se mettent à jour en direct ('09:30 to 12:30' → '10:45 to 13:45' → '11:30 to 14:30'), un badge '+1' apparaît sur la barre quand un follower va être poussé, les liens 'follows' SVG se redessinent en direct. Le SNAP à la grille 15 min opère DÉJÀ PENDANT le drag (aria '12:00 to 15:00' avant le relâchement). Drag strictement horizontal (top inchangé quelle que soit la trajectoire verticale).",
+      "timing": "suivi du curseur instantané ; snap live",
+      "evidence": "v3-pl-mid-8.png (barre levée au-dessus de Planting plan, badge +1), v3-planner.log MID i=5/8 + PRE-UP (styles is-drag + scale(1.03) + aria en direct)"
+    },
+    {
+      "location": "PLANNER — settle élastique au drop",
+      "trigger": "Relâchement d'une session draguée",
+      "description": "Au drop : settle élastique mesuré frame par frame : scale(0.9965, 1.0307) (f=1, ~80 ms) → scale(0.9997, 1.0023) (f=3, ~240 ms) → identité (f=5, ~400 ms), transform-origin basculant à 50% 50% pendant le settle.",
+      "timing": "~300-400 ms",
+      "evidence": "v3-planner.log DROP f=1/3/5 (matrices complètes), v3-pl-drop-1.png (settle en cours + follower en glissement)"
+    },
+    {
+      "location": "PLANNER — followers poussés au drop (cas signature)",
+      "trigger": "Drop d'une session dont la fin chevauche son follower",
+      "description": "Si la barre déplacée empiète sur le follower lié (Saltmarsh site survey → Planting plan), le follower est POUSSÉ à sa nouvelle position : Planting plan 14:00–16:00 → 15:00–17:00, aria mis à jour immédiatement au drop, position glissée en rAF (x mesuré 483,273 → 484,448 (f=1) → 554,332 (f=3) → 563,818 (f=5) = +80,5 px = exactement +1h). Le follower glisse VISIBLE sous la barre déposée pendant l'animation. Sans chevauchement, le follower ne bouge pas.",
+      "timing": "~400-500 ms pour la poussée du follower",
+      "evidence": "v3-planner.log (plant 483→563 px), v3-pl-drop-1.png (Planting plan en plein glissement, label '…ng plan 17:00'), toast 'Saltmarsh site survey → 12:00 · followers moved too [Undo]' (v3-pl-toast.png)"
+    },
+    {
+      "location": "PLANNER — drop hors cible / collision : TOUJOURS commit avec clamp (pas de spring-back)",
+      "trigger": "Relâcher la barre au-dessus des noms (gauche), du panneau droit, ou sur une autre session",
+      "description": "Contrairement aux cartes Tasks : le drop est toujours accepté. Hors grille gauche → clamp à 08:00 et commit ; au-dessus du panneau numbers → clamp à la fin de la grille (16:45–19:00) et commit ; collision sur une session de même ligne → chevauchement AUTORISÉ, la barre déposée passe en dessous (z-index) de l'existante.",
+      "timing": "clamp instantané au drop",
+      "evidence": "s4c.log (test A : x=0 '08:00 to 10:30' commit), s4d.log (Roof options commit 16:45–19:00 ; top inchangé en drag vertical)"
+    },
+    {
+      "location": "PLANNER — grip de redimensionnement (.tl__grip, bord droit)",
+      "trigger": "Hover sur une barre (poignée), puis drag du grip",
+      "description": "Au hover de la barre : une poignée verticale 2×12 px (currentcolor) APPARAÎT au bord droit — opacity 0 → 0.5, INSTANTANÉ (transition 0s mesurée sur ::after ; correction : ce n'est pas un fade). Pendant le drag : la largeur grandit en direct (197,4→237,6→257,8 px) avec scale(1.03) lift, aria en direct ('09:30 to 12:00' → '09:30 to 12:45'). À la fin : snap + settle élastique (scale 1.0065 → 1). Le toast Undo apparaît ensuite.",
+      "timing": "largeur live pendant le drag ; settle ~300 ms",
+      "evidence": "v3-pl-griphover.png (poignée visible), v3-planner.log (grip opacity 0.5 au hover, resize i=3/5 width+scale(1.03), settle f=1 scale(1.0065)), règles CSSOM dans v3-cssom2.log"
+    },
+    {
+      "location": "PLANNER/TASKS — toast de mutation avec Undo",
+      "trigger": "Tout drag/resize/déplacement validé (session ou carte)",
+      "description": "Une pilule sombre apparaît en bas au centre : '✓ Saltmarsh site survey → 12:00 · followers moved too [Undo]', '✓ Window schedule now 09:30–12:45 [Undo]', '✓ Planting palette, salt-tolerant → Drawing [Undo]'. Slide-up d'entrée ; persiste longtemps (toujours visible >3 s après, même après un changement de jour).",
+      "timing": "~200 ms d'apparition, TTL ≥ 5 s",
+      "evidence": "v3-pl-toast.png, v3-pl-day-end.png (toast encore présent après le changement de jour), v3-tk-toast.png"
+    },
+    {
+      "location": "PLANNER — segmented Timeline/Agenda",
+      "trigger": "Clic sur 'Agenda' (ou retour 'Timeline')",
+      "description": "Changement de layout : la grille timeline est remplacée par une liste groupée par personne ('Maren Holt 8.5h' + lignes session heure/titre/méta, chips 'Pencilled'). Les sections apparaissent en cascade haut→bas (à ~90 ms : ligne de Maren en fondu, header Kofi visible sans ses lignes, header Lucia à peine). Le panneau numbers reste.",
+      "timing": "~400-600 ms pour le remplissage",
+      "evidence": "v3-pl-agenda-0.png (~90 ms : cascade en cours), v3-pl-agenda-end.png (complet)"
+    },
+    {
+      "location": "PLANNER — chips disciplines (Everyone/Architecture/Interiors/Landscape)",
+      "trigger": "Clic sur une discipline",
+      "description": "Filtrage des lignes : les personnes non concernées sortent, seules les lignes de la discipline restent avec leurs barres ; le chip actif passe au sombre. Le panneau numbers SE RECALCULE pour le filtre (42h of 48h → 21h of 27h (78 %), Sessions 15→8, Site visits 2→0, Pencilled 5→3) et 'Still has room' se met à jour (seules les personnes de la discipline).",
+      "timing": "~300-500 ms",
+      "evidence": "v3-pl-chip-end.png (4 lignes restantes + numbers 21h/27h), v3-pl-chip-*.png (burst)"
+    },
+    {
+      "location": "CALENDAR — entrée de vue",
+      "trigger": "Clic nav 'Calendar'",
+      "description": "Titre lettre à lettre + soulignement ; les 42 cellules du mois apparaissent en CASCADE ligne par ligne de haut en bas (opacités mesurées : t+569 ms ligne0=0,55 / ligne1=0,28 / lignes2-4=0 → t+793 ms 0,97/0,92/0,84/0,71/0,51 → t+1230 ms tout à 1) ; les chips d'événements dans les cellules fondent APRÈS les cellules ; panneaux droits ('Today' + liste d'événements, 'Deadlines ahead') se remplissent.",
+      "timing": "~700-900 ms pour tout le mois, stagger ~60-80 ms/ligne",
+      "evidence": "v3-calendar.log (opacités par ligne à 170 ms d'intervalle), v3-cal-entry-*.png"
+    },
+    {
+      "location": "CALENDAR — changement de mois (prev/next) : GLISSEMENT DIRECTIONNEL",
+      "trigger": "Clic sur les flèches 'Previous month' / 'Next month'",
+      "description": "CORRECTION de l'inventaire précédent (qui disait 'pas de glissement directionnel') : le nouveau mois entre avec un GLISSEMENT HORIZONTAL DIRECTIONNEL + fondu en cascade par ligne. Next (→ décembre) : translateX +18 px → 0 (mesuré f=0 : cellule0 tx=+11,2/op 0,38 ; cellule7 tx=+16,8/op 0,07 ; cellules 14+/21 tx=+18/op 0 → f=2 : tx<2 px → f=3 : ~0). Prev (→ octobre) : symétrique depuis la GAUCHE, translateX -18 px → 0 (f=0 : tx=-14,9/op 0,17 ; -18/op 0). Le titre du mois change immédiatement.",
+      "timing": "~400-500 ms (translateX amorti + fondu par ligne)",
+      "evidence": "v3-calendar.log (séquences next f=0..6), v3-calendar2.log (séquence prev f=0..5), v3-cal-next-0.png (décembre, ligne 1 seule, décalée à droite), v3-cal-prev2-*.png"
+    },
+    {
+      "location": "CALENDAR — cellule au hover (.cal__cell)",
+      "trigger": "Hover sur une cellule du mois",
+      "description": "Fond : transparent → var(--card-2). INSTANTANÉ (transition 0s).",
+      "timing": "instantané",
+      "evidence": "v3-hoverscan.log + v3-planner.log (règle CSSOM .cal__cell:hover)"
+    },
+    {
+      "location": "CALENDAR — clic sur une cellule (jour)",
+      "trigger": "Clic sur une cal__cell (ex. samedi 21)",
+      "description": "La cellule sélectionnée reçoit un ANNEAU de sélection : box-shadow inset 0 0 0 2px rgb(10,10,10) (.cal__cell.is-sel), apparu d'emblée au frame 0 (pas d'animation mesurée). Le panneau droit change de jour ('Today/Tuesday 17 November' → 'Saturday/Saturday 21 November') avec RE-FADE de la liste d'événements : à ~50 ms après le clic, l'événement 'Mill Lane handover 10:00–11:00 · Deadline' est déjà visible mais semi-transparent (en fondu).",
+      "timing": "anneau instantané ; re-fade de la liste ~200-300 ms",
+      "evidence": "v3-cal-day-0.png (~50 ms : événement en fondu + anneau sur la 21), v3-calendar.log (style .is-sel box-shadow inset 2px), v3-cal-day-*.png"
+    },
+    {
+      "location": "CALENDAR — bouton 'Today'",
+      "trigger": "Clic sur 'Today' (depuis un autre mois)",
+      "description": "Retour au mois courant : ré-entrée en cascade des cellules + anneau/badge sur le jour actuel (17).",
+      "timing": "~600 ms",
+      "evidence": "s5-today-1.png, v3-calendar2.log (retour novembre après prev)"
+    },
+    {
+      "location": "CALENDAR — chips de type (All/Site visit/Client/Deadline/Studio)",
+      "trigger": "Clic sur un type",
+      "description": "Les événements non conformes sortent des cellules (les cellules vides restent) ; après 'Site visit' : 3 événements restent visibles (2 Nov, 15 Nov, 17 Nov). Le panneau droit se met à jour avec le filtre (la liste du jour ne garde que les événements du type : 'Client call · Avonvale' disparaît de la journée du 17) ; état vide possible ('No site visits / Show all kinds…'). Chip actif au sombre.",
+      "timing": "~300-400 ms",
+      "evidence": "v3-cal-chip-end.png (3 events restants + panneau filtré), v3-cal-chip-*.png (burst), s5-add-1.png (état vide)"
+    },
+    {
+      "location": "CALENDAR — bouton 'Add event' → modale centrée",
+      "trigger": "Clic sur '+ Add event'",
+      "description": "Une MODALE CENTRÉE (.modal-wrap) apparaît en fondu + léger scale au-dessus du voile sombre : 'Add to the calendar' avec champs Title (focus automatique), Date, Kind, From/To, Project, boutons Cancel/+ Add. getAnimations() vide pendant l'apparition → rAF.",
+      "timing": "~150-200 ms d'apparition",
+      "evidence": "v3-cal-modal-*.png, v3-calendar.log (MODALE: modal-wrap 'Add to the calendar…', ANIMS modal: [])"
+    },
+    {
+      "location": "TASKS — entrée de vue",
+      "trigger": "Clic nav 'Tasks'",
+      "description": "Titre lettre à lettre + soulignement ; les 4 colonnes (To start/Drawing/For review/Signed off) apparaissent d'abord (headers + compteurs + pastilles de statut), puis les CARTES en cascade haut→bas DANS chaque colonne avec un décalage entre colonnes. Mesuré : 20 cartes, visibles 0 → 8 (t+767 ms) → 17 (t+990 ms) → 20 (t+1211 ms).",
+      "timing": "~900-1200 ms au total",
+      "evidence": "v3-tasks.log (comptage des cartes visibles), v3-tk-entry-*.png"
+    },
+    {
+      "location": "TASKS — carte au HOVER (.tcard) : ombre qui s'approfondit (correction)",
+      "trigger": "Hover sur une .tcard",
+      "description": "CORRECTION de l'inventaire précédent ('computed styles identiques idle/hover') : le box-shadow CHANGE bien au hover — anneau inset rgba(8,8,8,0.075) → rgba(8,8,8,0.15) + ombre portée 0 6px 14px -12px (alpha 0,35) → 0 10px 20px -14px (alpha 0,45). Changement INSTANTANÉ (valeur finale déjà lue à t+30 ms ; transition 0s). Aucun transform/lift (transform: none avant/après).",
+      "timing": "instantané",
+      "evidence": "v3-tasks.log (shadow avant/après + transform none), v3-hoverfast.log (t+30 ms déjà final), règle CSSOM .tcard:hover"
+    },
+    {
+      "location": "TASKS — DRAG d'une carte entre colonnes (cas signature)",
+      "trigger": "Saisir une .tcard et la déplacer vers une autre colonne",
+      "description": "Au grab : classe .tcard.is-drag + POSE DE VOL mesurée : matrix(1.02937, -0.0359465, 0.0359465, 1.02937) = scale 1.03 + rotation -2° + double ombre portée (0 2px 6px + 0 34px 70px -26px, lift). La carte suit le curseur. La colonne survolée est SURLIGNÉE d'un contour sombre arrondi épais autour de toute la colonne (visuel net en plein drag ; détectée côté app via elementsFromPoint).",
+      "timing": "pose appliquée au grab (~100 ms), suivi instantané",
+      "evidence": "v3-tk-mid-10.png (carte en vol au-dessus de Drawing, colonne cerclée de noir), v3-tasks.log MID i=6/10 (matrice + is-drag + shadow)"
+    },
+    {
+      "location": "TASKS — drop d'une carte : FLIP des voisines",
+      "trigger": "Relâcher la carte au-dessus d'une colonne cible",
+      "description": "Au drop : les cartes de la colonne cible GLISSENT vers le bas (FLIP) pour faire la place — positions mesurées : avant [297, 413, 522, 631, 740, 849] → f=1 (~80 ms) [297, 413, 353(carte déposée en settle), 537, 646, 755, 864] → f=3 [297, 413, 521, 630, 739, 848, 957] → f=5 final [297, 413, 522, 631, 740, 849, 957] : les cartes sous le point d'insertion descendent d'environ 109 px en ~240 ms. Les compteurs de colonnes s'ajustent (To start 6→5, Drawing 6→7) ; toast '✓ Planting palette, salt-tolerant → Drawing [Undo]' en bas.",
+      "timing": "~300-400 ms pour le FLIP + settle",
+      "evidence": "v3-tasks.log DROP f=1/3/5 (positions y mesurées), v3-tk-drop-*.png, v3-tk-toast.png"
+    },
+    {
+      "location": "TASKS — SPRING-BACK hors cible",
+      "trigger": "Relâcher la carte HORS des colonnes (ex. au-dessus de la barre de recherche)",
+      "description": "La carte REVIENT à sa position d'origine avec un ressort ÉLASTIQUE et overshoot, séquence de matrices mesurée : f=0 matrix(1.02937,-0.0359465,…,150,-300) en vol → f=1/2 matrix(1.0167,-0.0199,…,84,-168) retour → f=3 matrix(0.998899,0.0013,…,-5.7,+11.4) = DÉPASSEMENT au-delà du repos → f=4 matrix(0.9999,…,-0.25,+0.5) convergence → f=5 transform none (parfaitement reposée). Rotation et scale se dissipent avec le ressort.",
+      "timing": "~400-500 ms (ressort amorti)",
+      "evidence": "v3-tasks.log SPRING-BACK f=0..6, v3-tk-back-2/4.png"
+    },
+    {
+      "location": "TASKS — segmented Board/List",
+      "trigger": "Clic sur 'List' (ou retour 'Board')",
+      "description": "Le board est remplacé par un TABLEAU : header 'Every task / 20 tasks' + segmented de tri 'By due date/By priority' + colonnes Task/Project/Owner/Status/Priority/Due ; les lignes cascading haut→bas (à la frame finale des lignes basses sont encore en fondu → ~50-80 ms/ligne sur ~20 lignes) avec chips de statut (Signed off sombre / For review / Drawing / To start) et de priorité (Urgent / This week / Whenever).",
+      "timing": "~1 s pour ~20 lignes",
+      "evidence": "v3-tk-list-end.png (lignes basses semi-transparentes), v3-tk-list-*.png (burst)"
+    },
+    {
+      "location": "TASKS — clic sur une carte → drawer détail",
+      "trigger": "Clic simple sur une .tcard",
+      "description": "Drawer coulissant depuis la droite (même pattern que le drawer de session, slide-in ~250-300 ms rAF) : titre 'Fee proposal for the loft', réf T-314 · Harbourside loft, lignes Project/Owner/Due/Priority + section 'WHERE IT IS' (segmented To start/Drawing/For review/Signed off) + OWNER (chips) + bouton Delete task ; page voilée en arrière-plan.",
+      "timing": "~250-300 ms slide-in",
+      "evidence": "v3-tk-drawer-end.png, v3-tk-drawer-*.png (burst d'entrée)"
+    },
+    {
+      "location": "TASKS — segmented Everyone/Mine",
+      "trigger": "Clic sur 'Mine'",
+      "description": "Filtrage du board aux tâches de l'utilisateur : le board passe instantanément à 2 cartes (Fee proposal for the loft / Pre-app meeting notes), les colonnes vides affichent un état vide 'Nothing matches here' encadré, le sous-titre se met à jour ('1 open · 0 waiting for review'). Retour inverse sur Everyone.",
+      "timing": "instantané ou <50 ms (frame 0 déjà à l'état final)",
+      "evidence": "v3-tk-mine-0.png (état filtré + empty states), v3-tasks2.log (2 cartes dès f=0)"
+    },
+    {
+      "location": "TASKS — clic en-tête de colonne : AUCUN effet (négatif vérifié)",
+      "trigger": "Clic sur le header d'une colonne (.tcol__head)",
+      "description": "Aucun comportement : pas de pressed state, pas de classe modifiée, pas de changement visuel (diff avant/après = uniquement le cycle de vie du toast). Le 'changement de colonne focus' du brief correspond en réalité au surlignage de la colonne cible PENDANT un drag + au FLIP au drop (entrées DRAG et FLIP ci-dessus).",
+      "timing": "n.a.",
+      "evidence": "v3-tasks2.log (4 clics, aucun aria-pressed/classe modifiée), v3-tk-head-base.png vs v3-tk-head-*.png"
+    }
+  ],
+  "notes": "SITE ACCESSIBLE : https://demo.codeandchill.store/talmo/ répond HTTP 200 et la SPA monte normalement (re-testé à plusieurs reprises le 2026-11-26, ~09h-11h) — aucun problème d'accès ni de contexte observé pendant cette passe ; si un agent précédent ne parvenait pas à charger le site, c'était très probablement transitoire (le hook de sécurité local a lui aussi connu des timeouts temporaires ce matin, 'claude-sonnet-5 temporarily unavailable', sans rapport avec le site).\n\nCONSTAT TECHNIQUE MAJEUR (re-confirmé) : Talmo anime presque tout avec un moteur de tween JS piloté par requestAnimationFrame — getAnimations() ne liste QUE des animations CSS : 'breathe' (point live, opacity 0.1→0.45→0.1, 2s ease-in-out infinite), 'flash' (chiffres modifiés, color var(--accent)→inherit, ~950 ms). Les keyframes tick-up/tick-down (color var(--up)/var(--down)) et spin (rotate 360deg) sont définis dans le CSSOM mais n'ont pas été observés déclenchés sur ce périmètre. Conséquence : compteurs, cascades d'entrée, reveal de titre (rotation par lettre), glissement directionnel des cellules Calendar, drag/settle élastique, FLIP des cartes, spring-back, pill nav, poussée des followers, slide des drawers/modales n'apparaissent JAMAIS dans getAnimations() — ils écrivent transform/width/opacity inline. Pour reproduire : WAAPI (element.animate) ou rAF custom.\n\nCOUVERTURE DES HOVERS (scan CSSOM exhaustif) : TOUTES les règles :hover du site sont des changements d'ÉTAT INSTANTANÉS (transition-duration 0s mesurée sur .wk__day, .chip, .seg, .kpi, .tl__bar, .next__row, .prow, .load__row, .btn--primary, .ibtn, .tcard…) : fond → var(--card-2), couleur → encre, box-shadow .tcard, poignée grip opacity 0→0.5 (aussi instantané). Il n'existe AUCUNE transition de hover animée dans l'app — les seuls 'hovers' perçus comme animés sont les effets rAF (magnetic buttons, qui nécessitent un approach lent ~120 ms/étape pour être mesurables).\n\nÉCHELLE TEMPS timeline Planner/Studio : ~80,5 px/h → 17,6-20,1 px par pas de 15 min. Snap au drop = grille 15 min (opère déjà pendant le drag, aria-label en direct).\n\nCORRECTIONS APPORTÉES À L'INVENTAIRE PRÉCÉDENT : (1) CALENDAR changement de mois = glissement directionnel réel (+18 px depuis la droite pour next, -18 px depuis la gauche pour prev) + fondu par ligne — l'ancienne conclusion 'pas de glissement' était fausse (premier frame capturé trop tard) ; (2) KPI hover re-tween : N'EXISTE PAS (3 tests contrôlés, zéro déviation du compteur) — l'observation 161→180→181 était la queue du count-up initial ; (3) .tcard:hover : le box-shadow change bien (anneau + ombre), contrairement à 'computed styles identiques' ; c'est instantané, sans lift ; (4) poignée grip : apparition instantanée (transition 0s), pas un fade ; (5) reveal de titre : mécanisme exact = fade-out ancien titre (~80 ms) + lettres en cascade gauche→droite (~30 ms/lettre) avec settle de rotation +6°→0 par lettre (~900 ms, rAF) + soulignement scaleX 0→1 (~600 ms) — pas un simple fade-in.\n\nDIVERGENCES AVEC LE BRIEF : (1) pas de 'spring-back' côté Planner — le drop d'une session est TOUJOURS commit avec clamp aux bords, collisions même ligne autorisées (la barre déposée passe sous l'existante) ; le spring-back élastique n'existe que sur les CARTES Tasks hors colonnes ; (2) les KPI cards ne font pas de flip 3D : montée/fondu + compteur + sparkline, et aucun effet au hover ; (3) le drag timeline est horizontal uniquement (pas de changement de ligne) ; (4) l'effet 'magnetic' des boutons primaires existe mais est subtil (2-5 px) et sensible à la vitesse du curseur ; (5) 'changement de colonne focus' Tasks = surlignage de la colonne cible pendant le drag (contour sombre arrondi via elementsFromPoint) + FLIP au drop — les en-têtes de colonnes ne sont pas cliquables.\n\nNON COUVERT (hors périmètre ou non déclenchable) : vues Projects/Team/Reports, toggle thème, cloche notifications, recherche ⌘K, bouton 'More' de la nav (absent à 1440px), drag vertical des sessions. Les hovers sans effet et les négatifs vérifiés sont documentés comme tels plutôt qu'omis."
+}

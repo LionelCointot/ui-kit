@@ -1,0 +1,442 @@
+{
+  "verdict": "MÊME RÉSULTAT PERÇU ≈ 95 % — FIDÉLITÉ STRICTE (mêmes courbes et durées) ≈ 85 % AVEC les tokens d'extension du panneau d'experts, ≈ 70 % sans. Les 4 inventaires live sont présents et tous exploités (inventory-1 : 41 entrées Studio/Planner/Calendar/Tasks ; inventory-2a : 21 Projects ; inventory-2b : 28 Settings/Help/shell ; inventory-2c : 20 Team/Reports — aucun manquant, contrairement à l'ancienne matrice), regroupés en 59 lignes (36 oui-css, 13 oui-waapi, 6 oui-js, 4 non). VRAIMENT INATTEIGNABLE À L'IDENTIQUE : uniquement la révélation circulaire light/dark — View Transitions = Baseline 2025, exclue du millésime ADR 0009 ; le résultat exact exige un snapshot de l'autre thème que seul VT fournit, et le repli de Talmo lui-même est le switch instantané. Hors périmètre du kit générique mais reproductible côté app avec recette complète fournie : les 2 DnD signature (Planner, Tasks) et le bouton magnétique (hors registre « outil posé »). Tout le reste passe par les primitives v2 livrées ([lcReveal] @starting-style, lcIndicatorRect, slide/sheet + lcDetachAnimated/lcAnimationsEnd, FLIP WAAPI de data-table, lcPrefersReducedMotion, kill switch base.css 0.01ms !important, tokens motion) + 9 extensions de tokens et 4 petits helpers (splitter de titre, [lcFill], extraction core/list-flip.ts, count-up, draw-path). Plus gros écart visuel sans extension : le registre d'easing — le kit n'a que des courbes S (standard cubic-bezier(0.2,0,0,1), emphasized cubic-bezier(0.3,0,0,1)) alors que Talmo est 100 % slow-OUT (power3.out/expo.out/quintique) ; c'est LA décision « sobre ou riche ». Contraintes respectées dans tous les verdicts : Baseline 2024, reduced-motion NON configurable (kill switch CSS base.css + garde lcPrefersReducedMotion() sur CHAQUE chemin WAAPI/JS — tout saute à l'état final), CA-15 (toutes valeurs en tokens), registre DESIGN.md, zéro GSAP.",
+  "matrix": [
+    {
+      "animation": "Titre h1 lettre à lettre — variante ROTATION (Studio/Planner/Calendar/Tasks : fade-out ancien titre ~80 ms, lettres L→R ~30 ms/lettre, rotation +6° → 0, settle ~900 ms)",
+      "family": "texte/titres",
+      "achievable": "oui-js",
+      "how": "Splitter JS en spans par caractère (aria-hidden + texte complet sr-only) + transition CSS par span (rotate + opacity), delay = index × nouveau token --lc-sys-motion-stagger-text 30 ms. Fidélité exacte : power4.out .85 s ≈ cubic-bezier(0.22,1,0.36,1) (= la signature CSS --ease de Talmo elle-même, 'slow-out quintique' du rapport) → nouveaux tokens ref.easing.title + sys.easing.title ; durée ~900 ms → token draw. Garde lcPrefersReducedMotion() → texte final affiché directement, pas de split animé.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Titre h1 lettre à lettre — variante GLISSE-DERRIÈRE-MASQUE (Projects/Settings/Help/Team : translateY +44,8 px → 0 derrière overflow hidden, stagger ~25-40 ms/lettre, ease-out)",
+      "family": "texte/titres",
+      "achievable": "oui-js",
+      "how": "Même splitter JS que la variante rotation ; chaque span dans un masque (overflow:hidden) avec transition transform translateY, delay = index × --lc-sys-motion-stagger-text 30 ms. Distance 44,8 px mesurée → nouveau token --lc-sys-motion-offset-title 45 px (le offset kit 8 px est trop petit). Easing title cubic-bezier(0.22,1,0.36,1) ~600 ms. Garde reduced-motion → titre final.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Soulignement .phead__mark : scaleX 0→1 de gauche à droite (~600-800 ms, retardé ~320-400 ms après les lettres)",
+      "family": "texte/titres",
+      "achievable": "oui-css",
+      "how": "Span avec transform-origin: left + @starting-style { transform: scaleX(0) } + transition transform var(--lc-sys-duration-draw 900 ms) var(--lc-sys-easing-title), delay = nouveau token de composant reveal.mark-delay 320 ms. Zéro JS.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Re-reveal du titre à chaque switch de sous-onglet (Settings Profile/Studio/…) et d'onglet People↔Capacity (Team) : le reveal se relance",
+      "family": "texte/titres",
+      "achievable": "oui-css",
+      "how": "Mécanisme = remount du header par onglet actif (@if Angular sur l'onglet) → @starting-style rejoue automatiquement. Aucune primitive nouvelle ; c'est la structure de rendu qui fait le replay (identique à Talmo qui remonte la vue).",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Nav top bar : items en stagger au chargement initial (cascade L→R fade, ~20-40 ms/item)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] + --lc-reveal-index posé par l'appelant sur chaque item de nav (mécanisme livré, feuille globale ui-angular.css). Stagger kit 80 ms vs ~30 ms Talmo : cascade visible mais plus lente ; fidélité exacte = token stagger-text 30 ms si la nav y est branchée.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Chorégraphie d'entrée de page complète (Studio/Planner/Tasks/Projects/Team/Reports : nav → titre + soulignement → cartes/blocs en cascade L→R ou T→B → compteurs → tracés)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "Composition de [lcReveal] avec --lc-reveal-index par section (nav 0-6, KPI 7-10, lignes 11+) : pas de plafond dans [lcReveal] lui-même — le plafonnement 300 ms/8 éléments ne vit que dans le helper staggerDelay() du message-thread. Résultat ~600-900 ms vs ~1 s Talmo. Les compteurs et tracés se greffent (lignes count-up / draw path).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Compteurs KPI count-up (Studio 0→181/17/14/£58 948, Reports 0→2 841 h, Team capacity 4→75 %) : montée ease-out ~1,2-1,7 s",
+      "family": "entrées/cascades",
+      "achievable": "oui-js",
+      "how": "Nouveau helper core/count-up.ts : rAF écrivant textContent frame par frame, easing sys.easing.title (quint), durée --lc-sys-duration-draw 900 ms (Talmo mesure 1,2-1,7 s : si fidélité stricte, draw passe à 1200 ms — décision). Se greffe sur lc-kpi-card (existant, point d'entrée data). Garde lcPrefersReducedMotion() → valeur finale posée directement.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Tracés SVG : sparkline KPI Studio (~800-1000 ms), double sparkline Portfolio, liens 'follows' de la timeline (~400-600 ms) — strokeDashoffset → 0",
+      "family": "entrées/cascades",
+      "achievable": "oui-waapi",
+      "how": "element.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: draw 900 ms, easing: sys.easing.entrance }) avec L = path.getTotalLength() posé en dasharray (2 lignes de JS de setup). Delay par path = index × token stagger-text 30 ms pour les liens successifs.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Timeline 'Today on the floor' : 7 lignes équipe en cascade HAUT→BAS (~80-100 ms/ligne)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] + --lc-reveal-index = numéro de ligne (stagger 80 ms kit ≈ 80-100 ms Talmo : correspondance quasi exacte).",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Timeline : barres de sessions en fondu + croissance ancrée à gauche (transform-origin 0% 50 %, ~300-400 ms, décalées par ligne)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "Nouvel attribut [lcFill] même mécanique que [lcReveal] : @starting-style { transform: scaleX(0) } + transition transform var(--lc-sys-duration-enter 600 ms) var(--lc-sys-easing-entrance), transform-origin: left, delay = ligne × stagger. Équivalent visuel exact du width-en-px écrit par rAF chez Talmo (scaleX = même rendu, pas de layout thrash).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Timeline : labels des barres (texte + icône) en fondu APRÈS la forme (~200-300 ms, retard ~200 ms)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] sur le label avec un --lc-reveal-index plus haut (le délai index × 80 ms décale automatiquement d'un bloc de barres) — ou token de composant dédié si la précision du retard est exigée.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "CALENDAR : 42 cellules du mois en CASCADE ligne par ligne T→B (~60-80 ms/ligne, mesuré t+569 → t+1230 ms) + chips d'événements qui fondent APRÈS les cellules",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] avec --lc-reveal-index = numéro de LIGNE (6 valeurs, pas 42 : toutes les cellules d'une ligne partent ensemble comme chez Talmo) ; chips en index supérieurs. Le replay à chaque changement de mois exige le remount des cellules (identité Angular par date).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "CALENDAR : changement de mois — GLISSEMENT DIRECTIONNEL +18 px (next) / -18 px (prev) + fondu par ligne (~400-500 ms)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "Classe de direction posée sur le conteneur avant remount (.lc-cal--from-next / .lc-cal--from-prev) qui sélectionne @starting-style { transform: translateX(±16px) } + opacity 0 ; transition var(--lc-sys-duration-move 500 ms) sys.easing.entrance. Token --lc-sys-motion-offset-lg 16 px ≈ 18 px mesurés (grille 4 px : 16 ou 20, pas 18).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "TASKS : entrée — colonnes d'abord (headers + compteurs), puis cartes en cascade T→B DANS chaque colonne avec décalage entre colonnes (20 cartes, ~900-1200 ms)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] : headers en index 0-3, cartes en index = colonne + ligne × 4 (formule d'index posée par l'appelant). Stagger 80 ms → ~1,2 s pour 20 cartes ≈ Talmo.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "PLANNER : changement de jour — barres sortantes en fondu rapide (~100 ms, grille vide) puis barres du nouveau jour en cascade T→B + labels retardés",
+      "family": "entrées/cascades",
+      "achievable": "oui-waapi",
+      "how": "Phase 1 : element.animate([{opacity:1},{opacity:0}], { duration: fast 100 ms }) sur les barres sortantes, onfinish → mutation du DOM. Phase 2 : remount + [lcReveal] index par ligne (replay @starting-style). Le panneau 'in numbers' se re-monte avec le flash (ligne feedback).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "PROJECTS : refiltrage chips/sort — cartes sortantes op→0 + y:+29 (~150 ms) puis nouvel ensemble en cascade ~45 ms/carte",
+      "family": "entrées/cascades",
+      "achievable": "oui-waapi",
+      "how": "Extraction du FLIP de data-table (animateDiff : mesure avant / mutation / animate translateY ancienne→nouvelle + fade des ajoutées) en core/list-flip.ts réutilisable hors tableau. Phase sortie : WAAPI opacity 100-150 ms sur les cartes retirées avant suppression. Fidélité ≈ exacte sur la ré-entrée ; la sortie de Talmo ajoute y:+29 (kit : fondu seul — équivalent perçu).",
+      "effort": "important"
+    },
+    {
+      "animation": "Filtrage par remount (TEAM chips discipline, PLANNER chips disciplines + recalcule du panneau numbers, CALENDAR chips de type) : cartes conformes re-jouent la cascade d'entrée",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "Suppression instantanée des non-conformes + remount des conformes → @starting-style rejoue [lcReveal] (c'est exactement le comportement mesuré chez Talmo : réinsertion sans animation de sortie). Panneau numbers : remount + count-up/flash.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "PLANNER segmented Timeline/Agenda : sections groupées par personne en cascade T→B (~400-600 ms)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] index par section (header + lignes), remount au switch de segmented.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Cascades de sous-contenu SETTINGS/HELP : rows .sets__card y:8 ~55 ms/ligne, FAQ 8 questions ~55 ms/item, feed What's new ~60 ms/item, carte Contact us en fondu ~300-400 ms",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] + --lc-reveal-index par ligne (stagger 80 ms kit vs ~55 ms Talmo : même cascade, légèrement plus aérée). Le re-stagger complet au clic de sous-onglet vient du remount @if (voir ligne texte/titres).",
+      "effort": "trivial"
+    },
+    {
+      "animation": "REPORTS : entrée — bloc .rp__main translateY 26→0 (~700-800 ms) + fondu en chaîne des cartes KPI et de la section 'Fee burn' (stagger ~150-250 ms entre blocs)",
+      "family": "entrées/cascades",
+      "achievable": "oui-css",
+      "how": "[lcReveal] index par bloc. Offset 26 px Talmo → token --lc-sys-motion-offset-lg 16 px (ou offset-title 45 si on veut la grande distance ; décision de registre). Compteurs KPI = ligne count-up.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Pill d'onglet actif / indicateur de tabs et segmentés : glissement horizontal (nav globale ~150-250 ms rAF, sous-onglets Settings <50 ms, segmentés drawer/Board/List, re-layout largeur variable des tabs Team)",
+      "family": "indicateurs",
+      "achievable": "oui-css",
+      "how": "PRIMITIVE EXISTANTE : lcIndicatorRect(rects, progress) (core/indicator-rect.ts) + tokens livrés tabs/segmented-control/nav-item.indicator-duration = move 500 ms + sys.easing.standard. Gère les largeurs variables (interpolation left+width). Écart de durée : kit 500 ms vs Talmo 150-250 ms — même mécanisme, décision sur la vitesse si on veut coller à Talmo.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Switches (Notifications, Compact tables) : knob en BACK.OUT ~465 ms avec overshoot ±2,7 px + piste qui change de couleur",
+      "family": "indicateurs",
+      "achievable": "oui-css",
+      "how": "lc-switch existant : transition inset-inline-start normal 200 ms standard (pas d'overshoot). Pour coller à Talmo : nouveau token de composant switch.thumb-duration 450 ms + easing sys.easing.pop cubic-bezier(0.34,1.56,0.64,1) (le dépassement du bezier ≈ l'overshoot mesuré). Équivalent visuel exact (position finale identique, rebond en plus).",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Point 'live' ambiant (panneau Next up) : pulsation d'opacité 0,1→0,45→0,1, 2 s infinite ease-in-out (une des seules @keyframes CSS du site)",
+      "family": "indicateurs",
+      "achievable": "oui-css",
+      "how": "@keyframes live-pulse { 0%,100% { opacity: .1 } 50% { opacity: .45 } } 2 s infinite — Baseline, zéro JS. Token de composant (live.pulse-duration 2000 ms). Reduced-motion : le kill switch base.css (animation-duration 0.01ms !important) gère la boucle ; compléter par opacity fixe 0,45 sous @media. QUESTION DE REGISTRE : DESIGN.md interdit >200 ms sauf cascade/mouvements — un pulse ambiant est une nouvelle catégorie à valider.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Jauges de charge sous les onglets jours (Planner) + meter 'FEE USED' du drawer projet (scaleX 0→1 ~700 ms, démarre pendant le slide et finit ~200 ms après)",
+      "family": "indicateurs",
+      "achievable": "oui-css",
+      "how": "[lcFill] scaleX origin left, durée draw 900 ms / easing entrance, delay token pour le meter du drawer (démarre pendant l'ouverture du panneau : transition-delay ~150 ms).",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Drawer projet : .steps__fill ×5 tracées séquentiellement (~100 ms de décalage par barre, ~800 ms total), dots statiques",
+      "family": "indicateurs",
+      "achievable": "oui-css",
+      "how": "[lcFill] sur chaque fill avec transition-delay = i × 100 ms (token de composant steps.fill-stagger 100 ms). Zéro JS.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "STUDIO 'Live projects' : indicateur à points ●●●●○ qui se remplit progressivement (~500 ms) + pourcentage, lignes en cascade ~60 ms",
+      "family": "indicateurs",
+      "achievable": "oui-css",
+      "how": "Lignes = [lcReveal] index ; points = spans avec [lcFill] (scale origin center) delay = point × stagger-text 30 ms → remplissage séquentiel ~200-500 ms selon le nombre de points pleins.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "FLASH des chiffres modifiés (.is-flash : color var(--accent) → inherit, ~950 ms) — changement de jour Planner, plage horaire du drawer, panneau 'in numbers'",
+      "family": "feedback de valeur",
+      "achievable": "oui-css",
+      "how": "@keyframes lc-flash { from { color: var(--lc-sys-color-primary) } to { color: inherit } } 1 s var(--lc-sys-easing-title) (Talmo utilise sa signature --ease quintique = même bezier), re-déclenché par retrait/repose de la classe (ou WAAPI si le même chiffre flashe deux fois de suite). Kill switch reduced-motion : pas de keyframe, valeur finale directe. Durée ≈ token draw 900 ms.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "REPORTS : KPI qui ré-animent vers les nouvelles cibles au changement de Measure/Period (~1,2 s)",
+      "family": "feedback de valeur",
+      "achievable": "oui-js",
+      "how": "Même helper count-up que l'entrée mais avec from = ancienne valeur → to = nouvelle (le helper gère déjà les deux bornes). NOTE QA : Talmo montre des valeurs transitoires énormes au 1er switch (149 894 % → 35 540 % → 75,8 %) = artefact d'interpolation entre échelles d'unités différentes — le kit doit interpoler dans l'unité cible ou faire un crossfade ; à trancher.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "REPORTS : pills delta ↑/↓ et toast 'Exported 24 weeks' — INSTANTANÉS (négatifs vérifiés <25 ms, aucune animation de sortie du toast non plus)",
+      "family": "feedback de valeur",
+      "achievable": "oui-css",
+      "how": "Négatif documenté : changement d'état instantané (texte + classe), rien à animer. Le kit ne doit PAS ajouter d'animation ici pour rester fidèle — les toasts animés standards (ligne toasts) s'appliquent aux autres vues, pas à ce toast Reports.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "PROJECTS : anneaux de progression des cartes (strokeDashoffset 166,5 → valeur finale selon %, ~1,2 s ease-out, stagger par carte)",
+      "family": "graphiques",
+      "achievable": "oui-waapi",
+      "how": "element.animate([{ strokeDashoffset: périmètre }, { strokeDashoffset: cible }], { duration: 1100 ms (token draw 900 ms ≈ ; fidélité stricte = valeur chart dédiée), easing: sys.easing.entrance, delay: carte × stagger }). Setup dasharray via getTotalLength().",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Drawer fichier : preview SVG procédural tracé LIGNE PAR LIGNE (7 paths, 508→0 puis 306→0… ~400-600 ms/path, ~1,2 s total) + métadonnées en fondu parallèle",
+      "family": "graphiques",
+      "achievable": "oui-waapi",
+      "how": "Même mécanique que la ligne tracés SVG : animate strokeDashoffset par path avec delay = 150 + i × 50 ms (token draw.stagger 50 ms, valeurs du rapport : power2.inOut 1,1 s). Les métadonnées = [lcReveal] en parallèle.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "REPORTS : barres 'By week' — entrée scaleY 0→finale avec stagger G→D (~35 ms/barre, ~600 ms) ET re-tween simultané au changement de Measure/Period (~600-1200 ms ease-in-out)",
+      "family": "graphiques",
+      "achievable": "oui-waapi",
+      "how": "Entrée : [lcFill] scaleY origin bottom (ou WAAPI si les barres sont des div). Update : element.animate([{ transform: scaleY(vAncienne) }, { transform: scaleY(vNouvelle) }], { duration: 1200 ms, easing: cubic-bezier(0.65,0,0.35,1) }) — power3.inOut ≈ easeInOutCubic ; token d'easing in-out à ajouter si réutilisé ailleurs.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "REPORTS : morphing des paths .area__line/.area__fill au changement de Measure/Period (tween de l'attribut d, ~1,2 s ; 6↔12 weeks change le nombre de points)",
+      "family": "graphiques",
+      "achievable": "oui-js",
+      "how": "Interpolation rAF point par point de l'attribut d (la même technique que le tween GSAP de Talmo). La propriété CSS/WAAPI `d` n'est PAS Baseline 2024 (Safari) → seul le JS passe partout. CONTRAINTE : morph exact seulement entre paths de même structure (même nombre de points) ; pour 6↔12 weeks, resampling à un nombre commun de points = équivalent visuel, pas l'identique. C'est la mécanique la plus coûteuse de la matrice.",
+      "effort": "important"
+    },
+    {
+      "animation": "TEAM Capacity : heatmap — chaque fill se remplit VERTICALEMENT DE BAS EN HAUT (scaleY 0→var(--f), origin bottom) avec vague de stagger haut-gauche → bas-droite (~50-60 ms/ligne + ~20-30 ms/colonne, ~450 ms/cellule)",
+      "family": "graphiques",
+      "achievable": "oui-css",
+      "how": "[lcFill] scaleY origin bottom + --lc-reveal-index = ligne × 5 + colonne (ordre row-major = la vague mesurée). Stagger kit 80 ms × 25 cellules = 2 s, trop lent → token --lc-sys-motion-stagger-text 30 ms pour les grilles denses. Libellés de lignes en fondu = [lcReveal].",
+      "effort": "modéré"
+    },
+    {
+      "animation": "REPORTS : barre survolée GRIS→NOIR + tooltip sombre au-dessus — INSTANTANÉ (négatif vérifié <40 ms, pas de fondu)",
+      "family": "graphiques",
+      "achievable": "oui-css",
+      "how": "Négatif documenté : état hover instantané (classe) + tooltip. Si le graphe est produit par le point d'entrée charts du kit (ECharts), le tooltip et l'emphasis sont natifs ; sinon lcTooltip ou tooltip maison sans transition.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Drawers latéraux droite (session, tâche, projet, membre, fichier) : slide-in depuis le bord (~250-500 ms mesurés selon la vue) + scrim qui fonde",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "PRIMITIVE EXISTANTE : tokens livrés slide.enter-duration = move 500 ms / exit = normal 200 ms + panneau CDK overlay (scrim en fondu, token backdrop) + lcDetachAnimated à la fermeture. Talmo mesure 250-400 ms : même mécanique, le kit est plus lent — décision sur la durée si on veut coller.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Drawers latéraux — SORTIE (Échap/×) : glissement vers la droite + lever du scrim (~200-340 ms), démontage après",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "PRIMITIVE EXISTANTE : classe --closing (transition exit 200 ms) + lcAnimationsEnd() (attend getAnimations finies, ignore les infinies) puis detach(). C'est exactement le cycle du kit, testé.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Modales centrées (Book a session, Add event, New task, Keyboard shortcuts, Reset demo) : fondu + scale .86-.9 → 1 avec overshoot 1,011, origine au point de clic, scrim fade (~350 ms)",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "lc-dialog existant (overlay enter normal 200 ms + token dialog.enter-scale 0,96) → pour coller à Talmo : valeur dialog.enter-scale 0,9 (contrat public — phase sans rétrocompatibilité, OK), easing sys.easing.pop (l'overshoot du bezier ≈ le 1,011 mesuré), durée ~350-450 ms (token), transform-origin posé au point de clic par 2 lignes de JS (coordonnées du clic → style transformOrigin).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Modales centrées — SORTIE (Échap/Cancel) : scale → ~0,94 + fade (~190-200 ms)",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "PRIMITIVE EXISTANTE : classe --closing + overlay exit fast 100 ms + lcDetachAnimated. Talmo ~190 ms vs kit 100 ms — même mécanique, décision de durée.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Palette de commandes ⌘K : ouverture y:-18 scale .97→1 back.out ~440 ms + résultats en cascade RE-ANIMÉS À CHAQUE FRAPPE (~50 ms/ligne) ; fermeture ~180-200 ms",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "Pas de composant palette dans le kit (hors périmètre générique) — COMPOSABLE : CDK overlay + panneau en [lcReveal] (y:-18 = offset-lg, easing pop) + lignes de résultats en [lcReveal] avec identité par résultat : chaque frappe change l'identité → remount → replay automatique de la cascade. Zéro séquenceur JS.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Popovers (cloche notifications + menu compte) : ouverture scale .95→1,01 back.out ~340-450 ms + items en cascade ~60 ms ; fermeture 140-160 ms",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "lc-menu / overlay CDK existants (enter normal 200 ms / exit fast 100 ms) + [lcReveal] sur les items + easing sys.easing.pop pour le scale. Durées kit plus courtes que Talmo — même mécanique.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Tooltip du bouton thème ('Dark mode'/'Light mode', fondu ~100-200 ms)",
+      "family": "overlays",
+      "achievable": "oui-css",
+      "how": "lcTooltip existant (DESIGN.md : info-bulles ancrées avec repli de position). Rien à ajouter.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Toasts bas-centre : entrée translateY +25→0 + scale .95→1,01 back.out ~450 ms ; TTL ~2,2 s simple / ~5,5 s avec Undo (pattern Undo systématique sur mutation réversible)",
+      "family": "toasts",
+      "achievable": "oui-css",
+      "how": "lc-toast-outlet EXISTANT et déjà équipé du slot action (= bouton Undo) + pause au hover — mais AUCUNE animation d'entrée/sortie aujourd'hui (vérifié dans le CSS du composant). À ajouter : tokens de composant toast.enter-duration 450 ms + toast.offset 24 px, easing sys.easing.pop, mécanisme @starting-style (translateY(24px) scale(.95) → final) sur .lc-toast. TTL = timer du service existant.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "Toasts — SORTIE / Undo : opacité 1→0 + translateY 0→+13 (~350 ms), état annulé instantanément",
+      "family": "toasts",
+      "achievable": "oui-waapi",
+      "how": "Classe --closing + transition (ou element.animate opacity/translateY 300 ms) puis retrait du DOM via lcAnimationsEnd() — le même cycle que les overlays, déjà prouvé dans le kit.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Hovers de cartes avec LIFT : Projects pcard -3,5 px + ombre (~200 ms), Team mcard -4 px (~350 ms), Files fcard -4 px (~300 ms)",
+      "family": "interactions pointeur",
+      "achievable": "oui-css",
+      "how": ":hover { transform: translateY(calc(-1 * var(--lc-sys-space-1))); box-shadow: var(--lc-sys-shadow-2) } + transition transform/box-shadow var(--lc-sys-duration-normal 200 ms) sys.easing.standard. Distance 4 px = token espace existant (3,5-4 px mesurés). Registre : le lift de carte est compatible avec 'plat au repos' (l'ombre signale la couche au survol).",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Hovers INSTANTANÉS — tous négatifs vérifiés (transition 0 s mesurée) : lignes .prow/.load__row/.next__row, cellules calendar, onglets jours, cartes KPI, tcard (box-shadow qui change SANS lift), poignée grip opacity 0→0,5, anneau de sélection cellule — fond → var(--card-2) d'un coup",
+      "family": "interactions pointeur",
+      "achievable": "oui-css",
+      "how": "Négatifs documentés : Talmo n'ANIME aucun hover (scan CSSOM exhaustif). Résultat identique = états hover instantanés du kit (tokens state.hover-opacity/pressed-opacity existants) — le kit ne doit pas ajouter de transition sur ces surfaces pour rester fidèle.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "Boutons magnétiques (.magnetic : 'Book a session' attiré 3-5 px vers le pointeur, lerp rAF, settle ~430 ms ; NÉGATIF sur 'New' top bar)",
+      "family": "interactions pointeur",
+      "achievable": "non",
+      "how": "Hors registre du kit : DESIGN.md « L'outil posé — ne cherche ni à séduire » + exclusion motivée du panneau d'experts (« faible valeur B2B »). Techniquement Baseline 2024 (pointermove + lerp rAF, fine pointer uniquement, garde lcPrefersReducedMotion()) mais aucune primitive à ajouter à un kit générique. Si l'utilisateur tranche pour : ~50 lignes de JS applicative, aucun token nouveau.",
+      "effort": "important"
+    },
+    {
+      "animation": "Bascule light/dark = RÉVÉLATION CIRCULAIRE depuis le point de clic (View Transition + WAAPI clipPath circle(0 → 1470 px at pointer), 450 ms cubic-bezier(.65,0,.35,1) ; miroir selon le déclencheur : top bar = ancien thème rétrécit, radio Settings = nouveau thème grandit)",
+      "family": "thème",
+      "achievable": "non",
+      "how": "View Transitions API = Baseline 2025, INTERDITE par ADR 0009 au millésime actuel (2024) sans repli écrit et testé. Le résultat EXACT exige un snapshot de l'autre thème (c'est le rôle de VT : ::view-transition-old/new) — aucun repli Baseline 2024 ne peut capturer le document ancien ; clip-path sur <html> seul donnerait un cercle de couleur de fond, pas le contenu. Le repli de Talmo lui-même = switch instantané (API absente ou reduced motion). Chemin d'adoption : revue annuelle ADR 0009 ou décision explicite avec repli écrit+testé (instantané).",
+      "effort": "important"
+    },
+    {
+      "animation": "Bascule des variables de thème elles-mêmes (bg body rgb(229,229,226)→rgb(13,13,13) en <50 ms — instantané sous le cercle)",
+      "family": "thème",
+      "achievable": "oui-css",
+      "how": "Système de thèmes du kit (tokens ref/sys, thème dark réglé séparément) : la bascule est déjà instantanée par construction (changement de variables CSS). Résultat identique sans rien ajouter.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "DRAG d'une session Planner (cas signature) : au grab .is-drag + scale(1,03) + ombre, suivi du curseur strictement horizontal, snap 15 min OPÉRANT PENDANT le drag, label + aria-label en direct, badge '+1' follower",
+      "family": "drag",
+      "achievable": "non",
+      "how": "DnD hors périmètre d'un kit générique (exclusion explicite du panneau : « pas de DnD dans le kit ») — logique applicative, pas une primitive de motion. RECETTE COMPLÈTE pour l'app : Pointer Events (pointerdown bouton 0 + fine pointer) + setPointerCapture + seuil 4 px ; pose grab = classe CSS transition transform 200 ms (scale 1,03 + shadow-3 en tokens) ; pendant le move : écriture directe du style (AUCUN tween, comme Talmo) ; snap 15 min dans la logique avant l'écriture ; garde lcPrefersReducedMotion() sur le settle uniquement. Le drop = lignes settle/followers ci-dessous.",
+      "effort": "important"
+    },
+    {
+      "animation": "PLANNER : settle ÉLASTIQUE au drop (elastic.out(1,0,45) .7 s : scale(0,9965,1,0307) → identité en ~400 ms, origin 50% 50%)",
+      "family": "drag",
+      "achievable": "oui-waapi",
+      "how": "element.animate avec keyframes APPROXIMANT l'élastique (pas de spring natif en Baseline 2024 — l'easing 'spring()' WAAPI est post-Baseline) : [{ transform: 'scaleY(.78) scaleX(1.025)' }, { transform: 'scaleY(1.012) scaleX(.996)', offset: .55 }, { transform: 'scaleY(.997)', offset: .8 }, { transform: 'none' }] ~700 ms (token draw). Équivalent perçu à ~2 px près ; l'élastique EXACT est le seul vrai 'non' de la famille. Garde reduced-motion → position finale directe.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "PLANNER : followers POUSSÉS au drop (Planting plan +1 h glissée visible sous la barre déposée, x .6 s power3.inOut delay .06, aria immédiat) + toast Undo",
+      "family": "drag",
+      "achievable": "oui-waapi",
+      "how": "element.animate([{ transform: translateX(0) }, { transform: translateX(+80,5px) }], { duration: 600 ms, easing: cubic-bezier(0.65,0,0.35,1) (power3.inOut ≈ easeInOutCubic), delay: 60 ms }) sur la barre follower ; z-index de la déposée au-dessus pendant l'animation. La logique de chaîne (after===id) est applicative.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "PLANNER : drop hors cible / collision — TOUJOURS commit avec clamp (gauche → 08:00, panneau droit → fin de grille), chevauchement autorisé (la déposée passe en dessous) ; PAS de spring-back (correction du brief)",
+      "family": "drag",
+      "achievable": "oui-js",
+      "how": "Comportement, pas animation : clamp de la position dans la logique avant commit + z-index inférieur en cas de collision. Aucune primitive de motion au-delà du settle (ligne ci-dessus). Documenté comme correction du brief pour éviter d'implémenter un spring-back inexistant côté Planner.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "PLANNER : grip de redimensionnement (.tl__grip) — poignée 2×12 px au hover (instantané), largeur en direct pendant le drag avec scale(1,03), snap + settle à la fin",
+      "family": "drag",
+      "achievable": "oui-waapi",
+      "how": "Poignée : ::after opacity 0→0,5 au hover INSTANTANÉ (classe, transition 0 s — fidèle). Drag : Pointer Events + écriture directe width (comme Talmo) + classe is-drag (scale 1,03 en tokens). Fin : settle élastique approximé (ligne ci-dessus) + toast Undo.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "DRAG d'une carte Tasks entre colonnes (cas signature) : pose de vol scale(1,03) + rotation -2° + double ombre portée, colonne survolée SURLIGNÉE d'un contour sombre arrondi",
+      "family": "drag",
+      "achievable": "non",
+      "how": "DnD hors périmètre du kit générique (Talmo utilise le plugin GSAP Flip — interdit dans le kit). RECETTE COMPLÈTE : Pointer Events + setPointerCapture ; pose grab = classe CSS transition transform 250 ms (scale(1.03) rotate(-2deg) + ombres en tokens shadow-2/shadow-4) ; colonne cible détectée par elementsFromPoint → classe de surlignage (outline en tokens border-width-thick/strong) ; le drop = FLIP ci-dessous.",
+      "effort": "important"
+    },
+    {
+      "animation": "TASKS : drop — FLIP des voisines (les cartes sous l'insertion descendent ~109 px en ~240-300 ms) + compteurs de colonnes qui s'ajustent",
+      "family": "drag",
+      "achievable": "oui-waapi",
+      "how": "PRIMITIVE EXISTANTE : le pattern animateDiff de data-table (FLIP WAAPI : mesure des tops avant mutation, translateY ancienne→nouvelle 500 ms standard sur les conservées, fade-in des ajoutées) — à extraire en core/list-flip.ts pour réutilisation hors tableau. Durée kit 500 ms vs Talmo ~300 ms : même mécanique.",
+      "effort": "modéré"
+    },
+    {
+      "animation": "TASKS : SPRING-BACK hors cible (retour à l'origine avec ressort amorti + overshoot, rotation/scale qui se dissipent, ~400-500 ms)",
+      "family": "drag",
+      "achievable": "oui-waapi",
+      "how": "Même approximation élastique que le settle Planner : keyframes WAAPI de la position en vol → origine avec dépassement (offset .6 à ~102 % du delta) puis convergence, ~450 ms. Équivalent perçu ; ressort exact = non (voir ligne settle).",
+      "effort": "modéré"
+    },
+    {
+      "animation": "STUDIO : focus clavier + flèches sur une barre timeline — ArrowRight décale la session de +15 min, la barre glisse (~150-250 ms/pas), aria-label en direct",
+      "family": "drag",
+      "achievable": "oui-css",
+      "how": "La position changeant par style (translate), une transition transform var(--lc-sys-duration-normal 200 ms) sys.easing.standard sur la barre suffit — pas de WAAPI. La logique clavier (±15 min, Shift ±60) est applicative.",
+      "effort": "trivial"
+    },
+    {
+      "animation": "STUDIO : steppers du drawer Start/Length → la barre glisse (+17,6 px = 15 min) ou s'allonge (~200-300 ms) + FLASH de la plage horaire dans le hero",
+      "family": "drag",
+      "achievable": "oui-waapi",
+      "how": "barre.animate([{ transform: translateX(x0) }, { transform: translateX(x1) }], { duration: 250 ms, easing: sys.easing.entrance }) (ou scaleX pour la longueur, origin left) + re-déclenchement du flash .is-flash sur le hero (ligne feedback).",
+      "effort": "modéré"
+    }
+  ],
+  "gaps": [
+    "Registre d'easing : le kit ne possède que des courbes S (standard cubic-bezier(0.2,0,0,1), emphasized cubic-bezier(0.3,0,0,1)) alors que le vocabulaire Talmo est 100 % slow-OUT (power3.out, expo.out, quintique). Sans les tokens d'extension, TOUTES les entrées paraîtront plus 'raides au départ' que Talmo — c'est l'écart visuel n°1 et LA décision sobre/riche.",
+    "Durées plafonnées à 500 ms (move) contre le cluster Talmo .15-.95 s : tracés SVG 1,1-1,3 s, flash ~950 ms, count-up 1,2-1,7 s, settle élastique .7 s — il manque une durée 'draw' (~900-1200 ms).",
+    "Aucun easing à dépassement (back.out) : toasts, knob switch, modales et pops perdent leur rebond signature (overshoot 1,01 mesuré sur les modales, ±2,7 px sur le knob).",
+    "Stagger unique 80 ms contre 12-80 ms chez Talmo : une grille dense (heatmap 25 cellules, 42 cellules calendrier) ferait une cascade de 2 s au lieu de ~0,8 s — il manque un stagger 'fin' (~30 ms), aussi nécessaire aux titres lettre à lettre (25-40 ms/lettre).",
+    "[lcReveal] ne fait que opacity + translateY(-8 px) : pas de remplissages scaleX/scaleY (barres timeline, meters, heatmap, underline, dots) ni de rotation par lettre → il manque l'attribut [lcFill] (même mécanique @starting-style + index) et un splitter de titre JS.",
+    "lc-toast-outlet n'a AUCUNE animation d'entrée/sortie aujourd'hui (vérifié dans le CSS du composant) alors que Talmo anime tous ses toasts en back.out ~450 ms — les tokens toast.* manquent.",
+    "Le FLIP WAAPI est privé à data-table (méthode animateDiff) : réutilisation pour le kanban Tasks et les refiltrages exige son extraction en core/list-flip.ts.",
+    "Aucun helper count-up ni draw-path dans core/ : les compteurs KPI, les sparklines, les anneaux et les tracés procéduraux (30+ occurrences dans les inventaires) n'ont pas de point d'entrée kit.",
+    "ERREUR de l'ancienne matrice à corriger : 'power4.out ≈ cubic-bezier(0.77,0,0.175,1)' est faux (c'est une courbe in-out). La bonne équivalence est cubic-bezier(0.22,1,0.36,1) — cross-validée par la signature CSS de Talmo elle-même (--ease: cubic-bezier(.22,1,.36,1), décrite 'slow-out quintique' dans le rapport).",
+    "Nommage des tokens d'extension de l'ancienne matrice (--lc-ref-easing-entrance consommé directement) viole la règle 3 couches (CLAUDE.md : --lc-ref-* réservés aux thèmes) → les valeurs brutes vont dans ref/ et les rôles dans sys/ (--lc-sys-easing-entrance, etc.).",
+    "Durées des primitives existantes divergent de Talmo (indicateur 500 ms vs 150-250 ms, drawer 500 ms vs 250-400 ms, modal 200 ms vs ~350 ms) : même mécanisme, vitesse différente — à trancher globalement plutôt que composant par composant."
+  ],
+  "recommendations": [
+    "TRANCHER « sobre ou riche » (LA décision) : valider le lot d'extensions — ref/sys easing entrance cubic-bezier(0.16,1,0.3,1), pop cubic-bezier(0.34,1.56,0.64,1), title cubic-bezier(0.22,1,0.36,1) ; durée draw 900-1200 ms ; motion.offset-lg 16 px, offset-title 45 px, stagger-text 30 ms, scale-pop 0,9 (dialog.enter-scale 0,96→0,9) — sur une démo Foundations/Motion à 3 réglages avant figeage. Sans : ~70 % de fidélité stricte ; avec : ~95 %.",
+    "TRANCHER la révélation circulaire du thème : recommandation = différer à la revue annuelle ADR 0009 (repli instantané, identique au fallback de Talmo) ; alternative = adopter View Transitions MAINTENANT avec repli écrit et testé (switch instantané), ce que l'ADR permet mais qui décale le millésime d'un composant.",
+    "CONFIRMER « pas de DnD dans le kit » : les 2 cas signature (Planner, Tasks) restent applicatifs ; livrer la recette Pointer Events + poses CSS en tokens + settle/FLIP WAAPI (fournie dans la matrice) au consommateur concerné plutôt qu'une primitive générique.",
+    "TRANCHER le bouton magnétique : exclusion recommandée (hors registre « outil posé », valeur B2B faible) ; si accepté, c'est ~50 lignes de JS applicative fine-pointer, aucune primitive kit.",
+    "NOMMER LE CONSOMMATEUR avant d'ajouter lcCountUp, [lcFill], list-flip.ts et draw-path au kit (règle du repo : rien sans consommateur identifié) — le simulateur ou copro-ticket doit être désigné pour justifier chaque helper.",
+    "VALIDER dans DESIGN.md la catégorie 'pulse ambiant' (breathe 2 s du point live) : elle sort de la règle « aucune animation >200 ms sauf cascade/mouvements » ; soit une exception écrite, soit on ne l'implémente pas.",
+    "DÉCIDER globalement des durées des primitives existantes (indicateur/drawer/modal/toast) : garder les valeurs kit pour la cohérence du registre, ou les rapprocher de Talmo — un arbitrage par composant créerait une incohérence pire que l'écart initial.",
+    "Garde reduced-motion NON négociable sur chaque chemin : kill switch CSS base.css (animation/transition-duration 0.01 ms !important) + lcPrefersReducedMotion() devant CHAQUE element.animate et helper rAF (count-up, splitter, draw, settle) — tout saute à l'état final, conformément aux inventaires (Talmo fait pareil : durées annulées à 0).",
+    "CA-15 : toutes les valeurs citées dans la matrice (30 ms, 45 px, 16 px, 900 ms, 450 ms, 0,9…) passent en tokens ref/sys/composant avant implémentation — rien en dur dans un composant."
+  ]
+}

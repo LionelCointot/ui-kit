@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion v2 — POC : le feeling Talmo en CSS natif</title>
+<style>
+/* =====================================================================
+   Motion v2 — POC autonome (HTML + CSS + JS inline, zéro dépendance)
+   Registre visuel : DESIGN.md du ui-kit (thème clair `default`).
+   Principe de la page : TOUTES les valeurs de mouvement viennent des
+   variables --lc-m-* ci-dessous ; aucune durée, courbe ou distance en
+   dur dans les règles d'animation. Seules ces variables changent
+   entre le mode A (kit actuel) et le mode B (v2).
+   ===================================================================== */
+
+/* ---------- Palette et typographie (DESIGN.md, recopiées : page autonome) ---------- */
+:root{
+  --lc-sys-color-primary:#1c5cab;
+  --lc-sys-color-on-primary:#ffffff;
+  --lc-sys-color-primary-container:#cde2fb;
+  --lc-sys-color-on-primary-container:#0d366b;
+  --lc-sys-color-background:#f9f9f7;
+  --lc-sys-color-surface-raised:#ffffff;
+  --lc-sys-color-surface-sunken:#f0efec;
+  --lc-sys-color-on-surface:#0b0b0b;
+  --lc-sys-color-on-surface-muted:#52514e;
+  --lc-sys-color-border:#e1e0d9;
+  --lc-sys-color-border-strong:#898781;
+  --lc-sys-color-focus:#2a78d6;
+  --lc-sys-color-success:#006300;
+  --lc-sys-color-error:#d03b3b;
+  --lc-sys-color-warning-container:#fdf0d0;
+  --lc-sys-color-on-warning-container:#5c3c00;
+  --lc-sys-color-warning-border:#fab219;
+  --lc-sys-font-family-base:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --lc-sys-font-family-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;
+
+  /* ---------- Vocabulaire de mouvement EXISTANT (mode A) — spec 2026-11-mouvement §5.2 ---------- */
+  --lc-sys-duration-fast:100ms;
+  --lc-sys-duration-normal:200ms;
+  --lc-sys-duration-slow:300ms;
+  --lc-sys-duration-long:350ms;
+  --lc-sys-duration-move:500ms;
+  --lc-sys-easing-standard:cubic-bezier(0.2,0,0,1);
+  --lc-sys-motion-offset:8px;
+  --lc-sys-motion-stagger:80ms;
+
+  /* ---------- Vocabulaire v2 PROPOSÉ (mode B) — tokens de l'avis du panneau d'experts + distances ---------- */
+  --lc-ref-easing-entrance:cubic-bezier(0.16,1,0.3,1);    /* expo-like : entrées, remplissages */
+  --lc-ref-easing-pop:cubic-bezier(0.34,1.56,0.64,1);     /* dépassement léger : pops, indicateurs */
+  --lc-ref-easing-pop-strong:cubic-bezier(0.34,2.2,0.64,1);
+  --lc-ref-easing-out:cubic-bezier(0.33,1,0.68,1);        /* décélération sans dépassement */
+  --lc-ref-duration-enter:600ms;
+  --lc-ref-duration-draw:900ms;
+  --lc-ref-duration-flash:500ms;
+  --lc-m-dist-sm:8px;
+  --lc-m-dist-md:16px;
+  --lc-m-dist-lg:24px;
+  --lc-m-flash-lift:-4px;
+  --lc-m-flash-pop:1.08;
+}
+
+/* ---------- Variables ACTIVES consommées par les démos : seules elles changent ---------- */
+body{--lc-m-time:1;}
+
+/* Mode A — kit actuel : tokens existants, valeurs figées. */
+body[data-mode="a"]{
+  --lc-m-ease-in:var(--lc-sys-easing-standard);
+  --lc-m-ease-pop:var(--lc-sys-easing-standard);
+  --lc-m-dur-reveal:var(--lc-sys-duration-long);
+  --lc-m-dur-indicator:var(--lc-sys-duration-move);
+  --lc-m-dur-flash:0ms;
+  --lc-m-dur-fill:var(--lc-sys-duration-long);
+  --lc-m-dist-reveal:var(--lc-sys-motion-offset);
+  --lc-m-stagger-step:var(--lc-sys-motion-stagger);
+}
+
+/* Mode B — v2 : entrées expo-like, remplissages lents, dépassement sur les indicateurs. */
+body[data-mode="b"]{
+  --lc-m-ease-in:var(--lc-ref-easing-entrance);
+  --lc-m-dur-reveal:calc(var(--lc-ref-duration-enter) * var(--lc-m-time));
+  --lc-m-dur-indicator:calc(var(--lc-sys-duration-move) * var(--lc-m-time));
+  --lc-m-dur-flash:calc(var(--lc-ref-duration-flash) * var(--lc-m-time));
+  --lc-m-dur-fill:calc(var(--lc-ref-duration-draw) * var(--lc-m-time));
+  --lc-m-stagger-step:calc(var(--lc-sys-motion-stagger) * var(--lc-m-time));
+}
+
+/* Calibration v2 (ignorée en mode A : les valeurs y sont figées). */
+body[data-mode="b"][data-overshoot="none"]{--lc-m-ease-pop:var(--lc-ref-easing-out);}
+body[data-mode="b"][data-overshoot="soft"]{--lc-m-ease-pop:var(--lc-ref-easing-pop);}
+body[data-mode="b"][data-overshoot="strong"]{--lc-m-ease-pop:var(--lc-ref-easing-pop-strong);}
+body[data-mode="b"][data-dist="sm"]{--lc-m-dist-reveal:var(--lc-m-dist-sm);}
+body[data-mode="b"][data-dist="md"]{--lc-m-dist-reveal:var(--lc-m-dist-md);}
+body[data-mode="b"][data-dist="lg"]{--lc-m-dist-reveal:var(--lc-m-dist-lg);}
+body[data-time=".8"]{--lc-m-time:.8;}
+body[data-time="1.2"]{--lc-m-time:1.2;}
+
+/* Contrat a11y : sous prefers-reduced-motion (réel ou simulé), durées ET délais à 0.
+   Tout vient des variables ci-dessus : les mettre à 0 ms coupe tout, cascades comprises. */
+body[data-rm="1"]{
+  --lc-m-dur-reveal:0ms;
+  --lc-m-dur-indicator:0ms;
+  --lc-m-dur-flash:0ms;
+  --lc-m-dur-fill:0ms;
+  --lc-m-stagger-step:0ms;
+}
+@media (prefers-reduced-motion:reduce){
+  body[data-mode]{
+    --lc-m-dur-reveal:0ms;
+    --lc-m-dur-indicator:0ms;
+    --lc-m-dur-flash:0ms;
+    --lc-m-dur-fill:0ms;
+    --lc-m-stagger-step:0ms;
+  }
+}
+
+/* ---------- Socle de page ---------- */
+*{box-sizing:border-box}
+body{margin:0;background:var(--lc-sys-color-background);color:var(--lc-sys-color-on-surface);font:400 1rem/1.5 var(--lc-sys-font-family-base)}
+::selection{background:var(--lc-sys-color-primary-container)}
+:focus-visible{outline:2px solid var(--lc-sys-color-focus);outline-offset:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+[hidden]{display:none!important}
+h1,h2,p,fieldset,legend{margin:0;padding:0}
+
+/* ---------- Bandeau de contrôle (collant) ---------- */
+.top{position:sticky;top:0;z-index:10;background:var(--lc-sys-color-background);border-bottom:1px solid var(--lc-sys-color-border)}
+.top-in{max-width:64rem;margin:0 auto;padding:.75rem 1rem .875rem}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem 1rem;flex-wrap:wrap}
+h1{font-size:1.5rem;font-weight:600;line-height:1.25}
+.seg{display:inline-flex;gap:2px;border:1px solid var(--lc-sys-color-border-strong);border-radius:8px;padding:2px;background:var(--lc-sys-color-surface-raised)}
+.seg button{min-height:40px;padding:0 .875rem;border:0;border-radius:6px;background:transparent;color:var(--lc-sys-color-on-surface-muted);font-weight:500;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--lc-sys-color-primary-container);color:var(--lc-sys-color-on-primary-container)}
+.readout{margin-top:.5rem;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted);font-variant-numeric:tabular-nums}
+.calib{display:flex;align-items:center;flex-wrap:wrap;gap:.625rem 1.25rem;margin-top:.75rem;transition:none}
+.calib.off{opacity:.45}
+.calib-g{display:flex;align-items:center;gap:.375rem;min-width:0}
+.calib-l{font-size:.75rem;font-weight:500;color:var(--lc-sys-color-on-surface-muted)}
+.chips{display:inline-flex;gap:.25rem}
+.chip{min-height:36px;padding:0 .75rem;border-radius:9999px;border:1px solid var(--lc-sys-color-border);background:transparent;color:var(--lc-sys-color-on-surface-muted);font-size:.875rem;font-weight:500}
+.chip:hover:not(:disabled){background:var(--lc-sys-color-surface-sunken)}
+.chip[aria-pressed="true"]{background:var(--lc-sys-color-primary-container);color:var(--lc-sys-color-on-primary-container);border-color:transparent}
+.chip:disabled{opacity:.5;cursor:not-allowed}
+#rm[aria-pressed="true"]{background:var(--lc-sys-color-warning-container);color:var(--lc-sys-color-on-warning-container);border-color:transparent}
+.rm-banner{margin-top:.75rem;background:var(--lc-sys-color-warning-container);color:var(--lc-sys-color-on-warning-container);border:1px solid var(--lc-sys-color-warning-border);border-radius:8px;padding:.625rem 1rem;font-size:.875rem}
+
+/* ---------- Structure principale ---------- */
+.main-in{max-width:64rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+.intro{max-width:62ch;margin-bottom:2rem}
+.noscript{margin-top:.75rem;font-size:.875rem;color:var(--lc-sys-color-error)}
+.demo + .demo{margin-top:2.5rem}
+.demo-h{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem 1rem;margin-bottom:.75rem}
+h2{font-size:1.125rem;font-weight:600;line-height:1.25}
+.hint{margin-top:.25rem;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted);max-width:55ch}
+.replay{min-height:44px;padding:0 1rem;border:0;border-radius:8px;background:transparent;color:var(--lc-sys-color-on-primary-container);font-weight:500;white-space:nowrap}
+.replay:hover{background:var(--lc-sys-color-primary-container)}
+.card{background:var(--lc-sys-color-surface-raised);border:1px solid var(--lc-sys-color-border);border-radius:12px;padding:1rem}
+.legend{margin-top:.625rem;font-family:var(--lc-sys-font-family-mono);font-size:.75rem;line-height:1.7;color:var(--lc-sys-color-on-surface-muted)}
+.legend code{background:var(--lc-sys-color-surface-sunken);border-radius:4px;padding:0 .3em;font-family:inherit}
+.lg-a{display:none}
+body[data-mode="a"] .lg-a{display:inline}
+body[data-mode="a"] .lg-b{display:none}
+
+/* ---------- Démo 1 : onglets ---------- */
+.tabs{position:relative;display:flex;gap:.25rem;border-bottom:1px solid var(--lc-sys-color-border);overflow-x:auto}
+.tabs [role="tab"]{min-height:44px;padding:0 .75rem;border:0;background:none;color:var(--lc-sys-color-on-surface-muted);font-weight:500;white-space:nowrap}
+.tabs [role="tab"][aria-selected="true"]{color:var(--lc-sys-color-on-primary-container)}
+.tabs-ind{position:absolute;left:0;bottom:-1px;height:2px;width:1px;background:var(--lc-sys-color-primary);
+  transition:transform var(--lc-m-dur-indicator) var(--lc-m-ease-pop),width var(--lc-m-dur-indicator) var(--lc-m-ease-pop)}
+.tabs-ind.no-anim{transition:none}
+.panel{padding-top:1rem}
+.row{display:flex;justify-content:space-between;gap:1rem;padding:.625rem 0;border-bottom:1px solid var(--lc-sys-color-border)}
+.row:last-child{border-bottom:0}
+.row-l{color:var(--lc-sys-color-on-surface-muted)}
+.row-v{font-weight:500;text-align:right}
+.tab-state{margin-top:.75rem;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
+
+/* ---------- Démo 2 : tuiles en cascade ---------- */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-top:1rem}
+.tile{background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border);border-radius:8px;padding:.75rem}
+.tile-l{display:block;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
+.tile-v{display:block;font-size:1.25rem;font-weight:600;line-height:1.25;margin-top:.25rem;font-variant-numeric:tabular-nums}
+.tile-d{display:block;font-size:.875rem;margin-top:.125rem;color:var(--lc-sys-color-on-surface-muted)}
+.tile-d.up{color:var(--lc-sys-color-success)}
+.tile-d.down{color:var(--lc-sys-color-error)}
+
+/* ---------- Démo 3 : flash de valeur ---------- */
+.kpi{display:block;width:100%;max-width:26rem;text-align:left;background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border);border-radius:12px;padding:1.25rem;margin-top:1rem}
+.kpi:hover{border-color:var(--lc-sys-color-border-strong)}
+.kpi-l{display:block;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
+.kpi-v{display:inline-block;font-size:1.875rem;font-weight:600;line-height:1.25;margin-top:.375rem;border-radius:4px;padding:0 .25em}
+.kpi-h{display:block;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted);margin-top:.5rem}
+
+/* ---------- Démo 4 : remplissage des jauges ---------- */
+.fills{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1.25rem 2.5rem;margin-top:1rem;align-items:end}
+.gauges-h{display:grid;gap:1.25rem}
+.gauge-t{display:flex;justify-content:space-between;gap:1rem;font-size:.875rem;margin-bottom:.5rem}
+.gauge-n{color:var(--lc-sys-color-on-surface-muted)}
+.gauge-v{font-weight:600;font-variant-numeric:tabular-nums}
+.track{position:relative;height:.75rem;border-radius:9999px;background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border)}
+.gauge-v-wrap .track{height:10rem;width:2.5rem}
+.fill{position:absolute;inset:0;border-radius:inherit;background:var(--lc-sys-color-primary)}
+.fill-x{transform-origin:left center;transform:scaleX(var(--lc-fill-v,1))}
+.fill-y{transform-origin:center bottom;transform:scaleY(var(--lc-fill-v,1))}
+
+/* ---------- Primitives v2 : les quatre animations de la page ---------- */
+
+/* [lcReveal] + [lcStagger] : fondu et descente en cascade (l'index --lc-reveal-i est posé par le JS, plafonné comme staggerDelay() du kit). */
+@keyframes lc-reveal{from{opacity:0;transform:translateY(calc(-1 * var(--lc-m-dist-reveal)))}}
+[lcStagger].is-entering [lcReveal]{
+  animation:lc-reveal var(--lc-m-dur-reveal) var(--lc-m-ease-in) backwards;
+  animation-delay:calc(var(--lc-reveal-i,0) * var(--lc-m-stagger-step));
+}
+
+/* [lcFlash] : pulse accent + micro-pop quand une valeur change. */
+@keyframes lc-flash-pop{from{transform:translateY(var(--lc-m-flash-lift)) scale(var(--lc-m-flash-pop))}}
+@keyframes lc-flash-tint{from{color:var(--lc-sys-color-primary);background-color:var(--lc-sys-color-primary-container)}}
+.is-flashing [lcFlash]{
+  animation:lc-flash-pop var(--lc-m-dur-flash) var(--lc-m-ease-pop),lc-flash-tint var(--lc-m-dur-flash) var(--lc-m-ease-in);
+}
+
+/* [lcFill] : remplissage depuis la gauche (scaleX) ou le bas (scaleY). */
+@keyframes lc-fill-x{from{transform:scaleX(0)}}
+@keyframes lc-fill-y{from{transform:scaleY(0)}}
+.is-drawing .fill-x{animation:lc-fill-x var(--lc-m-dur-fill) var(--lc-m-ease-in) backwards;animation-delay:calc(var(--i,0) * var(--lc-m-stagger-step))}
+.is-drawing .fill-y{animation:lc-fill-y var(--lc-m-dur-fill) var(--lc-m-ease-in) backwards;animation-delay:calc(var(--i,0) * var(--lc-m-stagger-step))}
+
+/* ---------- Responsive ---------- */
+@media (max-width:640px){
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .fills{grid-template-columns:1fr}
+  .gauge-v-wrap{max-width:2.5rem}
+  /* La barre de contrôle ne colle pas sur téléphone : elle ne doit pas manger l'écran. */
+  .top{position:static}
+  .readout{display:none}
+  .top-in{padding:.625rem 1rem .75rem}
+  h1{font-size:1.25rem}
+}
+</style>
+</head>
+<body data-mode="b" data-dist="md" data-overshoot="soft" data-time="1">
+
+<header class="top">
+  <div class="top-in">
+    <div class="top-row">
+      <h1>Motion v2 — POC</h1>
+      <div class="seg" role="group" aria-label="Vocabulaire de mouvement">
+        <button type="button" data-set="mode" data-val="a" aria-pressed="false">A · kit actuel (sobre)</button>
+        <button type="button" data-set="mode" data-val="b" aria-pressed="true">B · v2 Talmo-like</button>
+      </div>
+    </div>
+    <p class="readout" id="readout" role="status"></p>
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:.625rem 1.25rem;margin-top:.75rem">
+      <div class="calib" id="calib">
+        <div class="calib-g">
+          <span class="calib-l" id="lbl-dist">Distance</span>
+          <div class="chips" role="group" aria-labelledby="lbl-dist">
+            <button type="button" class="chip" data-set="dist" data-val="sm" aria-pressed="false">8 px</button>
+            <button type="button" class="chip" data-set="dist" data-val="md" aria-pressed="true">16 px</button>
+            <button type="button" class="chip" data-set="dist" data-val="lg" aria-pressed="false">24 px</button>
+          </div>
+        </div>
+        <div class="calib-g">
+          <span class="calib-l" id="lbl-over">Dépassement</span>
+          <div class="chips" role="group" aria-labelledby="lbl-over">
+            <button type="button" class="chip" data-set="overshoot" data-val="none" aria-pressed="false">Aucun</button>
+            <button type="button" class="chip" data-set="overshoot" data-val="soft" aria-pressed="true">Léger</button>
+            <button type="button" class="chip" data-set="overshoot" data-val="strong" aria-pressed="false">Marqué</button>
+          </div>
+        </div>
+        <div class="calib-g">
+          <span class="calib-l" id="lbl-time">Durées</span>
+          <div class="chips" role="group" aria-labelledby="lbl-time">
+            <button type="button" class="chip" data-set="time" data-val=".8" aria-pressed="false">×0,8</button>
+            <button type="button" class="chip" data-set="time" data-val="1" aria-pressed="true">×1</button>
+            <button type="button" class="chip" data-set="time" data-val="1.2" aria-pressed="false">×1,2</button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="chip" id="rm" aria-pressed="false">Simuler prefers-reduced-motion</button>
+    </div>
+    <p class="rm-banner" id="rmBanner" role="status" hidden>Rien ne bouge : durées et délais sont à 0, comme sous prefers-reduced-motion (simulation ou préférence système).</p>
+  </div>
+</header>
+
+<main>
+  <div class="main-in">
+    <p class="intro">Même scène, deux vocabulaires de mouvement. Le mode <strong>A</strong> applique les tokens actuels du kit : courbe standard, cascade 350 ms, descente de 8 px, indicateur en 500 ms. Le mode <strong>B</strong> ajoute le vocabulaire v2 proposé : entrées en 600 ms en courbe expo-like, remplissages en 900 ms, dépassement léger sur les indicateurs, flash quand une valeur change. Seul le jeu de variables CSS change entre les deux modes — c'est la preuve que des tokens suffisent à tout. Les trois réglages calibrent la v2 ; les chiffres affichés sont des valeurs d'exemple.</p>
+    <noscript><p class="noscript">Activez JavaScript pour comparer les modes A/B et rejouer les démos.</p></noscript>
+
+    <!-- ================= 1 · Onglets ================= -->
+    <section class="demo" aria-labelledby="d1-t">
+      <header class="demo-h">
+        <div>
+          <h2 id="d1-t">Onglets</h2>
+          <p class="hint">L'indicateur glisse pendant que le contenu change. Un panneau vu pour la première fois rejoue sa cascade ; un panneau déjà consulté ne rejoue rien — c'est le piège à valider.</p>
+        </div>
+        <button type="button" class="replay" data-replay="tabs">Rejouer</button>
+      </header>
+      <div class="card">
+        <div class="tabs" role="tablist" aria-label="Onglets de démonstration">
+          <span class="tabs-ind no-anim" aria-hidden="true"></span>
+          <button type="button" role="tab" id="t1a" aria-controls="p1a" aria-selected="true">Vue générale</button>
+          <button type="button" role="tab" id="t1b" aria-controls="p1b" aria-selected="false" tabindex="-1">Statistiques</button>
+          <button type="button" role="tab" id="t1c" aria-controls="p1c" aria-selected="false" tabindex="-1">Historique</button>
+        </div>
+        <div class="panel" role="tabpanel" id="p1a" aria-labelledby="t1a" lcStagger>
+          <div class="row" lcReveal><span class="row-l">Dernière mise à jour</span><span class="row-v">aujourd'hui, 09 h 12</span></div>
+          <div class="row" lcReveal><span class="row-l">Élément actif</span><span class="row-v">Contrat n° 4821</span></div>
+          <div class="row" lcReveal><span class="row-l">Alertes</span><span class="row-v">2 en attente</span></div>
+          <div class="row" lcReveal><span class="row-l">Prochaine échéance</span><span class="row-v">le 15 décembre</span></div>
+        </div>
+        <div class="panel" role="tabpanel" id="p1b" aria-labelledby="t1b" lcStagger hidden>
+          <div class="row" lcReveal><span class="row-l">Moyenne sur 30 jours</span><span class="row-v">71,4 %</span></div>
+          <div class="row" lcReveal><span class="row-l">Meilleur jour</span><span class="row-v">mardi (84 %)</span></div>
+          <div class="row" lcReveal><span class="row-l">Écart vs. mois dernier</span><span class="row-v">−3,2 points</span></div>
+          <div class="row" lcReveal><span class="row-l">Période analysée</span><span class="row-v">90 derniers jours</span></div>
+        </div>
+        <div class="panel" role="tabpanel" id="p1c" aria-labelledby="t1c" lcStagger hidden>
+          <div class="row" lcReveal><span class="row-l">le 12 novembre</span><span class="row-v">valeur passée à 74 %</span></div>
+          <div class="row" lcReveal><span class="row-l">le 5 novembre</span><span class="row-v">période modifiée (90 jours)</span></div>
+          <div class="row" lcReveal><span class="row-l">le 28 octobre</span><span class="row-v">alerte levée</span></div>
+          <div class="row" lcReveal><span class="row-l">le 21 octobre</span><span class="row-v">élément créé</span></div>
+        </div>
+        <p class="tab-state" id="tabState" role="status">première visite — cascade jouée</p>
+      </div>
+      <p class="legend">Primitives : <code>[lcReveal]</code> · <code>[lcStagger]</code> + mémoire des panneaux visités (sans elle, la cascade rejoue à chaque visite)</p>
+    </section>
+
+    <!-- ================= 2 · Tuiles ================= -->
+    <section class="demo" aria-labelledby="d2-t">
+      <header class="demo-h">
+        <div>
+          <h2 id="d2-t">Tuiles</h2>
+          <p class="hint">Huit cartes en cascade : fondu et descente, décalage de 80 ms par carte, plafonné à 300 ms au total.</p>
+        </div>
+        <button type="button" class="replay" data-replay="tiles">Rejouer</button>
+      </header>
+      <div class="card">
+        <div class="tiles" id="tiles" lcStagger>
+          <article class="tile" lcReveal><span class="tile-l">Tâches terminées</span><span class="tile-v">24</span><span class="tile-d up">+3 cette semaine</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Documents reçus</span><span class="tile-v">12</span><span class="tile-d">à jour</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Réunions planifiées</span><span class="tile-v">5</span><span class="tile-d">cette semaine</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Alertes actives</span><span class="tile-v">2</span><span class="tile-d down">+1 hier</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Délai moyen</span><span class="tile-v">2,4 j</span><span class="tile-d">stable</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Budget consommé</span><span class="tile-v">68 %</span><span class="tile-d">+5 pts ce mois</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Présents aujourd'hui</span><span class="tile-v">9</span><span class="tile-d">sur 12</span></article>
+          <article class="tile" lcReveal><span class="tile-l">Tickets ouverts</span><span class="tile-v">7</span><span class="tile-d up">−2 cette semaine</span></article>
+        </div>
+      </div>
+      <p class="legend">Primitives : <code>[lcReveal]</code> · <code>[lcStagger]</code></p>
+    </section>
+
+    <!-- ================= 3 · Flash ================= -->
+    <section class="demo" aria-labelledby="d3-t">
+      <header class="demo-h">
+        <div>
+          <h2 id="d3-t">Flash</h2>
+          <p class="hint">Cliquez sur la carte : la valeur change avec un pulse accent et un micro-pop d'environ 500 ms.</p>
+        </div>
+        <button type="button" class="replay" data-replay="flash">Rejouer</button>
+      </header>
+      <div class="card">
+        <button type="button" class="kpi" id="kpi">
+          <span class="kpi-l">Taux d'occupation (valeurs d'exemple)</span>
+          <span class="kpi-v" lcFlash aria-live="polite"><span id="kpiVal">72</span> %</span>
+          <span class="kpi-h">Cliquez pour changer la valeur</span>
+        </button>
+      </div>
+      <p class="legend">
+        <span class="lg-b">Primitive v2 : <code>[lcFlash]</code> — pulse accent + micro-pop (~500 ms)</span>
+        <span class="lg-a">Mode A : aucune primitive équivalente dans le kit actuel — la valeur change sans retour</span>
+      </p>
+    </section>
+
+    <!-- ================= 4 · Fill ================= -->
+    <section class="demo" aria-labelledby="d4-t">
+      <header class="demo-h">
+        <div>
+          <h2 id="d4-t">Remplissage</h2>
+          <p class="hint">Les jauges se remplissent depuis la gauche — depuis le bas pour la verticale — en courbe expo-like, 900 ms.</p>
+        </div>
+        <button type="button" class="replay" data-replay="fills">Rejouer</button>
+      </header>
+      <div class="card">
+        <div class="fills" id="fills">
+          <div class="gauges-h">
+            <div class="gauge" style="--i:0">
+              <div class="gauge-t"><span class="gauge-n">Occupation</span><span class="gauge-v">82 %</span></div>
+              <div class="track" aria-hidden="true"><span class="fill fill-x" lcFill style="--lc-fill-v:.82"></span></div>
+            </div>
+            <div class="gauge" style="--i:1">
+              <div class="gauge-t"><span class="gauge-n">Rendement</span><span class="gauge-v">64 %</span></div>
+              <div class="track" aria-hidden="true"><span class="fill fill-x" lcFill style="--lc-fill-v:.64"></span></div>
+            </div>
+          </div>
+          <div class="gauge gauge-v-wrap" style="--i:2">
+            <div class="gauge-t"><span class="gauge-n">Charge</span><span class="gauge-v">47 %</span></div>
+            <div class="track" aria-hidden="true"><span class="fill fill-y" lcFill style="--lc-fill-v:.47"></span></div>
+          </div>
+        </div>
+      </div>
+      <p class="legend">
+        <span class="lg-b">Primitive v2 : <code>[lcFill]</code> — remplissage depuis gauche/bas, 900 ms en courbe expo-like</span>
+        <span class="lg-a">Mode A : même remplissage en courbe standard (350 ms) — pas de primitive équivalente dans le kit actuel</span>
+      </p>
+    </section>
+
+    <footer style="margin-top:3rem;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted);max-width:62ch">
+      POC autonome : HTML, CSS et JS inline, aucune dépendance externe. Le registre visuel suit DESIGN.md ; seul le mouvement change entre les modes. Sous prefers-reduced-motion (simulé ou système), toutes les durées et tous les délais sont coupés à 0.
+    </footer>
+  </div>
+</main>
+
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const body = document.body;
+const reflow = e => void e.offsetWidth;
+const tok = n => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(n));
+const prm = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ---------- État global (mode + calibration) : porté par des attributs du body, le CSS fait le reste ---------- */
+const state = { mode: 'b', dist: 'md', overshoot: 'soft', time: '1' };
+const readout = $('#readout'), rmBanner = $('#rmBanner'), calib = $('#calib'), rmBtn = $('#rm');
+const DIST = { sm: '8 px', md: '16 px', lg: '24 px' };
+const OVER = { none: 'aucun', soft: 'léger', strong: 'marqué' };
+
+function readoutText() {
+  if (state.mode === 'a') return 'kit actuel : cascade 350 ms · descente 8 px · courbe standard — valeurs figées';
+  const s = parseFloat(state.time);
+  return `v2 : ${Math.round(tok('--lc-ref-duration-enter') * s)} ms entrée · ${Math.round(tok('--lc-ref-duration-draw') * s)} ms remplissage · descente ${DIST[state.dist]} · dépassement ${OVER[state.overshoot]} · ×${s.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}`;
+}
+
+function sync() {
+  body.dataset.mode = state.mode;
+  body.dataset.dist = state.dist;
+  body.dataset.overshoot = state.overshoot;
+  body.dataset.time = state.time;
+  $$('[data-set]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.val === state[b.dataset.set]));
+    b.disabled = b.dataset.set !== 'mode' && state.mode === 'a'; // la calibration ne s'applique qu'à la v2
+  });
+  calib.classList.toggle('off', state.mode === 'a');
+  readout.textContent = readoutText();
+}
+
+$$('[data-set]').forEach(b => b.addEventListener('click', () => { state[b.dataset.set] = b.dataset.val; sync(); }));
+
+/* ---------- Simulation prefers-reduced-motion : durées ET délais à 0 (le CSS coupe tout) ---------- */
+let rmSim = false;
+function syncRm() {
+  body.toggleAttribute('data-rm', rmSim);
+  rmBtn.setAttribute('aria-pressed', String(rmSim));
+  rmBanner.hidden = !(rmSim || prm.matches);
+}
+rmBtn.addEventListener('click', () => { rmSim = !rmSim; syncRm(); });
+prm.addEventListener('change', syncRm);
+
+/* ---------- Décalage en cascade : même plafonnement que staggerDelay() du kit (300 ms au total) ---------- */
+const MAX_STAGGER_MS = 300;
+function tagStagger(c) {
+  const kids = $$('[lcReveal]', c), n = kids.length;
+  const base = tok('--lc-sys-motion-stagger') || 80;
+  const k = n > 1 ? Math.min(1, MAX_STAGGER_MS / ((n - 1) * base)) : 1;
+  kids.forEach((el, i) => el.style.setProperty('--lc-reveal-i', (i * k).toFixed(3)));
+}
+$$('[lcStagger]').forEach(tagStagger);
+
+function play(el) { el.classList.remove('is-entering'); reflow(el); el.classList.add('is-entering'); }
+
+/* ---------- Démo 1 : onglets + mémoire des panneaux visités (le piège) ---------- */
+const tabs = $$('.tabs [role="tab"]');
+const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+const ind = $('.tabs-ind'), tabState = $('#tabState');
+const visited = new Set();
+let cur = 0;
+
+function placeInstant() {
+  const t = tabs[cur];
+  ind.style.transform = `translateX(${t.offsetLeft}px)`;
+  ind.style.width = `${t.offsetWidth}px`;
+}
+
+function select(i, force) {
+  const same = i === cur;
+  cur = i;
+  tabs.forEach((t, j) => { t.setAttribute('aria-selected', String(j === i)); t.tabIndex = j === i ? 0 : -1; });
+  const firstVisit = !visited.has(i);
+  visited.add(i);
+  const p = panels[i];
+  // Déjà consulté : on retire la classe pendant que le panneau est encore masqué,
+  // sinon sa réaffichage relancerait les animations (le piège du « déjà vu »).
+  if (!firstVisit && !force) p.classList.remove('is-entering');
+  panels.forEach((q, j) => q.hidden = j !== i);
+  if (!same) placeInstant(); // la transition CSS fait le glissement
+  tabState.textContent = firstVisit ? 'première visite — cascade jouée' : 'déjà vu — aucun mouvement';
+  if (force || firstVisit) play(p); // déjà consulté : rien ne rejoue
+}
+
+tabs.forEach((t, i) => t.addEventListener('click', () => select(i)));
+$('.tabs').addEventListener('keydown', e => {
+  let n = null;
+  if (e.key === 'ArrowRight') n = (cur + 1) % tabs.length;
+  else if (e.key === 'ArrowLeft') n = (cur - 1 + tabs.length) % tabs.length;
+  else if (e.key === 'Home') n = 0;
+  else if (e.key === 'End') n = tabs.length - 1;
+  if (n !== null) { e.preventDefault(); select(n); tabs[n].focus(); }
+});
+addEventListener('resize', () => placeInstant());
+
+/* ---------- Démos 2 à 4 ---------- */
+const tiles = $('#tiles');
+const kpi = $('#kpi'), kpiVal = $('#kpiVal');
+const VALS = [72, 68, 75, 71, 79];
+let vi = 0;
+function flash() {
+  vi = (vi + 1) % VALS.length;
+  kpiVal.textContent = VALS[vi];
+  kpi.classList.remove('is-flashing'); reflow(kpi); kpi.classList.add('is-flashing');
+}
+kpi.addEventListener('click', flash);
+const fills = $('#fills');
+function draw() { fills.classList.remove('is-drawing'); reflow(fills); fills.classList.add('is-drawing'); }
+
+/* ---------- Boutons Rejouer ---------- */
+$$('[data-replay]').forEach(b => b.addEventListener('click', () => {
+  const which = b.dataset.replay;
+  if (which === 'tabs') { visited.clear(); select(0, true); }
+  else if (which === 'tiles') play(tiles);
+  else if (which === 'flash') flash();
+  else if (which === 'fills') draw();
+}));
+
+/* ---------- Mise en route : état initial sans animation, puis les entrées jouent ---------- */
+ind.classList.add('no-anim');
+placeInstant();
+reflow(ind);
+ind.classList.remove('no-anim');
+visited.add(0);
+play(panels[0]);
+fills.classList.add('is-drawing');
+sync();
+syncRm();
+})();
+</script>
+</body>
+</html>

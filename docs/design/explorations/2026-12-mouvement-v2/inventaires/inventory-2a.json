@@ -1,0 +1,190 @@
+{
+  "scope": "Vue PROJECTS (Talmo demo) — entrée, filtres, drawer projet, stages/toast, sous-onglet FILES",
+  "site": "https://demo.codeandchill.store/talmo/ (SPA React, user maren)",
+  "method": "Playwright chromium (chrome channel), échantillonnage in-page ~30-40 ms + getAnimations() + screenshots pendant/après. Données brutes: inv2a/data-*.json ; PNG dans inv2a/.",
+  "animations": [
+    {
+      "location": "Vue Projects — h1.phead__title > span.word > span.ch (titre de page « Projects »)",
+      "trigger": "clic nav top « Projects » (entrée de la vue)",
+      "description": "Reveal du titre caractère par caractère : chaque span .ch glisse en translateY de +44,8 px à 0 derrière un masque (overflow hidden), opacité constante à 1 ; décalage d'environ 35-40 ms par lettre (stagger), les lettres de gauche finissent avant celles de droite",
+      "timing": "~500 ms total, ease-out (courbe mesurée : ty 44,8→21,3→6,9→2,7→0 entre t+240 et t+700 ms)",
+      "evidence": "inv2a/pg-enter2-f0.png, inv2a/pg-enter2-f1.png ; courbe dans inv2a/data-gap.json entrée enter2 (champ words) ; ancien agent : inv2a/p-p-enter-f2.png (lettres partielles visibles en haut du masque)"
+    },
+    {
+      "location": "Vue Projects — grille .pcard (cartes projet)",
+      "trigger": "clic nav top « Projects » (entrée de la vue)",
+      "description": "Cascade des cartes : opacité 0→1 + translateY +26 px→0, décalage ~45 ms par carte (la 3e démarre quand la 1re est déjà à ~0,8), les rangées suivantes en cascade",
+      "timing": "~700 ms par carte, ease-out (mesuré : carte 1 op 0→0,56→0,87→0,97→1 entre t+310 et t+880 ms)",
+      "evidence": "inv2a/data-gap.json entrée enter2 (champ cards) ; inv2a/p-p-enter-f0.png … p-p-enter-f5.png (cartes 2-6 à opacité partielle, décalées vers le bas)"
+    },
+    {
+      "location": "Vue Projects — .pcard svg circle (anneau de progression « graphic circulaire », chiffre % au centre)",
+      "trigger": "clic nav top « Projects » (entrée de la vue) — démarre ~300 ms après l'apparition des cartes",
+      "description": "Tracé de l'anneau : strokeDashoffset du circle de progression passe de 166,5 (périmètre complet, anneau vide) à la valeur finale selon le % (9 / 24 / 47 / 115 mesurés), arc qui se dessine dans le sens horaire ; stagger par carte (la carte 4 finit après la carte 1)",
+      "timing": "~1,2 s ease-out par anneau (mesuré : 166,5→150→70→32→16→9 entre t+310 et t+880 ms pour la carte 1)",
+      "evidence": "inv2a/data-gap.json entrée enter2 (champ rings) ; inv2a/p-p-enter-f2.png (anneau de la carte Mill Lane partiellement tracé pendant que la carte 2 est encore semi-transparente)"
+    },
+    {
+      "location": "Vue Projects — .pcard au survol (carte projet)",
+      "trigger": "survol souris d'une carte",
+      "description": "Lift : translateY 0→-3,5 px + ombre qui s'approfondit (box-shadow rgba(8,8,8,0.075) plus dense), la carte se « soulève » ; retour au repos en partant du survol",
+      "timing": "~200 ms ease-out (mesuré : ty 0→-0,6→-1,9→-2,5→-3,2→-3,5 entre t+10 et t+216 ms)",
+      "evidence": "inv2a/data-projects.json entrée p-card-hover ; inv2a/p-p-card-hover-f0.png … p-p-card-hover-end.png"
+    },
+    {
+      "location": "Vue Projects — chips de disciplines (All / Architecture / Interiors / Landscape, avec badge de comptage)",
+      "trigger": "clic sur une chip discipline (testé « Architecture » puis « All »)",
+      "description": "Refiltrage animé : les cartes sortantes disparaissent (op→0, translateY +29 px), puis le nouvel ensemble apparaît en cascade — opacité 0→1 + translateY +29 px→0 avec stagger ~45 ms par carte ; les badges de comptage des chips restent statiques",
+      "timing": "~150 ms pour la sortie + ~300-450 ms pour la réapparition en cascade (mesuré : toutes op 0 à t+87 ms, puis [0,5 / 0,16 / 0] → 1 entre t+242 et t+400 ms)",
+      "evidence": "inv2a/data-projects.json entrées p-chip-arch et p-chip-all ; inv2a/p-p-chip-arch-f0.png … p-p-chip-arch-end.png, p-p-chip-all-*.png"
+    },
+    {
+      "location": "Vue Projects — select de tri (Due soonest / progress / Largest fee)",
+      "trigger": "changement du tri dans le select (testé « Largest fee »)",
+      "description": "Même mécanisme que les chips : toutes les cartes s'estompent (op→0, y +29 px) puis réapparaissent dans le nouvel ordre en cascade avec stagger ~45 ms/carte",
+      "timing": "~150 ms sortie + ~350 ms réapparition en cascade (mesuré : op 0 à t+88 ms, [0,33 / …] → 1 entre t+169 et t+400 ms)",
+      "evidence": "inv2a/data-projects.json entrée p-sort ; inv2a/p-p-sort-f0.png … p-p-sort-end.png"
+    },
+    {
+      "location": "Vue Projects — champ « Search projects or clients »",
+      "trigger": "saisie dans la recherche (testé « wren » puis effacement)",
+      "description": "AUCUNE animation mesurable : le re-filtrage est un re-render instantané (<40 ms) — les cartes non correspondantes disparaissent sans fondu (6→3→1), positions stables, opacité 1 partout ; idem à l'effacement",
+      "timing": "instantané",
+      "evidence": "inv2a/data-projects.json entrées p-search et p-search-clear (opacités constantes à 1) ; inv2a/p-p-search-f*.png, p-p-search-clear-f*.png"
+    },
+    {
+      "location": "Vue Projects — drag de carte (mouse down + moves)",
+      "trigger": "drag souris d'une carte (.pcard)",
+      "description": "AUCUN comportement : aucune classe .is-drag, aucun transform pendant le drag, curseur pointer constant — les cartes ne sont pas réordonnables par drag",
+      "timing": "n/a",
+      "evidence": "inv2a/data-projects.json entrée p-drag-card (isDrag=false sur 26 échantillons) ; inv2a/p-p-drag-card-mid.png"
+    },
+    {
+      "location": "Drawer détail projet — .drawer (panneau latéral droit)",
+      "trigger": "clic sur une carte projet",
+      "description": "Glissement du panneau : translateX de x=1347 px (hors écran droite) à x=950 px (position finale, 490 px de largeur), opacité constante à 1 ; le fond de page est assombri par un scrim",
+      "timing": "~500 ms ease-out (mesuré : x 1347→1056→974→954→950 entre t+20 et t+495 ms)",
+      "evidence": "inv2a/data-projects.json entrée p-drawer-open ; inv2a/data-gap.json entrée drawer2, data-gap3.json entrée drawer4 (x 1232→1008→959) ; inv2a/p-p-drawer-open-f0.png … f4.png ; scrim visible sur inv2a/pg2-stage3-f1.png"
+    },
+    {
+      "location": "Drawer détail projet — .drawer .meter > fill (barre « FEE USED »)",
+      "trigger": "ouverture du drawer (même déclencheur que le glissement)",
+      "description": "Remplissage du meter de frais : largeur 0→375 px (scaleX 0→1) sur la piste grise, démarre pendant le glissement du panneau et finit ~200 ms après son arrivée",
+      "timing": "~700 ms ease-out (mesuré : 0→40→210→296→341→364→375 px entre t+107 et t+707 ms)",
+      "evidence": "inv2a/data-gap4.json entrée drawer5 ; inv2a/pg4-drawer5-f0.png, pg4-drawer5-f1.png (barre partiellement remplie en cours d'ouverture)"
+    },
+    {
+      "location": "Drawer détail projet — .steps__fill ×5 (barres du stepper de stages Brief→Handover)",
+      "trigger": "ouverture du drawer",
+      "description": "Tracé séquentiel des barres de connexion entre les dots : chaque .steps__fill passe de width/scaleX 0 à 45 px, une après l'autre de gauche à droite (la barre i+1 démarre quand la barre i est ~70 % tracée) ; les dots eux-mêmes restent statiques (op 1, scale 1)",
+      "timing": "~100 ms de décalage par barre, ~800 ms total (mesuré : fill1 0→32 px à t+406, fill2 13 px au même instant, fill3 8 px — cascade en cours)",
+      "evidence": "inv2a/data-gap3.json entrée drawer4 ; inv2a/data-gap4.json entrée drawer5 (fills [[39,0,87],[30,0,67],[8,0,18]…])"
+    },
+    {
+      "location": "Drawer détail projet — .plist__row (listes TEAM / COMING UP / OPEN TASKS) + .dstats (tuiles Progress/Fee/Due)",
+      "trigger": "ouverture du drawer",
+      "description": "AUCUN stagger mesurable : lignes et tuiles de stats visibles opacité 1 dès t+120 ms, aucun transform sur .drawer__body — la seule cascade du contenu est le meter + les barres steps (entrées ci-dessus)",
+      "timing": "instantané",
+      "evidence": "inv2a/data-gap3.json entrée drawer4 et data-gap4.json entrée drawer5 (rows [[1,0]×8], stats [[1,0]×3])"
+    },
+    {
+      "location": "Drawer détail projet — fermeture",
+      "trigger": "touche Escape (ou bouton ×)",
+      "description": "Glissement de sortie : x 950→988→1139 px puis suppression du nœud, ease-in ; le scrim se lève en même temps",
+      "timing": "~340 ms (mesuré : x 950→955→988→1139→null entre t+19 et t+339 ms)",
+      "evidence": "inv2a/data-projects.json entrée p-drawer-close ; inv2a/p-p-drawer-close-f0.png … f3.png"
+    },
+    {
+      "location": "Toast de confirmation — .toast (pilule sombre en bas centre, « ✓ <projet> → <stade> » + bouton Undo)",
+      "trigger": "clic bouton « Move to next stage » (.btn.pj__adv) dans le drawer",
+      "description": "Entrée du toast : opacité 0→1 + translateY +8,2 px→-2,6 px→0 avec léger overshoot et scale 0,98→1,01→1 (ressorti/spring discret)",
+      "timing": "~450 ms (mesuré : op 0,73/ty 8,2 à t+146 ; op 1/ty -2,6/sx 1,01 à t+275 ; stable ty 0 à t+527)",
+      "evidence": "inv2a/data-gap2.json entrée stage3 ; inv2a/pg2-stage3-f1.png (toast en cours d'entrée sous le drawer Wren Street café)"
+    },
+    {
+      "location": "Toast de confirmation — sortie",
+      "trigger": "clic « Undo » du toast",
+      "description": "Sortie : opacité 1→0 + translateY 0→+13 px (glisse vers le bas en s'estompant) ; l'état du stage est annulé instantanément (re-render, dot/bouton reviennent sans animation)",
+      "timing": "~350 ms (mesuré : op 0,94 à t+144, op 0,19/ty 13 à t+272, disparu à t+397)",
+      "evidence": "inv2a/data-gap2.json entrée undo3 ; inv2a/pg2-undo3-f0.png … f2.png"
+    },
+    {
+      "location": "Drawer détail projet — stepper .steps (dots + label de stade) au changement de stage",
+      "trigger": "clic « Move to next stage »",
+      "description": "Changement d'état : le dot du nouveau stade devient actif (ring is-now), les dots précédents cochés, le bouton devient « At handover » désactivé ; AUCUN pop mesurable sur le dot (<30 ms, scale reste 1 à tous les échantillons)",
+      "timing": "instantané",
+      "evidence": "inv2a/pg2-stage3-f1.png (6 dots cochés, ring sur « Handover », bouton « ✓ At handover » grisé) ; inv2a/data-gap2.json entrée stage3 (pop=null)"
+    },
+    {
+      "location": "Sous-onglet FILES — h1 (titre de section « Files »)",
+      "trigger": "clic onglet « Files » (nav.tabs, sous le titre Projects)",
+      "description": "Reveal du titre caractère par caractère : chaque span .ch glisse translateY +44,8 px→0 derrière masque, stagger ~4 px d'écart entre lettres successives à un instant donné (~35-40 ms de décalage), opacité 1",
+      "timing": "~500 ms ease-out (mesuré : ty [26,8 / 30,8 / 35,4 / 40,5 / 44,8] à t+310 → [13,4…24,9] à t+403 → [0,9…2,4] à t+694)",
+      "evidence": "inv2a/data-gap.json entrée ftab2 ; inv2a/p-p-files-tab-f2.png (fragment de lettres au-dessus du masque) ; inv2a/pg-ftab2-f0.png, pg-ftab2-f1.png"
+    },
+    {
+      "location": "Sous-onglet FILES — indicateur d'onglet actif (segment sombre sous « All projects » / « Files »)",
+      "trigger": "clic sur l'autre onglet",
+      "description": "Le segment sombre bascule de l'onglet quitté à l'onglet actif (visible entre les frames) ; .tabs__line est un hairline pleine largeur statique (x=28, w=1384) — glissement continu non confirmé au sampling 90 ms",
+      "timing": "<90 ms ou glissement rapide (non tranché)",
+      "evidence": "inv2a/p-p-files-tab-f0.png (segment sous All projects) vs inv2a/p-p-files-tab-f2.png (segment sous Files) ; probe logs/gapD-probe.json"
+    },
+    {
+      "location": "Sous-onglet FILES — tableau des fichiers (tbody tr, class trow)",
+      "trigger": "clic onglet « Files » ET clic « List » du segmented List/Previews",
+      "description": "Cascade des lignes : opacité 0→1 + translateY +10 px→0, stagger ~40 ms par ligne (la ligne i+1 démarre quand la précédente est à ~50 %)",
+      "timing": "~400-500 ms pour 8 lignes (mesuré : [0,48 / 0,33 / 0,16 / 0] ty [5,2 / 6,7 / 8,4 / 10] à t+411 → toutes op 1)",
+      "evidence": "inv2a/data-gap2.json entrée list3 ; inv2a/pg2-list3-f0.png … f1.png ; ancien agent : data-projects.json p-files-list et p-files-tab (rows [0,21 / 0,01…] → [0,93…])"
+    },
+    {
+      "location": "Sous-onglet FILES — tuiles .fcard (mode Previews)",
+      "trigger": "clic « Previews » du segmented List/Previews",
+      "description": "Cascade des tuiles : opacité 0→1 + translateY ~28 px (y 331→303) par rangée, stagger ~45 ms par tuile ; les SVG de preview sont déjà tracés à l'apparition (aucun strokeDashoffset en cours — le tracé ligne par ligne n'existe QUE dans le drawer fichier, entrée suivante)",
+      "timing": "~600-700 ms pour 8 tuiles (mesuré : [0,67 / 0,53 / 0,34 / 0,07] à t+277 → [0,9…0,59] à t+412)",
+      "evidence": "inv2a/data-gap2.json entrée prev3 ; inv2a/pg2-prev3-f1.png (tuile 1 quasi opaque, tuile 2 semi-transparente) ; inv2a/p-p-files-previews-f0.png … f5.png"
+    },
+    {
+      "location": "Drawer fichier — preview SVG procédural (7 paths : plan, masse isométrique, flèches, cotes)",
+      "trigger": "clic sur une tuile .fcard (ouverture du drawer de détail fichier)",
+      "description": "Tracé procédural ligne par ligne : les 7 paths SVG passent strokeDashoffset →0 séquentiellement avec stagger (path le plus long 508→0, puis 306→0, 218→0, 166→0, 88→0, 51→0, 44→0), chaque ligne se dessinant après la précédente ; les métadonnées (lignes enfants) fondu op 0→1 en parallèle",
+      "timing": "~400-600 ms par path, ~1,2 s total (mesuré : off 508/306/88/44/51/218/166 à t+10 → 498…→ tous 0 vers t+1000)",
+      "evidence": "inv2a/data-fdrawer.json entrée f-drawer-open (champ paths) ; inv2a/f-f-drawer-open-f0.png … f8.png"
+    },
+    {
+      "location": "Sous-onglet FILES — tuile .fcard au survol",
+      "trigger": "survol souris d'une tuile preview",
+      "description": "Lift : translateY ~4 px (y 302,2→298,2) + ombre qui s'approfondit",
+      "timing": "~300 ms ease-out (mesuré : y descend progressivement t+9→t+260 puis stable)",
+      "evidence": "inv2a/data-fdrawer.json entrée f-tile-hover ; inv2a/f-f-tile-hover-f0.png … end.png"
+    },
+    {
+      "location": "Drawer fichier — ouverture/fermeture du panneau",
+      "trigger": "clic tuile (ouverture) / Escape (fermeture)",
+      "description": "Ouverture : translateX x 1360→950 px (~400 ms ease-out) ; fermeture : x 950→988→1139→suppression (~340 ms), même mécanique que le drawer projet",
+      "timing": "~400 ms ouverture, ~340 ms fermeture (mesurées)",
+      "evidence": "inv2a/data-projects3.json entrée p-fcard-click (dlg.x 1360→1235→1141) ; inv2a/data-fdrawer.json entrées f-drawer-open / f-drawer-close ; inv2a/f-f-drawer-close-f*.png"
+    },
+    {
+      "location": "Sous-onglet FILES — segmented List/Previews (.seg + .seg__thumb)",
+      "trigger": "clic « List » ou « Previews »",
+      "description": "AUCUN animation du thumb mesurable (position x=1242 constante, pas de transform) : le switch de mode est porté uniquement par la cascade des lignes (List) ou des tuiles (Previews)",
+      "timing": "n/a",
+      "evidence": "inv2a/data-gap2.json entrées prev3/list3 (thumb [1242,170] constant)"
+    },
+    {
+      "location": "Sous-onglet FILES — tri par en-tête de tableau (th > button, aria-sort ; colonnes Name / Changed / Size…)",
+      "trigger": "clic sur un en-tête triable (testé « Size »)",
+      "description": "AUCUNE animation : le réordonnancement des lignes est instantané (<33 ms), sans FLIP ni fondu — l'ordre change d'un échantillon à l'autre, positions y constantes",
+      "timing": "instantané",
+      "evidence": "inv2a/data-gap3.json entrée fsort4 (ordre Snagging→Massing entre t+42 et t+75) ; inv2a/pg2-fsort3-f*.png ; ancien agent : data-projects.json p-files-sort"
+    },
+    {
+      "location": "Sous-onglet FILES — champ « Search file names »",
+      "trigger": "saisie dans la recherche fichiers (testé « plan »)",
+      "description": "AUCUNE animation mesurable : re-filtrage instantané des lignes (8→1 ligne, <100 ms), sans fondu",
+      "timing": "instantané",
+      "evidence": "inv2a/data-projects.json entrée p-files-search ; inv2a/p-p-files-search-f*.png"
+    }
+  ],
+  "notes": "Toutes les animations sont CSS/rAF (aucune WAAPI ni @keyframes détectée : getAnimations() vide et hooks transitionrun/animationstart à 0 sur toute la session — le moteur est du JS rAF qui écrit opacity/transform/stroke-dashoffset). Les entrées « AUCUNE animation » documentent des interactions testées sans effet mesurable (recherches, tri table, drag, thumb segmented). La cascade d'entrée (titre + cartes + rings) se rejoue à chaque entrée dans la vue Projects via la nav. Le tracé SVG ligne par ligne n'existe que dans le drawer de détail fichier, pas sur les tuiles de grille."
+}

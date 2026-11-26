@@ -1,0 +1,279 @@
+{
+  "scope": "Vues SETTINGS et HELP + TOUTES les interactions globales du shell de https://demo.codeandchill.store/talmo/ (SPA React, user maren / Halden & Moor). Toutes les animations ci-dessous ont été mesurées le 2026-11-26 en navigation RÉELLE (Google Chrome headless via playwright-core, viewport 1440×900) : clics, hovers lents, clavier (⌘K, ?, Escape), drag planner. Preuves : PNG dans /tmp/talmo-deep/inv2b/ (368 fichiers), données brutes data-*.json (samples in-page 25-80 ms + getAnimations() + hooks WAAPI/transitionrun/animationstart), scripts dans /tmp/talmo-deep/inv2b-scripts/, logs gapsA-F.log/help.log/global.log.",
+  "animations": [
+    {
+      "location": "SETTINGS — titre de page h1 « Settings »",
+      "trigger": "Entrée dans la vue (menu compte → Settings)",
+      "description": "Reveal CARACTÈRE PAR CARACTÈRE : chaque span monte depuis le bas, translateY +44.8 px → 0, décalé d'environ 25 ms par caractère (gauche→droite), opacité constante à 1, bloc tronqué (aucun fantôme visible en frames). Mesuré sur les 9 spans de « Settings » : dernier caractère stabilisé ~780 ms après le début.",
+      "timing": "stagger ~25 ms/caractère, montée ~600 ms ease-out par caractère, total ~0.8 s",
+      "evidence": "gapsA.log (courbe TITLES set-title : ty 44.8→0 span par span), x-set-title-f*.png"
+    },
+    {
+      "location": "SETTINGS — carte/champs du sous-onglet actif (.sets__card)",
+      "trigger": "Entrée dans la vue Settings",
+      "description": "Les lignes de la carte (labels/inputs) apparaissent en cascade : opacité 0→1 et translateY 8→0 (« y:8 »), décalage ~55 ms par ligne sur ~600 ms.",
+      "timing": "stagger ~55 ms/ligne, total ~600 ms",
+      "evidence": "data-settings.json (s-enter : rows « 0:8 » → cascade 0.32/0.18/0.01), s-s-enter-f*.png"
+    },
+    {
+      "location": "SETTINGS — titre h1 au changement de sous-onglet",
+      "trigger": "Clic sur un sous-onglet (Profile/Studio/Notifications/Appearance/Data)",
+      "description": "Le reveal caractère par caractère du titre SE RELANCE à chaque clic de sous-onglet (mêmes paramètres que l'entrée) — confirmé visuellement au clic « Studio » : seul le début du premier caractère est visible.",
+      "timing": "~0.8 s",
+      "evidence": "s-s-tab-studio-f2.png (titre en début de reveal juste après le clic onglet)"
+    },
+    {
+      "location": "SETTINGS — champs au changement de sous-onglet (.sets__card rows)",
+      "trigger": "Clic sur un sous-onglet",
+      "description": "RE-STAGGER complet : les lignes repassent instantanément à opacité 0 / y:8 puis refont la cascade (~55 ms/ligne). Mesuré sur l'onglet Studio : reset au clic (dt≈216 ms), 4e ligne en mouvement à dt≈576 ms, dernière stabilisée à dt≈1.04 s.",
+      "timing": "reset instantané, cascade ~700-900 ms",
+      "evidence": "data-settings.json (s-tab-studio : courbe complète « 1: » → « 0:8 » → 0.12→1 par ligne)"
+    },
+    {
+      "location": "SETTINGS — soulignement des sous-onglets (.tabs)",
+      "trigger": "Clic sur un sous-onglet",
+      "description": "Le trait sombre passe sous le nouvel onglet actif ; AUCUNE transition CSS ni WAAPI capturée (anims_started vide, .tabs__line sans transform) → pilotage rAF/instantané.",
+      "timing": "<50 ms (rAF)",
+      "evidence": "s-s-enter-f3.png (trait sous Profile) vs s-s-tab-studio-f2.png (sous Studio), data-settings.json"
+    },
+    {
+      "location": "SETTINGS / onglet Notifications — switches (Mentions, Deadlines, Every upload, Morning digest)",
+      "trigger": "Clic sur un switch [role=switch]",
+      "description": "Knob en BACK.OUT : mesuré « Mentions » ON→OFF : tx 18 → -2.67 px (dépassement ~2.7 px au-delà de la butée) → 0 ; inverse OFF→ON : 0 → +20.8 → 18. La piste change de couleur en parallèle (rgb(10,10,10) ↔ rgba(8,8,8,.06)).",
+      "timing": "~465 ms, back.out (overshoot ~15 %)",
+      "evidence": "data-settings.json (s-switch-on : knobTx 18→14.65→9.02→3.05→-2.67→0), s-s-switch-on-f*.png"
+    },
+    {
+      "location": "SETTINGS / Notifications → toast global (bas centre)",
+      "trigger": "Clic sur un switch de notification",
+      "description": "Toast de confirmation « Mentions on » / « Mentions off » avec l'animation d'entrée standard du toast (cf. entrée TOAST GLOBAL).",
+      "timing": "entrée ~450 ms, TTL ~2-2.5 s",
+      "evidence": "s-s-theme-dark-f0.png et s-s-theme-dark-f4.png (pilule « Mentions on » visible en bas centre)"
+    },
+    {
+      "location": "SETTINGS / onglet Appearance — radios thème Light/Dark/Match system (avec aperçus)",
+      "trigger": "Clic sur la radio « Dark » (ou « Light »)",
+      "description": "RÉVÉLATION CIRCULAIRE : View Transition + animation WAAPI clipPath sur <html> circle(0px → 1470.47 px au point du clic), 450 ms cubic-bezier(.65,0,.35,1). Le NOUVEAU thème (dark) apparaît dans un cercle qui GRANDIT depuis la carte cliquée ; l'ancien thème reste visible à l'extérieur pendant l'expansion. Variables de thème basculées instantanément (bg body rgb(229,229,226)→rgb(13,13,13) en <50 ms).",
+      "timing": "450 ms, cubic-bezier(.65,0,.35,1)",
+      "evidence": "s-s-theme-dark-f0/f2/f4.png (cercle dark centré sur la carte Dark), data-settings.json (anims_started waaPI html clipPath 450ms), g-theme-probe-*.png"
+    },
+    {
+      "location": "SETTINGS / onglet Appearance — switch « Compact tables » (Density)",
+      "trigger": "Clic sur le switch",
+      "description": "Même knob back.out que les autres switches : mesuré OFF→ON tx 0 → +20.77 (overshoot) → 18, piste qui passe dark.",
+      "timing": "~450 ms back.out",
+      "evidence": "data-settings.json (s-density-on : knobTx 3.35→11.04→16.18→20.77→18)"
+    },
+    {
+      "location": "SETTINGS / onglet Data — bouton « Reset demo » → confirm dialog (.modal)",
+      "trigger": "Clic sur « Reset demo »",
+      "description": "Modale standard : scale .898→1.011 (overshoot back.out) + opacité 0.272→1, position qui grandit depuis le point de clic (x 502→467, y 362→352), scrim fade 0.21→1.",
+      "timing": "~350 ms",
+      "evidence": "data-settings.json (s-reset-open : sx .898→.928→.965→.989→1.011)"
+    },
+    {
+      "location": "SETTINGS / Data — fermeture du confirm dialog",
+      "trigger": "Clic « Cancel » (ou Escape)",
+      "description": "Fermeture : scale → ~0.94-0.96, opacité → 0, scrim fade-out (même famille que la modale standard du shell).",
+      "timing": "~200-300 ms",
+      "evidence": "data-settings.json (s-reset-cancel), data-global.json (g-modal-escape)"
+    },
+    {
+      "location": "SETTINGS / onglet Profile — bouton « Save profile » → toast",
+      "trigger": "Clic sur « Save profile »",
+      "description": "Toast « Profile saved » : entrée translateY +25→0 avec scale .95→1.01 (back.out) et opacité 0→1 ; auto-dismiss mesuré à ~2.1-2.4 s.",
+      "timing": "entrée ~450 ms, TTL ~2.2 s",
+      "evidence": "data-magtoast.json (x-toast-entry : ty 25.33→17.5→6.07→-3.26→0, scale .95→1.01 ; x-toast-dismiss : présent à dt=2100, absent à 2400)"
+    },
+    {
+      "location": "HELP — titre de page h1 « Help »",
+      "trigger": "Entrée dans la vue Help (menu compte → Help)",
+      "description": "Même mécanisme que Settings : chaque caractère monte de +44.8 px à 0, stagger ~25 ms/caractère, opacité 1, bloc tronqué. « Help » (4 caractères) : stabilisé en ~0.7 s.",
+      "timing": "stagger ~25 ms, total ~0.7 s",
+      "evidence": "gapsA.log (TITLES help-title : ty 44.8→0), x-help-title-f*.png, h-h-enter-f2.png (« Hel » + 4e caractère partiel)"
+    },
+    {
+      "location": "HELP / onglet Guides — liste des questions FAQ (.faq__item)",
+      "trigger": "Entrée dans la vue Help",
+      "description": "Les 8 questions apparaissent en CASCADE : opacité 0→1 + translateY 10→0, décalage ~55 ms par item.",
+      "timing": "~55 ms/item, total ~600-800 ms",
+      "evidence": "data-help.json (h-enter : faqs « 0:10 » → cascade 0.21/0.36/0.12 par item)"
+    },
+    {
+      "location": "HELP / Guides — accordéon FAQ OUVERTURE (.faq__item > .faq__a)",
+      "trigger": "Clic sur une question fermée",
+      "description": "La réponse s'ouvre : opacité 0→1 + translateY -4.9→0 (~250-300 ms) pendant que la hauteur du conteneur s'étend (itemH 74→137 px). Comportement ACCORDÉON : l'item précédemment ouvert se ferme automatiquement. Le chevron fait une transition « rotate » de 0.3 s.",
+      "timing": "réponse ~250-300 ms, chevron 0.3 s",
+      "evidence": "gapsA.log (FAQ OPEN #3 : op 0.19→0.45→0.73→1, ty -4.9→-3.3→-1.6→0), x-faq-open-*.png, data-help.json (anims transition rotate 0.3s)"
+    },
+    {
+      "location": "HELP / Guides — accordéon FAQ FERMETURE",
+      "trigger": "Re-clic sur la question ouverte",
+      "description": "Fermeture quasi instantanée, bien plus rapide que l'ouverture : hauteur repliée (137→74 px) en <~40 ms à l'échelle de mon échantillonnage — pas de fade mesurable.",
+      "timing": "<~40-100 ms",
+      "evidence": "gapsA.log (FAQ CLOSE #3 : ouvert à dt=5, fermé h=0 à dt=46), x-faq-close-*.png"
+    },
+    {
+      "location": "HELP / Guides — 1re question FAQ ouverte par défaut",
+      "trigger": "Entrée dans la vue Help",
+      "description": "La 1re question (« How do I move a session? ») est OUVERTE par défaut : sa réponse fait partie de la cascade d'entrée (opacité 0→1).",
+      "timing": "avec l'entrée (~300 ms)",
+      "evidence": "gapsA.log (FAQ état par défaut : item 1 open=true, items 2-4 fermés), h-h-enter-f3.png"
+    },
+    {
+      "location": "HELP / onglet « Contact us » — carte formulaire (Subject, Topic, What happened, Send)",
+      "trigger": "Clic sur l'onglet « Contact us »",
+      "description": "La carte du formulaire + ses champs apparaissent en FONDU (opacité ~0→1 sur ~300-400 ms) ; le titre de page refait son reveal caractère par caractère en parallèle.",
+      "timing": "~300-400 ms",
+      "evidence": "h-h-tab-contact-f2.png (carte et champs à opacité partielle en pleine animation, titre « He » + partiel)"
+    },
+    {
+      "location": "HELP / Contact us — bouton « Send » (spinner)",
+      "trigger": "Clic sur « Send » (formulaire rempli)",
+      "description": "Le texte passe de « Send » à « Sending… », le bouton passe à opacité 0.85, et un spinner span.spin tourne (animation CSS « spin » 0.7 s/tour). Durée totale mesurée ~600 ms avant retour à l'état normal.",
+      "timing": "~600 ms (spinner 0.7 s)",
+      "evidence": "data-help.json (h-submit : « Sending… » op .85 de dt=91 à dt=583), cssAnim span.spin 0.7s"
+    },
+    {
+      "location": "HELP / Contact us → toast global + feed What's new",
+      "trigger": "Fin de l'envoi (après le spinner)",
+      "description": "Toast « SUP-2280 sent. We answer within 4 working hours. » (entrée standard du toast) ; le ticket est AJOUTÉ en tête du feed « What's new » (« Vérif animations QA / SUP-2280 · The planner · Today, 10:24 »).",
+      "timing": "toast à ~650 ms après le clic",
+      "evidence": "data-help.json (h-submit : toast visible à dt=666 ; h-tab-whatsnew : ticket en tête du feed)"
+    },
+    {
+      "location": "HELP / onglet « What's new » — feed des versions",
+      "trigger": "Clic sur l'onglet « What's new »",
+      "description": "Les items du feed (Version 2.8, 2.7, 2.6…) entrent en CASCADE opacité 0→1, stagger ~60 ms par item.",
+      "timing": "~60 ms/item",
+      "evidence": "data-help.json (h-tab-whatsnew : [0.23,0,0,0] → [0.55,0.37,0.14,0])"
+    },
+    {
+      "location": "SHELL — palette de commandes (.finder), raccourci ⌘K",
+      "trigger": "⌘K / Ctrl+K (ou bouton Search)",
+      "description": "Ouverture : opacité 0→1, scale ~.97→1.003 avec overshoot, translateY -18→+1.6→0 (back.out) ; les lignes de résultats entrent en CASCADE (~50 ms/ligne). Mesuré en vol à +67 ms : ty -7.2 / scale .988.",
+      "timing": "~440 ms, back.out",
+      "evidence": "data-global.json (g-palette-open : op .6→1, sx .988→1.003, rows [0.44,0.34,0.23,0.1,0]→1), g-g-palette-open-f*.png"
+    },
+    {
+      "location": "SHELL — palette de commandes : résultats",
+      "trigger": "Chaque frappe dans la palette (« p », « r », « o »…)",
+      "description": "Les résultats filtrés RE-ANIMENT À CHAQUE FRAPPE : les lignes repartent en cascade opacité 0→1 avec ~50 ms/ligne (~430 ms) — mesuré distinctement sur « p » puis « ro ».",
+      "timing": "~430 ms par frappe",
+      "evidence": "data-global.json (g-palette-type-p : rows [0.12,0,0,0,0]→1 ; g-palette-type-ro idem)"
+    },
+    {
+      "location": "SHELL — palette de commandes : fermeture",
+      "trigger": "Escape",
+      "description": "Fermeture : opacité 1→0, translateY 0→-5.9 (remonte vers -18), scale →0.982.",
+      "timing": "~180-200 ms",
+      "evidence": "data-global.json (g-palette-escape : op .959→.823→.41, ty -0.4→-1.8→-5.9)"
+    },
+    {
+      "location": "SHELL — bouton thème top bar (« Switch to dark/light mode »)",
+      "trigger": "Clic sur le bouton soleil/lune",
+      "description": "RÉVÉLATION CIRCULAIRE via View Transitions API : document.startViewTransition() appelé (espionné au runtime), animation WAAPI clipPath sur <html> circle(0px at clickX,clickY) → circle(1470.47px at clickX,clickY), 450 ms cubic-bezier(.65,0,.35,1), centrée EXACTEMENT sur le pointeur (1192.77, 40). Visuellement : l'ancien thème reste visible dans un disque qui RÉTRÉCIT jusqu'à s'annuler au point de clic pendant que le nouveau thème prend le reste de l'écran (miroir du comportement de la radio Settings, où c'est le nouveau thème qui grandit depuis le clic).",
+      "timing": "450 ms, cubic-bezier(.65,0,.35,1)",
+      "evidence": "g-theme-probe-0/1/3.png (disque light rétrécissant sur le bouton), probe-vt (VT call t=3254), probe-theme (keyframes circle 0→1470.47px @1192.77,40)"
+    },
+    {
+      "location": "SHELL — tooltip du bouton thème",
+      "trigger": "Hover/clic du bouton thème",
+      "description": "Une petite pilule « Dark mode » / « Light mode » apparaît sous le bouton (fondu) pendant l'interaction.",
+      "timing": "~100-200 ms (visible à dt≈85 ms)",
+      "evidence": "g-theme-probe-0.png (pilule « Dark mode » visible alors que la page est encore entièrement light)"
+    },
+    {
+      "location": "SHELL — cloche top bar → popover notifications (.pop.notices)",
+      "trigger": "Clic sur la cloche (badge de non-lus)",
+      "description": "Ouverture : opacité 0→1, scale .95→1.01 (back.out), ty -3.7→+0.8→0 ; les 4 notifications entrent en CASCADE (~60 ms/item).",
+      "timing": "~450 ms",
+      "evidence": "data-global.json (g-notif-open : op .376→1, sx .95→1.01, items [0,0,0,0]→[1,.99,.98,.96])"
+    },
+    {
+      "location": "SHELL — popover notifications : fermeture",
+      "trigger": "Escape (ou clic extérieur)",
+      "description": "Fermeture : opacité 1→0 + scale →0.982.",
+      "timing": "~140-160 ms",
+      "evidence": "data-global.json (g-notif-close : op .859→.549→null)"
+    },
+    {
+      "location": "SHELL — popover notifications, bouton « Mark all read »",
+      "trigger": "Clic sur « Mark all read »",
+      "description": "Le badge de non-lus disparaît : aria-label de la cloche passe de « Notifications, 3 unread » à « Notifications ». Pas d'animation mesurable sur le badge (changement d'état instantané).",
+      "timing": "instantané",
+      "evidence": "data-bell.json (x-notif-markall : aria avant/après)"
+    },
+    {
+      "location": "SHELL — cloche top bar : wiggle (recherche exhaustive)",
+      "trigger": "(hover, ouverture, mark-all, après drag planner, et 45 s d'attente au repos)",
+      "description": "NÉGATIF : AUCUN wiggle observé — getAnimations() vide sur le sous-arbre de la cloche dans tous les cas testés, et aucun @keyframes « wiggle/ring/shake » dans la feuille de style (catalogue complet des keyframes : flash, tick-up, tick-down, spin, breathe). Le brief mentionnait un wiggle de la cloche ; il n'existe pas dans ce build, ou est déclenché par une arrivée de notification non reproduite (aucune nouvelle notif après drag ni après 45 s d'attente).",
+      "timing": "n.a.",
+      "evidence": "gapsF.log (BELL WATCH 45s : aucun changement d'aria/anims), data-bell.json, gapsD.log (KEYFRAMES)"
+    },
+    {
+      "location": "SHELL — bouton compte « Maren Holt » (.mebtn) → menu popover (.pop)",
+      "trigger": "Clic sur l'avatar",
+      "description": "Ouverture : opacité 0→1, scale .949→1.01 (back.out), ty -3.8→+0.75→0. Contenu : Light ✓ / Dark / Match system, Profile, Settings, Help, Keyboard shortcuts ?, Sign out.",
+      "timing": "~340 ms",
+      "evidence": "data-global.json (g-acct-open : op .366→1, sx .949→1.01), h-h-enter-f0.png (menu ouvert)"
+    },
+    {
+      "location": "SHELL/STUDIO — bouton magnétique « Book a session » (.magnetic)",
+      "trigger": "Approche LENTE du pointeur (~130 ms/étape, rayon ~90-130 px) — approche rapide = effet quasi nul",
+      "description": "Le bouton est ATTIRÉ de 3-4 px vers le pointeur : matrix mesuré tx -3.15 / ty +3.82 (pic) quand le curseur est proche du bord, puis retour à 0 au centre ; pilotage rAF/lerp (aucun WAAPI). Au départ du pointeur : retour exponentiel en ~430 ms.",
+      "timing": "lerp rAF, pic ~5 px, settle ~200-450 ms",
+      "evidence": "data-mag2.json (x3-mag-book-a-session : tx -1.77→-2.80→-3.15→-2.82→…→0), x3-mag-book-a-session-mid8/mid11.png"
+    },
+    {
+      "location": "SHELL — bouton magnétique « New » (top bar)",
+      "trigger": "Approche ultra-lente (16 étapes × 150 ms depuis ~130 px)",
+      "description": "NÉGATIF : aucun déplacement mesuré (transform « none » sur 40/40 échantillons) malgré la classe .magnetic — effet absent ou trop faible pour être mesurable sur ce bouton dans ce build (alors que « Book a session » attire nettement).",
+      "timing": "n.a.",
+      "evidence": "data-last.json (x4-mag-new-slow : 0 transform), data-mag2.json (x3-mag-new identique)"
+    },
+    {
+      "location": "SHELL — menu « New » → modale standard « New task » (.modal)",
+      "trigger": "Clic « New » puis « New task »",
+      "description": "Le popover « New » (famille .pop : op 0→1, scale .937→1.01) se ferme pendant que la modale s'ouvre : scale ~.86-.9→1.011 (overshoot back.out), opacité 0→1, position qui grandit depuis le point de clic (x 484→461), scrim fade 0→1.",
+      "timing": "~350 ms",
+      "evidence": "data-global.json (g-modal-open : sx .983→1.011 en vol ; g-new-menu : sx .937→1.01)"
+    },
+    {
+      "location": "SHELL — modale standard : fermeture",
+      "trigger": "Escape",
+      "description": "Fermeture : scale →0.966 (vers ~0.94), opacité 1→0.428→0, scrim fade-out.",
+      "timing": "~190 ms",
+      "evidence": "data-global.json (g-modal-escape : sx .997→.966, op .943→.815→.428)"
+    },
+    {
+      "location": "SHELL — raccourci clavier « ? » → modale « Keyboard shortcuts »",
+      "trigger": "Touche « ? » (Shift+Slash)",
+      "description": "Modale standard (même famille) : scale .9→1.011, opacité 0→1, scrim fade 0.22→1 ; liste des raccourcis (⌘K, N, G+S…G+R, ←/→, Esc). Fermeture Escape ~200 ms.",
+      "timing": "ouverture ~350 ms, fermeture ~200 ms",
+      "evidence": "data-global.json (g-shortcuts-open : sx .9→.944→.975→1.011 ; g-shortcuts-escape), global.log (texte de la modale capturé)"
+    },
+    {
+      "location": "SHELL — toasts globaux (bas centre)",
+      "trigger": "Mutations : Save profile, switchs notifications, formulaire contact, drag planner…",
+      "description": "Entrée : translateY +25→0 (démarrage ~+28-30), scale .95→1.01 (back.out avec overshoot -3.26 px), opacité 0→1, ~450 ms. AUTO-DISMISS : toasts simples ~2.1-2.4 s ; toast de mutation avec bouton [Undo] (« Saltmarsh site survey → 10:15 · follower moved too ») persiste ~5.5 s.",
+      "timing": "entrée ~450 ms back.out ; TTL ~2.2 s (simple) / ~5.5 s (Undo)",
+      "evidence": "data-magtoast.json (x-toast-entry : ty 25.33→-3.26→0), data-global.json (g-toast-undo : présent à dt=5250, absent à 5500)"
+    },
+    {
+      "location": "SHELL/PLANNER — drag de session (trigger du toast Undo)",
+      "trigger": "pointer down + déplacement > seuil (~4-5 px) sur une barre .tl__bar",
+      "description": "La classe .is-drag apparaît pendant le mouvement (vérifiée à mi-drag, 10-20 petits pas de ~8-16 px) ; au drop : snap puis toast avec bouton Undo. (Le drag en lui-même relève du périmètre Planner — autre agent.)",
+      "timing": ".is-drag immédiat au seuil",
+      "evidence": "data-global.json (g-toast-undo : sawDrag=true), g-g-toast-drag-mid.png"
+    },
+    {
+      "location": "STUDIO — point « live » ambiant (span.live)",
+      "trigger": "Permanente (au repos, vue Studio)",
+      "description": "Pulsation d'opacité en boucle : CSSAnimation « breathe », 2000 ms, linear, iterations ∞ (seule animation active au repos avec les éléments ci-dessus).",
+      "timing": "2000 ms ∞",
+      "evidence": "recon.js (ANIMS au repos), ticks probe-theme (breathe span dur 2000)"
+    }
+  ],
+  "notes": "SITE ACCESSIBLE : le site répond sans problème depuis cet environnement (chargement networkidle ~1 s, aucune erreur page). Le problème « l'agent n'arrive pas à aller sur le site » ne se reproduit PAS ici — si un autre agent a échoué, c'est très probablement un problème de contexte/environnement (playwright-core non résolu hors de /tmp/talmo-deep ou /tmp/talmo-scout où node_modules est symlinké, cwd incorrect, sandbox réseau), et non le site lui-même. MÉTHODE : Playwright + Google Chrome headless (channel chrome) via require('playwright-core') depuis /tmp/talmo-deep, viewport 1440×900 ; navigation réelle uniquement (les URLs directes des vues font 404 — on passe par le menu compte pour Settings/Help) ; échantillonnage in-page toutes les 25-80 ms + document.getAnimations() + hooks Element.prototype.animate / transitionrun / animationstart installés via addInitScript. NÉGATIFS documentés : (1) aucun wiggle de la cloche (ni au hover, ni à l'ouverture, ni mark-all, ni après drag, ni 45 s d'attente ; pas de keyframes dédié) ; (2) pas d'attraction magnétique mesurable sur « New » top bar alors que « Book a session » attire 3-4 px (approche lente indispensable : ~130 ms/étape) ; (3) flèche bas dans la palette = surlignage instantané, aucune animation mesurée. DIVERGENCES AVEC LE BRIEF : le reveal circulaire du thème se comporte en miroir selon le déclencheur (top bar : l'ancien thème rétrécit vers le point de clic via View Transition ; radio Settings : le nouveau thème grandit depuis le clic) — les deux sont mesurés 450 ms cubic-bezier(.65,0,.35,1), WAAPI clipPath sur <html> circle(0→1470.47 px au pointeur). La fermeture de l'accordéon FAQ est quasi instantanée (<~100 ms) contrairement à l'ouverture (~300 ms). Les toasts ont des TTL différents selon le type (simple ~2.2 s / Undo ~5.5 s). Le premier item FAQ est ouvert par défaut à l'entrée de Help."
+}

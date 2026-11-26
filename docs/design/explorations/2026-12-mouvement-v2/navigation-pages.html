@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transitions entre pages — démo</title>
+<style>
+/* Démo autonome (HTML + CSS + JS inline). Toutes les valeurs de mouvement sont des variables --lc-nav-* sur .app,
+   lues par le JS (durées en ms, multipliées par --lc-motion-scale : 0 = mouvement réduit). */
+:root{
+  --bg:#1b1714; --surface:#25201c; --surface-2:#2e2823; --text:#f4ece3; --muted:#b3a89b;
+  --border:#3b332c; --accent:#e8a35c; --on-accent:#1b1714; --focus:#f2c48a; --teal:#8fd3c0;
+  --lc-motion-scale:1;
+}
+@media (prefers-reduced-motion:reduce){:root{--lc-motion-scale:0}}
+:root.reduced{--lc-motion-scale:0}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;min-height:100vh;background:#120f0d;color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1:focus{outline:0}
+a{color:inherit}
+
+/* ---- Barre de démo (hors application) ---- */
+.demo-bar{--bar-h:3rem;height:var(--bar-h);display:flex;align-items:center;gap:.75rem;padding:0 16px;font-size:.8125rem;color:var(--muted);border-bottom:1px solid var(--border)}
+.demo-bar strong{color:var(--text);font-weight:600;margin-right:auto}
+.dir{font-variant-numeric:tabular-nums;white-space:nowrap}
+.dir b{color:var(--accent);font-weight:600}
+.demo-bar button{min-height:32px;padding:0 .75rem;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.demo-bar button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.wrap{display:flex;justify-content:center;padding:12px 16px}
+
+/* ---- Application ---- */
+.app{
+  --lc-nav-out-ms:190; --lc-nav-out-shift:16px; --lc-nav-out-ease:cubic-bezier(0.4,0,1,1);
+  --lc-nav-in-ms:700;  --lc-nav-in-shift:26px;  --lc-nav-in-ease:cubic-bezier(0.16,1,0.3,1);
+  --lc-nav-fade-ms:300;
+  --lc-nav-stack-ms:500; --lc-nav-stack-ease:cubic-bezier(0.32,0.72,0,1);
+  --lc-nav-stack-parallax:30%; --lc-nav-stack-dim:.12; --lc-nav-stack-title-shift:36px;
+  --lc-nav-stack-min-ms:180; --lc-nav-stack-commit:.5; --lc-nav-stack-fling:.4; --lc-nav-edge:18px;
+  --lc-nav-stepper-ms:900; --lc-nav-stepper-delay:250; --lc-nav-stepper-ease:cubic-bezier(0.65,0,0.35,1);
+  position:relative;display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;
+  width:100%;max-width:1200px;height:calc(100dvh - 3rem - 24px);min-height:520px;
+  background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.phone .app{width:390px;height:min(780px,calc(100dvh - 3rem - 24px));border-radius:36px;border-width:6px;border-color:#000}
+
+.side{grid-row:1/3;display:flex;flex-direction:column;gap:1.5rem;padding:20px 12px;background:var(--surface);border-right:1px solid var(--border)}
+.brand{padding:0 10px;font-weight:700;letter-spacing:.01em}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:.75rem}
+.side ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.side a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;text-decoration:none;color:var(--muted)}
+.side a:hover{background:var(--surface-2);color:var(--text)}
+.side a[aria-current="page"]{background:var(--surface-2);color:var(--text);box-shadow:inset 3px 0 var(--accent)}
+.side svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+.top{grid-column:2;position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid var(--border);overflow:hidden;font-size:.875rem;color:var(--muted)}
+.crumb a{text-decoration:none}.crumb a:hover{color:var(--text);text-decoration:underline}
+.crumb b{color:var(--text);font-weight:500}
+.m-wrap{display:none}
+.stage{grid-column:2;position:relative;overflow:hidden}
+.page{position:absolute;inset:0;overflow:auto;padding:28px 32px 40px}
+.page .dim{display:none}
+.edge{display:none}
+
+/* ---- Contenu ---- */
+h1{margin:0 0 4px;font-size:1.75rem;line-height:1.2;font-weight:650;display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.lede{margin:0 0 24px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.card{display:block;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-decoration:none}
+.card:hover{background:var(--surface-2)}
+.card b{display:block;font-size:1.5rem;color:var(--accent)}
+.tablewrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:.9375rem}
+th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--border)}
+th{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--surface-2)}
+td a{font-weight:600;text-decoration:none}td a small{white-space:nowrap;font-weight:400;color:var(--muted);margin-left:6px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:.8125rem;font-weight:600;background:rgb(232 163 92 / .16);color:#f0b87a;vertical-align:middle}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge.t{background:rgb(143 211 192 / .15);color:var(--teal)}
+.sub{margin:0 0 28px;color:var(--muted)}
+.steps{position:relative;display:grid;grid-template-columns:repeat(5,1fr);list-style:none;margin:0 0 32px;padding:20px 0 4px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.steps::before,.steps .fill{content:'';position:absolute;top:36px;left:10%;width:80%;height:2px;background:var(--border)}
+.steps .fill{background:var(--accent);transform:scaleX(0);transform-origin:left;
+  transition:transform calc(var(--lc-nav-stepper-ms) * 1ms * var(--lc-motion-scale)) var(--lc-nav-stepper-ease) calc(var(--lc-nav-stepper-delay) * 1ms * var(--lc-motion-scale))}
+.page.go .fill{transform:scaleX(var(--fill))}
+.steps li{position:relative;text-align:center;padding:0 4px 14px;font-size:.8125rem;color:var(--muted)}
+.dot{display:grid;place-items:center;width:32px;height:32px;margin:0 auto 8px;border-radius:50%;background:var(--surface);border:2px solid var(--border);font-weight:600;
+  transition:background-color,border-color,color calc(var(--lc-nav-stepper-ms) * .1ms * var(--lc-motion-scale)) linear calc((var(--lc-nav-stepper-delay) + var(--k) * var(--lc-nav-stepper-ms) * .9) * 1ms * var(--lc-motion-scale))}
+.page.go li.done .dot{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.page.go li.done{color:var(--text)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tabs button{min-height:44px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);font:inherit;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--text);border-color:var(--accent)}
+.panel p{margin:0 0 12px;max-width:60ch}
+.hist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.hist span{color:var(--muted);margin-right:8px}
+.back{display:inline-flex;align-items:center;gap:2px;max-width:100%;min-height:44px;padding:0 8px 0 2px;border:0;background:none;color:var(--accent);font:inherit;font-size:1rem;cursor:pointer}
+.back svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
+.back span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- Mobile (< 760 px de largeur d'application) : pile façon iOS, barre d'onglets en bas ---- */
+.app.is-mobile{grid-template-columns:1fr;grid-template-rows:48px 1fr 60px}
+.is-mobile .side{grid-row:3;grid-column:1;flex-direction:row;padding:0;gap:0;border-right:0;border-top:1px solid var(--border)}
+.is-mobile .brand{display:none}
+.is-mobile .side ul{display:grid;grid-template-columns:repeat(4,1fr);width:100%;gap:0}
+.is-mobile .side a{flex-direction:column;justify-content:center;gap:2px;font-size:.6875rem;padding:0 2px;border-radius:0;text-align:center}
+.is-mobile .side a[aria-current="page"]{box-shadow:none;background:none;color:var(--accent)}
+.is-mobile .top{grid-column:1;padding:0;background:var(--surface)}
+.is-mobile .crumb,.is-mobile .top>.where{display:none}
+.is-mobile .m-wrap{display:block;position:absolute;inset:0}
+.m-nav{position:absolute;inset:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 4px}
+.m-title{font-weight:600;font-size:1rem;color:var(--text);white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.m-nav>div:first-child{min-width:0;justify-self:start;max-width:100%}
+.is-mobile .stage{grid-column:1}
+.is-mobile .page{padding:16px 16px 32px;background:var(--bg)}
+.is-mobile .page.over{box-shadow:-8px 0 20px rgb(0 0 0 / .4)}
+.is-mobile .page .dim{display:block;position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+.is-mobile .page h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0}
+.is-mobile .page .sub{margin-top:0}
+.is-mobile th:nth-child(2),.is-mobile td:nth-child(2),.is-mobile th:nth-child(4),.is-mobile td:nth-child(4){display:none}
+.is-mobile .steps li{font-size:.6875rem}
+.is-mobile[data-depth="2"] .edge{display:block;position:absolute;left:0;top:48px;bottom:60px;width:var(--lc-nav-edge);z-index:5;touch-action:pan-y}
+.is-mobile[data-depth="2"] .stage{position:relative}
+
+/* ---- Note ---- */
+.note{max-width:70ch;margin:8px auto 40px;padding:0 16px;font-size:.8125rem;color:var(--muted)}
+.note b{color:var(--text)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media (max-width:759px){
+  .demo-bar{padding:0 10px;gap:.5rem}.demo-bar strong{display:none}.demo-bar .dir{margin-right:auto}
+  #mobile-btn{display:none}
+  .wrap{padding:0}
+  .app{height:calc(100dvh - 3rem);border:0;border-radius:0}
+}
+</style>
+</head>
+<body>
+<svg class="sr" aria-hidden="true"><defs>
+  <symbol id="i-accueil" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+  <symbol id="i-demandes" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"/></symbol>
+  <symbol id="i-immeuble" viewBox="0 0 24 24"><path d="M5 21V4h10v17M15 9h4v12M3 21h18M8 8h4M8 12h4M8 16h4"/></symbol>
+  <symbol id="i-notifications" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+</defs></svg>
+
+<div class="demo-bar">
+  <strong>Transitions entre pages — démo</strong>
+  <span class="dir">sens déduit : <b id="dir">—</b></span>
+  <button type="button" id="mobile-btn" aria-pressed="false">Vue mobile</button>
+  <button type="button" id="reduced-btn" aria-pressed="false">Mouvement réduit</button>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="app" id="app" data-depth="1">
+    <nav class="side" aria-label="Navigation principale">
+      <div class="brand">Syndic en ligne<small>Résidence Les Tilleuls</small></div>
+      <ul>
+        <li><a href="#/accueil" data-top="accueil"><svg aria-hidden="true"><use href="#i-accueil"/></svg>Accueil</a></li>
+        <li><a href="#/demandes" data-top="demandes"><svg aria-hidden="true"><use href="#i-demandes"/></svg>Mes demandes</a></li>
+        <li><a href="#/immeuble" data-top="immeuble"><svg aria-hidden="true"><use href="#i-immeuble"/></svg>Mon immeuble</a></li>
+        <li><a href="#/notifications" data-top="notifications"><svg aria-hidden="true"><use href="#i-notifications"/></svg>Notifications</a></li>
+      </ul>
+    </nav>
+    <header class="top">
+      <div class="crumb" id="crumb"></div>
+      <span class="where">Bâtiment G</span>
+      <div class="m-wrap" id="mwrap"></div>
+    </header>
+    <main class="stage" id="stage"></main>
+    <div class="edge" id="edge" aria-hidden="true"></div>
+  </div>
+</div>
+
+<p class="note"><b>Technique à prouver en Angular, sans View Transitions :</b> le sens (avancer, reculer, même niveau) se déduit de la profondeur de l'URL, jamais d'un réglage de la page. À chaque changement de route, l'ancienne page reste dans le DOM comme copie non interactive (<code>inert</code>, <code>aria-hidden</code>) le temps de sa sortie, puis est retirée ; la nouvelle est ajoutée à côté et animée. Le libellé du bouton retour vient du titre déclaré pour la route parente (comme le <code>title</code> d'une route Angular).</p>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const app = $('#app'), stage = $('#stage'), mwrap = $('#mwrap'), crumb = $('#crumb'), edge = $('#edge');
+  const dirEl = $('#dir');
+
+  /* ---------- Données et routes (title déclaré par route, comme en Angular) ---------- */
+  const DEMANDES = [
+    { id: 3, title: 'Test', who: 'Moi et le gestionnaire', state: 'Reçue', step: 1, date: '26 nov. 2026' },
+    { id: 1, title: 'Panne ascenseur G1', who: 'Tout le bâtiment G', state: 'Prise en charge', step: 3, date: '9 nov. 2026' },
+  ];
+  const STEPS = ['Reçue', 'Lue par le gestionnaire', 'Prise en charge', 'Réglée', 'Terminée'];
+  const demande = id => DEMANDES.find(d => d.id == id);
+  const badge = d => `<span class="badge${d.step > 1 ? ' t' : ''}">${d.state}</span>`;
+
+  const ROUTES = [
+    { path: 'accueil', title: () => 'Accueil', view: () => `
+        <h1 tabindex="-1">Bonjour Marie</h1><p class="lede">L'essentiel de votre copropriété.</p>
+        <div class="cards">
+          <a class="card" href="#/demandes"><b>2</b>demandes en cours</a>
+          <a class="card" href="#/demandes/3">Dernière demande<br><b style="font-size:1rem">Test</b></a>
+          <a class="card" href="#/notifications">Notifications<br><b style="font-size:1rem">3 non lues</b></a>
+        </div>` },
+    { path: 'demandes', title: () => 'Mes demandes', view: () => `
+        <h1 tabindex="-1">Mes demandes</h1><p class="lede">Suivez ce que vous avez signalé au syndic.</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th scope="col">Demande</th><th scope="col">Qui peut la voir</th><th scope="col">État</th><th scope="col">Envoyée le</th></tr></thead>
+          <tbody>${DEMANDES.map(d => `<tr data-href="#/demandes/${d.id}"><td><a href="#/demandes/${d.id}">${d.title}<small>n° ${d.id}</small></a></td><td>${d.who}</td><td>${badge(d)}</td><td>${d.date}</td></tr>`).join('')}</tbody>
+        </table></div>` },
+    { path: 'demandes/:id', title: p => demande(p.id)?.title, view: p => {
+        const d = demande(p.id);
+        return `
+        <h1 tabindex="-1">${d.title} ${badge(d)}</h1><p class="sub">Demande n° ${d.id}</p>
+        <ol class="steps" style="--fill:${(d.step - 1) / 4}" aria-label="Étape ${d.step} sur 5 : ${STEPS[d.step - 1]}"><span class="fill"></span>
+          ${STEPS.map((s, i) => `<li class="${i < d.step ? 'done' : ''}" style="--k:${i / Math.max(d.step - 1, 1)}" ${i === d.step - 1 ? 'aria-current="step"' : ''}><span class="dot">${i + 1}</span>${s}</li>`).join('')}
+        </ol>
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-tab="0">Demande</button>
+          <button role="tab" aria-selected="false" data-tab="1">Photos</button>
+          <button role="tab" aria-selected="false" data-tab="2">Historique</button>
+        </div>
+        <div class="panel" role="tabpanel" data-panel="0"><p>${d.title === 'Test' ? 'Demande de test pour vérifier le suivi.' : 'L\'ascenseur du bâtiment G1 est à l\'arrêt depuis ce matin.'}</p><p>Visible par : ${d.who}.</p></div>
+        <div class="panel" role="tabpanel" data-panel="1" hidden><p>Aucune photo jointe.</p></div>
+        <div class="panel" role="tabpanel" data-panel="2" hidden><ul class="hist"><li><span>${d.date}</span>Demande envoyée</li>${d.step > 1 ? `<li><span>${d.date}</span>Lue par le gestionnaire</li><li><span>${d.date}</span>Prise en charge</li>` : ''}</ul></div>`;
+      } },
+    { path: 'immeuble', title: () => 'Mon immeuble', view: () => `
+        <h1 tabindex="-1">Mon immeuble</h1><p class="lede">Résidence Les Tilleuls, bâtiment G.</p>
+        <div class="cards"><div class="card"><b>48</b>lots</div><div class="card"><b>2</b>ascenseurs</div><div class="card"><b>Mme Roux</b>gestionnaire</div></div>` },
+    { path: 'notifications', title: () => 'Notifications', view: () => `
+        <h1 tabindex="-1">Notifications</h1><p class="lede">Ce qui a changé depuis votre dernière visite.</p>
+        <div class="cards"><div class="card">Demande n° 1 prise en charge</div><div class="card">Assemblée générale : convocation</div><div class="card">Test reçu</div></div>` },
+  ];
+
+  function match(path) {
+    const segs = path.split('/').filter(Boolean);
+    for (const r of ROUTES) {
+      const rs = r.path.split('/'), params = {};
+      if (rs.length !== segs.length) continue;
+      if (rs.every((s, i) => s[0] === ':' ? (params[s.slice(1)] = segs[i], true) : s === segs[i]) && r.title(params))
+        return { r, params, path: segs.join('/'), depth: segs.length, title: r.title(params) };
+    }
+  }
+  const parentOf = m => m.depth > 1 ? match(m.path.split('/').slice(0, -1).join('/')) : null;
+
+  /* ---------- Mouvement ---------- */
+  const css = n => getComputedStyle(app).getPropertyValue(n).trim();
+  const num = n => parseFloat(css(n));
+  const scale = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-motion-scale'));
+  const anim = (el, kf, ms, ease, o = {}) =>
+    el.animate(kf, { duration: ms * scale(), easing: ease, ...o }).finished.catch(() => {});
+
+  let cur = null, curM = null, prevPath = null, skip = false, mobile = false;
+
+  const makePage = (m, over) => {
+    const el = document.createElement('section');
+    el.className = 'page' + (over ? ' over' : '');
+    el.innerHTML = m.r.view(m.params) + '<i class="dim"></i>';
+    return el;
+  };
+  const makeMNav = m => {
+    const p = parentOf(m), el = document.createElement('div');
+    el.className = 'm-nav';
+    el.innerHTML = `<div>${p ? `<button type="button" class="back"><svg aria-hidden="true"><use href="#i-chev"/></svg><span>${p.title}</span></button>` : ''}</div><span class="m-title">${m.title}</span><div></div>`;
+    return el;
+  };
+  const fillStepper = el => requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('go')));
+
+  function go(m, first) {
+    document.querySelectorAll('[data-leaving],[data-under]').forEach(e => e.remove());
+    for (const e of [cur, mwrap.firstElementChild]) e?.getAnimations().forEach(a => a.finish());
+    const old = cur, oldM = curM, oldN = mwrap.firstElementChild;
+    const dir = !oldM ? 'init' : m.depth > oldM.depth ? 'forward' : m.depth < oldM.depth ? 'back' : 'same';
+    const label = { init: '—', forward: 'avancer', back: 'reculer', same: 'même niveau' }[dir];
+    dirEl.textContent = label; app.dataset.dir = dir;
+
+    const el = makePage(m, mobile && dir === 'forward'), nav = makeNav(m);
+    stage.append(el); mwrap.append(nav);
+    cur = el; curM = m; prevPath = oldM?.path ?? null;
+    app.dataset.depth = m.depth; document.title = `${m.title} — Syndic en ligne`;
+    document.querySelectorAll('.side a').forEach(a => a.toggleAttribute('aria-current', a.dataset.top === m.path.split('/')[0]));
+    document.querySelectorAll('.side a[aria-current]').forEach(a => a.setAttribute('aria-current', 'page'));
+    const p = parentOf(m);
+    crumb.innerHTML = p ? `<a href="#/${p.path}">${p.title}</a> / <b>${m.title}</b>` : `<b>${m.title}</b>`;
+
+    fillStepper(el);
+    const instant = skip || !old || scale() === 0;
+    skip = false;
+    if (dir !== 'init') $('h1', el).focus({ preventScroll: true });
+    if (instant) { old?.remove(); oldN?.remove(); return; }
+
+    for (const e of [old, oldN]) { e.dataset.leaving = 1; }
+    old.inert = true; old.setAttribute('aria-hidden', 'true'); old.scrollTop = old.scrollTop;
+    const done = Promise.all(mobile ? stack(dir, old, el, oldN, nav) : desk(dir, old, el));
+    done.then(() => { old.remove(); oldN.remove(); });
+  }
+  const makeNav = m => makeMNav(m);
+
+  /* Ordinateur : l'ancien contenu sort, puis le nouveau entre. Seule la zone de contenu bouge. */
+  function desk(dir, old, el) {
+    const out = num('--lc-nav-out-ms'), sgn = dir === 'forward' ? -1 : dir === 'back' ? 1 : 0;
+    const o = css('--lc-nav-out-shift'), i = css('--lc-nav-in-shift');
+    const inMs = dir === 'same' ? num('--lc-nav-fade-ms') : num('--lc-nav-in-ms');
+    return [
+      anim(old, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(calc(${sgn} * ${o}))` }], out, css('--lc-nav-out-ease'), { fill: 'forwards' }),
+      anim(el, [{ opacity: 0, transform: `translateX(calc(${-sgn} * ${i}))` }, { opacity: 1, transform: 'none' }], inMs, css('--lc-nav-in-ease'),
+        { delay: out * scale(), fill: 'backwards' }),
+    ];
+  }
+
+  /* Mobile : empilement iOS. Avancer = la nouvelle page arrive par la droite, l'ancienne recule de 30 % avec voile. */
+  function stack(dir, old, el, oldN, nav) {
+    const ms = num('--lc-nav-stack-ms'), ease = css('--lc-nav-stack-ease'), par = css('--lc-nav-stack-parallax'), dim = num('--lc-nav-stack-dim');
+    const sh = css('--lc-nav-stack-title-shift');
+    if (dir === 'same') return [
+      anim(old, [{ opacity: 1 }, { opacity: 0 }], num('--lc-nav-out-ms'), 'linear', { fill: 'forwards' }),
+      anim(el, [{ opacity: 0 }, { opacity: 1 }], num('--lc-nav-fade-ms'), 'ease-out', { delay: num('--lc-nav-out-ms') * scale(), fill: 'backwards' }),
+      anim(oldN, [{ opacity: 1 }, { opacity: 0 }], num('--lc-nav-out-ms'), 'linear', { fill: 'forwards' }),
+      anim(nav, [{ opacity: 0 }, { opacity: 1 }], num('--lc-nav-fade-ms'), 'ease-out', { delay: num('--lc-nav-out-ms') * scale(), fill: 'backwards' }),
+    ];
+    const fwd = dir === 'forward', s = fwd ? 1 : -1;
+    const under = fwd ? old : el, over = fwd ? el : old;
+    under.style.zIndex = 1; over.style.zIndex = 2; over.classList.add('over');
+    const A = (e, kf, o) => anim(e, kf, ms, ease, { fill: 'forwards', ...o });
+    return [
+      A(over, [{ transform: fwd ? 'translateX(100%)' : 'none' }, { transform: fwd ? 'none' : 'translateX(100%)' }]),
+      A(under, [{ transform: fwd ? 'none' : `translateX(calc(-1 * ${par}))` }, { transform: fwd ? `translateX(calc(-1 * ${par}))` : 'none' }]),
+      A($('.dim', under), [{ opacity: fwd ? 0 : dim }, { opacity: fwd ? dim : 0 }]),
+      A(oldN, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(calc(${-s} * ${sh}))` }]),
+      A(nav, [{ opacity: 0, transform: `translateX(calc(${s} * ${sh}))` }, { opacity: 1, transform: 'none' }]),
+    ];
+  }
+
+  /* ---------- Routage par hash ---------- */
+  const render = first => {
+    const m = match(location.hash.replace(/^#\/?/, ''));
+    if (!m) { location.replace('#/accueil'); return; }
+    go(m, first);
+  };
+  addEventListener('hashchange', () => render(false));
+  if (!location.hash) location.replace('#/accueil');
+
+  const goBack = () => {
+    const p = parentOf(curM);
+    if (prevPath === p.path) history.back(); else location.hash = '#/' + p.path;
+  };
+
+  /* ---------- Interactions : retour, lignes du tableau, onglets ---------- */
+  app.addEventListener('click', e => {
+    if (e.target.closest('.back')) return goBack();
+    const row = e.target.closest('tr[data-href]');
+    if (row && !e.target.closest('a')) location.hash = row.dataset.href;
+    const tab = e.target.closest('[role=tab]');
+    if (tab) {
+      const page = tab.closest('.page');
+      page.querySelectorAll('[role=tab]').forEach(t => t.setAttribute('aria-selected', t === tab));
+      page.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== tab.dataset.tab);
+    }
+  });
+
+  /* ---------- Retour au geste depuis le bord gauche (mobile) ---------- */
+  let drag = null;
+  edge.addEventListener('pointerdown', e => {
+    if (!mobile || curM.depth < 2) return;
+    edge.setPointerCapture(e.pointerId);
+    const under = makePage(parentOf(curM)); under.dataset.under = 1; under.inert = true;
+    under.style.zIndex = 1; cur.style.zIndex = 2; cur.classList.add('over');
+    stage.insertBefore(under, cur);
+    drag = { x0: e.clientX, w: stage.clientWidth, p: 0, last: e.clientX, lt: e.timeStamp, v: 0, under };
+  });
+  const setP = (p, d = drag) => {
+    const w = d.w, par = parseFloat(css('--lc-nav-stack-parallax')) / 100;
+    cur.style.transform = `translateX(${p * w}px)`;
+    d.under.style.transform = `translateX(${-par * (1 - p) * w}px)`;
+    $('.dim', d.under).style.opacity = num('--lc-nav-stack-dim') * (1 - p);
+  };
+  edge.addEventListener('pointermove', e => {
+    if (!drag) return;
+    drag.p = Math.min(Math.max((e.clientX - drag.x0) / drag.w, 0), 1);
+    drag.v = (e.clientX - drag.last) / Math.max(e.timeStamp - drag.lt, 1);
+    drag.last = e.clientX; drag.lt = e.timeStamp;
+    setP(drag.p);
+  });
+  const release = async () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    const commit = d.p > num('--lc-nav-stack-commit') || d.v > num('--lc-nav-stack-fling'), t = commit ? 1 : 0;
+    const par = parseFloat(css('--lc-nav-stack-parallax')) / 100, dim = num('--lc-nav-stack-dim');
+    const ms = Math.max(num('--lc-nav-stack-min-ms'), num('--lc-nav-stack-ms') * Math.abs(t - d.p)), ease = css('--lc-nav-stack-ease');
+    const A = (el, a, b, k) => anim(el, [{ [k]: a }, { [k]: b }], ms, ease, { fill: 'forwards' });
+    const page = cur;
+    await Promise.all([
+      A(page, `translateX(${d.p * d.w}px)`, `translateX(${t * d.w}px)`, 'transform'),
+      A(d.under, `translateX(${-par * (1 - d.p) * d.w}px)`, `translateX(${-par * (1 - t) * d.w}px)`, 'transform'),
+      A($('.dim', d.under), dim * (1 - d.p), dim * (1 - t), 'opacity'),
+    ]);
+    if (page !== cur) return;
+    if (commit) { skip = true; goBack(); }
+    else { d.under.remove(); page.getAnimations().forEach(a => a.cancel()); page.style.transform = ''; page.classList.remove('over'); }
+  };
+  edge.addEventListener('pointerup', release);
+  edge.addEventListener('pointercancel', release);
+
+  /* ---------- Disposition (largeur de l'application) et barre de démo ---------- */
+  const layout = () => { mobile = app.getBoundingClientRect().width < 760; app.classList.toggle('is-mobile', mobile); };
+  new ResizeObserver(layout).observe(app);
+  layout();
+
+  $('#mobile-btn').addEventListener('click', e => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', on);
+    $('#wrap').classList.toggle('phone', on);
+  });
+  $('#reduced-btn').addEventListener('click', e => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', on);
+    document.documentElement.classList.toggle('reduced', on);
+  });
+
+  render(true);
+})();
+</script>
+</body>
+</html>
