@@ -1,3 +1,4 @@
+/** @internal Réservé aux points d'entrée du kit. */
 export interface LcIndicatorRect {
   readonly left: number;
   readonly width: number;

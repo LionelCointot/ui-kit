@@ -31,9 +31,3 @@ export class ArrivalTracker {
     return [];
   }
 }
-
-/** Durée (ms) d'une propriété CSS personnalisée en secondes ou millisecondes ; `NaN` si absente. */
-export function cssMs(style: CSSStyleDeclaration, name: string): number {
-  const raw = style.getPropertyValue(name).trim();
-  return parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000);
-}

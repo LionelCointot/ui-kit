@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
-import { lcPrefersReducedMotion } from '../core/reduced-motion';
+import { lcPrefersReducedMotion } from '../motion/runtime/reduced-motion';
 
 /** shortcut: dupliqué du token `--lc-truncate-speed` (px/s), à garder synchronisé ; sert quand le jeton n'est pas chargé. */
 const FALLBACK_SPEED = 96;

@@ -78,7 +78,8 @@ const UNIT_FAMILIES = {
   angle: new RegExp(`^${SIGNED}(?:deg|turn)$`),
 };
 const X = '(?:0(?:\\.\\d+)?|1(?:\\.0+)?|\\.\\d+)'; // abscisse d'un point de contrôle : de 0 à 1
-const CUBIC_BEZIER = new RegExp(`^cubic-bezier\\(\\s*${X}\\s*,\\s*${SIGNED}\\s*,\\s*${X}\\s*,\\s*${SIGNED}\\s*\\)$`);
+// Espaces simples seulement (pas `\s`) : un saut de ligne dans la valeur est refusé dès la validation, plus seulement au rendu.
+const CUBIC_BEZIER = new RegExp(`^cubic-bezier\\( *${X} *, *${SIGNED} *, *${X} *, *${SIGNED} *\\)$`);
 
 /**
  * Valeur d'un token de mouvement : mêmes garde-fous que isValidValue, plus des distances signées, des %, des angles

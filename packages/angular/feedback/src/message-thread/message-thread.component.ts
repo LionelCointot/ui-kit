@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, cssMs, isSafePreviewUrl, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
 import { LC_STATUS_ICONS } from '../status-icons';
 import { LcStatusBadgeComponent } from '../status-badge/status-badge.component';
-import { ArrivalTracker, cssMs, normalizePageSize, staggerDelay } from './message-thread-motion';
+import { ArrivalTracker, normalizePageSize, staggerDelay } from './message-thread-motion';
 import type { LcStatusBadgeKind } from '../status-icons';
 import type { LcThreadAttachment, LcThreadMessage } from './message-thread.model';
 
