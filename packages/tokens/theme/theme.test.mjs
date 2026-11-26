@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   baseValues, checkContrast, deriveContainer, deriveOnColor, fromDtcg, overrideVars, renderThemeCss, resolveTheme,
-  themeFontStacks, themeSchema, toDtcg, validateTheme, contrastRatio, cssVarOf,
+  motionSchema, themeFontStacks, themeSchema, toDtcg, validateTheme, contrastRatio, cssVarOf,
 } from './index.js';
 
 const theme = (overrides = {}, extra = {}) => ({ name: 'mon-theme', extends: 'default', overrides, ...extra });
@@ -211,6 +211,20 @@ describe('surcharges de mouvement (CA-1b)', () => {
     assert.equal(resolveTheme(theme(overrides))['--lc-sys-duration-fast'], '120ms');
     assert.equal(resolveTheme(theme(overrides))['--lc-button-press-duration'], '80ms');
     assert.deepEqual(overrideVars(theme(overrides)), { '--lc-sys-duration-fast': '120ms', '--lc-button-press-duration': '80ms' });
+  });
+
+  test('une distance n\'accepte que des longueurs, un angle que des angles', () => {
+    assert.equal(errorsOf({ 'motion.offset-sm': '10deg' })[0].code, 'invalid-value');
+    assert.equal(errorsOf({ 'motion.rotate-tilt': '10px' })[0].code, 'invalid-value');
+    assert.equal(errorsOf({ 'title.letter-rotate': '10px' })[0].code, 'invalid-value'); // composant : l'unité vient de la valeur de base
+    assert.deepEqual(errorsOf({ 'motion.offset-sm': '10px', 'motion.rotate-tilt': '0.05turn', 'title.letter-offset': '120%' }), []);
+  });
+
+  test('seuils de geste et mise en page ne sont pas réglables par un thème', () => {
+    for (const path of ['sheet.dismiss-ratio', 'sheet.top-radius', 'sheet.max-height', 'toast.tabbar-gap', 'dialog.sheet-radius']) {
+      assert.ok(!motionSchema.some((entry) => entry.path === path), path);
+    }
+    assert.ok(motionSchema.some((entry) => entry.path === 'sheet.spring-duration'));
   });
 
   test('export DTCG puis import redonnent les mêmes surcharges', () => {

@@ -35,18 +35,6 @@
         "$value": "{sys.space.5}",
         "$type": "dimension"
       }
-    },
-    "press-scale": {
-      "$value": "0.97",
-      "$type": "number"
-    },
-    "press-duration": {
-      "$value": "100ms",
-      "$type": "duration"
-    },
-    "spinner-duration": {
-      "$value": "{spinner.duration}",
-      "$type": "duration"
     }
   }
 }

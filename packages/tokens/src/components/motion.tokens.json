@@ -1,4 +1,14 @@
 {
+  "button": {
+    "press-scale": { "$value": "0.97", "$type": "number" },
+    "press-duration": { "$value": "100ms", "$type": "duration" },
+    "spinner-duration": { "$value": "{spinner.duration}", "$type": "duration" }
+  },
+  "message-thread": {
+    "enter-duration": { "$value": "550ms", "$type": "duration", "$description": "Tuned to the spring of enter-easing." },
+    "enter-fade-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
+    "enter-stagger": { "$value": "{sys.motion.stagger-normal}", "$type": "duration" }
+  },
   "tabs": {
     "indicator-front-duration": { "$value": "380ms", "$type": "duration" },
     "indicator-front-easing": { "$value": "{sys.easing.title}", "$type": "cubicBezier" },
@@ -173,6 +183,8 @@
     "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" }
   },
   "calendar": {
+    "duration": { "$value": "{overlay.enter-duration}", "$type": "duration" },
+    "easing": { "$value": "{overlay.easing}", "$type": "cubicBezier" },
     "slide-offset": { "$value": "18px", "$type": "dimension" },
     "slide-duration": { "$value": "{sys.duration.enter}", "$type": "duration" },
     "row-stagger": { "$value": "30ms", "$type": "duration" }
@@ -208,6 +220,7 @@
     "indeterminate-duration": { "$value": "{progress-bar.indeterminate-duration}", "$type": "duration" }
   },
   "message-composer": {
+    "shake-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
     "indeterminate-duration": { "$value": "{progress-bar.indeterminate-duration}", "$type": "duration" }
   },
   "table": {

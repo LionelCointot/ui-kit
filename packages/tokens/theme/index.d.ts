@@ -1,7 +1,7 @@
 /** Thème de base : fixe les valeurs de départ et le `color-scheme`. */
 export type LcThemeBase = 'default' | 'dark';
 
-export type LcThemeTokenType = 'color' | 'dimension' | 'fontFamily' | 'number' | 'duration' | 'shadow';
+export type LcThemeTokenType = 'color' | 'dimension' | 'fontFamily' | 'number' | 'duration' | 'cubicBezier' | 'shadow';
 
 export type LcThemeGroupId = 'brand' | 'status' | 'surface' | 'charts' | 'typography' | 'shape' | 'spacing' | 'shadows';
 
@@ -12,7 +12,10 @@ export interface LcThemeDefinition {
   /** Libellé affiché (libre, 1 à 60 caractères). */
   readonly label?: string;
   readonly extends: LcThemeBase;
-  /** Chemin `sys` → valeur, par exemple `{ "color.primary": "#0b5f5a" }`. */
+  /**
+   * Chemin → valeur : rôle `sys` sans son préfixe (`{ "color.primary": "#0b5f5a" }`, `"duration.fast"`) ou token de mouvement
+   * d'un composant avec son chemin complet (`"button.press-duration"`), voir `motionSchema`.
+   */
   readonly overrides: Readonly<Record<string, string>>;
 }
 
@@ -26,6 +29,16 @@ export interface LcThemeTokenSchema {
   readonly label: string;
   /** Édité par le mode simple. */
   readonly simple?: boolean;
+}
+
+/** Token de mouvement qu'un thème peut surcharger, hors du builder. */
+export interface LcThemeMotionSchema {
+  /** `duration.fast` (rôle `sys`, sans préfixe) ou `button.press-duration` (composant, chemin complet). */
+  readonly path: string;
+  readonly cssVar: string;
+  readonly type: LcThemeTokenType;
+  /** Famille d'unité d'une distance (`length` : px, rem, em, %, dvh) ou d'un angle (`angle` : deg, turn) ; absent hors `dimension`. */
+  readonly unit?: 'length' | 'angle';
 }
 
 export interface LcThemeGroup {
@@ -78,6 +91,7 @@ export interface LcContrastResult {
 
 export declare const THEME_NAME_PATTERN: RegExp;
 export declare const themeSchema: readonly LcThemeTokenSchema[];
+export declare const motionSchema: readonly LcThemeMotionSchema[];
 export declare const themeGroups: readonly LcThemeGroup[];
 export declare const themeFontStacks: readonly LcThemeFontStack[];
 
@@ -101,6 +115,8 @@ export declare function checkContrast(resolved: Readonly<Record<string, string>>
 
 export interface LcDtcgTheme {
   sys: Record<string, unknown>;
+  /** Tokens de mouvement d'un composant (`button`, `tabs`…), à la racine du fichier. */
+  [component: string]: unknown;
 }
 
 /** Export au format des thèmes produit, compilable par `lc-tokens build`. Lève une exception si le thème est invalide. */

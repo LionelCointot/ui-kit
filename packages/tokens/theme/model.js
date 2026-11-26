@@ -15,7 +15,8 @@ export const baseValuesByName = Object.freeze(Object.fromEntries(
 export const schemaByPath = new Map(schema.map((entry) => [entry.path, entry]));
 
 /** Tokens de mouvement qu'un thème peut surcharger sans qu'ils soient dans le builder : rôles `sys` (`duration.fast`) et composant (`button.press-duration`). */
-export const motionByPath = new Map(MOTION_SCHEMA.map((entry) => [entry.path, Object.freeze({ ...entry })]));
+export const motionSchema = Object.freeze(MOTION_SCHEMA.map((entry) => Object.freeze({ ...entry })));
+export const motionByPath = new Map(motionSchema.map((entry) => [entry.path, entry]));
 
 export const fontStacks = Object.freeze([
   ...['base', 'mono'].map((key) => Object.freeze({

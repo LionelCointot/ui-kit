@@ -59,7 +59,7 @@ function validateOverrides(definition) {
     const motion = motionByPath.get(tokenPath);
     const entry = schemaByPath.get(tokenPath);
     if (motion) {
-      if (!isValidMotionValue(motion.type, value)) issues.push({ path: tokenPath, code: 'invalid-value', message: `Valeur refusée pour « ${tokenPath} » (type ${motion.type}).` });
+      if (!isValidMotionValue(motion.type, value, motion.unit)) issues.push({ path: tokenPath, code: 'invalid-value', message: `Valeur refusée pour « ${tokenPath} » (type ${motion.type}).` });
     } else if (!entry) {
       issues.push(unknownToken(tokenPath));
     } else if (!isValidValue(entry.type, value, knownFontStacks)) {

@@ -107,22 +107,9 @@
       "$type": "other",
       "$description": "iOS-style spring (linear(), Baseline 2023); component token, no sys spring (exception to decision 27 of the motion spec)."
     },
-    "enter-duration": {
-      "$value": "550ms",
-      "$type": "duration",
-      "$description": "Tuned to the spring above."
-    },
     "enter-scale": {
       "$value": "0.6",
       "$type": "number"
-    },
-    "enter-fade-duration": {
-      "$value": "{sys.duration.normal}",
-      "$type": "duration"
-    },
-    "enter-stagger": {
-      "$value": "{sys.motion.stagger-normal}",
-      "$type": "duration"
     }
   }
 }
