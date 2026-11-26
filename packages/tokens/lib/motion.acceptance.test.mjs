@@ -1,32 +1,34 @@
 // Acceptation de docs/specs/2026-11-mouvement.md : CA-1 (tokens de 5.2), côté tokens de CA-24 et délais de CA-13.
 import { before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { PACKAGE_ROOT } from './tokens.mjs';
+import { buildCss, resolve, tokenMap, toMs } from './motion-css.mjs';
 
-const css = {};
-before(() => {
-  execFileSync(process.execPath, [path.join(PACKAGE_ROOT, 'lib', 'build-all.mjs')], { stdio: 'pipe' });
-  for (const f of ['lc-tokens', 'theme-default', 'theme-dark', 'base']) css[f] = readFileSync(path.join(PACKAGE_ROOT, 'dist', 'css', `${f}.css`), 'utf8');
-});
+let css;
+before(() => { css = buildCss(); });
 
 const decl = (file, name) => css[file].match(new RegExp(`^\\s*${name}: ([^;]+);`, 'm'))?.[1];
 
-// CA-1 : nouveaux tokens ref (valeurs) et sys (repli sur ref), dans les deux thèmes
+// Mouvement v2 (docs/specs/2026-12-mouvement-v2.md, T1, CA-1) : valeurs réécrites ; les rôles et tokens nouveaux sont dans motion.v2.acceptance.test.mjs.
+// CA-1 : tokens ref (valeurs) et sys (repli sur ref), dans les deux thèmes
 for (const theme of ['theme-default', 'theme-dark']) {
-  test(`CA-1 : tokens duration-long et motion-stagger (${theme} : sys)`, () => {
-    assert.equal(decl('lc-tokens', '--lc-ref-duration-long'), '350ms');
+  test(`CA-1 : duration-long vaut 600 ms, motion-stagger (feuille) n'existe plus (${theme} : sys)`, () => {
+    assert.equal(decl('lc-tokens', '--lc-ref-duration-long'), '600ms');
     assert.equal(decl(theme, '--lc-sys-duration-long'), 'var(--lc-ref-duration-long)');
-    assert.equal(decl('lc-tokens', '--lc-ref-motion-stagger'), '80ms');
-    assert.equal(decl(theme, '--lc-sys-motion-stagger'), 'var(--lc-ref-motion-stagger)');
+    assert.equal(decl('lc-tokens', '--lc-ref-motion-stagger'), undefined);
+    assert.equal(decl(theme, '--lc-sys-motion-stagger'), undefined);
   });
 
-  test(`CA-1 : motion-offset vaut space-2 (${theme} : sys)`, () => {
+  test(`CA-1 : les durées revalorisées fast 150, normal 250, slow 350 (${theme} : sys)`, () => {
+    assert.equal(decl('lc-tokens', '--lc-ref-duration-fast'), '150ms');
+    assert.equal(decl('lc-tokens', '--lc-ref-duration-normal'), '250ms');
+    assert.equal(decl('lc-tokens', '--lc-ref-duration-slow'), '350ms');
+    for (const role of ['fast', 'normal', 'slow']) assert.equal(decl(theme, `--lc-sys-duration-${role}`), `var(--lc-ref-duration-${role})`);
+  });
+
+  test(`CA-1 : motion-offset (feuille) n'existe plus, space-2 inchangé (${theme} : sys)`, () => {
     assert.equal(decl(theme, '--lc-sys-space-2'), 'var(--lc-ref-space-2)');
     assert.equal(decl('lc-tokens', '--lc-ref-space-2'), '8px');
-    assert.equal(decl(theme, '--lc-sys-motion-offset'), 'var(--lc-sys-space-2)');
+    assert.equal(decl(theme, '--lc-sys-motion-offset'), undefined);
   });
 
   test(`CA-1 : easing standard et emphasized inchangés (${theme} : sys)`, () => {
@@ -38,32 +40,29 @@ for (const theme of ['theme-default', 'theme-dark']) {
 }
 
 // CA-1 : tokens de composant avec repli sur sys
+// Mouvement v2 : les indicateurs (tabs, nav-item, segmented-control) ont deux bords et la liste glisse en 420 ms `draw` (valeurs dans
+// motion.v2.acceptance.test.mjs, par groupe) ; `reveal.*` n'est plus listé par §5.2 (lcReveal lit les rôles sys) ; la durée d'appui du bouton est
+// découplée de duration-fast ; le décalage de overlay n'a plus de rôle `motion-offset` (offset-sm, 8 px, garde sa valeur).
 const COMPONENT_TOKENS = {
-  // Décision 27 révisée : les déplacements (indicateurs, lignes) durent 500 ms avec easing-standard (pas de ressort).
-  '--lc-tabs-indicator-duration': 'duration-move',
-  '--lc-tabs-indicator-easing': 'easing-standard',
-  '--lc-segmented-control-indicator-duration': 'duration-move',
-  '--lc-segmented-control-indicator-easing': 'easing-standard',
-  '--lc-nav-item-indicator-duration': 'duration-move',
-  '--lc-nav-item-indicator-easing': 'easing-standard',
-  '--lc-list-move-duration': 'duration-move',
-  '--lc-list-move-easing': 'easing-standard',
-  '--lc-button-press-duration': 'duration-fast',
+  '--lc-list-move-easing': 'easing-draw',
   '--lc-overlay-enter-duration': 'duration-normal',
   '--lc-overlay-exit-duration': 'duration-fast',
   '--lc-overlay-easing': 'easing-standard',
-  '--lc-overlay-offset': 'motion-offset',
   '--lc-chip-enter-duration': 'duration-fast',
-  '--lc-reveal-duration': 'duration-long',
-  '--lc-reveal-easing': 'easing-standard',
-  '--lc-reveal-offset': 'motion-offset',
-  '--lc-reveal-stagger': 'motion-stagger',
 };
 for (const [name, sys] of Object.entries(COMPONENT_TOKENS)) {
   test(`CA-1 : ${name} se replie sur sys-${sys}`, () => {
     assert.equal(decl('lc-tokens', name), `var(--lc-sys-${sys})`);
   });
 }
+
+test('CA-1 : --lc-list-move-duration vaut 420 ms et --lc-overlay-offset garde 8 px, sans passer par les anciens rôles', () => {
+  const map = tokenMap(css, 'default');
+  assert.equal(toMs(resolve(map, '--lc-list-move-duration').value), 420);
+  const offset = resolve(map, '--lc-overlay-offset');
+  assert.equal(offset.value, '8px');
+  assert.ok(!offset.chain.includes('--lc-sys-motion-offset'));
+});
 
 // CA-24 : durée de déplacement 500 ms, courbe easing-standard ; plus de token easing-spring
 for (const theme of ['theme-default', 'theme-dark']) {
