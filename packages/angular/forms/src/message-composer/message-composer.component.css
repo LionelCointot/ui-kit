@@ -178,7 +178,7 @@
 @starting-style {
   .lc-message-composer__thumb {
     opacity: 0;
-    transform: translateY(var(--lc-sys-motion-offset)) scale(var(--lc-message-composer-enter-scale, 1));
+    transform: translateY(var(--lc-sys-motion-offset-sm)) scale(var(--lc-message-composer-enter-scale, 1));
   }
 }
 
@@ -234,7 +234,7 @@
 
 .lc-message-composer__progress--indeterminate .lc-message-composer__progress-fill {
   inline-size: 40%;
-  animation: lc-message-composer-slide calc(var(--lc-sys-duration-slow) * 5) var(--lc-sys-easing-standard) infinite;
+  animation: lc-message-composer-slide var(--lc-progress-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 
 @keyframes lc-message-composer-slide {

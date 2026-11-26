@@ -156,8 +156,8 @@
   background: var(--lc-segmented-control-pill-bg, var(--lc-sys-color-surface-raised));
   box-shadow: var(--lc-segmented-control-pill-shadow, var(--lc-sys-shadow-1));
   transition:
-    transform var(--lc-segmented-control-indicator-duration) var(--lc-segmented-control-indicator-easing),
-    width var(--lc-segmented-control-indicator-duration) var(--lc-segmented-control-indicator-easing);
+    transform var(--lc-segmented-control-indicator-front-duration) var(--lc-segmented-control-indicator-front-easing),
+    width var(--lc-segmented-control-indicator-front-duration) var(--lc-segmented-control-indicator-front-easing);
 }
 
 /* Premier placement, remesure et suivi du doigt : pas de glissement. */

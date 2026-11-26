@@ -11,7 +11,7 @@
   height: 1em;
   border-radius: var(--lc-sys-radius-sm);
   background: var(--lc-skeleton-background, var(--lc-sys-color-surface-sunken));
-  animation: lc-skeleton-pulse calc(var(--lc-sys-duration-slow) * 5) ease-in-out infinite;
+  animation: lc-skeleton-pulse var(--lc-skeleton-duration) ease-in-out infinite;
 }
 
 .lc-skeleton__bone--last {

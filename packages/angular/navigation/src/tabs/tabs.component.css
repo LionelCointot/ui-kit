@@ -74,8 +74,8 @@
 
 :host(.lc-tabs--ready) .lc-tabs__indicator {
   transition:
-    transform var(--lc-tabs-indicator-duration) var(--lc-tabs-indicator-easing),
-    width var(--lc-tabs-indicator-duration) var(--lc-tabs-indicator-easing);
+    transform var(--lc-tabs-indicator-front-duration) var(--lc-tabs-indicator-front-easing),
+    width var(--lc-tabs-indicator-front-duration) var(--lc-tabs-indicator-front-easing);
 }
 
 :host(.lc-tabs--ready) .lc-tabs__indicator--instant {

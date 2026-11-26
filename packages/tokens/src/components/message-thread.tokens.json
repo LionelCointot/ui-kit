@@ -121,7 +121,7 @@
       "$type": "duration"
     },
     "enter-stagger": {
-      "$value": "{sys.motion.stagger}",
+      "$value": "{sys.motion.stagger-normal}",
       "$type": "duration"
     }
   }

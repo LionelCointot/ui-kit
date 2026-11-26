@@ -240,7 +240,7 @@
   border: var(--lc-sys-border-width-thick) solid var(--_fg);
   border-inline-end-color: transparent;
   border-radius: var(--lc-sys-radius-full);
-  animation: lc-button-spin calc(var(--lc-sys-duration-slow) * 3) linear infinite;
+  animation: lc-button-spin var(--lc-spinner-duration) linear infinite;
 }
 
 @keyframes lc-button-spin {

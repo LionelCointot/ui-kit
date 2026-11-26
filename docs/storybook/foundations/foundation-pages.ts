@@ -285,7 +285,7 @@ const MOTION_OFF_CSS = `:root {
   --lc-sys-duration-normal: 0ms;
   --lc-sys-duration-long: 0ms;
   --lc-sys-duration-move: 0ms;
-  --lc-sys-motion-stagger: 0ms;
+  --lc-sys-motion-stagger-normal: 0ms;
 }`;
 
 interface CurveTrace { path: string; mid: number }
@@ -396,7 +396,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
     .demos section > .row + .row { margin-top: var(--lc-sys-space-2); }
     .panel { line-height: var(--lc-sys-font-line-height-relaxed); box-shadow: var(--lc-sys-shadow-2);
       animation: panel-enter var(--lc-sys-duration-normal) var(--lc-sys-easing-standard) both; }
-    @keyframes panel-enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset))); } }
+    @keyframes panel-enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset-sm))); } }
     `,
   ],
 })

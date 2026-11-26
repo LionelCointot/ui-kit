@@ -41,7 +41,7 @@
       "$type": "number"
     },
     "press-duration": {
-      "$value": "{sys.duration.fast}",
+      "$value": "100ms",
       "$type": "duration"
     }
   }
