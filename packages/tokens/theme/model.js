@@ -1,5 +1,5 @@
 // Modèle en lecture seule construit à partir de data.generated.js (schéma, valeurs de base, piles de polices).
-import { BASE_VALUES, CONTRAST_PAIRS, THEME_GROUPS, THEME_SCHEMA } from './data.generated.js';
+import { BASE_VALUES, CONTRAST_PAIRS, MOTION_SCHEMA, THEME_GROUPS, THEME_SCHEMA } from './data.generated.js';
 import { EXTRA_FONT_STACKS } from './fonts.js';
 
 export const BASE_NAMES = Object.freeze(Object.keys(BASE_VALUES));
@@ -13,6 +13,9 @@ export const baseValuesByName = Object.freeze(Object.fromEntries(
 
 /** Entrées du schéma par chemin (Map : pas de collision avec `__proto__` ou `constructor`). */
 export const schemaByPath = new Map(schema.map((entry) => [entry.path, entry]));
+
+/** Tokens de mouvement qu'un thème peut surcharger sans qu'ils soient dans le builder : rôles `sys` (`duration.fast`) et composant (`button.press-duration`). */
+export const motionByPath = new Map(MOTION_SCHEMA.map((entry) => [entry.path, Object.freeze({ ...entry })]));
 
 export const fontStacks = Object.freeze([
   ...['base', 'mono'].map((key) => Object.freeze({

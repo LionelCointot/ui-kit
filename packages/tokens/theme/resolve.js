@@ -1,6 +1,6 @@
 // Résolution d'un thème (base + surcharges) et rendu CSS `[data-theme="<nom>"]`.
 import { cssVarOf } from './paths.js';
-import { baseValuesByName, schemaByPath } from './model.js';
+import { baseValuesByName, motionByPath, schemaByPath } from './model.js';
 import { isSafeCssValue } from './values.js';
 import { validateTheme } from './validate.js';
 
@@ -18,7 +18,7 @@ function assertValid(definition, options) {
  */
 export function overrideVars(definition) {
   assertValid(definition, { identity: false });
-  return Object.fromEntries(Object.entries(definition.overrides).map(([tokenPath, value]) => [schemaByPath.get(tokenPath).cssVar, value]));
+  return Object.fromEntries(Object.entries(definition.overrides).map(([tokenPath, value]) => [(schemaByPath.get(tokenPath) ?? motionByPath.get(tokenPath)).cssVar, value]));
 }
 
 /**
@@ -29,7 +29,7 @@ export function overrideVars(definition) {
 export function resolveTheme(definition) {
   assertValid(definition, { identity: false });
   const merged = { ...baseValuesByName[definition.extends], ...definition.overrides };
-  return Object.fromEntries(Object.entries(merged).map(([tokenPath, value]) => [cssVarOf(tokenPath), value]));
+  return Object.fromEntries(Object.entries(merged).map(([tokenPath, value]) => [motionByPath.get(tokenPath)?.cssVar ?? cssVarOf(tokenPath), value]));
 }
 
 /**

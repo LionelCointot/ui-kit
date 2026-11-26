@@ -64,7 +64,10 @@ describe('validation des valeurs', () => {
     assert.equal(typo.suggestion, 'color.primary');
     assert.match(typo.message, /color\.primary/);
     assert.equal(errorsOf({ 'z.dropdown': '5' })[0].code, 'not-editable');
-    assert.equal(errorsOf({ 'duration.fast': '1s' })[0].code, 'not-editable');
+    // Mouvement (CA-1b) : surchargeable par un thème, valeur contrôlée ; l'appui du bouton aussi, et le type est vérifié.
+    assert.deepEqual(errorsOf({ 'duration.fast': '1s', 'button.press-duration': '80ms', 'popover.enter-offset': '-3.7px' }), []);
+    assert.equal(errorsOf({ 'duration.fast': 'url(x)' })[0].code, 'invalid-value');
+    assert.equal(errorsOf({ 'easing.pop': 'cubic-bezier(0.3, 1, 0.6)' })[0].code, 'invalid-value');
     assert.equal(errorsOf({ 'ref.color.blue.500': '#fff' })[0].code, 'unknown-token');
     const polluted = JSON.parse('{"__proto__": "#fff", "constructor": "#fff"}');
     assert.equal(validateTheme(theme(polluted)).errors.length, 2);
@@ -198,5 +201,22 @@ describe('dérivations', () => {
     const light = deriveContainer('#1c5cab', 'light').container;
     const dark = deriveContainer('#1c5cab', 'dark').container;
     assert.ok(contrastRatio(light, '#ffffff') < contrastRatio(dark, '#ffffff'));
+  });
+});
+
+describe('surcharges de mouvement (CA-1b)', () => {
+  const overrides = { 'duration.fast': '120ms', 'button.press-duration': '80ms' };
+
+  test('résolution : rôle sous --lc-sys-, token composant sous --lc-<composant>-', () => {
+    assert.equal(resolveTheme(theme(overrides))['--lc-sys-duration-fast'], '120ms');
+    assert.equal(resolveTheme(theme(overrides))['--lc-button-press-duration'], '80ms');
+    assert.deepEqual(overrideVars(theme(overrides)), { '--lc-sys-duration-fast': '120ms', '--lc-button-press-duration': '80ms' });
+  });
+
+  test('export DTCG puis import redonnent les mêmes surcharges', () => {
+    const json = toDtcg(theme(overrides));
+    assert.equal(json.sys.duration.fast.$value, '120ms');
+    assert.equal(json.button['press-duration'].$value, '80ms');
+    assert.deepEqual(fromDtcg(json, { name: 'mon-theme', extends: 'default' }).overrides, overrides);
   });
 });

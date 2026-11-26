@@ -154,7 +154,7 @@ function build() {
     return { name: n, decls };
   });
   // Tokens supprimés ou renommés : note écrite à la main, ajoutée telle quelle à la fin du catalogue.
-  return renderCatalogue(version, entryPoints) + '\n' + readFileSync(path.join(ROOT, 'tools', 'catalogue-tokens.md'), 'utf8');
+  return renderCatalogue(version, entryPoints) + '\n' + readFileSync(path.join(ROOT, 'tools', 'catalogue-motion-v2.md'), 'utf8');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

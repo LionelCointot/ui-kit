@@ -71,6 +71,16 @@ export function isValidValue(type, value, knownFontStacks) {
   }
 }
 
+const MOTION_DIMENSION = /^(?:0|-?\d+(?:\.\d+)?(?:px|rem|em|%|deg|dvh))$/;
+const CUBIC_BEZIER = /^cubic-bezier\(\s*-?\d*\.?\d+\s*(?:,\s*-?\d*\.?\d+\s*){3}\)$/;
+
+/** Valeur d'un token de mouvement : comme isValidValue, avec des distances signées, des %, des angles et la courbe `cubic-bezier()`. */
+export function isValidMotionValue(type, value) {
+  if (type === 'dimension') return typeof value === 'string' && !FORBIDDEN.test(value) && MOTION_DIMENSION.test(value);
+  if (type === 'cubicBezier') return typeof value === 'string' && !FORBIDDEN.test(value) && CUBIC_BEZIER.test(value);
+  return isValidValue(type, value, new Set());
+}
+
 /** Dernier garde-fou avant écriture dans une feuille de style (les piles de la base contiennent des apostrophes). */
 export function isSafeCssValue(value) {
   return typeof value === 'string' && !FORBIDDEN.test(value) && !/[\r\n"]/.test(value);

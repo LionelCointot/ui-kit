@@ -43,6 +43,10 @@
     "press-duration": {
       "$value": "100ms",
       "$type": "duration"
+    },
+    "spinner-duration": {
+      "$value": "{spinner.duration}",
+      "$type": "duration"
     }
   }
 }

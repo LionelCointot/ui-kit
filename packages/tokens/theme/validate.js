@@ -1,6 +1,6 @@
 // Validation d'un thème : identité (nom, libellé, base) et surcharges (chemin connu, valeur selon le type).
-import { baseValuesByName, isBaseName, knownFontStacks, schema, schemaByPath } from './model.js';
-import { isValidValue } from './values.js';
+import { baseValuesByName, isBaseName, knownFontStacks, motionByPath, schema, schemaByPath } from './model.js';
+import { isValidMotionValue, isValidValue } from './values.js';
 
 export const THEME_NAME_PATTERN = /^[a-z][a-z0-9-]{0,47}$/;
 const RESERVED_NAMES = new Set(['default', 'dark']);
@@ -56,8 +56,11 @@ function validateOverrides(definition) {
     return issues;
   }
   for (const [tokenPath, value] of Object.entries(overrides)) {
+    const motion = motionByPath.get(tokenPath);
     const entry = schemaByPath.get(tokenPath);
-    if (!entry) {
+    if (motion) {
+      if (!isValidMotionValue(motion.type, value)) issues.push({ path: tokenPath, code: 'invalid-value', message: `Valeur refusée pour « ${tokenPath} » (type ${motion.type}).` });
+    } else if (!entry) {
       issues.push(unknownToken(tokenPath));
     } else if (!isValidValue(entry.type, value, knownFontStacks)) {
       issues.push({ path: tokenPath, code: 'invalid-value', message: `Valeur refusée pour « ${tokenPath} » (type ${entry.type}).` });

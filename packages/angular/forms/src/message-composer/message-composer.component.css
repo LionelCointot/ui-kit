@@ -234,7 +234,7 @@
 
 .lc-message-composer__progress--indeterminate .lc-message-composer__progress-fill {
   inline-size: 40%;
-  animation: lc-message-composer-slide var(--lc-progress-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
+  animation: lc-message-composer-slide var(--lc-message-composer-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 
 @keyframes lc-message-composer-slide {

@@ -61,8 +61,8 @@
   { "demo": "d10", "valeur": "cubic-bezier(0.645, 0.045, 0.355, 1)", "token": "--lc-tabs-indicator-back-easing" },
   { "demo": "d10", "valeur": "80ms", "token": "--lc-tabs-indicator-back-delay" },
 
-  { "demo": "d48", "valeur": "300ms", "token": "--lc-disclosure-open-duration" },
-  { "demo": "d48", "valeur": "100ms", "token": "--lc-disclosure-close-duration" },
+  { "demo": "d48", "valeur": "300ms", "token": "--lc-disclosure-enter-duration" },
+  { "demo": "d48", "valeur": "100ms", "token": "--lc-disclosure-exit-duration" },
   { "demo": "d48", "valeur": "-5px", "token": "--lc-disclosure-offset" },
   { "demo": "d48", "valeur": "300ms", "token": "--lc-disclosure-chevron-duration" },
 
@@ -152,7 +152,7 @@
 
   { "demo": "d42", "valeur": "700ms", "token": "--lc-spinner-duration" },
   { "demo": "d42", "valeur": "1500ms", "token": "--lc-skeleton-duration" },
-  { "demo": "d42", "valeur": "1500ms", "token": "--lc-progress-indeterminate-duration" },
+  { "demo": "d42", "valeur": "1500ms", "token": "--lc-progress-bar-indeterminate-duration" },
   { "demo": "—", "valeur": "350ms", "token": "--lc-shell-nav-duration" },
 
   { "demo": "d54", "valeur": "600ms", "token": "--lc-sheet-enter-duration" },
@@ -162,6 +162,7 @@
   { "demo": "d54", "valeur": "92dvh", "token": "--lc-sheet-max-height" },
   { "demo": "d54", "valeur": "24px", "token": "--lc-sheet-top-radius" },
   { "demo": "d55", "valeur": "500ms", "token": "--lc-sheet-spring-duration" },
+  { "demo": "d55", "valeur": "cubic-bezier(0.34, 1.7, 0.64, 1)", "token": "--lc-sheet-spring-easing" },
 
   { "demo": "d57", "valeur": "750ms", "token": "--lc-tabbar-enter-duration" },
   { "demo": "d57", "valeur": "265ms", "token": "--lc-tabbar-enter-delay" },

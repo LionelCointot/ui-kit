@@ -77,6 +77,7 @@
     "exit-duration": { "$value": "300ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
     "spring-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Return to place after a release that does not close the sheet." },
+    "spring-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
     "dismiss-ratio": {
       "$description": "Share of its height the sheet must be pulled down to close (unitless number).",
       "$value": "0.25",
@@ -187,10 +188,10 @@
     "enter-stagger": { "$value": "33ms", "$type": "duration" }
   },
   "disclosure": {
-    "open-duration": { "$value": "300ms", "$type": "duration" },
-    "close-duration": { "$value": "100ms", "$type": "duration" },
+    "enter-duration": { "$value": "300ms", "$type": "duration" },
+    "exit-duration": { "$value": "100ms", "$type": "duration" },
     "offset": { "$value": "-5px", "$type": "dimension" },
-    "chevron-duration": { "$value": "{disclosure.open-duration}", "$type": "duration" }
+    "chevron-duration": { "$value": "{disclosure.enter-duration}", "$type": "duration" }
   },
   "theme-toggle": {
     "duration": { "$value": "{sys.duration.enter}", "$type": "duration" },
@@ -200,8 +201,17 @@
     "duration": { "$value": "700ms", "$type": "duration" },
     "pulse-duration": { "$value": "1500ms", "$type": "duration", "$description": "Pulse that replaces the rotation under reduced motion." }
   },
-  "progress": {
-    "indeterminate-duration": { "$value": "1500ms", "$type": "duration", "$description": "Loop of the indeterminate band of progress bars, file uploads and the message composer." }
+  "progress-bar": {
+    "indeterminate-duration": { "$value": "1500ms", "$type": "duration", "$description": "Loop of the indeterminate band." }
+  },
+  "file-upload": {
+    "indeterminate-duration": { "$value": "{progress-bar.indeterminate-duration}", "$type": "duration" }
+  },
+  "message-composer": {
+    "indeterminate-duration": { "$value": "{progress-bar.indeterminate-duration}", "$type": "duration" }
+  },
+  "table": {
+    "filter-spinner-duration": { "$value": "{spinner.duration}", "$type": "duration", "$description": "Rotation of the loading indicator in a column filter." }
   },
   "skeleton": {
     "duration": { "$value": "1500ms", "$type": "duration" }

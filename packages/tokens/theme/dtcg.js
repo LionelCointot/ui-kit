@@ -1,5 +1,5 @@
 // Import et export au format DTCG des thèmes produit : { sys: { color: { primary: { $value, $type } } } }.
-import { schema, schemaByPath } from './model.js';
+import { motionByPath, schema, schemaByPath } from './model.js';
 import { validateTheme } from './validate.js';
 
 function isObject(value) {
@@ -39,7 +39,16 @@ export function toDtcg(definition) {
     const parent = segments.reduce((node, segment) => (node[segment] ??= {}), sys);
     parent[leaf] = { $value: definition.overrides[tokenPath], $type: type };
   }
-  return { sys };
+  // Surcharges de mouvement hors builder : rôles sous `sys`, tokens composant à la racine (comme src/components/*.tokens.json).
+  const theme = { sys };
+  for (const { path: tokenPath, cssVar, type } of motionByPath.values()) {
+    if (!Object.hasOwn(definition.overrides, tokenPath)) continue;
+    const segments = tokenPath.split('.');
+    const leaf = segments.pop();
+    const parent = segments.reduce((node, segment) => (node[segment] ??= {}), cssVar.startsWith('--lc-sys-') ? sys : theme);
+    parent[leaf] = { $value: definition.overrides[tokenPath], $type: type };
+  }
+  return theme;
 }
 
 /**
