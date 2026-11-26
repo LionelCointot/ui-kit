@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, input, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterRenderEffect, booleanAttribute, computed, effect, inject, input, untracked } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, isActive as isUrlActive } from '@angular/router';
-import { LcIconComponent } from '@lionelcointot/ui-angular';
+import { LcIconComponent, LcNavRegistry } from '@lionelcointot/ui-angular';
 import { LcNavListComponent } from './nav-list.component';
 
 /**
@@ -38,6 +38,8 @@ export class LcNavItemComponent {
 
   readonly icon = input<string>();
   readonly badge = input<string>();
+  /** Rubrique principale : affichée dans la barre d'onglets de `lc-app-shell` (au plus 4). */
+  readonly primary = input(false, { transform: booleanAttribute });
   /** Entrée active choisie par l'application (par exemple selon le contexte) ; non définie : l'URL décide. */
   readonly active = input<boolean | undefined>();
 
@@ -56,12 +58,17 @@ export class LcNavItemComponent {
   readonly queryParams = input<unknown>();
   readonly fragment = input<unknown>();
 
-  private readonly routeActive = computed(() => {
+  /** Adresse du lien, relue à chaque appel (un lien relatif change avec la navigation) ; lue dans un contexte réactif, elle suit les entrées ci-dessus. */
+  private currentTree() {
     this.routerLink();
     this.queryParams();
     this.fragment();
+    return this.link?.urlTree;
+  }
+
+  private readonly routeActive = computed(() => {
     const options = this.routerLinkActiveOptions();
-    const tree = this.link?.urlTree;
+    const tree = this.currentTree();
     if (!options || !tree) return false;
     const match: Partial<IsActiveMatchOptions> =
       'exact' in options
@@ -72,16 +79,28 @@ export class LcNavItemComponent {
   protected readonly isActive = computed(() => this.active() ?? this.routeActive());
 
   constructor() {
+    const element = this.element.nativeElement;
+    const destroyRef = inject(DestroyRef);
+
+    // Inscription au registre de navigation.
+    // shortcut: le libellé n'est relu que quand l'adresse, `icon` ou `primary` changent, pas quand le texte projeté change seul ;
+    // à lever si un libellé dynamique projeté est utilisé dans la barre d'onglets (lire le texte via un MutationObserver).
+    const registry = inject(LcNavRegistry);
+    afterRenderEffect(() => {
+      const tree = this.currentTree();
+      registry.register(element, { url: tree ? this.router.serializeUrl(tree) : '', label: this.label(), icon: this.icon(), primary: this.primary() });
+    });
+    destroyRef.onDestroy(() => registry.unregister(element));
+
     // Dans une liste, le fond actif est porté par son indicateur glissant.
     const list = this.list;
     if (!list) return;
-    const element = this.element.nativeElement;
     effect(() => {
       const active = this.isActive();
       // `register` lit le signal de la liste : sans `untracked`, l'effet suivrait aussi l'entrée active des autres.
       untracked(() => list.register(element, active));
     });
-    inject(DestroyRef).onDestroy(() => list.register(element, false));
+    destroyRef.onDestroy(() => list.register(element, false));
   }
 
   /** Texte du libellé (info-bulle et nom accessible en mode réduit). */

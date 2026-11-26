@@ -79,6 +79,27 @@ describe('cubic-bezier : x1 et x2 dans [0, 1], y1 et y2 libres', () => {
   }
 });
 
+// Correctif reporté de T1 : un saut de ligne dans une courbe ne doit pas être accepté par validateTheme (aujourd'hui seul le rendu le refuse).
+describe('cubic-bezier : aucun saut de ligne dans la valeur, refusé dès validateTheme', () => {
+  const WITH_NEWLINE = [
+    'cubic-bezier(0.2,\n0, 0, 1)', 'cubic-bezier(\n0.2, 0, 0, 1)', 'cubic-bezier(0.2, 0, 0, 1\n)', 'cubic-bezier(0.2,\r\n0, 0, 1)',
+    'cubic-bezier(0.2, 0,\r0, 1)', 'cubic-bezier(0.2, 0, 0, 1)\n',
+  ];
+  for (const path of ['easing.standard', 'tabs.indicator-front-easing']) {
+    test(`${path} : une valeur avec \\n ou \\r est refusée (invalid-value)`, () => {
+      for (const value of WITH_NEWLINE) refused(path, value);
+    });
+  }
+
+  test('l\'import DTCG (fromDtcg puis validateTheme) la refuse aussi', () => {
+    const definition = fromDtcg({ sys: { easing: { standard: { $value: 'cubic-bezier(0.2,\n0, 0, 1)', $type: 'cubicBezier' } } } }, { name: 'x', extends: 'default' });
+    const result = validateTheme(definition, { identity: false });
+    assert.deepEqual(result.errors.map((e) => [e.path, e.code]), [['easing.standard', 'invalid-value']]);
+  });
+
+  test('la même courbe sur une seule ligne reste acceptée', () => accepted('easing.standard', 'cubic-bezier(0.2, 0, 0, 1)'));
+});
+
 describe('une valeur invalide par type de mouvement est refusée avec invalid-value', () => {
   test('échelle (motion.scale-pop, motion.scale-enter)', () => {
     for (const path of ['motion.scale-pop', 'motion.scale-enter']) for (const value of ['abc', '0.9px', '-0.5', '1e3', '0.9 0.9', 'calc(1)']) refused(path, value);
