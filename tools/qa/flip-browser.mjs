@@ -25,7 +25,8 @@ if (!base) {
   server = createServer(async (request, response) => {
     const file = path.join(storybookDir, path.normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname)).replace(/^(\.\.[/\\])+/, ''));
     try {
-      response.writeHead(200, { 'content-type': types[path.extname(file)] ?? 'application/octet-stream' }).end(await readFile(file));
+      const body = await readFile(file);
+      response.writeHead(200, { 'content-type': types[path.extname(file)] ?? 'application/octet-stream' }).end(body);
     } catch {
       response.writeHead(404).end();
     }

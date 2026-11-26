@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
 try {
   execFileSync('npx', ['ng', 'build'], { cwd: app, stdio: 'pipe', encoding: 'utf8' });
 } catch (error) {
-  console.log(`KO  construction du harnais (échec attendu avant T13 : directive absente) : ${String(error.stdout ?? error.message).split('\n').filter((l) => /error|erreur/i.test(l)).slice(0, 3).join(' | ')}`);
+  console.log(`KO  construction du harnais (échec attendu avant T13 : directive absente) : ${`${error.stdout}${error.stderr}`.split('\n').filter((l) => /error|erreur/i.test(l)).slice(0, 3).join(' | ')}`);
   process.exit(1);
 }
 
@@ -32,7 +32,8 @@ const server = await new Promise((resolve) => {
   const s = createServer(async (request, response) => {
     const p = new URL(request.url ?? '/', 'http://x').pathname;
     try {
-      response.writeHead(200, { 'content-type': types[path.extname(p)] ?? 'text/html' }).end(await readFile(path.join(dist, path.extname(p) ? p : 'index.html')));
+      const body = await readFile(path.join(dist, path.extname(p) ? p : 'index.html'));
+      response.writeHead(200, { 'content-type': types[path.extname(p)] ?? 'text/html' }).end(body);
     } catch {
       response.writeHead(404).end();
     }
