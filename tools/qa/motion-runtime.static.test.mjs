@@ -20,9 +20,11 @@ const entryPoints = readdirSync(angular, { withFileTypes: true })
 
 const motionSources = () => {
   assert.ok(existsSync(motion), 'packages/angular/src/lib/motion/ n\'existe pas');
-  return readdirSync(motion, { withFileTypes: true, recursive: true })
+  const files = readdirSync(motion, { withFileTypes: true, recursive: true })
     .filter((f) => f.isFile() && f.name.endsWith('.ts') && !/\.(spec|stories)\.ts$|\.stories\./.test(f.name))
     .map((f) => join(f.parentPath, f.name));
+  assert.ok(files.length >= 5, 'lib/motion/ doit contenir au moins les fichiers du runtime (le test ne passe pas à vide)');
+  return files;
 };
 
 /** Spécificateurs de tous les `import … from`, `export … from` et `import()` d'un fichier. */

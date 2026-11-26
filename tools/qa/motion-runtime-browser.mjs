@@ -1,7 +1,7 @@
 // Acceptation navigateur de docs/specs/2026-12-mouvement-v2.md, tâche T2 : CA-19 (`lcAnimate`) et CA-4 (préférence de mouvement réduit changée en cours de session).
 // Chrome réel (Playwright, channel chrome) sur le Storybook statique (`npm run build-storybook`, dist/storybook ; STORYBOOK_DIR pour une autre construction).
 //   node tools/qa/motion-runtime-browser.mjs
-// Story : QA/Motion/Runtime (packages/angular/src/stories/motion-runtime.acceptance.qa.stories.ts). Les valeurs attendues viennent de la spec (§5.2). Code de sortie 1 au moindre échec.
+// Story : QA/Motion/Runtime (packages/angular/src/lib/motion/stories/motion-runtime.acceptance.qa.stories.ts). Les valeurs attendues viennent de la spec (§5.2). Code de sortie 1 au moindre échec.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
