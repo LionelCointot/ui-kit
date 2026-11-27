@@ -365,12 +365,14 @@ async function motion() {
     const page = await open(c);
     await patch(page, { height: 300 }); await put(page, FIVE.map(long));
     const r = await page.evaluate(async (add) => {
-      const old = Q.bubbles(); window.__thread.add(add); await Q.until(() => Q.bubbles().length === old.length + 1);
+      const old = Q.bubbles(); window.__thread.add(add); await Q.until(() => Q.bubbles().length === old.length + 1); await Q.raf();
+      const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).length;
       const all = Q.anims().map((a) => ({ props: (a.effect.getKeyframes?.() ?? []).flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)).concat(a.transitionProperty ? [a.transitionProperty] : []), dur: a.effect.getComputedTiming().duration, target: a.effect.target }));
       const nb = Q.bubble(6);
-      return { all: all.map((x) => [x.props, x.dur]), motionProps: all.filter((x) => x.props.some((p) => /transform|translate|scale|rotate/.test(p))).length, fade: all.some((x) => x.props.includes('opacity') && (x.target === nb || x.target.contains(nb) || nb.contains(x.target)) && x.dur > 1), onOld: all.filter((x) => x.dur > 1 && old.some((o) => x.target === o || o.contains(x.target) || x.target.contains(o))).length };
+      return { running, all: all.map((x) => [x.props, x.dur]), motionProps: all.filter((x) => x.props.some((p) => /transform|translate|scale|rotate/.test(p))).length, fade: all.some((x) => x.props.includes('opacity') && (x.target === nb || x.target.contains(nb) || nb.contains(x.target)) && x.dur > 1), onOld: all.filter((x) => x.dur > 1 && old.some((o) => x.target === o || o.contains(x.target) || x.target.contains(o))).length };
     }, [long(me(6, { s: 6 }))]);
-    check('CA-T4 réduction des animations : l\'arrivée ne joue que l\'opacité (aucune animation de transform, translate ou scale), le fondu survit', r.motionProps === 0 && r.fade, JSON.stringify(r));
+    // Spec 2026-12-mouvement-v2 CA-3 (T7), qui remplace « le fondu survit » de 2026-11-fil-de-messages : sous mouvement réduit, aucune animation n'est en cours une image après l'arrivée.
+    check('CA-T4 / CA-3 réduction des animations : l\'arrivée ne joue aucune animation (ni transform, translate, scale, ni fondu d\'opacité), rien n\'est en cours une image après', r.motionProps === 0 && !r.fade && r.running === 0, JSON.stringify(r));
     check('CA-T4 réduction des animations : les messages précédents ne sont pas animés', r.onOld === 0, JSON.stringify(r));
     await page.close();
   });

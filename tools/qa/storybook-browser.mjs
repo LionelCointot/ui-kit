@@ -490,10 +490,12 @@ const MOTION_INIT = () => {
     const all = [...document.querySelectorAll('lc-data-table tbody tr:not(.lc-data-table__state)')].map((tr) => ({ tr, list: revealAnims(tr) }));
     all.forEach(({ list }) => list.forEach((a) => a.pause()));
     all.forEach(({ list }) => list.forEach((a) => { a.currentTime = 0; }));
-    q.cardSnaps.push(all.map(({ tr, list }, i) => {
+    const snap = all.map(({ tr, list }, i) => {
       const cs = getComputedStyle(tr);
-      return { n: i + 1, reveal: tr.classList.contains('lc-reveal') || tr.hasAttribute('lcreveal') || list.length > 0, props: list.map((a) => a.animationName), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), startOpacity: cs.opacity, cssDelay: cs.animationDelay, cssDuration: cs.animationDuration };
-    }));
+      return { n: i + 1, reveal: tr.classList.contains('lc-reveal') || tr.hasAttribute('lcreveal') || list.length > 0, props: list.map((a) => a.animationName), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), easings: list.map((a) => a.effect.getComputedTiming().easing), startOpacity: cs.opacity, cssDelay: cs.animationDelay, cssDuration: cs.animationDuration };
+    });
+    snap.t = performance.now();
+    q.cardSnaps.push(snap);
     all.forEach(({ list }) => list.forEach((a) => a.finish()));
   };
   new MutationObserver((records) => {
@@ -583,12 +585,17 @@ const MOTION_INIT = () => {
   /** Instantané « avant » (éléments, positions), puis enregistrement de chaque animation de ligne à sa première image. */
   q.startList = () => {
     if (q.list) q.list.stop = true;
-    const rec = (q.list = { stop: false, idle: 0, before: new Map(), els: new Map(), anims: [], block: [], cardSnapsBefore: q.cardSnaps.length });
+    const rec = (q.list = { stop: false, idle: 0, before: new Map(), els: new Map(), anims: [], block: [], frames: [], changedAt: null, leavingSeen: false, keysBefore: q.rowKeys().join(), cardSnapsBefore: q.cardSnaps.length });
     document.querySelectorAll(ROWS).forEach((tr) => { rec.before.set(rowKey(tr), tr.getBoundingClientRect().top); rec.els.set(rowKey(tr), tr); });
     const seen = new WeakSet();
-    const tick = () => {
+    const tick = (now) => {
       if (rec.stop) return;
       const all = [...document.querySelectorAll('lc-data-table tbody tr')];
+      // T7 : visibilité par image (liste vidée ?), instant du premier changement de lignes, sortie en cours (data-leaving, lc-leave).
+      const shown = [...document.querySelectorAll(ROWS)];
+      if (rec.changedAt === null && shown.map(rowKey).join() !== rec.keysBefore) rec.changedAt = now;
+      rec.frames.push({ t: now, visible: shown.filter((tr) => parseFloat(getComputedStyle(tr).opacity) > 0.01).length });
+      if (document.querySelector('tr[data-leaving], tr.lc-leave')) rec.leavingSeen = true;
       let running = 0;
       for (const tr of all) {
         for (const a of tr.getAnimations()) {
@@ -597,11 +604,11 @@ const MOTION_INIT = () => {
           seen.add(a);
           const kf = a.effect.getKeyframes();
           const t = a.effect.getTiming();
-          rec.anims.push({ key: rowKey(tr), kind: a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'css' : 'waapi', props: Object.keys(kf[0] ?? {}).filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)), first: kf[0], last: kf.at(-1), duration: t.duration, delay: t.delay, easing: t.easing, fill: t.fill, leaving: tr.hasAttribute('data-leaving'), connected: tr.isConnected, leavingConnected: document.querySelectorAll('tr[data-leaving]').length });
+          rec.anims.push({ seenAt: now, name: a.animationName ?? null, key: rowKey(tr), kind: a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'css' : 'waapi', props: Object.keys(kf[0] ?? {}).filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)), first: kf[0], last: kf.at(-1), duration: t.duration, delay: t.delay, easing: t.easing, fill: t.fill, leaving: tr.hasAttribute('data-leaving'), connected: tr.isConnected, leavingConnected: document.querySelectorAll('tr[data-leaving]').length });
         }
       }
       for (const a of document.querySelector('.lc-data-table__scroll')?.getAnimations() ?? []) if (!seen.has(a)) { seen.add(a); rec.block.push({ first: a.effect.getKeyframes()[0]?.transform, duration: a.effect.getTiming().duration }); }
-      rec.idle = running === 0 && !document.querySelector('tr[data-leaving]') ? rec.idle + 1 : 0;
+      rec.idle = running === 0 && !document.querySelector('tr[data-leaving], tr.lc-leave') ? rec.idle + 1 : 0;
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -620,7 +627,9 @@ const MOTION_INIT = () => {
       anims: r.anims,
       block: r.block,
       cascades: q.cardSnaps.length - r.cardSnapsBefore,
-      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-overlay-exit-duration'), enter: q.tokenMs('--lc-overlay-enter-duration'),
+      snaps: q.cardSnaps.slice(r.cardSnapsBefore).map((s) => ({ t: s.t, rows: s.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) })),
+      frames: r.frames, changedAt: r.changedAt, leavingSeen: r.leavingSeen,
+      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-sys-duration-enter'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
     };
   };
 };
@@ -765,11 +774,11 @@ async function motionPhone(context, base, reduced, tag, check) {
     if (reduced) check(quick(chip.transitionDuration), `CA-11b/13 ${tag} pastille ajoutée`, `durée=${chip.transitionDuration}`);
     else check(Object.keys(chip.props).join() === 'opacity' && near(chip.props.opacity.duration, t.chip) && chip.props.opacity.delay === 0 && chip.props.opacity.startOpacity === '0' && chip.endOpacity === '1', `CA-11b ${tag} pastille ajoutée`, `props=${JSON.stringify(chip.props)} attendu opacité seule, durée ${t.chip}, fin=${chip.endOpacity}`);
   }
-  // CA-12 (décision 26) : après « Afficher N … », aucune cascade rejouée ; les cartes conservées gardent leur élément.
+  // CA-26 (spec mouvement-v2 §12, qui remplace la décision 26 de 2026-11-mouvement) : après « Afficher N … », la liste est vidée puis les 10 cartes entrent en cascade (détail dans `motionList`).
   await page.waitForFunction(() => window.__qa.rowKeys().length === 10 && window.__qa.list.idle >= 6, undefined, { timeout: 10000 });
   {
     const r = await page.evaluate(() => window.__qa.listReport());
-    check(r.cascades === 0 && r.kept.length === 10 && r.kept.every((k) => k.same), `CA-12 ${tag} après « Afficher N » : aucune cascade rejouée, 10 cartes conservées (même élément)`, `cascades rejouées=${r.cascades}, conservées=${r.kept.length}, éléments identiques=${r.kept.filter((k) => k.same).length}`);
+    check(r.order.length === 10 && (reduced || r.cascades >= 1), `CA-26 ${tag} après « Afficher N » : liste reconstruite, une cascade rejouée (10 cartes)`, `cascades rejouées=${r.cascades}, cartes=${r.order.length}`);
   }
   await press(page, 'avec filtres');
   // Deuxième filtre : deux pastilles, puis retrait de l'une.
@@ -781,16 +790,17 @@ async function motionPhone(context, base, reduced, tag, check) {
   await page.waitForFunction(() => window.__qa.dlg.closing);
   await page.evaluate(() => window.__qa.releaseDialog());
   await page.waitForFunction(() => !document.querySelector('lc-sheet dialog').open && document.querySelectorAll('li.lc-data-table__chip').length === 2, undefined, { timeout: 5000 });
+  await page.waitForFunction(() => window.__qa.list.idle >= 6 && window.__qa.rowKeys().length > 0, undefined, { timeout: 10000 }); // cascade du deuxième filtre terminée
   const snapsBefore = await page.evaluate(() => window.__qa.cardSnaps.length);
   await page.evaluate(() => { window.__qa.chipOut = null; });
   await page.locator('.lc-data-table__chip-remove').first().click();
   await page.waitForFunction(() => window.__qa.chipOut?.neighboursLater !== undefined);
   const out = await page.evaluate(() => window.__qa.chipOut);
   check(!out.connected && out.own === 0 && out.neighbours === 0 && out.neighboursLater === 0 && out.remaining === 1, `CA-11c ${tag} pastille retirée`, `dans le DOM=${out.connected}, animations de la pastille=${out.own}, des pastilles voisines=${out.neighbours} puis ${out.neighboursLater} (toutes animations de la zone : ${out.laterWhich}), pastilles restantes=${out.remaining}`);
-  await page.waitForFunction(() => document.querySelectorAll('lc-data-table tbody tr').length > 0);
-  await tick(page);
+  const replayed = await page.waitForFunction((n) => window.__qa.cardSnaps.length > n, snapsBefore, { timeout: 4000 }).then(() => true, () => false);
+  await page.waitForFunction(() => window.__qa.list.idle >= 6 && window.__qa.rowKeys().length > 0, undefined, { timeout: 10000 });
   const snapsAfterChip = await page.evaluate(() => window.__qa.cardSnaps.length);
-  check(snapsAfterChip === snapsBefore, `CA-12 ${tag} aucune cascade au retrait d'une pastille`, `cascades rejouées=${snapsAfterChip - snapsBefore}`);
+  check(reduced || replayed, `CA-26 ${tag} retrait d'une pastille = changement de filtre : la cascade est rejouée`, `cascades rejouées=${snapsAfterChip - snapsBefore}`);
   await page.selectOption('select.lc-data-table__sort-select', 'name:desc');
   await tick(page);
   await tick(page);
@@ -1004,7 +1014,9 @@ async function motionIndicators(context, base, name, tag, width, check) {
   }
 }
 
-/** Différence de liste de lc-data-table (spec mouvement, T6b et T6c, décision 26) : CA-20 à CA-24 sur de vraies suppressions, ajouts et déplacements ; cartes à 360 px, lignes à 1 280 px. */
+/** Liste de lc-data-table (spec mouvement-v2, T7) : CA-26 sur de vraies actions ; cartes à 360 px, lignes à 1 280 px.
+ *  Attendus tirés de la spec (§5.4.2) et des démos d07, d08, d33, d36 du catalogue, pas du code : filtre (et retrait du filtre) = liste vidée, puis cascade après 200 ms (40 ms par rang, 450 ms, 8 rangs au plus) ;
+ *  tri = glissement de 420 ms `draw` des lignes qui changent de place, rien d'autre ; suppression = sortie `lc-leave` (token d'exit, sans fondu propre), puis glissement des voisines (420 ms `draw`). */
 async function motionList(context, base, reduced, tag, phone, check) {
   const ID = 'qa-motion-data-table--table';
   const { page, errors } = await motionPage(context, base, ID);
@@ -1028,76 +1040,70 @@ async function motionList(context, base, reduced, tag, phone, check) {
       await page.locator('.lc-data-table__overlay button', { hasText: 'Appliquer' }).click();
     }
   };
-  const report = (expectedKeys) => page.evaluate(() => window.__qa.listReport());
+  const report = () => page.evaluate(() => window.__qa.listReport());
   const near1 = (a, b) => Math.abs(a - b) <= 1.5;
   const translateY = (t) => parseFloat(t?.match(/translateY\((-?[\d.]+)px\)/)?.[1] ?? 'NaN');
+  const waapiOf = (r) => r.anims.filter((a) => a.kind === 'waapi');
+  const lastGlide = (r, key) => waapiOf(r).filter((a) => a.key === key && a.props.includes('transform')).at(-1);
 
-  const analyse = (r, label, { expectKept, expectRemoved, expectAdded, strict = false, blockStart = false }) => {
+  /** Conservées : même élément DOM, qui glissent de leur ancienne place à la nouvelle (420 ms, courbe draw) ; `strict` : celles qui n'ont pas bougé n'animent rien. */
+  const glides = (r, label, { strict = false } = {}) => {
     const moved = r.kept.filter((k) => Math.abs(k.from - k.to) >= 0.5);
-    const waapi = r.anims.filter((a) => a.kind === 'waapi');
-    check(r.kept.length === expectKept && r.kept.every((k) => k.same), `CA-20 ${tag} ${label} lignes conservées : même élément DOM (${r.kept.length})`, `conservées=${r.kept.length} attendu ${expectKept}, éléments identiques=${r.kept.filter((k) => k.same).length}`);
-    check(r.cascades === 0 && !r.anims.some((a) => a.kind === 'transition' && a.delay > 0), `CA-20 ${tag} ${label} aucune cascade rejouée`, `insertions de cartes lcReveal=${r.cascades}, transitions à délai=${r.anims.filter((a) => a.kind === 'transition' && a.delay > 0).length}`);
-    if (reduced) {
-      check(r.anims.length === 0, `CA-23 ${tag} ${label} aucune animation de ligne en réduction`, `animations=${JSON.stringify(r.anims.map((a) => [a.key, a.kind, a.props.join('+')]))}`);
-      check(r.removed.length === expectRemoved && r.removed.every((x) => x.gone) && r.added.length === expectAdded, `CA-23 ${tag} ${label} retraits immédiats, ajouts présents`, `retirées=${r.removed.length} disparues=${r.removed.filter((x) => x.gone).length}, ajoutées=${r.added.length}`);
-      return;
-    }
-    // Dernière animation de transform de chaque ligne : elle part de la position visible à cet instant (continuité si une première glissade, due au décalage de la barre de filtres, est en cours) et finit à la place finale.
-    const last = (key) => waapi.filter((a) => a.key === key && a.props.includes('transform')).at(-1);
     const bad = moved.filter((k) => {
-      const a = last(k.key);
-      if (!a && blockStart) return false; // le bloc porte tout le déplacement de cette ligne : départ vérifié plus bas
-      if (!a || !(a.last.transform === 'none' && near(a.duration, r.move) && a.delay === 0 && sameEase(a.easing, r.moveEase))) return true;
-      if (blockStart) return false; // départ vérifié plus bas (bloc + ligne)
-      const start = k.to + translateY(a.first.transform);
-      // Marge : 10 % du trajet (une glissade due au décalage de la barre de filtres peut dépasser de quelques pixels).
+      const a = lastGlide(r, k.key);
+      if (!a || !(a.last.transform === 'none' && near(a.duration, 420) && near(a.duration, r.move) && a.delay === 0 && sameEase(a.easing, r.moveEase))) return true;
       const slack = Math.max(1.5, 0.1 * Math.abs(k.from - k.to));
-      const inside = start >= Math.min(k.from, k.to) - slack && start <= Math.max(k.from, k.to) + slack;
-      return !inside || (strict && !near1(translateY(a.first.transform), k.from - k.to));
+      const start = k.to + translateY(a.first.transform);
+      return !(start >= Math.min(k.from, k.to) - slack && start <= Math.max(k.from, k.to) + slack) || (strict && !near1(translateY(a.first.transform), k.from - k.to));
     });
-    check(moved.length > 0 && bad.length === 0, `CA-20 ${tag} ${label} conservées : glissement vers la nouvelle place (${r.move} ms, courbe du token), sans sortir de la zone`, `déplacées=${moved.length}, non conformes=${bad.map((k) => `${k.key} (de ${k.from} à ${k.to}, animations ${JSON.stringify(waapi.filter((a) => a.key === k.key).map((a) => [a.first.transform, a.duration]))})`)}`);
-    // Retrait de pastille : le bloc de la liste glisse (une seule animation) et les lignes portent le reste ; ensemble, la position visuelle de départ de chaque ligne conservée est son ancienne place (± 1 px).
-    if (blockStart) {
-      const blockY = r.block.length ? translateY(r.block[0].first) : 0;
-      const off = r.kept.map((k) => { const a = last(k.key); return { key: k.key, d: k.to + blockY + (a ? translateY(a.first.transform) : 0) - k.from }; });
-      check(r.block.length <= 1 && off.every((o) => near1(o.d, 0)), `CA-20 ${tag} ${label} bloc + ligne : départ visuel de chaque ligne conservée = ancienne position (± 1 px)`, `animations du bloc=${r.block.length} (départ ${blockY}), écarts=${JSON.stringify(off.filter((o) => !near1(o.d, 0)))}`);
-    }
-    const still = r.kept.filter((k) => Math.abs(k.from - k.to) < 0.5);
-    if (strict) check(still.every((k) => !last(k.key)), `CA-20 ${tag} ${label} pas de glissement pour une ligne qui n'a pas bougé`, `lignes immobiles animées=${still.filter((k) => last(k.key)).map((k) => k.key)}`);
-    const moveEase = waapi.find((a) => a.props.includes('transform'));
-    check(!!moveEase && sameEase(moveEase.easing, r.moveEase) && near(moveEase.duration, 500), `CA-24 ${tag} ${label} lignes : easing-standard, 500 ms`, `durée=${moveEase?.duration} courbe=${moveEase?.easing?.slice(0, 40)}…`);
-    // Ajoutées : fondu à leur place.
-    if (expectAdded > 0) {
-      const fades = r.added.map((key) => waapi.find((a) => a.key === key && a.props.includes('opacity')));
-      check(r.added.length === expectAdded && fades.every((a) => a && a.first.opacity === '0' && a.last.opacity === '1' && near(a.duration, r.enter) && a.delay === 0 && !a.leaving), `CA-21 ${tag} ${label} lignes ajoutées en fondu (${r.enter} ms)`, `ajoutées=${r.added}, fondus=${JSON.stringify(fades.map((a) => a && [a.key, a.first.opacity, a.last.opacity, a.duration]))}`);
-      const ascending = r.order.every((k, i) => i === 0 || Number(k.split(' ')[1]) > Number(r.order[i - 1].split(' ')[1]));
-      check(ascending, `CA-21 ${tag} ${label} ajoutées à leur place`, `ordre=${r.order}`);
-    }
-    // Retirées : restent le temps d'un fondu, puis disparaissent, puis les suivantes comblent.
-    if (expectRemoved > 0) {
-      const fades = r.removed.map((x) => waapi.find((a) => a.key === x.key && a.props.includes('opacity')));
-      check(r.removed.length === expectRemoved && fades.every((a) => a && a.leaving && a.connected && a.first.opacity === '1' && a.last.opacity === '0' && near(a.duration, r.exit)) && r.removed.every((x) => x.gone), `CA-22 ${tag} ${label} lignes retirées : dans le DOM pendant un fondu (${r.exit} ms), puis disparues`, `retirées=${r.removed.map((x) => `${x.key}:disparue=${x.gone}`)}, fondus=${JSON.stringify(fades.map((a) => a && [a.key, a.leaving, a.connected, a.first.opacity, a.last.opacity, a.duration]))}`);
-      check(moved.every((k) => last(k.key)?.leavingConnected === 0), `CA-22 ${tag} ${label} le comblement (dernier glissement) commence après la disparition des lignes en fondu`, `lignes encore en fondu au début du dernier glissement=${moved.map((k) => last(k.key)?.leavingConnected)}`);
+    check(moved.length > 0 && bad.length === 0, `CA-26 ${tag} ${label} conservées : glissement de 420 ms, courbe draw, de l'ancienne à la nouvelle place`, `déplacées=${moved.length}, non conformes=${bad.map((k) => `${k.key} (de ${k.from} à ${k.to}, animations ${JSON.stringify(waapiOf(r).filter((a) => a.key === k.key).map((a) => [a.first.transform, a.duration, a.easing.slice(0, 30)]))})`)}`);
+    check(near(r.move, 420) && sameEase(r.moveEase, r.draw), `CA-26 ${tag} ${label} tokens list-move : 420 ms, easing draw`, `durée=${r.move} courbe=${r.moveEase.slice(0, 40)}`);
+    if (strict) {
+      const still = r.kept.filter((k) => Math.abs(k.from - k.to) < 0.5);
+      check(still.every((k) => !lastGlide(r, k.key)), `CA-26 ${tag} ${label} pas de glissement pour une ligne qui n'a pas bougé`, `lignes immobiles animées=${still.filter((k) => lastGlide(r, k.key)).map((k) => k.key)}`);
     }
   };
 
-  // 1. Filtre « Beta » : 4 lignes retirées, 10 conservées qui comblent.
+  /** Filtre : liste vidée d'un coup (rien ne sort), puis cascade des lignes affichées après `refill` (200 ms, d08), 40 ms par rang, 450 ms, rang plafonné à 8. */
+  const refill = (r, label, expectCount) => {
+    if (reduced) {
+      check(r.anims.length === 0, `CA-23 ${tag} ${label} aucune animation de ligne en réduction`, `animations=${JSON.stringify(r.anims.map((a) => [a.key, a.kind, a.props.join('+')]))}`);
+      check(r.order.length === expectCount && r.removed.every((x) => x.gone), `CA-23 ${tag} ${label} retraits immédiats, lignes affichées`, `affichées=${r.order.length}, retirées non disparues=${r.removed.filter((x) => !x.gone).length}`);
+      return;
+    }
+    check(r.order.length === expectCount, `CA-26 ${tag} ${label} lignes affichées (${expectCount})`, `ordre=${r.order}`);
+    check(r.changedAt !== null && !r.leavingSeen && !r.anims.some((a) => a.leaving || a.name === 'lc-leave' || (a.props.includes('opacity') && String(a.last.opacity) === '0' && a.kind === 'waapi')), `CA-26 ${tag} ${label} rien ne sort : aucune ligne retirée n'est animée en sortie`, `changement vu=${r.changedAt !== null}, sortie vue=${r.leavingSeen}`);
+    const during = r.frames.filter((f) => r.changedAt !== null && f.t >= r.changedAt + 40 && f.t <= r.changedAt + r.refill - 40);
+    check(during.length >= 3 && during.every((f) => f.visible === 0), `CA-26 ${tag} ${label} liste vidée : aucune ligne visible pendant le délai de ${r.refill} ms`, `images=${during.length}, lignes visibles=${during.map((f) => f.visible)}`);
+    check(near(r.refill, 200) && near(r.stagger, 40) && near(r.reveal, 450), `CA-26 ${tag} ${label} tokens : délai 200 ms, rang 40 ms, entrée 450 ms`, `refill=${r.refill} stagger=${r.stagger} reveal=${r.reveal}`);
+    // Cascade lue dans l'instantané pris à l'insertion des lignes (les entrées sont terminées aussitôt) : celui qui compte le plus de lignes animées.
+    const snap = [...r.snaps].sort((x, y) => y.rows.filter((c) => c.reveal).length - x.rows.filter((c) => c.reveal).length)[0];
+    const rows = snap?.rows ?? [];
+    const first = snap ? snap.t + rows[0]?.delay : NaN;
+    // Rangs 0 à 7 : une entrée chacun (délai = rang × 40 ms) ; au-delà (cascade plafonnée, comme les cartes de CA-12) : pas d'entrée obligatoire, mais jamais après le plafond.
+    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !(sameEase(c.easing, r.entrance) || sameEase(c.easing, r.soft)) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
+    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 450 ms, 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
+    check(!!snap && first - r.changedAt >= r.refill - 40 && first - r.changedAt <= r.refill + 60, `CA-26 ${tag} ${label} la première ligne entre ${r.refill} ms après le changement (à une image près)`, `écart=${(first - r.changedAt).toFixed(1)} ms`);
+    check(!waapiOf(r).some((a) => a.props.includes('transform')), `CA-26 ${tag} ${label} aucune glissade de ligne (la liste est reconstruite)`, `glissades=${waapiOf(r).filter((a) => a.props.includes('transform')).map((a) => a.key)}`);
+  };
+
+  // 1. Filtre « Beta » : 4 lignes retirées, 10 affichées en cascade.
   await begin();
   await beta();
   await idle(`window.__qa.rowKeys().length === 10`);
   const beta1 = await report();
   const betaKeys = all.filter((_, i) => i % 4 !== 0);
-  check(beta1.order.join() === betaKeys.join(), `CA-20 ${tag} filtre : lignes affichées`, `ordre=${beta1.order}`);
-  analyse(beta1, 'filtre', { expectKept: 10, expectRemoved: 4, expectAdded: 0 });
+  check(beta1.order.join() === betaKeys.join(), `CA-26 ${tag} filtre : lignes affichées`, `ordre=${beta1.order}`);
+  refill(beta1, 'filtre', 10);
 
-  // 2. Retrait de la pastille (téléphone) ou « Effacer les filtres » (ordinateur) : 4 lignes ajoutées, 10 conservées qui s'écartent.
+  // 2. Retrait de la pastille (téléphone) ou « Effacer les filtres » (ordinateur) : c'est un changement de filtre, 14 lignes en cascade.
   await begin();
   if (phone) await page.locator('.lc-data-table__chip-remove').first().click();
   else await page.getByRole('button', { name: 'Effacer les filtres' }).click();
   await idle(`window.__qa.rowKeys().length === 14`);
-  analyse(await report(), 'retrait de pastille', { expectKept: 10, expectRemoved: 0, expectAdded: 4, blockStart: true });
+  refill(await report(), 'retrait de pastille', 14);
 
-  // 3. Tri : toutes les lignes conservées, certaines changent de place.
+  // 3. Tri : toutes les lignes conservées, certaines changent de place ; rien ne sort, rien n'entre.
   await page.evaluate(() => window.__qa.frames(40));
   await begin();
   const order0 = await page.evaluate(() => window.__qa.rowKeys().join());
@@ -1105,9 +1111,31 @@ async function motionList(context, base, reduced, tag, phone, check) {
   else { const head = page.locator('thead button', { hasText: 'Objet' }); await head.click(); await page.evaluate(() => window.__qa.frames(40)); await begin(); await head.click(); }
   await idle(`window.__qa.rowKeys().join() !== ${JSON.stringify(order0)}`);
   const sorted = await report();
-  check(sorted.order.join() !== order0, `CA-20 ${tag} tri : l'ordre a changé`, `avant=${order0.slice(0, 40)}… après=${sorted.order.join().slice(0, 40)}…`);
-  analyse(sorted, 'tri', { expectKept: 14, expectRemoved: 0, expectAdded: 0, strict: true });
-  if (!phone) check(await page.evaluate(() => document.querySelectorAll('tr[lcreveal], tr.lc-reveal').length) === 0, `CA-12 ${tag} pas de cascade sur ordinateur`);
+  check(sorted.order.join() !== order0, `CA-26 ${tag} tri : l'ordre a changé`, `avant=${order0.slice(0, 40)}… après=${sorted.order.join().slice(0, 40)}…`);
+  check(sorted.kept.length === 14 && sorted.kept.every((k) => k.same), `CA-26 ${tag} tri lignes conservées : même élément DOM (14)`, `conservées=${sorted.kept.length}, identiques=${sorted.kept.filter((k) => k.same).length}`);
+  check(sorted.cascades === 0 && !sorted.leavingSeen && !sorted.anims.some((a) => a.props.includes('opacity')), `CA-26 ${tag} tri : aucune cascade, aucune entrée ni sortie`, `cascades=${sorted.cascades}, animations d'opacité=${sorted.anims.filter((a) => a.props.includes('opacity')).map((a) => a.key)}`);
+  if (reduced) check(sorted.anims.length === 0, `CA-23 ${tag} tri aucune animation de ligne en réduction`, `animations=${JSON.stringify(sorted.anims.map((a) => [a.key, a.kind, a.props.join('+')]))}`);
+  else glides(sorted, 'tri', { strict: true });
+  if (!phone) check(await page.evaluate(() => document.querySelectorAll('tr[lcreveal], tr.lc-reveal').length) === 0, `CA-12 ${tag} pas de cascade sur ordinateur après un tri`);
+
+  // 4. Suppression de « Demande 5 » : sortie par lc-leave seule (durée du token d'exit, sans fondu propre), puis glissement des voisines.
+  await page.evaluate(() => window.__qa.frames(40));
+  await begin();
+  await page.click('#qa-remove');
+  await idle(`window.__qa.rowKeys().length === 13`);
+  const del = await report();
+  check(del.order.join() === all.filter((k) => k !== 'Demande 5').join() && del.removed.length === 1 && del.removed[0].key === 'Demande 5' && del.removed[0].gone, `CA-26 ${tag} suppression : ligne retirée du DOM à la fin de la sortie`, `ordre=${del.order}, retirées=${JSON.stringify(del.removed)}`);
+  if (reduced) {
+    check(del.anims.length === 0, `CA-23 ${tag} suppression : aucune animation en réduction`, `animations=${JSON.stringify(del.anims.map((a) => [a.key, a.kind, a.name, a.props.join('+')]))}`);
+  } else {
+    const out = del.anims.filter((a) => a.key === 'Demande 5');
+    const leave = out.find((a) => a.name === 'lc-leave');
+    check(!!leave && near(leave.duration, 200) && near(leave.duration, del.exit) && leave.connected && out.every((a) => a.name === 'lc-leave'), `CA-26 ${tag} suppression : une seule sortie, lc-leave de ${del.exit} ms (200 ms), sans fondu ni second délai`, `animations de la ligne=${JSON.stringify(out.map((a) => [a.kind, a.name, a.duration, a.props.join('+')]))}`);
+    const below = del.kept.filter((k) => Math.abs(k.from - k.to) >= 0.5);
+    check(below.length === 9 && below.every((k) => Number(k.key.split(' ')[1]) > 5), `CA-26 ${tag} suppression : seules les voisines suivantes bougent (9)`, `déplacées=${below.map((k) => k.key)}`);
+    glides({ ...del, kept: del.kept }, 'suppression', { strict: true });
+    check(below.every((k) => lastGlide(del, k.key)?.leavingConnected === 0), `CA-26 ${tag} suppression : le glissement des voisines commence après la disparition de la ligne`, `lignes encore en sortie au début du glissement=${below.map((k) => lastGlide(del, k.key)?.leavingConnected)}`);
+  }
   check(errors.length === 0, `erreurs page ${tag} liste`, errors.join(' ; '));
   await page.close();
 }

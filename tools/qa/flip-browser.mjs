@@ -121,10 +121,10 @@ const worstJump = async (reveal) => {
   await context.close();
   return worst;
 };
-{
+try {
   const [alone, together] = [await worstJump(false), await worstJump(true)];
   check(together <= alone + 0.5, 'CA-18 lcReveal + lcFlip : déplacement maximal par image ≤ FLIP seul + 0,5 px', `ensemble ${together.toFixed(1)} px, FLIP seul ${alone.toFixed(1)} px`);
-}
+} catch (error) { check(false, 'CA-18 lcReveal + lcFlip : le premier ajout doit animer (un FLIP en cours à pousser)', String(error.message).split('\n')[0]); }
 
 // CA-3 : mouvement réduit.
 {
