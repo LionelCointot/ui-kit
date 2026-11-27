@@ -117,12 +117,6 @@
     animation: none;
   }
 
-  .lc-tabbar__tab,
-  .lc-tabbar__tab[aria-current='page'],
-  .lc-tabbar__tab--active {
-    transition: none;
-  }
-
   :host(.lc-app-tabbar--ready) .lc-tabbar__indicator,
   :host(.lc-app-tabbar--ready) .lc-tabbar__indicator[data-direction='backward'] {
     transition: none;

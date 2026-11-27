@@ -108,11 +108,14 @@ export class LcAppTabbarComponent {
   /** Le libellé d'un onglet passe « sur la pastille » à l'image où elle recouvre son centre, et en sort de même : image par image tant qu'elle glisse. */
   private syncLabels(indicator: HTMLElement): void {
     const pill = indicator.getBoundingClientRect();
-    for (const { nativeElement: tab } of this.items()) {
+    const tabs = this.items().map((item) => item.nativeElement);
+    // Toutes les lectures d'abord, puis les écritures : une seule mise en page par image.
+    const under = tabs.map((tab) => {
       const label = tab.querySelector('.lc-tabbar__label')?.getBoundingClientRect();
       const center = label ? label.left + label.width / 2 : -1;
-      tab.classList.toggle('lc-tabbar__tab--under', pill.width > 0 && center >= pill.left && center <= pill.right);
-    }
+      return pill.width > 0 && center >= pill.left && center <= pill.right;
+    });
+    tabs.forEach((tab, index) => tab.classList.toggle('lc-tabbar__tab--under', under[index]));
     if (indicator.getAnimations?.().length) this.frame = requestAnimationFrame(() => this.syncLabels(indicator));
   }
 }
