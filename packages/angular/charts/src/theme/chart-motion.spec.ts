@@ -116,6 +116,7 @@ describe('graphiques : mouvement depuis les tokens (T11, CA-28)', () => {
     expect(option.animation).toBe(true);
     expect(option.animationDuration).toBe(777);
     expect(option.animationEasing).toBe(LC_CHART_EASING['draw']);
+    expect(option.animationEasingUpdate).toBe(LC_CHART_EASING['draw']);
   });
 
   it('CA-28 : barres, courbe, aire et lc-chart passent animationDuration et animationDurationUpdate = token update-duration, courbe draw, décalage = update-stagger × rang', async () => {

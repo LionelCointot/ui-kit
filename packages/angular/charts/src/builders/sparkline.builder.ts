@@ -19,6 +19,7 @@ export function buildSparklineOption(args: SparklineBuildArgs): EChartsCoreOptio
     animation: !theme.reducedMotion,
     animationDuration: theme.motion.sparklineMs,
     animationEasing: LC_CHART_EASING['draw'],
+    animationEasingUpdate: LC_CHART_EASING['draw'],
     backgroundColor: 'transparent',
     aria: ariaOption(args.summary),
     grid: { left: 4, right: 4, top: 4, bottom: 4 },
@@ -28,6 +29,7 @@ export function buildSparklineOption(args: SparklineBuildArgs): EChartsCoreOptio
     series: [{
       type: 'line',
       animationEasing: LC_CHART_EASING['draw'], // le défaut `linear` de la série l'emporte sur l'option globale
+      animationEasingUpdate: LC_CHART_EASING['draw'],
       data: [...values],
       showSymbol: args.showEndPoint,
       symbol: args.showEndPoint ? (_value: unknown, params: { dataIndex: number }) => (params.dataIndex === lastIndex ? 'circle' : 'none') : 'none',
