@@ -105,15 +105,13 @@ describe('LcTabsComponent', () => {
       expect(revealed(panels()[0])).toEqual([]);
     });
 
-    it('la première ouverture donne à chaque enfant direct sa classe, son rang et la courbe « soft » ; la fin de l\'entrée les retire ; la réouverture ne rejoue rien', async () => {
+    it('la première ouverture donne à chaque enfant direct sa classe, son rang ; la fin de l\'entrée les retire ; la réouverture ne rejoue rien', async () => {
       const { fixture, element, tabs, panels } = await setup();
       tabs()[1].click();
       await fixture.whenStable();
       expect(revealed(panels()[1])).toEqual(['0']);
-      expect(rows(element)[0].style.getPropertyValue('--lc-reveal-curve')).toBe('var(--lc-sys-easing-soft)');
       rows(element)[0].dispatchEvent(Object.assign(new Event('animationend', { bubbles: true }), { animationName: 'lc-reveal-in' }));
       expect(revealed(panels()[1])).toEqual([]);
-      expect(rows(element)[0].style.getPropertyValue('--lc-reveal-curve')).toBe('');
       tabs()[0].click();
       await fixture.whenStable();
       tabs()[1].click();

@@ -148,8 +148,8 @@ const BOARD = [
   styles: `
     .lc-demo__board { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-4); }
     .lc-demo__column { display: grid; gap: var(--lc-sys-space-2); align-content: start; min-inline-size: 12rem; flex: 1; }
-    .lc-demo__head { padding: var(--lc-sys-space-2) var(--lc-sys-space-3); font-weight: 600; --lc-reveal-y: var(--lc-sys-motion-offset-lg); --lc-reveal-curve: var(--lc-sys-easing-soft); animation-duration: var(--lc-sys-duration-long); }
-    .lc-demo__card { padding: var(--lc-sys-space-3); border-radius: var(--lc-sys-radius-md); background: var(--lc-sys-color-surface-sunken); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); --lc-reveal-y: calc(var(--lc-sys-motion-offset-sm) * 1.5); --lc-reveal-curve: var(--lc-sys-easing-soft); }
+    .lc-demo__head { padding: var(--lc-sys-space-2) var(--lc-sys-space-3); font-weight: 600; --lc-reveal-y: var(--lc-sys-motion-offset-lg); animation-duration: var(--lc-sys-duration-long); }
+    .lc-demo__card { padding: var(--lc-sys-space-3); border-radius: var(--lc-sys-radius-md); background: var(--lc-sys-color-surface-sunken); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); --lc-reveal-y: calc(var(--lc-sys-motion-offset-sm) * 1.5); }
   `,
   template: `
     <div class="lc-demo__board" lcStagger>

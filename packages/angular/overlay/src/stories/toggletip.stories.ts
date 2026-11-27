@@ -95,8 +95,8 @@ import { LcToggletipComponent, LcToggletipDirective } from '@lionelcointot/ui-an
 })
 export class ExampleComponent {}`;
 
-/* Valeurs du catalogue (d39) pour les lignes de démonstration : 10 px, courbe `soft`, 450 ms (durée d'entrée par défaut de `lcReveal`), sans décalage. */
-const NOTIFICATION = 'style="display:block;--lc-reveal-y:10px;--lc-reveal-curve:var(--lc-sys-easing-soft);padding-block:var(--lc-sys-space-1)"';
+/* Valeurs du catalogue (d39) pour les lignes de démonstration : 10 px, 450 ms (durée d'entrée par défaut de `lcReveal`), sans décalage. */
+const NOTIFICATION = 'style="display:block;--lc-reveal-y:10px;padding-block:var(--lc-sys-space-1)"';
 
 /**
  * The bubble grows from its button with a small overshoot while it fades in, and fades out faster when it closes. The three notifications

@@ -92,7 +92,7 @@ const leave = (page, button, gone) => page.evaluate(async ([button, gone]) => {
 const tokens = (page) => page.evaluate(() => {
   const { ms, num, px, flat } = window.__rv;
   const raw = (n) => flat(getComputedStyle(document.documentElement).getPropertyValue(n));
-  return { enter: ms('--lc-sys-duration-enter'), exit: ms('--lc-sys-duration-exit'), easeEntrance: raw('--lc-sys-easing-entrance'), easeExit: raw('--lc-sys-easing-exit'), easePop: raw('--lc-sys-easing-pop'),
+  return { enter: ms('--lc-sys-duration-enter'), exit: ms('--lc-sys-duration-exit'), easeEntrance: raw('--lc-sys-easing-entrance'), easeExit: raw('--lc-sys-easing-exit'), easePop: raw('--lc-sys-easing-pop'), easeSoft: raw('--lc-sys-easing-soft'),
     offsets: { sm: px('--lc-sys-motion-offset-sm'), md: px('--lc-sys-motion-offset-md'), lg: px('--lc-sys-motion-offset-lg'), xl: px('--lc-sys-motion-offset-xl') },
     scaleEnter: num('--lc-sys-motion-scale-enter'), scalePop: num('--lc-sys-motion-scale-pop'), tilt: num('--lc-sys-motion-rotate-tilt'),
     pace: { fine: ms('--lc-sys-motion-stagger-fine'), normal: ms('--lc-sys-motion-stagger-normal'), cards: ms('--lc-sys-motion-stagger-cards') }, cap: num('--lc-sys-motion-stagger-cap') };
@@ -132,8 +132,8 @@ await section(1, async () => {
     check(r.count === 1 && r.kinds[0] === 'CSSAnimation:lc-reveal-in', `CA-7 ${id} n'a qu'une animation (lc-reveal-in), aucune CSSTransition`, JSON.stringify(r.kinds));
     check(r.className.split(' ').includes('lc-reveal'), `CA-8 ${id} porte la classe lc-reveal pendant l'entrée`, r.className);
     check(near(r.duration, t.enter, 0.01), `CA-8 ${id} durée = --lc-sys-duration-enter (${t.enter} ms)`, String(r.duration));
-    const expected = id === 'v-pop' ? t.easePop : t.easeEntrance;
-    check(r.easings.includes(expected), `CA-8 ${id} courbe = ${id === 'v-pop' ? 'easing-pop' : 'easing-entrance'} (${expected})`, JSON.stringify(r.easings));
+    const expected = id === 'v-pop' ? t.easePop : t.easeSoft;
+    check(r.easings.includes(expected), `CA-8 ${id} courbe = ${id === 'v-pop' ? 'easing-pop' : 'easing-soft'} (${expected})`, JSON.stringify(r.easings));
     check(r.start.opacity === 0 && near(r.end.opacity, 1, 0.001) && near(r.end.dx, 0) && near(r.end.dy, 0) && near(r.end.scale, 1, 0.001) && near(r.end.rot, 0, 0.01), `CA-8 ${id} : opacité 0 → 1 et fin sans décalage, échelle ni rotation`, JSON.stringify({ start: r.start, end: r.end }));
   }
   const S = (id) => got[id].start ?? {};
