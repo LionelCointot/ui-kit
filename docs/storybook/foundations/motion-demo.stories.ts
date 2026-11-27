@@ -99,7 +99,7 @@ class DemoStore {
           <lc-kpi-card label="Respect des délais" [value]="92" format="percent" />
         </lc-grid>
         <lc-grid [columns]="{ base: 1, md: 2 }" gap="4">
-          <lc-card>
+          <lc-card style="align-self:start">
             <lc-card-header title="Avancement des projets" />
             <div style="display:grid;gap:var(--lc-sys-space-4)">
               @for (project of projects; track project.name) { <lc-progress-bar [value]="project.value" [label]="project.name" /> }
