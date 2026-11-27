@@ -1,7 +1,10 @@
 import type { OverlayRef } from '@angular/cdk/overlay';
-import { lcDialogEnter, lcDrawerEnter } from './overlay-motion';
+import { LC_OVERLAY_CLOSING_CLASS } from '@lionelcointot/ui-angular';
+import { lcDialogEnter, lcDrawerEnter, lcOverlayLeave } from './overlay-motion';
 
 const TOKENS = { '--lc-dialog-enter-scale': '0.91', '--lc-dialog-enter-duration': '500ms', '--lc-dialog-enter-easing': 'ease-out', '--lc-overlay-enter-duration': '250ms',
+  '--lc-dialog-exit-scale': '0.9', '--lc-dialog-exit-duration': '150ms', '--lc-dialog-exit-easing': 'ease-in', '--lc-overlay-exit-duration': '100ms',
+  '--lc-drawer-exit-duration': '320ms', '--lc-drawer-exit-easing': 'ease-out', '--lc-drawer-backdrop-exit-duration': '200ms',
   '--lc-drawer-enter-duration': '550ms', '--lc-drawer-enter-easing': 'ease-in', '--lc-drawer-backdrop-enter-duration': '300ms', '--lc-sys-easing-out': 'linear' };
 
 function setup(direction = 'ltr') {
@@ -60,4 +63,39 @@ describe('overlay-motion', () => {
       expect(animate).toHaveBeenCalledWith([{ opacity: 0 }, { opacity: 1 }], expect.objectContaining({ duration: 300 }));
     },
   );
+
+  it('sortie du dialogue : marque la fermeture, joue le panneau puis le voile, et se résout à la fin des deux', async () => {
+    const { ref, container, backdrop, animate } = setup();
+    await lcOverlayLeave(ref, 'dialog');
+    expect(ref.overlayElement.classList).toContain(LC_OVERLAY_CLOSING_CLASS);
+    expect(animate).toHaveBeenCalledWith([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.9 }], expect.objectContaining({ duration: 150, easing: 'ease-in', fill: 'forwards' }));
+    expect(animate).toHaveBeenCalledWith([{ opacity: 1 }, { opacity: 0 }], expect.objectContaining({ duration: 100, fill: 'forwards' }));
+    expect(container.animate).toBe(animate);
+    expect(backdrop.animate).toBe(animate);
+  });
+
+  it.each([['end', 'ltr', '100% 0'], ['start', 'rtl', '100% 0'], ['start', 'ltr', '-100% 0']] as const)('sortie du tiroir côté %s en écriture %s : glisse vers %s, voile aux tokens du tiroir', async (side, direction, to) => {
+    const { ref, animate } = setup(direction);
+    await lcOverlayLeave(ref, 'drawer', side);
+    expect(animate).toHaveBeenCalledWith([{ translate: '0 0' }, { translate: to }], expect.objectContaining({ duration: 320, easing: 'ease-out', fill: 'forwards' }));
+    expect(animate).toHaveBeenCalledWith([{ opacity: 1 }, { opacity: 0 }], expect.objectContaining({ duration: 200 }));
+  });
+
+  it('sortie sans panneau ni voile : se résout sans erreur', async () => {
+    const ref = { overlayElement: document.createElement('div'), backdropElement: null } as unknown as OverlayRef;
+    await expect(lcOverlayLeave(ref, 'dialog')).resolves.toBeUndefined();
+  });
+
+  it('fermeture avant le rendu : l\'entrée ne joue rien sur un panneau qui part ou qui est retiré', () => {
+    const closing = setup();
+    closing.ref.overlayElement.classList.add(LC_OVERLAY_CLOSING_CLASS);
+    lcDialogEnter(closing.ref, null);
+    lcDrawerEnter(closing.ref, 'end');
+    expect(closing.animate).not.toHaveBeenCalled();
+
+    const removed = setup();
+    removed.container.remove();
+    lcDialogEnter(removed.ref, null);
+    expect(removed.animate).not.toHaveBeenCalled();
+  });
 });

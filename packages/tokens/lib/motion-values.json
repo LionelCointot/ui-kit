@@ -2,7 +2,6 @@
   { "demo": "—", "valeur": "cubic-bezier(0.2, 0, 0, 1)", "token": "--lc-sys-easing-standard" },
   { "demo": "d04", "valeur": "cubic-bezier(0.16, 1, 0.3, 1)", "token": "--lc-sys-easing-entrance" },
   { "demo": "d09", "valeur": "cubic-bezier(0.16, 1, 0.3, 1)", "token": "--lc-sys-easing-fill" },
-  { "demo": "d06", "valeur": "cubic-bezier(0.34, 1, 0.64, 1)", "token": "--lc-sys-easing-soft" },
   { "demo": "d14", "valeur": "cubic-bezier(0.215, 0.61, 0.355, 1)", "token": "--lc-sys-easing-out" },
   { "demo": "d26", "valeur": "cubic-bezier(0.34, 1.7, 0.64, 1)", "token": "--lc-sys-easing-pop" },
   { "demo": "d13", "valeur": "cubic-bezier(0.34, 2, 0.64, 1)", "token": "--lc-sys-easing-pop-strong" },
@@ -101,7 +100,6 @@
   { "demo": "d26", "valeur": "200ms", "token": "--lc-dialog-exit-duration" },
   { "demo": "d26", "valeur": "cubic-bezier(0.42, 0, 1, 1)", "token": "--lc-dialog-exit-easing" },
   { "demo": "d26", "valeur": "0.94", "token": "--lc-dialog-exit-scale" },
-  { "demo": "d56", "valeur": "20px", "token": "--lc-dialog-sheet-radius" },
 
   { "demo": "d25", "valeur": "600ms", "token": "--lc-drawer-enter-duration" },
   { "demo": "d25", "valeur": "cubic-bezier(0.16, 1, 0.3, 1)", "token": "--lc-drawer-enter-easing" },
@@ -133,7 +131,6 @@
 
   { "demo": "d07", "valeur": "8px", "token": "--lc-sys-motion-offset-sm" },
   { "demo": "d07", "valeur": "450ms", "token": "--lc-sys-duration-enter" },
-  { "demo": "d07", "valeur": "cubic-bezier(0.34, 1, 0.64, 1)", "token": "--lc-sys-easing-soft" },
   { "demo": "d07", "valeur": "40ms", "token": "--lc-sys-motion-stagger-normal" },
   { "demo": "d33", "valeur": "420ms", "token": "--lc-list-move-duration" },
   { "demo": "d33", "valeur": "cubic-bezier(0.455, 0.03, 0.515, 0.955)", "token": "--lc-list-move-easing" },

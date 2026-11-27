@@ -2,25 +2,9 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { DestroyRef, Directive, ElementRef, type OnChanges, PLATFORM_ID, inject, input } from '@angular/core';
 import { LcFormatService } from '../../core/format.service';
 import type { LcValueFormat } from '../../core/types';
+import { curveOf } from '../runtime/curve';
 import { lcReadMotion } from '../runtime/motion-tokens';
 import { lcPrefersReducedMotion } from '../runtime/reduced-motion';
-
-/** Courbe `cubic-bezier(x1, y1, x2, y2)` → progression ; toute autre courbe (`linear`, jeton absent) donne une progression linéaire. */
-function curveOf(css: string): (t: number) => number {
-  const p = /^cubic-bezier\(([^)]+)\)$/.exec(css)?.[1].split(',').map(Number);
-  if (p?.length !== 4 || p.some(Number.isNaN)) return (t) => t;
-  const [x1, y1, x2, y2] = p;
-  const axis = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
-  return (t) => {
-    let lo = 0;
-    let hi = 1;
-    for (let i = 0; i < 24; i += 1) {
-      const mid = (lo + hi) / 2;
-      if (axis(x1, x2, mid) < t) lo = mid; else hi = mid;
-    }
-    return axis(y1, y2, (lo + hi) / 2);
-  };
-}
 
 /**
  * Écrit `lcCountUp` dans le texte de l'élément, formaté par `LcFormatService` comme `lc-data-table` (`number` : 2 décimales).

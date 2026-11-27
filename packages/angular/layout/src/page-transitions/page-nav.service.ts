@@ -90,10 +90,10 @@ export class LcPageNav {
         const to = pathOf(event.urlAfterRedirects);
         this._level.set(lcPathLevel(to));
         this._resolved.set(resolved);
-        // shortcut: après un saut du navigateur vers une URL absente de la pile, la pile et l'index du navigateur divergent ; le sens est jugé au niveau. À lever si une transition est jugée fausse.
         // skipLocationChange : le navigateur n'a pas bougé, la pile non plus.
         if (step.skip) return;
         const from = history.urls[history.index] ?? null;
+        // shortcut: après un saut du navigateur vers une URL absente de la pile, la pile et l'index du navigateur divergent ; le sens est jugé au niveau. À lever si une transition est jugée fausse.
         const next = lcNavStep(history, { url: to, ...step }, this.registry.items().map((item) => item.url));
         history = next.history;
         if (from === to || !resolved.transition) return;

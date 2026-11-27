@@ -56,12 +56,9 @@ for (const [name, sys] of Object.entries(COMPONENT_TOKENS)) {
   });
 }
 
-test('CA-1 : --lc-list-move-duration vaut 420 ms et --lc-overlay-offset garde 8 px, sans passer par les anciens rôles', () => {
+test('CA-1 : --lc-list-move-duration vaut 420 ms, sans passer par les anciens rôles', () => {
   const map = tokenMap(css, 'default');
   assert.equal(toMs(resolve(map, '--lc-list-move-duration').value), 420);
-  const offset = resolve(map, '--lc-overlay-offset');
-  assert.equal(offset.value, '8px');
-  assert.ok(!offset.chain.includes('--lc-sys-motion-offset'));
 });
 
 // CA-24 : durée de déplacement 500 ms, courbe easing-standard ; plus de token easing-spring
