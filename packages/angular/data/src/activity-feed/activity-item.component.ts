@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { LcIconComponent } from '@lionelcointot/ui-angular';
+import { LcIconComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
 
 /**
  * Événement d'un `ol[lcActivityFeed]` : icône, titre, contenu libre projeté (par exemple une valeur avant et après)
@@ -26,6 +26,7 @@ import { LcIconComponent } from '@lionelcointot/ui-angular';
     </div>
   `,
   styleUrl: './activity-item.component.css',
+  hostDirectives: [LcRevealDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'lc-activity-item' },
 })

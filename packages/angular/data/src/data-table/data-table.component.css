@@ -511,6 +511,10 @@ lc-data-table {
 }
 
 /* Cascade des lignes (`lcReveal`) : à l'ouverture, courbe `out` par défaut ; après un changement de filtre, courbe `entrance` et départ après `table.refill-delay` (invisibles pendant leur délai). */
+.lc-data-table__table tr.lc-reveal {
+  --lc-layer: var(--lc-layer-rows);
+}
+
 .lc-data-table__body--refill {
   --lc-reveal-offset: var(--lc-table-refill-delay);
 }

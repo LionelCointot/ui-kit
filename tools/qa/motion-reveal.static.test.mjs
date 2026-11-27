@@ -205,6 +205,9 @@ describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
     assert.deepEqual(offenders, []);
   });
 
+  /** Exceptions écrites (T10b, ADR 0011) : l'hôte est lui-même l'élément qui entre (carte, ligne d'un fil) et n'a pas d'`animate.leave` propre ; une carte entre seule, sans attribut côté application. */
+  const HOST_ENTERS = ['layout/src/card/card.component.ts', 'data/src/kpi-card/kpi-card.component.ts', 'data/src/activity-feed/activity-item.component.ts'];
+
   test('aucun lcReveal ni animate.leave sur l\'hôte d\'un composant du kit (host: {} et hostDirectives)', () => {
     const offenders = [];
     for (const file of sources(angular, ['.component.ts']).filter((f) => !/\/testing\//.test(f))) {
@@ -216,7 +219,7 @@ describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
       }
       for (const m of code.matchAll(/\bhostDirectives\s*:\s*\[/g)) {
         const end = code.indexOf(']', m.index);
-        if (/LcRevealDirective/.test(code.slice(m.index, end))) offenders.push(`${relative(angular, file)} : hostDirectives`);
+        if (/LcRevealDirective/.test(code.slice(m.index, end)) && !HOST_ENTERS.includes(relative(angular, file))) offenders.push(`${relative(angular, file)} : hostDirectives`);
       }
     }
     assert.deepEqual(offenders, []);

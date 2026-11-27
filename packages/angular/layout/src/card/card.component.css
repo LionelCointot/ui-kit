@@ -22,6 +22,11 @@
   border-color: transparent;
 }
 
+/* Le contenu d'une carte repart au rythme `normal` : celui des cartes d'une grille (`--lc-stagger-pace` hérité) ne vaut que pour la carte. */
+.lc-card__body {
+  --lc-stagger-pace: var(--lc-sys-motion-stagger-normal);
+}
+
 .lc-card__body[hidden] {
   display: none;
 }

@@ -1,5 +1,6 @@
 :host {
   --lc-icon-size: var(--_icon-size, var(--lc-sys-icon-size-md));
+  --lc-layer: var(--lc-layer-rows);
 
   position: relative;
   display: flex;

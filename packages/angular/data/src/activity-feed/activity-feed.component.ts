@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { LcStaggerDirective } from '@lionelcointot/ui-angular';
 
 /**
  * Fil d'historique : liste ordonnée verticale d'événements. S'applique à un `<ol>` natif dont les
@@ -10,6 +11,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'ol[lcActivityFeed]',
   template: '<ng-content />',
   styleUrl: './activity-feed.component.css',
+  // Les événements entrent en cascade (`lcReveal` de chaque `li[lcActivityItem]`).
+  hostDirectives: [LcStaggerDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-activity-feed',

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { LcButtonComponent, LcFormatService, LcValueFormat } from '@lionelcointot/ui-angular';
+import { LcButtonComponent, LcFormatService, LcRevealDirective, LcStaggerDirective, LcValueFormat } from '@lionelcointot/ui-angular';
 import { LcBadgeComponent } from '@lionelcointot/ui-angular/feedback';
 
 export interface LcDescriptionItem {
@@ -25,11 +25,12 @@ export interface LcDescriptionItemAction {
 /** Liste de définitions (`<dl>`) : paires terme / valeur formatée, avec ligne de total et mention. */
 @Component({
   selector: 'lc-description-list',
-  imports: [LcBadgeComponent, LcButtonComponent],
+  imports: [LcBadgeComponent, LcButtonComponent, LcRevealDirective],
+  hostDirectives: [LcStaggerDirective],
   template: `
     <dl class="lc-description-list__list">
       @for (item of items(); track $index) {
-        <div class="lc-description-list__row" [class.lc-description-list__row--emphasis]="item.emphasis">
+        <div lcReveal class="lc-description-list__row" [class.lc-description-list__row--emphasis]="item.emphasis">
           <dt class="lc-description-list__term">
             {{ item.term }}
             @if (item.badge) {

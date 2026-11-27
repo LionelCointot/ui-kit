@@ -1,5 +1,6 @@
 /* Les styles de base viennent de `table.component.css` (classes `lc-table__*`, tokens `--lc-table-*`). */
 .lc-tree-table__row {
+  --lc-layer: var(--lc-layer-rows);
   --_indent: var(--lc-tree-table-indent, var(--lc-sys-space-5));
 }
 
