@@ -26,13 +26,13 @@ export class LcNavRegistry {
   readonly items = computed<readonly LcNavEntry[]>(() => [...this.entries().values()]);
 
   constructor() {
-    afterEveryRender(() => this.sort(this.entries()));
+    afterEveryRender(() => this.publish(this.entries()));
   }
 
   /** Inscrit ou met à jour la rubrique de `element`. @internal Réservé à `a[lcNavItem]`. */
   register(element: Element, entry: LcNavEntry): void {
     // `untracked` : appelé depuis un effet de `a[lcNavItem]`, qui ne doit pas suivre les inscriptions des autres rubriques.
-    untracked(() => this.sort(new Map(this.entries()).set(element, entry), true));
+    untracked(() => this.publish(new Map(this.entries()).set(element, entry), true));
   }
 
   /** Retire la rubrique de `element`. @internal Réservé à `a[lcNavItem]`. */
@@ -44,7 +44,7 @@ export class LcNavRegistry {
   }
 
   /** Publie `map` triée ; sans `force`, seulement si l'ordre a changé (évite de réveiller les lecteurs à chaque rendu). */
-  private sort(map: ReadonlyMap<Element, LcNavEntry>, force = false): void {
+  private publish(map: ReadonlyMap<Element, LcNavEntry>, force = false): void {
     const before = [...map.keys()];
     const sorted = [...map].sort(([a], [b]) => byDocumentOrder(a, b));
     if (force || sorted.some(([element], index) => element !== before[index])) this.entries.set(new Map(sorted));

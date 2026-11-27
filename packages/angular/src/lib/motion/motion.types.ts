@@ -1,7 +1,15 @@
-/** Rôles de durée : `--lc-sys-duration-<rôle>`. Doit rester égal aux `sys.duration.*` des tokens (vérifié par `motion.types.spec.ts`). */
+/**
+ * Rôles de durée : `--lc-sys-duration-<rôle>`. Doit rester égal aux `sys.duration.*` des tokens (vérifié par `motion.types.spec.ts`).
+ *
+ * @internal Réservé aux points d'entrée du kit : le contrat public est le type `LcMotionDuration`.
+ */
 export const LC_MOTION_DURATIONS = ['fast', 'exit', 'normal', 'slow', 'enter', 'move', 'long', 'view', 'title', 'draw'] as const;
 
-/** Rôles de courbe : `--lc-sys-easing-<rôle>`. Égal aux `sys.easing.*` hors `emphasized` (vérifié par `motion.types.spec.ts`). */
+/**
+ * Rôles de courbe : `--lc-sys-easing-<rôle>`. Égal aux `sys.easing.*` hors `emphasized` (vérifié par `motion.types.spec.ts`).
+ *
+ * @internal Réservé aux points d'entrée du kit : le contrat public est le type `LcMotionEasing`.
+ */
 export const LC_MOTION_EASINGS = ['standard', 'entrance', 'fill', 'soft', 'out', 'pop', 'pop-strong', 'title', 'draw', 'inout', 'exit', 'stack'] as const;
 
 /** Rôle de durée (`'enter'` lit `--lc-sys-duration-enter`). */

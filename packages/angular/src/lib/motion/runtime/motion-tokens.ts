@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import type { LcMotionDuration, LcMotionEasing, LcMotionToken } from '../motion.types';
 
 /**
@@ -23,6 +24,13 @@ export function lcReadMotion(
   easing: LcMotionEasing | LcMotionToken,
 ): { readonly duration: number; readonly easing: string } {
   const style = getComputedStyle(element);
-  const ms = lcCssMs(style, duration.startsWith('--') ? duration : `--lc-sys-duration-${duration}`);
-  return { duration: Number.isFinite(ms) ? ms : 0, easing: style.getPropertyValue(easing.startsWith('--') ? easing : `--lc-sys-easing-${easing}`).trim() || 'linear' };
+  const durationToken = duration.startsWith('--') ? duration : `--lc-sys-duration-${duration}`;
+  const easingToken = easing.startsWith('--') ? easing : `--lc-sys-easing-${easing}`;
+  const ms = lcCssMs(style, durationToken);
+  const curve = style.getPropertyValue(easingToken).trim();
+  if (isDevMode()) {
+    const missing = [Number.isFinite(ms) ? '' : durationToken, curve ? '' : easingToken].filter(Boolean);
+    if (missing.length) console.warn(`[ui-kit] Token de mouvement absent : ${missing.join(', ')} (animation instantanée ou linéaire) ; faute de frappe, ou feuille du kit non chargée ?`);
+  }
+  return { duration: Number.isFinite(ms) ? ms : 0, easing: curve || 'linear' };
 }
