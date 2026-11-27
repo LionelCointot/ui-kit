@@ -1,6 +1,35 @@
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { LcGridComponent } from '@lionelcointot/ui-angular/layout';
 import { LcDescriptionListComponent, LcKpiCardComponent, type LcKpiDelta } from '@lionelcointot/ui-angular/data';
+
+/** Demo of the `Animation` story: three cards in an `lc-grid`; "Mettre à jour" changes a value. */
+@Component({
+  selector: 'lc-kpi-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcKpiCardComponent, LcGridComponent, LcButtonComponent, StoryMotionNoticeComponent],
+  template: `
+    <lc-story-motion-notice />
+    <section #root>
+      <p>
+        <button lcButton fillMode="outline" size="small" (click)="replay.replay(root)">Rejouer</button>
+        <button lcButton fillMode="outline" size="small" (click)="orders.set(orders() + 137)">Mettre à jour</button>
+      </p>
+      @for (key of replay.keys(); track key) {
+        <lc-grid [columns]="3" gap="4">
+          <lc-kpi-card label="Commandes" [value]="orders()" format="integer" />
+          <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" />
+          <lc-kpi-card label="Conversion" [value]="3.2" format="percent" />
+        </lc-grid>
+      }
+    </section>`,
+})
+class KpiAnimationDemoComponent {
+  protected readonly orders = signal(1248);
+  protected readonly replay = replayable();
+}
 
 type KpiArgs = LcKpiCardComponent & { hasDelta: boolean };
 
@@ -95,4 +124,17 @@ export const WithDescriptionList: Story = {
         { term: 'Avancement', value: 62.5, format: 'percent', badge: 'estimation' },
         { term: 'Total engagé', value: 300000, format: 'money', emphasis: true }]" /></div>`,
   }),
+};
+
+const ANIMATION_CODE = `<lc-grid [columns]="3">
+  <lc-kpi-card label="Commandes" [value]="1248" />
+  <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" />
+  <lc-kpi-card label="Conversion" [value]="3.2" format="percent" />
+</lc-grid>`;
+
+/** The cards tilt in from 40 px (850 ms) one after the other and each figure counts up to its value in 1.2 s; a new value counts on from the old one and flashes. "Rejouer" shows them again. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  decorators: [moduleMetadata({ imports: [KpiAnimationDemoComponent] })],
+  render: () => ({ template: '<lc-kpi-animation-demo />' }),
 };

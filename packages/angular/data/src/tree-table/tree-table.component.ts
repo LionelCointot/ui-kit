@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy, Component, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
   linkedSignal, model, output, signal, viewChild,
 } from '@angular/core';
-import { LC_LABELS, LcFormatService, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcFormatService, LcIconComponent, LcRevealDirective, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcSort, LcTableColumn, nextSort } from '../table/table-model';
 import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from '../table/table-shared';
@@ -18,7 +18,8 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
  */
 @Component({
   selector: 'lc-tree-table',
-  imports: [NgTemplateOutlet, LcIconComponent],
+  imports: [NgTemplateOutlet, LcIconComponent, LcRevealDirective],
+  hostDirectives: [LcStaggerDirective],
   template: `
     <div class="lc-table__scroll">
       <table class="lc-table__table" role="treegrid" [attr.aria-labelledby]="captionId">
@@ -41,7 +42,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
         </thead>
         <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)">
           @for (row of rows(); track row.key; let rowIndex = $index) {
-            <tr class="lc-tree-table__row" role="row" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
+            <tr lcReveal class="lc-tree-table__row" role="row" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
               [attr.aria-setsize]="row.setSize" [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
               [attr.tabindex]="rowIndex === activeIndex() ? 0 : -1" [style.--_level]="row.level - 1">
               @for (view of columnViews(); track view.column.id; let first = $first) {

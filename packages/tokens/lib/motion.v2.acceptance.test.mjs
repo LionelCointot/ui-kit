@@ -21,7 +21,7 @@ const EASINGS = {
 const DURATIONS = { fast: 150, exit: 200, normal: 250, slow: 350, enter: 450, move: 500, long: 600, view: 700, title: 850, draw: 1100, fill: 950 };
 const OTHERS = {
   'motion-offset-sm': '8px', 'motion-offset-md': '16px', 'motion-offset-lg': '26px', 'motion-offset-xl': '40px',
-  'motion-stagger-fine': '12ms', 'motion-stagger-normal': '40ms', 'motion-stagger-cards': '67ms', 'motion-stagger-chars': '22ms',
+  'motion-stagger-fine': '12ms', 'motion-stagger-normal': '40ms', 'motion-stagger-cards': '60ms', 'motion-stagger-chars': '22ms',
   'motion-stagger-cap': '8', 'motion-scale-pop': '0.94', 'motion-scale-enter': '0.95', 'motion-rotate-tilt': '2.5deg', 'motion-rotate-char': '6deg',
 };
 

@@ -30,7 +30,7 @@
   { "demo": "—", "valeur": "40px", "token": "--lc-sys-motion-offset-xl" },
   { "demo": "—", "valeur": "12ms", "token": "--lc-sys-motion-stagger-fine" },
   { "demo": "—", "valeur": "40ms", "token": "--lc-sys-motion-stagger-normal" },
-  { "demo": "—", "valeur": "67ms", "token": "--lc-sys-motion-stagger-cards" },
+  { "demo": "—", "valeur": "60ms", "token": "--lc-sys-motion-stagger-cards" },
   { "demo": "—", "valeur": "22ms", "token": "--lc-sys-motion-stagger-chars" },
   { "demo": "—", "valeur": "8", "token": "--lc-sys-motion-stagger-cap" },
   { "demo": "—", "valeur": "0.94", "token": "--lc-sys-motion-scale-pop" },

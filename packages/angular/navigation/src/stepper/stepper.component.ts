@@ -290,9 +290,11 @@ export class LcStepperComponent {
     const fills = Array.from(this.host.querySelectorAll<HTMLElement>('.lc-stepper__fill')).filter((fill, position) => position >= firstFill && fill.classList.contains('lc-stepper__fill--on'));
     const steps = this.steps();
     const dots = Array.from(this.host.querySelectorAll<HTMLElement>('.lc-stepper__badge')).filter((_, position) => position > previous && position <= index && steps[position]?.state !== 'upcoming');
+    // Couche « points » de l'entrée de page (`--lc-layer-dots`, définie seulement sous `lc-page--entering`) : la pastille est invisible pendant ce délai, sans saut à son retrait.
+    const dotsLayer = dots.length ? lcCssMs(getComputedStyle(dots[0]), '--lc-layer-dots') || 0 : 0;
     const animations = [
       ...fills.map((fill, rank) => lcAnimate(fill, [{ scale: vertical ? '1 0' : '0 1' }, { scale: '1 1' }], { duration: '--lc-steps-bar-duration', easing: 'entrance', delay: rank * lcCssMs(getComputedStyle(fill), '--lc-steps-bar-stagger') })),
-      ...dots.map((dot, rank) => lcAnimate(dot, [{ scale: 'var(--lc-steps-dot-scale)', opacity: 0 }, { scale: '1', opacity: 1 }], { duration: '--lc-steps-dot-duration', easing: '--lc-steps-dot-easing', delay: rank * lcCssMs(getComputedStyle(dot), '--lc-steps-dot-delay') })),
+      ...dots.map((dot, rank) => lcAnimate(dot, [{ scale: 'var(--lc-steps-dot-scale)', opacity: 0 }, { scale: '1', opacity: 1 }], { duration: '--lc-steps-dot-duration', easing: '--lc-steps-dot-easing', delay: dotsLayer + rank * lcCssMs(getComputedStyle(dot), '--lc-steps-dot-delay') })),
     ];
     this.settle(animations);
   }

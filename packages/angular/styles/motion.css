@@ -3,6 +3,7 @@
  * Toutes les valeurs viennent des tokens --lc-sys-* ; les directives posent classes et variables, le CSS anime.
  * Règle de propriété (ADR 0011) : apparition et sortie animent `opacity` et les propriétés individuelles
  * `translate` / `scale` / `rotate`, jamais `transform` (réservé au FLIP et au survol).
+ * Contrat de la cascade : un compteur (`--lc-reveal-rank`), deux rythmes (`--lc-stagger-pace` de l'ancêtre, puis `--lc-reveal-pace` de la variante), un décalage de couche (`--lc-layer`).
  */
 
 /* Entrée : état de départ décrit par les variables --lc-reveal-* (une variante les redéfinit) ; l'état final est le style de l'élément. */
@@ -51,7 +52,38 @@
   }
 }
 
-/* Classe posée par [lcReveal] jusqu'à animationend. Délai = départ (--lc-reveal-offset, hérité, 0 par défaut) + min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */
+/*
+ * Couches de l'entrée d'une page : tant que `lc-page` porte `.lc-page--entering` (le temps de `page.layer-window`), chaque type de composant part après le délai de sa couche.
+ * La classe disparaît ensuite : une ligne ajoutée, un filtre ou une mise à jour n'ont plus aucun délai. Sous mouvement réduit les variables restent indéfinies (délai nul).
+ * Un composant déclare sa couche par `--lc-layer: var(--lc-layer-<couche>)` sur l'élément qui porte `lcReveal` ; les jauges (`lcFill`, `lcDraw`) lisent `--lc-layer-gauges` dans leur `transition-delay` :
+ * `calc(var(--lc-layer-gauges, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal)))`,
+ * à condition que la directive pose elle-même `--lc-reveal-rank` sur l'élément (comme `lcReveal`, rang pris auprès de `LcStaggerBatch`), faute de quoi le rang d'une carte parente serait hérité.
+ */
+@property --lc-layer {
+  syntax: '<time>';
+  inherits: false;
+  initial-value: 0ms;
+}
+
+/* Fin de l'entrée : animation sans effet visible dont `animationend` fait retirer la classe à `lc-page`. */
+@keyframes lc-page-entering {
+  to {
+    --lc-page-entering-tick: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lc-page--entering {
+    animation: lc-page-entering var(--lc-page-layer-window);
+    --lc-layer-kpi: var(--lc-page-layer-kpi);
+    --lc-layer-cards: var(--lc-page-layer-cards);
+    --lc-layer-rows: var(--lc-page-layer-rows);
+    --lc-layer-gauges: var(--lc-page-layer-gauges);
+    --lc-layer-dots: var(--lc-page-layer-dots);
+  }
+}
+
+/* Classe posée par [lcReveal] jusqu'à animationend. Délai = couche de la page (--lc-layer) + départ (--lc-reveal-offset, hérité, 0 par défaut) + min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), puis de la variante (--lc-reveal-pace), `normal` sinon. */
 .lc-reveal {
   --lc-reveal-x: 0px;
   --lc-reveal-y: var(--lc-sys-motion-offset-sm);
@@ -62,7 +94,8 @@
 
   animation: lc-reveal-in var(--lc-reveal-time) var(--lc-reveal-curve) backwards;
   animation-delay: calc(
-    var(--lc-reveal-offset, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
+    var(--lc-layer) + var(--lc-reveal-offset, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) *
+      var(--lc-stagger-pace, var(--lc-reveal-pace, var(--lc-sys-motion-stagger-normal)))
   );
 }
 
@@ -96,8 +129,20 @@
   --lc-reveal-y: 0px;
 }
 
-/* Cartes : l'inclinaison alterne entre frères voisins. */
+/* Cartes (cascade du site) : 26 px, échelle 0,985, 800 ms `entrance`, au rythme `cards` sauf `lcStagger` au-dessus. */
+.lc-reveal--card {
+  --lc-reveal-time: var(--lc-reveal-card-duration);
+  --lc-reveal-curve: var(--lc-reveal-card-easing);
+  --lc-reveal-y: var(--lc-sys-motion-offset-lg);
+  --lc-reveal-scale: var(--lc-reveal-card-scale);
+  --lc-reveal-pace: var(--lc-sys-motion-stagger-cards);
+  --lc-layer: var(--lc-layer-cards);
+}
+
+/* Cartes d'indicateurs : l'inclinaison alterne entre frères voisins. */
 .lc-reveal--tilt {
+  --lc-reveal-pace: var(--lc-sys-motion-stagger-cards);
+  --lc-layer: var(--lc-layer-kpi);
   --lc-reveal-time: var(--lc-reveal-tilt-duration);
   --lc-reveal-curve: var(--lc-sys-easing-pop);
   --lc-reveal-y: var(--lc-sys-motion-offset-xl);

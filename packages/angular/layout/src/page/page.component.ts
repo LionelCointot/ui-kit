@@ -1,7 +1,11 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import { LcSplitTextDirective } from '@lionelcointot/ui-angular';
 
-/** Page : titre `<h1>`, description, actions (`[lcPageActions]`), barre d'outils (`[lcPageToolbar]`) et contenu. */
+/**
+ * Page : titre `<h1>`, description, actions (`[lcPageActions]`), barre d'outils (`[lcPageToolbar]`) et contenu.
+ * Son apparition (première ouverture, ou changement de page : le routeur crée alors une nouvelle page) est « l'entrée de page » : le temps de
+ * `--lc-page-layer-window`, elle porte `lc-page--entering` et les composants qui entrent partent à leur couche (KPI, cartes, lignes, jauges, points ; `motion.css`).
+ */
 @Component({
   selector: 'lc-page',
   template: `
@@ -21,9 +25,19 @@ import { LcSplitTextDirective } from '@lionelcointot/ui-angular';
   imports: [LcSplitTextDirective],
   styleUrl: './page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-page' },
+  host: { class: 'lc-page', '[class.lc-page--entering]': 'entering()', '(animationend)': 'ended($event)', '(animationcancel)': 'ended($event)' },
 })
 export class LcPageComponent {
   readonly title = input.required<string>();
   readonly description = input<string>();
+
+  protected readonly entering = signal(true);
+
+  /**
+   * La fenêtre de l'entrée (`--lc-page-layer-window`) est écoulée ; les `animationend` des enfants remontent jusqu'ici, on ne garde que le nôtre.
+   * shortcut: sous mouvement réduit ou sans feuille du kit, l'animation ne tourne pas et la classe reste posée ; sans effet, les variables de couche y sont indéfinies.
+   */
+  protected ended(event: AnimationEvent): void {
+    if (event.target === event.currentTarget && event.animationName === 'lc-page-entering') this.entering.set(false);
+  }
 }

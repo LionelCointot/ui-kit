@@ -10,6 +10,7 @@
 }
 
 .lc-description-list__row {
+  --lc-layer: var(--lc-layer-rows);
   display: flex;
   flex-direction: column;
   gap: var(--lc-sys-space-1);

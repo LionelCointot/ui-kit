@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input } from '@angular/core';
-import { LcFormatService, LcIconComponent, LcSkeletonComponent, LcValueFormat } from '@lionelcointot/ui-angular';
+import { LcCountUpDirective, LcFlashDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, LcValueFormat, lcRevealHost } from '@lionelcointot/ui-angular';
 
 export interface LcKpiDelta {
   readonly value: number;
@@ -11,18 +11,25 @@ export interface LcKpiDelta {
 const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as const;
 
 /**
- * Carte indicateur : libellé, valeur principale (chiffres proportionnels), variation (icône de tendance,
+ * Carte indicateur (entrée `tilt`, chiffre qui compte) : libellé, valeur principale (chiffres proportionnels), variation (icône de tendance,
  * signe et texte : jamais la couleur seule) et précision. L'emplacement `[lcKpiVisual]` accueille une sparkline.
  */
 @Component({
   selector: 'lc-kpi-card',
-  imports: [LcIconComponent, LcSkeletonComponent],
+  imports: [LcIconComponent, LcSkeletonComponent, LcCountUpDirective, LcFlashDirective],
+  providers: lcRevealHost('tilt'),
+  hostDirectives: [{ directive: LcRevealDirective, inputs: ['lcReveal', 'lcRevealIndex'] }],
   template: `
     <p class="lc-kpi-card__label">{{ label() }}</p>
     @if (loading()) {
       <lc-skeleton shape="text" width="60%" height="2rem" />
     } @else {
-      <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()">{{ displayText() }}</p>
+      @if (counted()) {
+        <!-- Le comptage démarre au montage, sans délai de couche, comme sur le site : la carte, elle, entre à 100 ms + rang × rythme. -->
+        <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()" [lcCountUp]="value() ?? 0" [lcCountUpFormat]="format()" [lcFlash]="value()"></p>
+      } @else {
+        <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()">{{ displayText() }}</p>
+      }
       @if (delta(); as change) {
         <p class="lc-kpi-card__delta" [class]="'lc-kpi-card__delta--' + change.sentiment">
           <lc-icon [name]="trendIcon()" />
@@ -61,6 +68,8 @@ export class LcKpiCardComponent {
   /** Valeur atténuée pendant un recalcul. */
   readonly stale = input(false, { transform: booleanAttribute });
 
+  /** Une valeur numérique sans texte libre : le chiffre compte jusqu'à elle (`lcCountUp`) et flashe à chaque changement. */
+  protected readonly counted = computed(() => this.valueText() === null && this.value() !== null);
   protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value(), this.format()));
   /** Nom du groupe : libellé et valeur affichée (le texte libre remplace le nombre). */
   protected readonly accessibleName = computed(() => (this.loading() ? this.label() : `${this.label()} : ${this.displayText()}`));
