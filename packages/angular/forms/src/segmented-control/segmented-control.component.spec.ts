@@ -215,8 +215,11 @@ class TrackedHostComponent {
 
 describe('LcSegmentedControlComponent indicatorProgress', () => {
   it('place le fond entre les segments voisins, et le pose sous le segment choisi quand la progression est nulle', async () => {
-    vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 100 : 0; });
-    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 60 : 100; });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const b = this.getAttribute('role') === 'radio' && this.textContent!.includes('B');
+      const radio = this.getAttribute('role') === 'radio';
+      return { left: b ? 100 : 0, width: radio ? (b ? 60 : 100) : 160 } as DOMRect;
+    });
     const fixture = TestBed.createComponent(TrackedHostComponent);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
@@ -245,8 +248,11 @@ describe('LcSegmentedControlComponent fillMode solid', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('pose la pastille sur le segment choisi, la fait glisser au choix, garde les icônes', async () => {
-    vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 100 : 0; });
-    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 60 : 100; });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const b = this.getAttribute('role') === 'radio' && this.textContent!.includes('B');
+      const radio = this.getAttribute('role') === 'radio';
+      return { left: b ? 100 : 0, width: radio ? (b ? 60 : 100) : 160 } as DOMRect;
+    });
     const fixture = TestBed.createComponent(SolidHostComponent);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;

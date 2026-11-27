@@ -133,7 +133,12 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
         return;
       }
       const place = (instant: boolean): void => {
-        const rects = buttons.map(({ nativeElement: button }) => ({ left: button.offsetLeft, width: button.offsetWidth }));
+        // Rectangles fractionnaires (les options se partagent la largeur) : `offsetLeft` / `offsetWidth` arrondis décaleraient la pastille d'un pixel.
+        const origin = this.host.getBoundingClientRect().left + this.host.clientLeft;
+        const rects = buttons.map(({ nativeElement: button }) => {
+          const box = button.getBoundingClientRect();
+          return { left: box.left - origin, width: box.width };
+        });
         const rect = progress < 0 ? null : lcIndicatorRect(rects, progress);
         indicator.hidden = !rect;
         if (!rect) return;

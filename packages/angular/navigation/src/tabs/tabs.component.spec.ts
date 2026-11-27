@@ -526,6 +526,7 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
   it('pose left, width et le rognage du bord de fin sous l\'onglet sélectionné, et glisse (sans --instant) après un clic', async () => {
     const { fixture, indicator, tabs } = await setupDynamic();
     expect(edges(indicator)).toEqual({ left: '0px', width: '282px', trailing: '202px' });
+    expect(indicator.classList.contains(INSTANT)).toBe(true); // premier placement : aucune transition au premier affichage
     tabs()[2].click();
     await fixture.whenStable();
     expect(edges(indicator)).toEqual({ left: '200px', width: '82px', trailing: '0px' });

@@ -50,6 +50,15 @@
   --lc-icon-size: var(--lc-sys-icon-size-sm);
 }
 
+/* Téléphone : marges réduites, quatre options tiennent dans 328 px sans faire défiler la page. */
+@media (max-width: 767.98px) {
+  .lc-segmented-control__option,
+  :host(.lc-segmented-control--small) .lc-segmented-control__option {
+    gap: var(--lc-sys-space-1);
+    padding-inline: var(--lc-sys-space-2);
+  }
+}
+
 .lc-segmented-control__option + .lc-segmented-control__option {
   border-inline-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }

@@ -158,7 +158,8 @@ export class LcTabsComponent {
     indicator.hidden = !button;
     if (!button) return;
     // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
-    indicator.classList.toggle('lc-tabs__indicator--instant', resized || id === this.placedId);
+    // Premier placement (`placedId` nul) : sans transition, même si `lc-tabs--ready` arrive dans le même calcul de style.
+    indicator.classList.toggle('lc-tabs__indicator--instant', resized || this.placedId === null || id === this.placedId);
     this.placedId = id;
     lcPlaceIndicator(indicator, 'x', button.offsetLeft, button.offsetLeft + button.offsetWidth, this.rightEdge());
     this.ready.set(true);
