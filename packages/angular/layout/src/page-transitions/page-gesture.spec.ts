@@ -31,6 +31,12 @@ describe('geste de retour : décision au relâchement', () => {
     expect(pageBackShouldEngage(offset, WIDTH, flick(offset, 0.1), PAGE_BACK_FLICK_WINDOW_MS)).toBe(false);
   });
 
+  it('borne : un geste vif au seuil de déplacement navigue, un pixel de moins non', () => {
+    const at = PAGE_BACK_FLICK_MIN_DISTANCE_PX;
+    expect(pageBackShouldEngage(at, WIDTH, flick(at, 2), PAGE_BACK_FLICK_WINDOW_MS)).toBe(true);
+    expect(pageBackShouldEngage(at - 1, WIDTH, flick(at - 1, 2), PAGE_BACK_FLICK_WINDOW_MS)).toBe(false);
+  });
+
   it('élan trop ancien, déplacement trop court, toucher immobile ou tirage vers la gauche : jamais', () => {
     expect(pageBackShouldEngage(WIDTH * 0.2, WIDTH, flick(WIDTH * 0.2, 2), PAGE_BACK_FLICK_WINDOW_MS * 3)).toBe(false);
     expect(pageBackShouldEngage(PAGE_BACK_FLICK_MIN_DISTANCE_PX - 1, WIDTH, flick(PAGE_BACK_FLICK_MIN_DISTANCE_PX - 1, 2), PAGE_BACK_FLICK_WINDOW_MS)).toBe(false);

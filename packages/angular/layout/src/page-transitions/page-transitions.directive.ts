@@ -1,10 +1,10 @@
-import { Directive, ElementRef, Injector, afterNextRender, effect, inject } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, Injector, afterNextRender, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ResolveEnd, Router } from '@angular/router';
 import { lcAnimate, lcPrefersReducedMotion, type LcMotionToken } from '@lionelcointot/ui-angular';
+import { PAGE_BACK_FLICK_WINDOW_MS, pageBackSettleMs, pageBackShouldEngage, pageBackTranslation, type LcPageSample } from './page-gesture';
 import { pathOf } from './page-nav.direction';
 import { LcPageNav, type LcPageChange } from './page-nav.service';
-import { pageBackSettleMs, pageBackShouldEngage, pageBackTranslation, type LcPageSample, PAGE_BACK_FLICK_WINDOW_MS } from './page-gesture';
 
 const COPY = 'data-lc-page-copy';
 const VEIL = 'data-lc-page-veil';
@@ -100,7 +100,16 @@ interface Drag {
  *
  * @internal Posée par `lc-app-shell` seule : exportée par aucun point d'entrée.
  */
-@Directive({ selector: '[lcPageTransitions]' })
+@Directive({
+  selector: '[lcPageTransitions]',
+  host: {
+    '(pointerdown)': 'onDown($event)',
+    '(pointermove)': 'onMove($event)',
+    '(pointerup)': 'onUp($event)',
+    '(pointercancel)': 'release(false)',
+    '(lostpointercapture)': 'release(false)',
+  },
+})
 export class LcPageTransitionsDirective {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly nav = inject(LcPageNav);
@@ -108,7 +117,9 @@ export class LcPageTransitionsDirective {
   private readonly injector = inject(Injector);
   private snapshot: Snapshot | null = null;
   private settle: () => void = () => {};
+  /** Un seul clone de la page quittée (sans `id` ni `name`), libéré par `run()` à la navigation suivante. */
   private previous: Previous | null = null;
+  private destroyed = false;
   private drag: Drag | null = null;
   /** Vrai entre l'engagement du geste et le rendu de la page précédente : la navigation finale ne rejoue pas la transition. */
   private silent = false;
@@ -119,11 +130,10 @@ export class LcPageTransitionsDirective {
     this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
       if (event instanceof ResolveEnd) this.capture(event.urlAfterRedirects);
     });
-    this.host.addEventListener('pointerdown', (event) => this.onDown(event));
-    this.host.addEventListener('pointermove', (event) => this.onMove(event));
-    this.host.addEventListener('pointerup', (event) => this.onUp(event));
-    this.host.addEventListener('pointercancel', () => this.release(false));
-    this.host.addEventListener('lostpointercapture', () => this.release(false));
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+      this.abort();
+    });
     effect(() => {
       const change = this.nav.change();
       if (!change || change === seen) return;
@@ -222,15 +232,30 @@ export class LcPageTransitionsDirective {
       if (this.settle === settle) settle();
     });
   }
-  /** Geste en cours ou impossible ici : feuille ouverte, ou doigt posé sur une bande de panneaux. */
+
+  /** Geste impossible ici : feuille ouverte, ou doigt posé sur une bande de panneaux. */
   private blocked(event: PointerEvent): boolean {
     if (document.querySelector('dialog[open]')) return true;
     return (document.elementsFromPoint?.(event.clientX, event.clientY) ?? []).some((element) => element.closest('lc-swipe-panels'));
   }
 
-  private onDown(event: PointerEvent): void {
+  /** Fin brutale (destruction) : retire voile et copie, rend les styles, sans navigation. */
+  private abort(): void {
+    const drag = this.drag;
+    this.drag = null;
+    if (drag) {
+      cancelAnimationFrame(drag.frame);
+      drag.under.remove();
+      drag.veil.remove();
+      drag.styles.restore();
+    }
+    this.finishGesture();
+  }
+
+  /** Sans page parente titrée, le geste n'est pas armé : le bouton garde `Location.back()`. */
+  protected onDown(event: PointerEvent): void {
     const edge = (event.target as Element).closest?.(`[${EDGE}]`);
-    if (!edge || this.drag || !event.isPrimary || event.pointerType === 'mouse' || !this.animates() || !matchMedia(PHONE).matches || this.blocked(event)) return;
+    if (!edge || this.drag || !this.nav.parent() || !event.isPrimary || event.pointerType === 'mouse' || !this.animates() || !matchMedia(PHONE).matches || this.blocked(event)) return;
     this.settle();
     const rect = this.host.getBoundingClientRect();
     const style = getComputedStyle(this.host);
@@ -238,6 +263,8 @@ export class LcPageTransitionsDirective {
     const pages = this.pages() as HTMLElement[];
     styles.set(this.host, 'overflow-x', 'clip');
     for (const page of pages) {
+      if (getComputedStyle(page).display === 'inline') styles.set(page, 'display', 'block'); // `<ng-component>` : `translate` n'agit pas sur un élément `inline`
+      styles.set(page, 'translate', '0px 0'); // `paint` l'écrase ; `restore` rend la valeur d'origine
       styles.set(page, 'position', 'relative');
       styles.set(page, 'z-index', '3');
       styles.set(page, 'background', 'var(--lc-sys-color-background)');
@@ -262,7 +289,7 @@ export class LcPageTransitionsDirective {
     this.drag = { pointerId: event.pointerId, startX: event.clientX, width: rect.width, pages, under, inner, veil, styles, recede: style.getPropertyValue('--lc-page-stack-recede').trim(), dim: parseFloat(style.getPropertyValue('--lc-page-stack-dim')) || 0, samples: [], offset: 0, frame: 0 };
   }
 
-  private onMove(event: PointerEvent): void {
+  protected onMove(event: PointerEvent): void {
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointerId) return;
     drag.offset = event.clientX - drag.startX;
@@ -274,7 +301,7 @@ export class LcPageTransitionsDirective {
     });
   }
 
-  private onUp(event: PointerEvent): void {
+  protected onUp(event: PointerEvent): void {
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointerId) return;
     this.release(pageBackShouldEngage(drag.offset, drag.width, drag.samples, event.timeStamp));
@@ -294,7 +321,7 @@ export class LcPageTransitionsDirective {
   }
 
   /** Relâchement : engage (la page sort, puis navigation silencieuse vers la parente) ou ramène la page en place ; durée proportionnelle à la distance restante. */
-  private release(engage: boolean): void {
+  protected release(engage: boolean): void {
     const drag = this.drag;
     if (!drag) return;
     this.drag = null;
@@ -313,14 +340,16 @@ export class LcPageTransitionsDirective {
       this.finishGesture = () => {};
     };
     void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
-      if (!engage) return cleanup();
+      if (!engage || this.destroyed) return cleanup();
       this.silent = true;
       this.finishGesture = cleanup; // appelé par `run` une fois la page précédente rendue
-      void this.nav.back().then((done) => {
-        if (done) return;
+      const before = this.nav.change();
+      const clean = () => {
         this.silent = false;
         cleanup();
-      });
+      };
+      // Le `change` est posé au `NavigationEnd`, avant cette résolution : s'il n'a pas bougé, aucun `run` ne viendra (route sans transition, navigation ignorée ou échouée).
+      this.nav.back().then((done) => (done && this.nav.change() !== before ? undefined : clean()), clean);
     });
   }
 }

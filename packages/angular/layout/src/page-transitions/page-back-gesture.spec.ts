@@ -14,6 +14,7 @@ class List {}
 class Detail {}
 const routes: Routes = [
   { path: 'liste', title: 'Ma liste', children: [{ path: '', component: List }, { path: ':id', component: Detail }] },
+  { path: 'muet', title: 'Muet', children: [{ path: '', data: { lcPageTransition: false }, component: List }, { path: 'x', component: Detail }] },
   { path: 'direct', children: [{ path: 'profond', component: Detail }] },
 ];
 
@@ -49,13 +50,13 @@ describe('retour au geste et en-tête mobile', () => {
     const settle = async (ms = 30) => { await fixture.whenStable(); fixture.detectChanges(); await new Promise((resolve) => setTimeout(resolve, ms)); };
     for (const url of path) { await router.navigateByUrl(url); await settle(); }
     const edge = () => root.querySelector<HTMLElement>('[data-lc-page-edge]')!;
-    const touch = (type: string, x: number, time: number) => {
+    const touch = (type: string, x: number, time: number, pointerType = 'touch') => {
       const event = new Event(type, { bubbles: true });
       Object.defineProperty(event, 'timeStamp', { value: time });
-      Object.assign(event, { pointerId: 1, isPrimary: true, pointerType: 'touch', clientX: x, clientY: 300 });
+      Object.assign(event, { pointerId: 1, isPrimary: true, pointerType, clientX: x, clientY: 300 });
       edge().dispatchEvent(event);
     };
-    return { root, router, settle, edge, touch };
+    return { fixture, root, router, settle, edge, touch };
   }
 
   it('niveau 1 : ni bouton retour ni bande de geste', async () => {
@@ -99,6 +100,7 @@ describe('retour au geste et en-tête mobile', () => {
     await settle();
     expect(router.url).toBe('/liste/42');
     expect(root.querySelector('[data-lc-page-copy], [data-lc-page-veil]')).toBeNull();
+    for (const page of root.querySelectorAll<HTMLElement>('main > *')) expect(page.style.translate).toBe('');
   });
 
   it('tirer de 70 % navigue vers la parente sans rejouer la transition (aucune animation après l\'engagement)', async () => {
@@ -126,14 +128,11 @@ describe('retour au geste et en-tête mobile', () => {
     expect(router.url).toBe('/liste');
   });
 
-  it('lien direct sans copie : fond neutre (sans copie de page) qui porte le titre du parent, ici aucun', async () => {
+  it('sans parent titré, le geste n\'est pas armé (le bouton garde Location.back())', async () => {
     const { root, settle, touch } = await setup('/direct/profond');
     await settle(600);
     touch('pointerdown', 0, 0);
-    touch('pointermove', 50, 100);
-    const under = root.querySelector('[data-lc-page-copy]')!;
-    expect(under.querySelector('h1')).toBeNull();
-    expect(under.textContent).toBe('');
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
   });
 
   it('niveau 2 atteint par lien direct, parent titré : le fond neutre porte son titre', async () => {
@@ -155,5 +154,64 @@ describe('retour au geste et en-tête mobile', () => {
     touch('pointerdown', 0, 0);
     expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
     dialog.remove();
+  });
+
+  it('un pointeur souris est ignoré', async () => {
+    const { root, settle, touch } = await setup('/liste', '/liste/42');
+    await settle(600);
+    touch('pointerdown', 0, 0, 'mouse');
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
+  });
+
+  it('mouvement réduit : la bande est masquée par le CSS et le geste ne démarre pas', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('max-width') || query.includes('reduce') }));
+    const { root, settle, touch } = await setup('/liste', '/liste/42');
+    await settle(600);
+    touch('pointerdown', 0, 0);
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
+  });
+
+  it('au-dessus d\'un lc-swipe-panels, le geste ne démarre pas', async () => {
+    const { root, settle, touch } = await setup('/liste', '/liste/42');
+    await settle(600);
+    const panels = document.createElement('lc-swipe-panels');
+    const inside = document.createElement('div');
+    panels.append(inside);
+    (document as { elementsFromPoint?: unknown }).elementsFromPoint = () => [inside];
+    touch('pointerdown', 0, 0);
+    delete (document as { elementsFromPoint?: unknown }).elementsFromPoint;
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
+  });
+
+  it('destruction pendant un tirage : voile et copie retirés, styles rendus, plus d\'écoute', async () => {
+    const { fixture, root, settle, touch } = await setup('/liste', '/liste/42');
+    await settle(600);
+    touch('pointerdown', 0, 0);
+    touch('pointermove', 100, 100);
+    const main = root.querySelector<HTMLElement>('main')!;
+    expect(root.querySelector('[data-lc-page-copy]')).not.toBeNull();
+    fixture.destroy();
+    expect(root.querySelector('[data-lc-page-copy], [data-lc-page-veil]')).toBeNull();
+    expect(main.style.overflowX).toBe('');
+    main.dispatchEvent(new Event('pointerup', { bubbles: true }));
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
+  });
+
+  it('back() sans `change` suivant (parent sans transition) : état propre, rien de bloqué', async () => {
+    const { root, router, settle, touch } = await setup('/muet/x');
+    await settle(600);
+    touch('pointerdown', 0, 0);
+    touch('pointermove', WIDTH * 0.7, 500);
+    touch('pointerup', WIDTH * 0.7, 1000);
+    await settle();
+    expect(router.url).toBe('/muet');
+    expect(root.querySelector('[data-lc-page-copy], [data-lc-page-veil]')).toBeNull();
+    // La navigation suivante se joue normalement : le drapeau silencieux n'est pas resté armé.
+    const before = played.length;
+    await router.navigateByUrl('/liste');
+    await settle();
+    await router.navigateByUrl('/liste/42');
+    await settle();
+    expect(played.length).toBeGreaterThan(before);
   });
 });

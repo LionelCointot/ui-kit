@@ -154,6 +154,10 @@
     transition: none;
   }
 
+  .lc-shell__edge {
+    display: none;
+  }
+
   .lc-shell__nav,
   .lc-shell__nav--drawer,
   .lc-shell__nav--drawer.lc-shell__nav--open {
