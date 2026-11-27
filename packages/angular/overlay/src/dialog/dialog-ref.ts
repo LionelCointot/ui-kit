@@ -1,6 +1,6 @@
-import { DialogRef } from '@angular/cdk/dialog';
-import { InjectionToken } from '@angular/core';
-import { LC_OVERLAY_CLOSING_CLASS, lcAnimationsEnd } from '@lionelcointot/ui-angular';
+import type { DialogRef } from '@angular/cdk/dialog';
+import { InjectionToken, type WritableSignal } from '@angular/core';
+import type { Observable } from 'rxjs';
 
 /** Données passées au composant ouvert par `LcDialogService.open()` (`inject(LC_DIALOG_DATA)`). */
 export const LC_DIALOG_DATA = new InjectionToken<unknown>('LC_DIALOG_DATA');
@@ -9,8 +9,16 @@ export const LC_DIALOG_DATA = new InjectionToken<unknown>('LC_DIALOG_DATA');
 export interface LcDialogContext {
   readonly titleId: string;
   readonly dismissible: boolean;
+  /** Présent quand le dialogue est présenté en `lc-sheet` (sous 768 px) : la feuille porte le titre, `lc-dialog` y écrit le sien et masque son en-tête. */
+  readonly sheetTitle?: WritableSignal<string>;
 }
 export const LC_DIALOG_CONTEXT = new InjectionToken<LcDialogContext>('LC_DIALOG_CONTEXT');
+
+/** Ce que `LcDialogRef` attend de ce qui porte le dialogue (CDK Dialog, ou la feuille) : `closed` émet à la fermeture effective, `close` la déclenche. @internal */
+export interface LcDialogHandle<R> {
+  readonly closed: Observable<R | undefined>;
+  close(result?: R): void;
+}
 
 /** Référence d'un dialogue ouvert : injectable dans le composant ouvert pour se fermer avec un résultat. */
 export class LcDialogRef<R = unknown> {
@@ -19,9 +27,10 @@ export class LcDialogRef<R = unknown> {
   private closing = false;
   private done = false;
 
-  constructor(private readonly cdkRef: Pick<DialogRef<R>, 'close' | 'closed' | 'overlayRef'>) {
+  /** `leave` joue la sortie animée et se résout quand elle est finie (voir `overlay-motion.ts`, `sheet-presenter.ts`). */
+  constructor(private readonly handle: LcDialogHandle<R>, private readonly leave: () => Promise<void>) {
     this.closed = new Promise((resolve) => {
-      cdkRef.closed.subscribe((result) => {
+      handle.closed.subscribe((result) => {
         this.done = true;
         resolve(result);
       });
@@ -35,17 +44,9 @@ export class LcDialogRef<R = unknown> {
   close(result?: R): void {
     if (this.closing) return;
     this.closing = true;
-    void this.animateOut().then(() => {
-      if (!this.done) this.cdkRef.close(result);
+    void this.leave().then(() => {
+      if (!this.done) this.handle.close(result);
     });
-  }
-
-  private async animateOut(): Promise<void> {
-    const { overlayElement, backdropElement } = this.cdkRef.overlayRef;
-    overlayElement.classList.add(LC_OVERLAY_CLOSING_CLASS);
-    backdropElement?.classList.remove('cdk-overlay-backdrop-showing');
-    // Sans les descendants : une animation du contenu ne retarde pas la fermeture.
-    await lcAnimationsEnd(overlayElement, { subtree: false });
   }
 }
 

@@ -198,27 +198,13 @@ lc-form-field [lcSuffix] {
   background: var(--lc-sys-color-backdrop);
 }
 
-/* Fonds du dialogue et du tiroir : durée et courbe du kit à la place des 400 ms du CDK ; le fond s'éteint quand le CDK retire `cdk-overlay-backdrop-showing`. */
+/* Fonds du dialogue et du tiroir : le fondu est joué par `overlay-motion.ts` (Web Animations), pas par la transition de 400 ms du CDK. */
 .cdk-overlay-backdrop:is(.lc-dialog-backdrop, .lc-drawer-backdrop) {
-  transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+  transition: none;
 }
 
-/* Dialogue : entrée en fondu et léger zoom sur le contenu du panneau (le CDK pose `panelClass` après un premier calcul de style : pas de `@starting-style`),
-   sortie en fondu (`lc-overlay--closing`, posée par LcDialogRef.close). */
-.lc-dialog-panel > * {
-  animation: lc-dialog-enter var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
-}
-
-@keyframes lc-dialog-enter {
-  from {
-    opacity: 0;
-    transform: scale(var(--lc-dialog-enter-scale));
-  }
-}
-
-.lc-dialog-panel.lc-overlay--closing {
-  opacity: 0;
-  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
+/* Dialogue et tiroir : l'entrée et la sortie du conteneur sont jouées par `overlay-motion.ts` ; `lc-overlay--closing` (posée par LcDialogRef.close) coupe les clics. */
+:is(.lc-dialog-panel, .lc-drawer-panel).lc-overlay--closing {
   pointer-events: none;
 }
 
@@ -262,25 +248,6 @@ lc-form-field [lcSuffix] {
   max-inline-size: 100vw;
 }
 
-/* Entrée en glissant de toute sa largeur sur le contenu du panneau ; sortie en glissant (`lc-overlay--closing`, posée par LcDialogRef.close). */
-.lc-drawer-panel > * {
-  animation: lc-drawer-in-end var(--lc-slide-enter-duration, var(--lc-sys-duration-move)) var(--lc-overlay-easing);
-}
-
-.lc-drawer-panel--start > * {
-  animation-name: lc-drawer-in-start;
-}
-
-.lc-drawer-panel.lc-overlay--closing {
-  transform: translateX(100%);
-  transition: transform var(--lc-slide-exit-duration, var(--lc-sys-duration-normal)) var(--lc-overlay-easing);
-  pointer-events: none;
-}
-
-.lc-drawer-panel--start.lc-overlay--closing {
-  transform: translateX(-100%);
-}
-
 .lc-drawer-panel--small {
   inline-size: calc(var(--lc-sys-space-16) * 6);
 }
@@ -297,33 +264,10 @@ lc-form-field [lcSuffix] {
   outline: none;
 }
 
+/* Plein écran seulement pour un tiroir `dismissible: false` : les autres se présentent en feuille du bas sous 768 px. */
 @media (max-width: 767.98px) {
   .lc-drawer-panel {
     inline-size: 100vw;
-  }
-}
-
-@keyframes lc-drawer-in-end {
-  from {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes lc-drawer-in-start {
-  from {
-    transform: translateX(-100%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cdk-overlay-backdrop:is(.lc-dialog-backdrop, .lc-drawer-backdrop),
-  .lc-dialog-panel.lc-overlay--closing,
-  .lc-drawer-panel.lc-overlay--closing {
-    transition: none;
-  }
-
-  :is(.lc-dialog-panel, .lc-drawer-panel) > * {
-    animation: none;
   }
 }
 

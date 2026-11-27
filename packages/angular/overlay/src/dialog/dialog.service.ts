@@ -1,8 +1,10 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { Injectable, Type, inject } from '@angular/core';
+import { EnvironmentInjector, Injectable, Injector, Type, afterNextRender, inject, signal } from '@angular/core';
 import { lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcConfirmDialogComponent } from './confirm-dialog.component';
 import { LC_DIALOG_CONTEXT, LC_DIALOG_DATA, LcDialogContext, LcDialogRef, lcCloseOnDismiss } from './dialog-ref';
+import { lcDialogEnter, lcOverlayLeave } from './overlay-motion';
+import { lcOpenInSheet, lcSheetPresentation } from './sheet-presenter';
 
 export interface LcDialogConfig<D> {
   readonly data?: D;
@@ -35,10 +37,14 @@ export interface LcConfirmOptions {
 /**
  * Dialogues modaux sur CDK Dialog : focus piégé puis restauré, premier élément focusable ciblé,
  * empilement géré (Échap ferme le plus haut). Le composant ouvert utilise `lc-dialog` pour sa mise en page.
+ * Il s'ouvre depuis l'élément actif à l'ouverture (le déclencheur). Sous 768 px, un dialogue fermable est présenté en `lc-sheet` (feuille du bas) ;
+ * un dialogue `dismissible: false` garde la carte, la feuille se fermant d'elle-même par Échap, la croix et le geste.
  */
 @Injectable({ providedIn: 'root' })
 export class LcDialogService {
   private readonly dialog = inject(Dialog);
+  private readonly environment = inject(EnvironmentInjector);
+  private readonly injector = inject(Injector);
 
   open<C, D = unknown, R = unknown>(component: Type<C>, config: LcDialogConfig<D> = {}): LcDialogRef<R> {
     return this.openDialog<C, D, R>(component, config, config.role ?? 'dialog');
@@ -52,9 +58,23 @@ export class LcDialogService {
   }
 
   private openDialog<C, D, R>(component: Type<C>, config: LcDialogConfig<D>, role: 'dialog' | 'alertdialog'): LcDialogRef<R> {
-    const context: LcDialogContext = { titleId: lcUniqueId('dialog-title'), dismissible: config.dismissible ?? true };
+    const dismissible = config.dismissible ?? true;
+    const trigger = document.activeElement === document.body ? null : document.activeElement;
+    const sheetTitle = lcSheetPresentation() && dismissible ? signal(config.ariaLabel ?? '') : undefined;
+    const context: LcDialogContext = { titleId: lcUniqueId('dialog-title'), dismissible, sheetTitle };
+    const providers = (ref: LcDialogRef<R>) => [
+      { provide: LcDialogRef, useValue: ref },
+      { provide: LC_DIALOG_DATA, useValue: config.data },
+      { provide: LC_DIALOG_CONTEXT, useValue: context },
+    ];
+    if (sheetTitle) {
+      return lcOpenInSheet<R, LcDialogRef<R>>(this.environment, {
+        component, title: sheetTitle, role, ariaDescribedBy: config.ariaDescribedBy,
+        makeRef: (handle, leave) => new LcDialogRef<R>(handle, leave), providers,
+      });
+    }
     let lcRef: LcDialogRef<R> | undefined;
-    this.dialog.open<R, D, C>(component, {
+    const cdkRef = this.dialog.open<R, D, C>(component, {
       role,
       ariaModal: true,
       data: config.data ?? null,
@@ -65,19 +85,17 @@ export class LcDialogService {
       disableClose: true,
       panelClass: ['lc-dialog-panel', `lc-dialog-panel--${config.size ?? 'medium'}`],
       backdropClass: 'lc-dialog-backdrop',
-      providers: (cdkRef) => {
-        lcRef = new LcDialogRef<R>(cdkRef);
-        lcCloseOnDismiss(cdkRef, lcRef, { escape: context.dismissible, backdrop: context.dismissible });
-        return [
-          { provide: LcDialogRef, useValue: lcRef },
-          { provide: LC_DIALOG_DATA, useValue: config.data },
-          { provide: LC_DIALOG_CONTEXT, useValue: context },
-        ];
+      providers: (ref) => {
+        lcRef = new LcDialogRef<R>(ref, () => lcOverlayLeave(ref.overlayRef, 'dialog'));
+        lcCloseOnDismiss(ref, lcRef, { escape: dismissible, backdrop: dismissible });
+        return providers(lcRef);
       },
     });
     if (!lcRef) {
       throw new Error('[LcDialogService] Le dialogue n\'a pas pu être créé.');
     }
+    // Après le rendu : le dialogue est en place, l'origine se mesure dans son repère.
+    afterNextRender(() => lcDialogEnter(cdkRef.overlayRef, trigger), { injector: this.injector });
     return lcRef;
   }
 }

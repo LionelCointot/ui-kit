@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { InjectionToken, type WritableSignal } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { LcDialogRef } from '../dialog/dialog-ref';
 
@@ -13,6 +13,8 @@ export interface LcDrawerContext {
   readonly titleId: string;
   readonly side: LcDrawerSide;
   readonly dismissible: boolean;
+  /** Présent quand le tiroir est présenté en `lc-sheet` (sous 768 px), comme `LcDialogContext.sheetTitle`. */
+  readonly sheetTitle?: WritableSignal<string>;
 }
 export const LC_DRAWER_CONTEXT = new InjectionToken<LcDrawerContext>('LC_DRAWER_CONTEXT');
 

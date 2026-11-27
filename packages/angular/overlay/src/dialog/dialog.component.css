@@ -10,6 +10,19 @@
   color: var(--lc-sys-color-on-surface);
 }
 
+/* Présenté en feuille : la feuille fournit le cadre, le titre et la croix. */
+:host(.lc-dialog--in-sheet) {
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:host(.lc-dialog--in-sheet) .lc-dialog__header {
+  display: none;
+}
+
 .lc-dialog__header {
   display: flex;
   align-items: flex-start;

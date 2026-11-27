@@ -1,6 +1,6 @@
-import { Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcDialogComponent, LC_DIALOG_DATA, LcDialogRef, LcDialogService, type LcDialogConfig } from '@lionelcointot/ui-angular/overlay';
 
@@ -99,4 +99,59 @@ export const AlertDialog: Story = {
     props: { config: { role: 'alertdialog', ariaDescribedBy: 'lc-dialog-demo-message' } satisfies LcDialogConfig<unknown> },
     template: `<lc-dialog-demo [config]="config" />`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component, inject } from '@angular/core';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { LcDialogService } from '@lionelcointot/ui-angular/overlay';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcButtonComponent],
+  template: \`<button lcButton type="button" (click)="open()">Ouvrir le dialogue</button>\`,
+})
+export class ExampleComponent {
+  private readonly dialogs = inject(LcDialogService);
+
+  protected open(): void {
+    // The dialog grows from the focused element at the time of the call (here the button).
+    this.dialogs.open(ConfirmContentComponent, { size: 'small' });
+  }
+}`;
+
+/** Demo of the `Animation` story: "Rejouer" focuses the "Ouvrir" button and opens the dialog from it. */
+@Component({
+  selector: 'lc-dialog-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcButtonComponent, StoryMotionNoticeComponent],
+  template: `
+    <lc-story-motion-notice />
+    <div data-demo="d26" #root style="display:flex;gap:var(--lc-sys-space-3);align-items:center;padding-block:var(--lc-sys-space-8)">
+      <button lcButton fillMode="outline" size="small" (click)="replayer.replay(root)">Rejouer</button>
+      <button lcButton type="button" data-opener (click)="show()">Ouvrir le dialogue</button>
+    </div>`,
+})
+class DialogAnimationDemoComponent {
+  private readonly dialogs = inject(LcDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private ref: LcDialogRef | undefined;
+  protected readonly replayer = replayable({
+    reset: () => this.ref?.close(),
+    play: (_later, root) => {
+      root.querySelector<HTMLElement>('[data-opener]')?.focus();
+      this.show();
+    },
+    destroyRef: this.destroyRef,
+  });
+
+  protected show(): void {
+    this.ref = this.dialogs.open(DialogDemoContentComponent, { size: 'small', data: { title: 'Revenir au niveau Simple ?', message: 'Vos réglages détaillés seront conservés, mais masqués.', hideClose: true } satisfies DemoData });
+  }
+}
+
+/** The dialog grows from the button that opened it (scale 0.91 to 1 in 500 ms) and leaves in 150 ms; below 768 px it is presented as a bottom sheet. "Rejouer" opens it again. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  decorators: [moduleMetadata({ imports: [DialogAnimationDemoComponent] })],
+  render: () => ({ template: `<lc-dialog-animation-demo />` }),
 };
