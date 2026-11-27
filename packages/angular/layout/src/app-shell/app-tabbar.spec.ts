@@ -1,9 +1,10 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router, provideRouter, type Routes } from '@angular/router';
 import { BehaviorSubject, map } from 'rxjs';
 import { LcNavRegistry, type LcNavEntry } from '@lionelcointot/ui-angular';
+import { LC_PHONE_QUERY } from '../phone-query';
 import { LcAppShellComponent } from './app-shell.component';
 
 @Component({ template: '' })
@@ -24,7 +25,11 @@ class HostComponent {
 const entry = (url: string, label: string, primary = true): LcNavEntry => ({ url, label, icon: 'menu', primary });
 
 describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
-  afterEach(() => document.body.querySelectorAll(':scope > a').forEach((node) => node.remove()));
+  const shown: HTMLStyleElement[] = [];
+  afterEach(() => {
+    document.body.querySelectorAll(':scope > a').forEach((node) => node.remove());
+    shown.splice(0).forEach((style) => style.remove());
+  });
 
   // jsdom n'a pas de matchMedia : la largeur pilote un faux BreakpointObserver qui évalue les requêtes min-width / max-width.
   const width$ = new BehaviorSubject(1280);
@@ -33,11 +38,11 @@ describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
     return query.includes('min-width') ? width >= bound : width <= bound;
   };
 
-  async function setup(entries: LcNavEntry[], width = 390) {
+  async function setup(entries: LcNavEntry[], width = 390, routes: Routes = [{ path: '**', component: PageComponent }]) {
     width$.next(width);
     TestBed.configureTestingModule({
       providers: [
-        provideRouter([{ path: '**', component: PageComponent }]),
+        provideRouter(routes),
         { provide: BreakpointObserver, useValue: { observe: (query: string) => width$.pipe(map((w) => ({ matches: matches(query, w), breakpoints: {} }))) } },
       ],
     });
@@ -109,12 +114,27 @@ describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
     expect(root.querySelector('lc-app-tabbar')!.hasAttribute('inert')).toBe(true);
   });
 
-  // Seuils : l'affichage de la barre est une media query CSS (non évaluée par jsdom) ; le TypeScript ne dépend de la largeur que pour le tiroir et le focus rendu.
-  it('la barre est masquée par défaut et affichée sous 768 px par media query CSS (767 / 768)', async () => {
+  // Seuils : l'affichage est une media query CSS (non évaluée par jsdom) ; on lit sa borne dans les feuilles injectées et on l'évalue comme le faux BreakpointObserver.
+  const css = () => [...document.querySelectorAll('style')].map((style) => style.textContent).join('');
+
+  it('la barre est masquée par défaut, affichée par une media query dont la borne est celle de LC_PHONE_QUERY', async () => {
     await setup(four);
-    const css = [...document.querySelectorAll('style')].map((s) => s.textContent).join('');
-    expect(css).toMatch(/\.lc-tabbar[^{]*\{[^}]*display:\s*none/);
-    expect(css).toMatch(/@media \(max-width: 767\.98px\)\s*\{\s*\.lc-tabbar[^{]*\{[^}]*display:\s*grid/);
+    expect(css()).toMatch(/\.lc-tabbar[^{]*\{[^}]*display:\s*none/);
+    const bounds = [...css().matchAll(/@media \(max-width:\s*([\d.]+)px\)\s*\{\s*\.lc-tabbar[^{]*\{[^}]*display:\s*grid/g)].map((m) => m[1]);
+    expect(bounds).toHaveLength(1);
+    expect(`(max-width: ${bounds[0]}px)`).toBe(LC_PHONE_QUERY);
+  });
+
+  it.each([
+    [767, true],
+    [768, false],
+    [1023, false],
+    [1024, false],
+  ])('à %i px, la borne de la media query de la barre donne : barre affichée = %s', async (width, shown) => {
+    await setup(four, width);
+    const bound = /@media \(max-width:\s*([\d.]+)px\)\s*\{\s*\.lc-tabbar/.exec(css())![1];
+    expect(matches(`(max-width: ${bound}px)`, width)).toBe(shown);
+    expect(matches(LC_PHONE_QUERY, width)).toBe(shown);
   });
 
   it.each([
@@ -127,6 +147,7 @@ describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
     // jsdom applique le `display: none` par défaut de la barre (sa media query n'est pas évaluée) et refuse alors le focus : on la montre.
     const show = document.head.appendChild(document.createElement('style'));
     show.textContent = '.lc-tabbar { display: grid !important; }';
+    shown.push(show);
     expect(!!root.querySelector('.lc-shell__menu')).toBe(drawer);
     if (!drawer) return; // ≥ 1024 px : navigation latérale, pas de tiroir à fermer
     (root.querySelector('lc-app-tabbar button') as HTMLButtonElement).click();
@@ -135,6 +156,40 @@ describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
     await fixture.whenStable();
     const expected = focusMore ? root.querySelector('lc-app-tabbar button') : root.querySelector('.lc-shell__menu');
     expect(document.activeElement).toBe(expected);
-    show.remove();
+  });
+
+  describe('avec le bouton retour et la bande du geste (T14)', () => {
+    const routes: Routes = [{ path: 'a', title: 'A', children: [{ path: '', component: PageComponent }, { path: 'b', component: PageComponent }] }];
+
+    it('barre, bouton retour et bande cohabitent : la barre est hors de la bande, du titre et de <main>, et un appui sur la bande ne la touche pas', async () => {
+      const { fixture, root, router, bar } = await setup([entry('/a', 'A'), ...four.slice(1)], 390, routes);
+      await router.navigateByUrl('/a/b');
+      await fixture.whenStable();
+      const edge = root.querySelector('.lc-shell__edge')!;
+      expect(root.querySelector('.lc-shell__back')).not.toBeNull();
+      expect(edge).not.toBeNull();
+      const tabbar = root.querySelector('lc-app-tabbar')!;
+      expect(tabbar.closest('main, header')).toBeNull();
+      expect(edge.contains(tabbar)).toBe(false);
+      const before = bar()!.outerHTML;
+      edge.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      await fixture.whenStable();
+      expect(bar()!.outerHTML).toBe(before);
+      expect(bar()!.querySelector('[aria-current="page"]')!.textContent?.trim()).toBe('A');
+    });
+
+    it('à la fermeture du tiroir, le focus va à « Plus » (pas au bouton retour) sur téléphone', async () => {
+      const { fixture, root, router } = await setup([entry('/a', 'A'), ...four.slice(1)], 390, routes);
+      const show = document.head.appendChild(document.createElement('style'));
+      show.textContent = '.lc-tabbar { display: grid !important; }';
+      shown.push(show);
+      await router.navigateByUrl('/a/b');
+      await fixture.whenStable();
+      (root.querySelector('lc-app-tabbar button') as HTMLButtonElement).click();
+      await fixture.whenStable();
+      root.querySelector('.lc-shell__nav')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(root.querySelector('lc-app-tabbar button'));
+    });
   });
 });

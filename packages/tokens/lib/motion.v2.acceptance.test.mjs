@@ -79,7 +79,7 @@ const GROUPS = {
   sheet: ['550ms', '300ms', '500ms', '24px', '92dvh'],
   popover: ['450ms', '0.95', '-3.7px', '150ms'],
   menu: ['400ms', '0.92', '150ms', '-6px'],
-  toast: ['500ms', '30px', '0.94', '250ms'],
+  toast: ['500ms', '30px', '0.94', '250ms', '16px', 'cubic-bezier(0.55, 0.085, 0.68, 0.53)'],
   switch: ['465ms'],
   steps: ['800ms', '117ms'],
   'count-up': ['1200ms'],
@@ -121,6 +121,15 @@ test('CA-1 : --lc-spinner-duration vaut 700ms ; --lc-skeleton-duration existe (1
   const skeleton = resolve(map, '--lc-skeleton-duration');
   assert.equal(toMs(skeleton.value), 1500);
   for (const t of [spinner, skeleton]) assert.ok(!t.chain.includes('--lc-sys-duration-slow'), 'doit être découplé de --lc-sys-duration-slow (350 ms)');
+});
+
+test('CA-36 : --lc-tabbar-enter-easing = expo.out du site (sys entrance), barre de 66px, pastille de rayon 16px', () => {
+  const map = tokenMap(css, 'default');
+  const easing = resolve(map, '--lc-tabbar-enter-easing');
+  assert.ok(matches(easing.value, E('entrance')), `--lc-tabbar-enter-easing = ${easing.value}`);
+  assert.ok(easing.chain.includes('--lc-sys-easing-entrance'), 'doit référencer le rôle sys entrance');
+  assert.equal(resolve(map, '--lc-tabbar-height').value, '66px');
+  assert.equal(resolve(map, '--lc-tabbar-indicator-radius').value, '16px');
 });
 
 test('CA-1 : --lc-shell-nav-duration garde sa valeur actuelle (350ms) malgré la revalorisation de duration-long', () => {
