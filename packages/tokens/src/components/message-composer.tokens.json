@@ -39,7 +39,7 @@
     },
     "enter-scale": {
       "$description": "Scale an attachment thumbnail starts from when it fades in (unitless number).",
-      "$value": "{dialog.enter-scale}",
+      "$value": "0.96",
       "$type": "number"
     }
   }
