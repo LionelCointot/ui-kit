@@ -1,5 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { signal } from '@angular/core';
+import { StoryMotionNoticeComponent, fixedExample } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcBarChartComponent } from '@lionelcointot/ui-angular/charts';
 import type { LcCartesianData } from '@lionelcointot/ui-angular/charts';
 
@@ -46,7 +48,7 @@ type BarChartArgs = LcBarChartComponent & { hasData: boolean };
 const meta: Meta<BarChartArgs> = {
   title: 'Charts/Bar chart',
   component: LcBarChartComponent,
-  decorators: [moduleMetadata({ imports: [LcBarChartComponent] })],
+  decorators: [moduleMetadata({ imports: [LcBarChartComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
   args: {
     title: 'Chiffre d\'affaires par canal',
     titleHidden: false,
@@ -130,4 +132,39 @@ export const IntegerAxis: Story = {
     props: { data: { categories: days, series: [{ id: 'ko', label: 'En échec', values: [1, 0, 2, 1, 0, 1, 2] }] } satisfies LcCartesianData },
     template: `<lc-bar-chart title="Échecs par jour" [data]="data" [yAxis]="{ format: 'integer' }" />`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component, signal } from '@angular/core';
+import { LcBarChartComponent } from '@lionelcointot/ui-angular/charts';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcBarChartComponent],
+  template: \`<lc-bar-chart title="Chiffre d'affaires du canal web" [data]="data()" />\`,
+})
+export class ExampleComponent {
+  // Replacing the data re-computes the bars, each one starting a little after the previous.
+  readonly data = signal({ categories: ['T1', 'T2', 'T3'], series: [{ id: 'web', label: 'Web', values: [4, 6, 5] }] });
+}`;
+
+const PERIODS: readonly LcCartesianData[] = [
+  { categories: months, series: [{ id: 'web', label: 'Web', values: months.map((_, i) => 6000 + i * 450) }] },
+  { categories: months, series: [{ id: 'web', label: 'Web', values: months.map((_, i) => 9000 - i * 500) }] },
+];
+
+/** Changing the data re-computes the bars, each one a little after the previous (duration, curve and stagger come from the chart tokens). "Rejouer" switches the period. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => {
+    const index = signal(0);
+    return {
+      props: { periods: PERIODS, index, next: () => index.update((value) => 1 - value) },
+      template: `
+        <lc-story-motion-notice />
+        <div data-demo="d24">
+          <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="next()">Rejouer</button>
+          <div data-sample><lc-bar-chart title="Chiffre d'affaires du canal web" [data]="periods[index()]" [yAxis]="{ format: 'money' }" /></div>
+        </div>`,
+    };
+  },
 };
