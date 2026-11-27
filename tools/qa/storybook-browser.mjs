@@ -701,8 +701,8 @@ const PANELS = {
 };
 const panelStory = (spec, control, place) => (spec.table ? ['qa-motion-data-table--table', `place:${place}`] : ['qa-motion-acceptance--panel', `control:${control};place:${place}`]);
 const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
-/** Feuille du téléphone (d54 de fidelite.json) : glissement 600 ms à l'ouverture, 300 ms à la fermeture ; fondu du voile 300 ms. */
-const SHEET = { enter: 600, exit: 300, backdrop: 300 };
+/** Feuille du téléphone : glissement 550 ms à l'ouverture (talmo-source.md, ligne lc-sheet : « entrée 550 ms »), 300 ms à la fermeture ; fondu du voile 300 ms. */
+const SHEET = { enter: 550, exit: 300, backdrop: 300 };
 /** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
 const m42 = (value) => (value === 'none' ? 0 : parseFloat(value.slice(value.indexOf('(') + 1, -1).split(',')[value.startsWith('matrix3d') ? 13 : 5]));
 /** Le panneau a été mesuré à l'ouverture (5 s au plus) ; sinon un échec écrit, pas un délai de 30 s qui interrompt la suite. */
@@ -732,7 +732,7 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
     return { page, errors };
   };
-  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-sys-duration-enter'), offset: q.tokenPx('--lc-sys-motion-offset-sm') }; });
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-sys-motion-offset-sm') }; });
   const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
   const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('lc-sheet dialog').open); };
   const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
