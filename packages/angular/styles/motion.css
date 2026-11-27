@@ -81,10 +81,39 @@
   animation: lc-leave var(--lc-sys-duration-exit) var(--lc-sys-easing-exit) forwards;
 }
 
+/* Titre lettre par lettre ([lcSplitText]) : le mot masque, la lettre monte (translate en % de sa propre hauteur) en se redressant, sans fondu. */
+@keyframes lc-split-char-in {
+  from {
+    translate: 0 var(--lc-title-letter-offset);
+    rotate: var(--lc-title-letter-rotate);
+  }
+}
+
+.lc-split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.lc-split-char {
+  display: inline-block;
+  animation: lc-split-char-in var(--lc-title-letter-duration) var(--lc-title-letter-easing) backwards;
+  animation-delay: calc(var(--lc-split-rank, 0) * var(--lc-title-letter-stagger));
+}
+
+/* Trait sous le titre de lc-page (.lc-page__line) : se trace depuis la gauche. */
+@keyframes lc-title-line-in {
+  from {
+    scale: 0 1;
+  }
+}
+
 /* Sans animation, Angular retire l'élément aussitôt et l'entrée n'est jamais jouée. */
 @media (prefers-reduced-motion: reduce) {
   .lc-reveal,
-  .lc-leave {
+  .lc-leave,
+  .lc-split-char {
     animation: none;
   }
 }
