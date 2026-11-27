@@ -186,7 +186,7 @@ async function dom(browser, base) {
   {
     const context = await browser.newContext({ forcedColors: 'active', viewport: { width: 1100, height: 800 } });
     const page = await context.newPage();
-    await page.goto(`${base}/iframe.html?id=retours-d-état-indicateur-d-état--par-role&viewMode=story`);
+    await page.goto(`${base}/iframe.html?id=feedback-status-badge--by-kind&viewMode=story`);
     await page.waitForSelector('lc-status-badge');
     const borders = await page.locator('lc-status-badge').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).borderTopColor));
     check('CA-K1.3 forced-colors : bordure du badge visible (non transparente)', borders.length === 6 && borders.every((color) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'), borders.join(' | '));
