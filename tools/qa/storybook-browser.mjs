@@ -1077,6 +1077,15 @@ async function motionIndicators(context, base, name, tag, width, check) {
   }
 }
 
+/** Ferme les panneaux modaux laissés ouverts par un « Rejouer » (feuille, dialogue) : sinon les « Rejouer » suivants sont inaccessibles au rôle. Un panneau naît une ou deux images après le clic : on attend d'abord le calme (aucune animation finie en cours, 300 ms de suite), puis Échap tant qu'un panneau reste ouvert. */
+const closePanels = async (page) => {
+  const calm = async () => { for (let quiet = 0, i = 0; quiet < 3 && i < 80; i += 1) { quiet = (await page.evaluate(() => [...document.getAnimations()].some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending)))) ? 0 : quiet + 1; await page.waitForTimeout(100); } };
+  await calm();
+  for (let i = 0; i < 6 && (await page.evaluate(() => !!document.querySelector('dialog[open], .cdk-overlay-pane'))); i += 1) {
+    await page.keyboard.press('Escape');
+    await calm();
+  }
+};
 /** Liste de lc-data-table (spec mouvement-v2, T7) : CA-26 sur de vraies actions ; cartes à 360 px, lignes à 1 280 px.
  *  Attendus tirés de la spec (§5.4.2) et des démos d07, d08, d33, d36 du catalogue, pas du code : filtre (et retrait du filtre) = liste vidée, puis cascade après 200 ms (40 ms par rang, 450 ms, 8 rangs au plus) ;
  *  tri = glissement de 420 ms `draw` des lignes qui changent de place, rien d'autre ; suppression = sortie `lc-leave` (token d'exit, sans fondu propre), puis glissement des voisines (420 ms `draw`). */
@@ -1563,7 +1572,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }
-      await page.keyboard.press('Escape'); // un « Rejouer » qui ouvre un panneau modal (dialogue, feuille) rend les suivants inaccessibles au rôle : on le ferme avant le suivant
+      await closePanels(page);
       if (width === 360 && !reduced) {
         const fresh = await context.newPage(); // page neuve : les animations de la première passe ont été laissées en l'état
         await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
@@ -1612,6 +1621,7 @@ async function storiesMotion(browser, base) {
           await buttons.nth(n).click();
           const started = await poll(page, () => document.getAnimations().length > 0, null);
           check(`CA-16b ${id} « Rejouer » n°${n + 1}/${count} relance une animation (avant : ${before})`, started);
+          await closePanels(page);
         }
       }
       check(`CA-16a ${tag} sans erreur de page ni de console`, errors.length === 0, errors.join(' | '));
