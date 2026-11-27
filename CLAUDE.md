@@ -58,6 +58,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 - Comportement : CDK par défaut (Angular Aria non retenu) ; une primitive native (`dialog`) est admise pour un nouveau composant si elle est dans la cible navigateurs, avec test en navigateur réel (ADR 0009). Styles `.css` (pas de SCSS) ; les directives sur éléments natifs et les panneaux CDK sont stylés par la feuille globale `styles/ui-angular.css`.
 - Structure : `packages/tokens` ; `packages/angular/src` (principal : cœur, bouton, icône, spinner, squelette) et `packages/angular/<forms|feedback|overlay|layout|navigation|data|charts|geo|theme-builder>/src/<composant>/` (`.component.ts`, `.component.css`, `.spec.ts`, `public-api.ts` par point d'entrée) ; config Storybook dans `.storybook/`, stories `*.stories.ts` à côté des composants.
 - Gestion d'erreurs : avertissements console en développement seulement (`isDevMode()`), jamais d'exception visible pour un usage incorrect non bloquant.
+- Édition des fichiers : les fichiers d'interface (`.css`, `.html`, composants, directives, stories) se modifient avec les outils Edit / Write seulement, car le hook impeccable ne contrôle que ces outils ; pour le reste (tests, scripts, docs, JSON, changements mécaniques en masse), `sed`, scripts et heredoc sont permis.
 
 ## À ne pas faire
 - Ne pas écrire de couleur, taille ou durée en dur dans un composant ; ne pas utiliser `--lc-ref-*` hors des thèmes.
