@@ -7,35 +7,17 @@
 //   node tools/qa/storybook-browser.mjs swipe                     lc-swipe-panels, lc-tabs en swipe, fond du segmenté (spec 2026-11-bande-a-panneaux-et-reperes, CA-1 à CA-11) ; normal et mouvement réduit à 360 px, colonnes à 1280 px
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const storybookDir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook'); // STORYBOOK_DIR : construction à part (évite de piétiner celle d'un autre processus)
 const { chromium } = require('playwright');
 const axeSource = await readFile(require.resolve('axe-core/axe.min.js'), 'utf8');
-
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ico': 'image/x-icon' };
-
-function serve() {
-  const server = createServer(async (request, response) => {
-    const url = new URL(request.url ?? '/', 'http://localhost');
-    const file = path.join(storybookDir, path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, ''));
-    let body;
-    try {
-      body = await readFile(file);
-    } catch {
-      response.writeHead(404).end();
-      return;
-    }
-    response.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' }).end(body);
-  });
-  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
-}
 
 /** `axe` sans argument : les stories de mouvement (ce qu'étaient `axe --animation` et `axe qa-motion`). `axe --hors-mouvement` : les stories des autres lots. */
 const MOTION_AXE_FRAGMENTS = ['--animation', 'qa-motion'];
@@ -1902,8 +1884,8 @@ async function swipe(browser, base) {
   return failures;
 }
 
-const server = await serve();
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(storybookDir); // BASE (variable d'environnement) : serveur partagé du lanceur `run.mjs`
+const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 try {
