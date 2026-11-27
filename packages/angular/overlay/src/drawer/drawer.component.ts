@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, signal } from '@angular/core';
-import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, effect, inject, input, signal } from '@angular/core';
+import { LC_LABELS, LcButtonComponent, LcIconComponent, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_DRAWER_CONTEXT, LcDrawerRef } from './drawer-ref';
 
 /**
@@ -23,15 +23,20 @@ import { LC_DRAWER_CONTEXT, LcDrawerRef } from './drawer-ref';
   `,
   styleUrl: './drawer.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Le contenu en `lcReveal` apparaît en cascade (rang × décalage des tokens), y compris le contenu projeté.
+  hostDirectives: [LcStaggerDirective],
   host: {
     class: 'lc-drawer',
     '[class.lc-drawer--start]': 'side() === "start"',
+    '[class.lc-drawer--in-sheet]': '!!sheetTitle',
   },
 })
 export class LcDrawerComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly context = inject(LC_DRAWER_CONTEXT, { optional: true });
   private readonly drawerRef = inject(LcDrawerRef, { optional: true });
+  /** Présenté en `lc-sheet` (sous 768 px) : la feuille porte le titre et la croix, l'en-tête est masqué. */
+  protected readonly sheetTitle = this.context?.sheetTitle;
 
   readonly title = input.required<string>();
   /** Masque le bouton de fermeture de l'en-tête. */
@@ -41,6 +46,10 @@ export class LcDrawerComponent {
   protected readonly side = computed(() => this.context?.side ?? 'end');
   protected readonly closable = computed(() => !this.hideClose() && !!this.drawerRef && (this.context?.dismissible ?? true));
   protected readonly scrolled = signal(false);
+
+  constructor() {
+    effect(() => this.sheetTitle?.set(this.title()));
+  }
 
   protected close(): void {
     this.drawerRef?.close();

@@ -1,7 +1,7 @@
-import { Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
-import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent, LcIconComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
 import { LcDrawerComponent, LcDrawerInitialFocusDirective, LC_DRAWER_DATA, LcDrawerRef, LcDrawerService, type LcDrawerConfig } from '@lionelcointot/ui-angular/overlay';
 
 interface DrawerData {
@@ -127,4 +127,87 @@ export const NotDismissible: Story = {
     props: { config: { size: 'large', dismissible: false, data: { title: 'Action obligatoire' } } satisfies LcDrawerConfig<DrawerData> },
     template: `<lc-drawer-demo [config]="config" />`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component, inject } from '@angular/core';
+import { LcButtonComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
+import { LcDrawerComponent, LcDrawerService } from '@lionelcointot/ui-angular/overlay';
+
+// The drawer sets the cascade: every lcReveal inside it appears in turn.
+@Component({
+  selector: 'app-drawer-content',
+  imports: [LcDrawerComponent, LcRevealDirective],
+  template: \`
+    <lc-drawer title="Détail">
+      @for (line of lines; track line) {
+        <p lcReveal>{{ line }}</p>
+      }
+    </lc-drawer>\`,
+})
+export class DrawerContentComponent {
+  protected readonly lines = ['Première ligne', 'Deuxième ligne', 'Troisième ligne'];
+}
+
+@Component({
+  selector: 'app-example',
+  imports: [LcButtonComponent],
+  template: \`<button lcButton type="button" (click)="open()">Ouvrir le tiroir</button>\`,
+})
+export class ExampleComponent {
+  private readonly drawers = inject(LcDrawerService);
+
+  protected open(): void {
+    this.drawers.open(DrawerContentComponent, { size: 'small' });
+  }
+}`;
+
+/** Content of the `Animation` drawer: four lines in `lcReveal`, in cascade under the `lcStagger` that `lc-drawer` sets. */
+@Component({
+  selector: 'lc-drawer-animation-content',
+  imports: [LcDrawerComponent, LcRevealDirective],
+  // Demo only: 20 rem wide, like the catalogue demo d25 (the panel lives outside the component, hence the global rule).
+  encapsulation: ViewEncapsulation.None,
+  styles: '.lc-drawer-panel:has(lc-drawer-animation-content) { inline-size: calc(var(--lc-sys-space-16) * 5); }',
+  template: `
+    <lc-drawer title="Détail de la tâche">
+      @for (line of lines; track line) {
+        <p lcReveal>{{ line }}</p>
+      }
+    </lc-drawer>`,
+})
+class DrawerAnimationContentComponent {
+  protected readonly lines = ['Préparer la réunion', 'Relire le compte rendu', 'Envoyer les invitations', 'Mettre à jour le planning'];
+}
+
+/** Demo of the `Animation` story: "Rejouer" closes the drawer if it is open, then opens it again. */
+@Component({
+  selector: 'lc-drawer-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcButtonComponent, StoryMotionNoticeComponent],
+  template: `
+    <lc-story-motion-notice />
+    <div data-demo="d25" #root style="display:flex;gap:var(--lc-sys-space-3);align-items:center;padding-block:var(--lc-sys-space-8)">
+      <button lcButton fillMode="outline" size="small" (click)="replayer.replay(root)">Rejouer</button>
+      <button lcButton type="button" (click)="show()">Ouvrir le tiroir</button>
+    </div>`,
+})
+class DrawerAnimationDemoComponent {
+  private readonly drawers = inject(LcDrawerService);
+  private ref: LcDrawerRef | undefined;
+  protected readonly replayer = replayable({
+    reset: () => this.ref?.close(),
+    play: () => this.show(),
+    destroyRef: inject(DestroyRef),
+  });
+
+  protected show(): void {
+    this.ref = this.drawers.open(DrawerAnimationContentComponent, { size: 'small' });
+  }
+}
+
+/** The drawer slides in over its whole width in 550 ms and out in 300 ms, the backdrop fades in 300 ms and out in 200 ms, and the lines of its content appear in cascade. Below 768 px it is a bottom sheet. "Rejouer" opens it again. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  decorators: [moduleMetadata({ imports: [DrawerAnimationDemoComponent] })],
+  render: () => ({ template: `<lc-drawer-animation-demo />` }),
 };

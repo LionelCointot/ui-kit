@@ -1,8 +1,53 @@
-import { signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { LcSheetComponent } from '@lionelcointot/ui-angular/overlay';
+import { LcDialogComponent, LcDialogRef, LcDialogService, LcSheetComponent } from '@lionelcointot/ui-angular/overlay';
+
+/** Confirmation opened in the "Dialog as a sheet" demo (d56). */
+@Component({
+  selector: 'lc-sheet-confirm-content',
+  imports: [LcDialogComponent, LcButtonComponent],
+  template: `
+    <lc-dialog title="Réinitialiser les données ?" hideClose>
+      <p id="lc-sheet-confirm-message" style="margin:0">Les séances et les tâches de démonstration seront supprimées. Cette action est irréversible.</p>
+      <ng-container ngProjectAs="[lcDialogActions]">
+        <button lcButton type="button" fillMode="outline" themeColor="neutral" (click)="ref.close(false)">Annuler</button>
+        <button lcButton type="button" themeColor="error" (click)="ref.close(true)">Réinitialiser</button>
+      </ng-container>
+    </lc-dialog>`,
+})
+class SheetConfirmContentComponent {
+  protected readonly ref = inject<LcDialogRef<boolean>>(LcDialogRef);
+}
+
+/** Demo d56: a confirmation (`alertdialog`) below 768 px is presented as a bottom sheet. "Rejouer" opens it again. */
+@Component({
+  selector: 'lc-sheet-confirm-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcButtonComponent],
+  template: `
+    <div data-demo="d56" #root style="display:flex;gap:var(--lc-sys-space-3);align-items:center;padding-block:var(--lc-sys-space-4)">
+      <button lcButton fillMode="outline" size="small" (click)="replayer.replay(root)">Rejouer</button>
+      <button lcButton type="button" themeColor="error" data-opener (click)="show()">Réinitialiser les données</button>
+    </div>`,
+})
+class SheetConfirmDemoComponent {
+  private readonly dialogs = inject(LcDialogService);
+  private ref: LcDialogRef | undefined;
+  protected readonly replayer = replayable({
+    reset: () => this.ref?.close(),
+    play: (_later, root) => {
+      root.querySelector<HTMLElement>('[data-opener]')?.focus();
+      this.show();
+    },
+    destroyRef: inject(DestroyRef),
+  });
+
+  protected show(): void {
+    this.ref = this.dialogs.open(SheetConfirmContentComponent, { size: 'small', role: 'alertdialog', ariaDescribedBy: 'lc-sheet-confirm-message' });
+  }
+}
 
 type Args = Pick<LcSheetComponent, 'title'> & { closeLabel: string; closeText: string };
 
@@ -16,7 +61,7 @@ type Args = Pick<LcSheetComponent, 'title'> & { closeLabel: string; closeText: s
 const meta: Meta<Args> = {
   title: 'Overlays/Sheet',
   component: LcSheetComponent,
-  decorators: [moduleMetadata({ imports: [LcSheetComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
+  decorators: [moduleMetadata({ imports: [LcSheetComponent, LcButtonComponent, StoryMotionNoticeComponent, SheetConfirmDemoComponent] })],
   args: { title: 'Filtres', closeLabel: 'Fermer sans appliquer', closeText: '' },
   argTypes: {
     closeLabel: { control: 'text', description: 'Accessible name of the close icon button.' },
@@ -81,7 +126,8 @@ export const Animation: Story = {
               <button lcSheetFooter lcButton type="button" (click)="shown.set(false)">Fermer</button>
             </lc-sheet>
           }
-        </div>`,
+        </div>
+        <lc-sheet-confirm-demo />`,
     };
   },
 };

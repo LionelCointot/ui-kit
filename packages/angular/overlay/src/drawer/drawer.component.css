@@ -22,6 +22,10 @@
   border-end-end-radius: var(--lc-drawer-radius, var(--lc-sys-radius-lg));
 }
 
+:host(.lc-drawer--in-sheet) .lc-drawer__header {
+  display: none;
+}
+
 .lc-drawer__header {
   position: sticky;
   inset-block-start: 0;

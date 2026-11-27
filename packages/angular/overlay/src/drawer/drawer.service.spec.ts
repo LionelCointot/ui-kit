@@ -208,24 +208,33 @@ describe('LcDrawerService', () => {
       ref.close('premier');
       ref.close('second');
       expect(pane().classList).toContain('lc-overlay--closing');
-      expect(backdrop()!.classList).not.toContain('cdk-overlay-backdrop-showing');
       await expect(ref.closed).resolves.toBe('premier');
     });
 
-    it('la sortie attend les animations du panneau (sans les descendants)', async () => {
-      const ref = await open();
-      let finish!: () => void;
-      const animation = { effect: { getComputedTiming: () => ({ endTime: 200 }) }, finished: new Promise<void>((resolve) => (finish = resolve)) };
-      const getAnimations = vi.fn(() => [animation]);
-      pane().getAnimations = getAnimations as never;
-      let closed = false;
-      void ref.closed.then(() => (closed = true));
-      ref.close('ok');
-      await settle();
-      expect(getAnimations).toHaveBeenCalledWith({ subtree: false });
-      expect(closed).toBe(false);
-      finish();
-      await expect(ref.closed).resolves.toBe('ok');
+    it('la sortie fait glisser le conteneur et le voile aux tokens du tiroir, et attend leur fin', async () => {
+      const root = document.documentElement.style;
+      for (const [name, value] of Object.entries({ '--lc-drawer-exit-duration': '300ms', '--lc-drawer-exit-easing': 'ease-in', '--lc-drawer-backdrop-exit-duration': '200ms' })) root.setProperty(name, value);
+      try {
+        const ref = await open();
+        let finish!: () => void;
+        const slow = { finished: new Promise<void>((resolve) => (finish = resolve)) };
+        const container = pane().querySelector('.cdk-dialog-container') as HTMLElement;
+        const slide = vi.fn(() => slow as unknown as Animation);
+        const fade = vi.fn(() => ({ finished: Promise.resolve() }) as unknown as Animation);
+        container.animate = slide as never;
+        backdrop()!.animate = fade as never;
+        let closed = false;
+        void ref.closed.then(() => (closed = true));
+        ref.close('ok');
+        await settle();
+        expect(slide).toHaveBeenCalledWith([{ translate: '0 0' }, { translate: '100% 0' }], expect.objectContaining({ duration: 300, easing: 'ease-in', fill: 'forwards' }));
+        expect(fade).toHaveBeenCalledWith([{ opacity: 1 }, { opacity: 0 }], expect.objectContaining({ duration: 200, fill: 'forwards' }));
+        expect(closed).toBe(false);
+        finish();
+        await expect(ref.closed).resolves.toBe('ok');
+      } finally {
+        for (const name of ['--lc-drawer-exit-duration', '--lc-drawer-exit-easing', '--lc-drawer-backdrop-exit-duration']) root.removeProperty(name);
+      }
     });
 
     it('un Échap avec modificateur est ignoré', async () => {
@@ -268,6 +277,14 @@ describe('LcDrawerService', () => {
       // La fermeture par programme reste possible.
       overlayEl().querySelector<HTMLButtonElement>('#ok')!.click();
       await expect(ref.closed).resolves.toBe('ok');
+    });
+  });
+
+  describe('cascade du contenu', () => {
+    it('lc-drawer pose le lcStagger parent : les lcReveal de son contenu prennent leur rang (rythme normal)', async () => {
+      await open();
+      const drawer = overlayEl().querySelector<HTMLElement>('lc-drawer')!;
+      expect(drawer.style.getPropertyValue('--lc-stagger-pace')).toBe('var(--lc-sys-motion-stagger-normal)');
     });
   });
 

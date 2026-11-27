@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_DIALOG_CONTEXT, LcDialogRef } from './dialog-ref';
 
@@ -22,12 +22,14 @@ import { LC_DIALOG_CONTEXT, LcDialogRef } from './dialog-ref';
   `,
   styleUrl: './dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-dialog' },
+  host: { class: 'lc-dialog', '[class.lc-dialog--in-sheet]': '!!sheetTitle' },
 })
 export class LcDialogComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly context = inject(LC_DIALOG_CONTEXT, { optional: true });
   private readonly dialogRef = inject(LcDialogRef, { optional: true });
+  /** Présenté en `lc-sheet` (sous 768 px) : la feuille porte le titre et la croix, l'en-tête est masqué. */
+  protected readonly sheetTitle = this.context?.sheetTitle;
 
   readonly title = input.required<string>();
   /** Masque le bouton de fermeture de l'en-tête (ex. confirmation : le bouton Annuler suffit). */
@@ -35,6 +37,10 @@ export class LcDialogComponent {
 
   protected readonly titleId = this.context?.titleId ?? lcUniqueId('dialog-title');
   protected readonly closable = computed(() => !this.hideClose() && !!this.dialogRef && (this.context?.dismissible ?? true));
+
+  constructor() {
+    effect(() => this.sheetTitle?.set(this.title()));
+  }
 
   protected close(): void {
     this.dialogRef?.close();

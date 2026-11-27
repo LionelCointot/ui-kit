@@ -309,46 +309,76 @@ async function chips() {
   });
 }
 
-// ---------- tiroir, dialogue, fonds ----------
+// ---------- tiroir, dialogue, fonds (spec 2026-12-mouvement-v2, §5.4.1, T9a) ----------
+// Valeurs de la spec, en ms : tiroir 550 entrée / 300 sortie, voile 300 / 200 ; dialogue 500 / 150, voile 250 / 150 ; échelle 0,91 à l'entrée, 0,95 à la sortie.
+const OV = { drawer: { enter: 550, exit: 300, bdEnter: 300, bdExit: 200 }, dialog: { enter: 500, exit: 150, bdEnter: 250, bdExit: 150 } };
+/** Côté page : relève chaque animation de la surcouche à sa première image, la mesure à 0 et à sa fin (rectangle, opacité), puis la laisse en pause ; `window.__w.stop()` les termine. */
+const WATCH = () => {
+  const w = (window.__w = { recs: [], seen: new Set() });
+  const loop = () => {
+    for (const a of document.getAnimations()) {
+      const t = a.effect?.target;
+      if (w.seen.has(a) || !t?.closest?.('.cdk-overlay-container')) continue;
+      w.seen.add(a);
+      const tm = a.effect.getComputedTiming();
+      if (!Number.isFinite(tm.endTime)) continue;
+      a.pause(); a.currentTime = 0;
+      const r0 = t.getBoundingClientRect(), o0 = getComputedStyle(t).opacity;
+      a.currentTime = tm.endTime;
+      const r1 = t.getBoundingClientRect(), o1 = getComputedStyle(t).opacity;
+      a.currentTime = 0;
+      w.recs.push({ backdrop: t.classList.contains('cdk-overlay-backdrop'), d: tm.duration, delay: tm.delay, dx: Math.abs(r0.left - r1.left), width: Math.max(r0.width, r1.width), ratio: Math.min(r0.width, r1.width) / Math.max(r0.width, r1.width), o0, o1 });
+    }
+    w.raf = requestAnimationFrame(loop);
+  };
+  loop();
+  w.stop = () => { cancelAnimationFrame(w.raf); document.getAnimations().forEach((a) => { try { a.finish(); } catch { /* boucle infinie */ } }); };
+};
 async function overlays() {
   for (const reduced of [false, true]) await withCtx(reduced ? 'deskReduced' : 'desk', async (c) => {
     const page = await open(c, SHEET_STORY);
-    const T = await page.evaluate(() => ({ move: Q.ms('--lc-sys-duration-move'), normal: Q.ms('--lc-sys-duration-normal'), fast: Q.ms('--lc-sys-duration-fast'), enterBd: Q.ms('--lc-overlay-enter-duration'), ease: Q.ease('--lc-sys-easing-standard'), scale: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-dialog-enter-scale')) }));
     for (const kind of ['drawer', 'dialog']) {
+      const V = OV[kind];
       const pane = `.cdk-overlay-pane:has(lc-${kind})`;
       const results = () => page.evaluate(() => (window.__qa?.results ?? []).map((r) => r.slice()));
+      const watch = async (action) => { await page.evaluate(WATCH); await action(); await page.waitForTimeout(350); return page.evaluate(() => ({ recs: window.__w.recs, there: !!document.querySelector('.cdk-overlay-pane'), running: document.getAnimations().filter((a) => a.playState === 'running' || a.pending).length })); };
       // Entrée.
-      await page.evaluate((k) => document.querySelector(`#qa-open-${k}`).click(), kind);
-      const en = await page.evaluate(async ([k, sel]) => { await Q.until(() => document.querySelector(sel)); const p = document.querySelector(sel); await Q.raf(); const a = Q.anims(p).filter((x) => x.prop && !x.pseudo && p !== x.el || false); const inner = p.firstElementChild; const list = inner.getAnimations(); const info = list.map((x) => ({ d: x.effect.getComputedTiming().duration, n: x.animationName })); const reduced = Q.reduced(p); Q.at(p, 0); const m = new DOMMatrix(getComputedStyle(inner).transform); const bd = document.querySelector(`.cdk-overlay-backdrop.lc-${k}-backdrop`); const bcs = getComputedStyle(bd); const w = inner.getBoundingClientRect().width; const r = { info, x: m.m41, a: m.a, w, op: getComputedStyle(inner).opacity, reduced, bdDur: bcs.transitionDuration, bdEase: bcs.transitionTimingFunction, bdShowing: bd.classList.contains('cdk-overlay-backdrop-showing') }; p.getAnimations({ subtree: true }).forEach((x) => x.finish()); await Q.raf(); return r; }, [kind, pane]);
-      const bdMs = parseFloat(en.bdDur) * (en.bdDur.endsWith('ms') ? 1 : 1000);
-      if (reduced) check(`CA-R1 ${kind} et son fond : aucune animation > 0,01 ms`, en.reduced && bdMs <= 0.01, JSON.stringify(en));
+      const en = await watch(() => page.evaluate((k) => document.querySelector(`#qa-open-${k}`).click(), kind));
+      await page.evaluate(() => window.__w.stop()); await page.waitForTimeout(100);
+      const panel = en.recs.filter((r) => !r.backdrop && r.width > 10 && (kind === 'drawer' ? r.dx > 1 : r.ratio < 0.999));
+      const bd = en.recs.filter((r) => r.backdrop);
+      if (reduced) check(`CA-3 ${kind} et son voile à l'entrée : aucune animation > 0,01 ms ni en cours`, en.recs.every((r) => r.d <= 0.01 && r.delay <= 0.01) && en.running === 0, JSON.stringify(en));
       else {
-        if (kind === 'drawer') check('CA-O1 tiroir : entrée par glissement de toute sa largeur en 500 ms', en.info.length > 0 && en.info.every((i) => near(i.d, T.move, 0.5)) && Math.abs(Math.abs(en.x) - en.w) <= 1, JSON.stringify({ en, move: T.move }));
-        else check('CA-O2 dialogue : entrée en fondu et échelle --lc-dialog-enter-scale → 1 en 200 ms', en.info.length > 0 && en.info.every((i) => near(i.d, T.normal, 0.5)) && near(en.a, T.scale, 0.005) && en.op === '0', JSON.stringify({ en, T }));
-        check(`CA-O3 fond du ${kind} : --lc-overlay-enter-duration et easing-standard`, near(bdMs, T.enterBd, 0.5) && en.bdEase.startsWith('cubic-bezier') && (en.bdEase.match(/-?[\d.]+/g) ?? []).every((n, i) => Math.abs(n - (T.ease.match(/-?[\d.]+/g) ?? [])[i]) < 1e-3), JSON.stringify({ bdDur: en.bdDur, bdEase: en.bdEase, T }));
+        if (kind === 'drawer') check(`CA-20 tiroir : entrée par glissement de toute sa largeur en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.dx, r.width, 1.5)), JSON.stringify(en.recs));
+        else check(`CA-20 dialogue : entrée en fondu et échelle 0,91 → 1 en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.ratio, 0.91, 0.005) && r.o0 === '0'), JSON.stringify(en.recs));
+        check(`CA-20 voile du ${kind} : ${V.bdEnter} ms à l'entrée`, bd.length > 0 && bd.every((r) => near(r.d, V.bdEnter) && r.o0 === '0' && r.o1 === '1'), JSON.stringify(bd));
       }
-      // Sortie par « Valider » : valeur conservée, closed à la fin de la sortie.
-      const t0 = await page.evaluate(() => Date.now());
-      await page.evaluate((k) => document.querySelector(`#qa-${k}-ok`).click(), kind);
-      const ex = await page.evaluate(async (sel) => { await Q.raf(); const p = document.querySelector(sel); if (!p) return { gone: true }; const bd = document.querySelector('.cdk-overlay-backdrop'); return { gone: false, closing: p.classList.contains('lc-overlay--closing') || !!p.querySelector('.lc-overlay--closing'), durs: Q.anims(p).map((x) => x.t.duration), bdShowing: bd?.classList.contains('cdk-overlay-backdrop-showing'), reduced: Q.reduced(p), inDom: true }; }, pane);
-      await page.waitForFunction((n) => (window.__qa?.results.length ?? 0) >= n, kind === 'drawer' ? 1 : 2, { timeout: 4000 }).catch(() => {});
+      // Sortie par « Valider » : valeur conservée, `closed` à la fin de la sortie.
+      const t0 = Date.now();
+      const ex = await watch(() => page.evaluate((k) => document.querySelector(`#qa-${k}-ok`).click(), kind));
+      const exitPanel = ex.recs.filter((r) => !r.backdrop && r.width > 10 && (kind === 'drawer' ? r.dx > 1 : r.ratio < 0.999));
+      const exitBd = ex.recs.filter((r) => r.backdrop);
+      await page.evaluate(() => window.__w.stop());
+      await page.waitForFunction((k) => (window.__qa?.results ?? []).some((r) => r[0] === k), kind, { timeout: 4000 }).catch(() => {});
       const res = (await results()).find((r) => r[0] === kind); await page.waitForTimeout(300);
       const gone = !(await page.locator(pane).count());
-      const elapsed = res ? res[2] - t0 : -1;
-      const want = kind === 'drawer' ? T.normal : T.fast;
-      if (reduced) check(`CA-R1 ${kind} sortie immédiate, valeur rendue`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && elapsed < 150, JSON.stringify({ res, elapsed, ex }));
+      if (reduced) check(`CA-3 ${kind} sortie immédiate, valeur rendue`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && Date.now() - t0 < 1000 + 350 && ex.recs.every((r) => r.d <= 0.01) && ex.running === 0, JSON.stringify({ res, ex }));
       else {
-        check(`CA-O${kind === 'drawer' ? 1 : 2} ${kind} : sortie animée ${want} ms (panneau encore là, fond retiré en même temps), puis quitte le DOM`, !ex.gone && ex.closing && ex.bdShowing === false && ex.durs.length > 0 && ex.durs.every((d) => near(d, want, 0.5)) && gone, JSON.stringify({ ex, gone, want }));
-        check(`CA-O${kind === 'drawer' ? 1 : 2} ${kind} : closed émis avec la valeur, après la fin de la sortie`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && elapsed >= want - 40, JSON.stringify({ res, elapsed, want }));
+        const o = kind === 'dialog' ? exitPanel.every((r) => near(r.ratio, 0.95, 0.005) && r.o1 === '0') : exitPanel.every((r) => near(r.dx, r.width, 1.5));
+        check(`CA-20 ${kind} : sortie animée ${V.exit} ms (panneau encore dans le DOM), puis quitte le DOM`, ex.there && exitPanel.length > 0 && exitPanel.every((r) => near(r.d, V.exit)) && o && gone, JSON.stringify({ ex: ex.recs, gone }));
+        check(`CA-20 voile du ${kind} : ${V.bdExit} ms à la sortie`, exitBd.length > 0 && exitBd.every((r) => near(r.d, V.bdExit) && r.o0 === '1' && r.o1 === '0'), JSON.stringify(exitBd));
+        check(`CA-20 ${kind} : closed émis avec la valeur, après la fin de la sortie`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && res[2] - t0 >= V.exit - 40, JSON.stringify({ res, elapsed: res?.[2] - t0 }));
       }
     }
     // Échap et clic sur le fond du dialogue passent par la sortie animée.
     if (!reduced) for (const way of ['Échap', 'fond']) {
-      await page.evaluate(() => document.querySelector('#qa-open-dialog').click()); await page.waitForSelector('.cdk-overlay-pane:has(lc-dialog)'); await page.waitForTimeout(400);
+      await page.evaluate(() => document.querySelector('#qa-open-dialog').click()); await page.waitForSelector('.cdk-overlay-pane:has(lc-dialog)'); await page.waitForTimeout(800);
+      await page.evaluate(WATCH);
       if (way === 'Échap') await page.keyboard.press('Escape'); else await page.mouse.click(5, 5);
-      const s = await page.evaluate(async () => { await Q.raf(); const p = document.querySelector('.cdk-overlay-pane:has(lc-dialog)'); return { there: !!p, closing: !!p?.querySelector('.lc-overlay--closing') || p?.classList.contains('lc-overlay--closing') }; });
-      await page.waitForTimeout(500);
-      check(`CA-O2 dialogue : ${way} → sortie animée (encore dans le DOM, classe de sortie), puis fermé`, s.there && s.closing && !(await page.locator('.cdk-overlay-pane:has(lc-dialog)').count()), JSON.stringify(s));
+      await page.waitForTimeout(250);
+      const s = await page.evaluate(() => ({ there: !!document.querySelector('.cdk-overlay-pane:has(lc-dialog)'), durs: window.__w.recs.filter((r) => !r.backdrop).map((r) => r.d) }));
+      await page.evaluate(() => window.__w.stop()); await page.waitForTimeout(500);
+      check(`CA-20 dialogue : ${way} → sortie animée de ${OV.dialog.exit} ms (encore dans le DOM), puis fermé`, s.there && s.durs.length > 0 && s.durs.every((d) => near(d, OV.dialog.exit)) && !(await page.locator('.cdk-overlay-pane:has(lc-dialog)').count()), JSON.stringify(s));
     }
     await page.close();
   });
