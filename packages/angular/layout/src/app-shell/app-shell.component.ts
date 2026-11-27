@@ -4,15 +4,16 @@ import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRend
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LcPageTransitionsDirective } from '../page-transitions/page-transitions.directive';
 
 /**
  * Coquille d'application : lien d'évitement, en-tête, navigation et contenu principal.
  * Navigation latérale (réductible aux icônes) ≥ 1024 px, tiroir en dessous (focus piégé, Échap ferme
- * et rend le focus au bouton de menu). Emplacements : `[lcShellHeader]`, `[lcShellNav]`, contenu.
+ * et rend le focus au bouton de menu). Les changements de page de l'application sont animés (`lcPageTransitions`, sans effet sans routeur). Emplacements : `[lcShellHeader]`, `[lcShellNav]`, contenu.
  */
 @Component({
   selector: 'lc-app-shell',
-  imports: [A11yModule, LcButtonComponent, LcIconComponent],
+  imports: [A11yModule, LcButtonComponent, LcIconComponent, LcPageTransitionsDirective],
   template: `
     <a class="lc-shell__skip" href="#lc-main" (click)="focusMain($event)">{{ labels.skipToContent }}</a>
     <header class="lc-shell__header" [attr.inert]="modalNav() ? '' : null">
@@ -46,7 +47,7 @@ import { LC_LABELS, LcButtonComponent, LcIconComponent, lcUniqueId } from '@lion
           <div class="lc-shell__backdrop" (click)="closeDrawer()"></div>
         }
       }
-      <main class="lc-shell__main" id="lc-main" tabindex="-1" [attr.inert]="modalNav() ? '' : null"><ng-content /></main>
+      <main lcPageTransitions class="lc-shell__main" id="lc-main" tabindex="-1" [attr.inert]="modalNav() ? '' : null"><ng-content /></main>
     </div>
   `,
   styleUrl: './app-shell.component.css',

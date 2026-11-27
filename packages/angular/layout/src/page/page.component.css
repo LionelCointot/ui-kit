@@ -42,6 +42,11 @@
   }
 }
 
+/* Reçoit le focus par programme après un changement de page (lcPageTransitions) : repère pour les lecteurs d'écran, élément non interactif, donc sans anneau de focus (tabindex -1, pas dans l'ordre de tabulation). */
+.lc-page__title:focus {
+  outline: none;
+}
+
 .lc-page__description {
   max-width: 70ch;
   margin: var(--lc-sys-space-1) 0 0;
