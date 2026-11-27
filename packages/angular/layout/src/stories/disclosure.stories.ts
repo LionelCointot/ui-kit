@@ -20,12 +20,12 @@ import { LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupD
     </div>`,
 })
 class DisclosureAnimationDemoComponent {
-  protected readonly first = signal(false);
-  protected readonly second = signal(true);
+  protected readonly first = signal(true);
+  protected readonly second = signal(false);
   protected readonly demo = replayable({
     destroyRef: inject(DestroyRef),
-    reset: () => { this.first.set(false); this.second.set(true); },
-    play: (later) => { this.first.set(true); this.second.set(false); later(1800, () => this.first.set(false)); },
+    reset: () => { this.first.set(true); this.second.set(false); },
+    play: (later) => { this.first.set(false); later(1800, () => this.first.set(true)); },
   });
 }
 
@@ -97,7 +97,7 @@ export const List: Story = {
   }),
 };
 
-/** Opening takes about 300 ms (height grows, content fades in from 5 px above), closing 100 ms, the chevron turns in 300 ms. "Rejouer" closes both rows, then opens and closes the first. */
+/** Opening takes about 300 ms (height grows, content fades in from 5 px above), closing 100 ms, the chevron turns in 300 ms. "Rejouer" closes the first row, then opens it again. */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   render: () => ({ template: '<lc-disclosure-animation-demo />' }),
