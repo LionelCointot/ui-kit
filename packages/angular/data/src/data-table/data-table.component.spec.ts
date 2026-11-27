@@ -824,65 +824,70 @@ describe('LcDataTableComponent', () => {
       expect(menu()).toBeNull();
     });
 
-    it('cartes : lcReveal sur les 8 premières seulement sur téléphone, aucune sur ordinateur', async () => {
-      await setup({ narrow: true });
-      expect(rowNodes()).toHaveLength(10);
-      const ranks = rowNodes().map((row) => (row as HTMLElement).style.getPropertyValue('--lc-reveal-rank'));
-      expect(ranks).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '', '']);
+    const ranks = () => rowNodes().map((row) => row.style.getPropertyValue('--lc-reveal-rank'));
+
+    it('cascade à l\'ouverture : lcReveal sur les 8 premières lignes seulement, sur téléphone comme sur ordinateur', async () => {
+      for (const narrow of [true, false]) {
+        await setup({ narrow });
+        expect(rowNodes()).toHaveLength(10);
+        expect(ranks()).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '', '']);
+        TestBed.resetTestingModule();
+      }
     });
 
-    it('cartes : aucune lcReveal sur ordinateur', async () => {
+    it('tri, suppression : les lignes conservées gardent leur élément et ne rejouent aucune entrée', async () => {
       await setup();
-      expect(rowNodes()).toHaveLength(10);
-      expect(rowNodes().filter((row) => row.style.getPropertyValue('--lc-reveal-rank') !== '' || row.classList.contains('lc-reveal'))).toHaveLength(0);
-    });
-
-    it('cartes : la cascade ne joue qu\'au premier affichage ; après un filtre, les cartes conservées gardent leur élément, sans lcReveal', async () => {
-      await setup({ narrow: true });
       const before = rowNodes();
       host.source.set([...ROWS]); // nouvelle source, même requête : lignes conservées (suivies par id), pas de cascade
       await stable();
       expect(rowNodes()[0]).toBe(before[0]);
-      const dialog = await openPanel();
-      await click([...dialog.querySelectorAll<HTMLButtonElement>('.lc-data-table__section-toggle')].find((b) => b.textContent!.includes('État'))!);
-      await click(boxes(dialog)[1]); // Close : lignes 2, 5, 8
-      await click(dialog.querySelector<HTMLButtonElement>('.lc-data-table__panel-apply')!);
-      await stable();
-      const after = rowNodes();
-      expect(after).toEqual([before[1], before[4], before[7]]);
-      expect(after.some((row) => row.style.getPropertyValue('--lc-reveal-rank') !== '')).toBe(false);
+      expect(ranks().every((rank) => rank === '')).toBe(true);
+      expect(el.querySelector('tbody')!.classList.contains('lc-data-table__body--refill')).toBe(false);
     });
 
-    describe('différence de liste (décision 26)', () => {
-      type Call = { row: HTMLElement; keyframes: Record<string, unknown[]>; options: KeyframeAnimationOptions; finish: () => void };
+    it('filtre : la liste est reconstruite (aucune ligne conservée), la cascade attend le délai de remplissage (classe du corps)', async () => {
+      await setup();
+      const before = rowNodes();
+      host.query.set(q({ state: ['Close'] })); // lignes 2, 5, 8
+      await stable();
+      const after = rowNodes();
+      expect(after).toHaveLength(3);
+      expect(after.some((row) => before.includes(row))).toBe(false);
+      expect(ranks()).toEqual(['0', '1', '2']);
+      expect(el.querySelector('tbody')!.classList.contains('lc-data-table__body--refill')).toBe(true);
+      expect(el.querySelector('tbody')!.hidden).toBe(false); // masqué le temps du rendu seulement
+      host.source.set([...ROWS]); // un tri ou une suppression ensuite : plus de refill
+      await stable();
+      expect(el.querySelector('tbody')!.classList.contains('lc-data-table__body--refill')).toBe(false);
+    });
+
+    it('filtre : seules les 8 premières lignes de la nouvelle liste portent une entrée', async () => {
+      await setup();
+      host.query.set(q({ city: ['Annecy', 'Brest', 'Caen', 'Dijon', 'Évry', 'Fréjus', 'Gap', 'Hyères', 'Istres'] }));
+      await stable();
+      expect(rowNodes()).toHaveLength(9);
+      expect(ranks().filter((rank) => rank !== '')).toHaveLength(8);
+    });
+
+    describe('animations (lcFlip, lcAnimate)', () => {
+      type Call = { target: HTMLElement; keyframes: Record<string, unknown>[]; options: KeyframeAnimationOptions };
       let calls: Call[];
 
       /** Web Animations simulée : `animate` enregistre ses appels ; la mise en page est simulée (40 px par ligne, dans l'ordre du DOM). */
       const stubLayout = (reduced = false) => {
         calls = [];
-        (HTMLElement.prototype as { animate?: unknown }).animate = function (this: HTMLElement, keyframes: Record<string, unknown[]>, options: KeyframeAnimationOptions) {
-          let finish!: () => void;
-          const finished = new Promise<void>((resolve) => (finish = resolve));
-          calls.push({ row: this, keyframes, options, finish });
-          return { finished };
+        (HTMLElement.prototype as { animate?: unknown }).animate = function (this: HTMLElement, keyframes: Record<string, unknown>[], options: KeyframeAnimationOptions) {
+          calls.push({ target: this, keyframes, options });
+          return { finished: Promise.resolve(), cancel() {} };
         };
         vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-          const top = [...document.querySelectorAll('tbody tr')].indexOf(this) * 40;
-          return { top } as DOMRect;
+          return { top: [...document.querySelectorAll('tbody tr')].indexOf(this) * 40 } as DOMRect;
         });
-        if (reduced) vi.stubGlobal('matchMedia', () => ({ matches: true }));
+        vi.stubGlobal('matchMedia', () => ({ matches: reduced }));
+        vi.stubGlobal('getComputedStyle', () => ({
+          getPropertyValue: (name: string) => ({ '--lc-list-move-duration': '200ms', '--lc-list-move-easing': 'ease-in-out', '--lc-sys-duration-fast': '150ms', '--lc-overlay-easing': 'ease-out' })[name] ?? '',
+        }));
       };
-      const tokens = (easings: Record<string, string> = { '--lc-list-move-easing': 'ease-in-out' }) => {
-        const table = el.querySelector<HTMLElement>('lc-data-table') ?? el;
-        for (const [name, value] of Object.entries({ '--lc-list-move-duration': '200ms', '--lc-overlay-enter-duration': '0.3s', '--lc-overlay-exit-duration': '100ms', '--lc-overlay-easing': 'ease-out', ...easings })) {
-          table.style.setProperty(name, value);
-        }
-      };
-      const filterTo = async (names: readonly string[]) => {
-        host.query.set(q(names.length ? { state: names } : {}));
-        await stable();
-      };
-      const on = (rows: readonly Element[]) => calls.filter((call) => rows.includes(call.row));
 
       afterEach(() => {
         delete (HTMLElement.prototype as { animate?: unknown }).animate;
@@ -890,39 +895,24 @@ describe('LcDataTableComponent', () => {
         vi.unstubAllGlobals();
       });
 
-      it('lignes conservées : même élément, glissement translateY(ancienne - nouvelle place) → none, durée et courbe lues en CSS', async () => {
+      it('tri : les lignes qui changent de place glissent (translateY de l\'ancienne à la nouvelle place), les autres n\'animent rien', async () => {
         await setup();
         const before = rowNodes();
         stubLayout();
-        tokens();
-        await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
-        const kept = [before[1], before[4], before[7]];
-        expect(rowNodes()).toEqual(kept);
-        expect(calls.map((call) => call.row)).toEqual(kept);
-        expect(calls.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
-        expect(calls[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
+        host.query.set({ filters: {}, sort: { columnId: 'date', direction: 'desc' } });
+        await stable();
+        const moved = calls.filter((call) => call.keyframes[1]?.['transform'] === 'none');
+        expect(moved.length).toBeGreaterThan(0);
+        expect(moved.length).toBeLessThan(before.length + 1);
+        expect(moved.every((call) => before.includes(call.target))).toBe(true);
+        expect(moved[0].options).toMatchObject({ duration: 200, easing: 'ease-in-out' });
+        expect(calls.every((call) => !('opacity' in call.keyframes[0]))).toBe(true); // aucune entrée ni sortie
       });
 
-      it('lignes ajoutées : fondu d\'entrée (--lc-overlay-enter-duration) ; conservées : glissement', async () => {
-        await setup({ query: q({ state: ['Close'] }) });
-        const before = rowNodes();
-        stubLayout();
-        tokens();
-        await filterTo([]);
-        expect(rowNodes()).toHaveLength(10);
-        const fades = calls.filter((call) => 'opacity' in call.keyframes);
-        expect(fades).toHaveLength(7);
-        expect(fades[0].keyframes['opacity']).toEqual([0, 1]);
-        expect(fades[0].options).toEqual({ duration: 300, easing: 'ease-out' });
-        expect(fades.some((call) => before.includes(call.row))).toBe(false);
-        expect(on(before).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
-      });
-
-      it('ligne qui ne bouge pas : pas d\'animation', async () => {
+      it('filtre : aucune ligne ne glisse (la liste est reconstruite)', async () => {
         await setup();
         stubLayout();
-        tokens();
-        host.source.set([...ROWS]);
+        host.query.set(q({ state: ['Close'] }));
         await stable();
         expect(calls).toHaveLength(0);
       });
@@ -930,76 +920,11 @@ describe('LcDataTableComponent', () => {
       it('réduction de mouvement : ni glissement ni fondu', async () => {
         await setup();
         stubLayout(true);
-        tokens();
-        await filterTo(['Close']);
-        await filterTo([]);
+        host.query.set({ filters: {}, sort: { columnId: 'date', direction: 'desc' } });
+        await stable();
+        host.query.set(q({ state: ['Close'] }));
+        await stable();
         expect(calls).toHaveLength(0);
-      });
-
-      it('lignes retirées : fondu de sortie, conservées figées à leur place d\'avant, puis UN SEUL glissement de l\'avant à la fin', async () => {
-        await setup();
-        const before = rowNodes();
-        stubLayout();
-        tokens();
-        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
-        // Angular ne joue pas `animate.leave` sous jsdom : on déclare la ligne 1 (État Nouvelle, retirée par le filtre) comme sortante.
-        const animationComplete = vi.fn();
-        component.fadeOut({ target: before[0], animationComplete });
-        expect(before[0].hasAttribute('data-leaving')).toBe(true);
-        expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
-        expect(calls[0].options).toEqual({ duration: 100, easing: 'ease-out', fill: 'forwards' });
-        await filterTo(['Close']); // lignes 2, 5, 8 : de 40, 160, 280 à 0, 40, 80
-        const kept = [before[1], before[4], before[7]];
-        expect(calls).toHaveLength(1); // pas de glissement pendant le fondu
-        expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['translateY(40px)', 'translateY(120px)', 'translateY(200px)']);
-        expect(animationComplete).not.toHaveBeenCalled();
-        calls[0].finish();
-        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-        expect(animationComplete).toHaveBeenCalledOnce();
-        const glides = calls.slice(1);
-        expect(glides.map((call) => call.row)).toEqual(kept); // un seul glissement par ligne conservée
-        expect(glides.map((call) => call.keyframes['transform'])).toEqual([['translateY(40px)', 'none'], ['translateY(120px)', 'none'], ['translateY(200px)', 'none']]);
-        expect(kept.map((row) => (row as HTMLElement).style.transform)).toEqual(['', '', '']);
-      });
-
-      /** Part de « Close » (2, 5, 8) ; la ligne 8 est déclarée sortante, puis le filtre passe à « Nouvelle » (1, 4, 7, 10 ajoutées). */
-      const leavingScenario = async () => {
-        await setup({ query: q({ state: ['Close'] }) });
-        const initial = rowNodes();
-        stubLayout();
-        tokens();
-        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
-        component.fadeOut({ target: initial[2], animationComplete: vi.fn() });
-        await filterTo(['Nouvelle']);
-        return rowNodes() as HTMLElement[];
-      };
-      const settleFade = async () => {
-        calls[0].finish();
-        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-      };
-
-      it('lignes ajoutées : masquées pendant le fondu des sortantes, puis révélées en fondu par le glissement unique', async () => {
-        const added = await leavingScenario();
-        expect(added.map((row) => row.style.opacity)).toEqual(['0', '0', '0', '0']);
-        expect(calls).toHaveLength(1);
-        await settleFade();
-        const fades = calls.slice(1);
-        expect(fades.map((call) => call.row)).toEqual(added);
-        expect(fades.every((call) => JSON.stringify(call.keyframes['opacity']) === '[0,1]')).toBe(true);
-        expect(added.map((row) => row.style.opacity)).toEqual(['', '', '', '']);
-      });
-
-      it('second filtre pendant le fondu : une ligne ajoutée au premier changement et conservée reste masquée, puis reçoit son fondu', async () => {
-        const added = await leavingScenario();
-        await filterTo(['Nouvelle', 'Qualifiée']); // 1, 4, 7, 10 conservées ; 3, 6, 9 ajoutées
-        expect(rowNodes().filter((row) => added.includes(row as HTMLElement))).toHaveLength(4);
-        expect(added.map((row) => row.style.opacity)).toEqual(['0', '0', '0', '0']);
-        expect(calls).toHaveLength(1);
-        await settleFade();
-        expect(calls.slice(1).filter((call) => 'opacity' in call.keyframes).map((call) => call.row)).toEqual(expect.arrayContaining(added));
-        expect(calls.slice(1).filter((call) => 'transform' in call.keyframes && added.includes(call.row))).toHaveLength(0);
       });
 
       type ChipTarget = { fadeOutChip(event: unknown): void };
@@ -1008,26 +933,21 @@ describe('LcDataTableComponent', () => {
       it('CA-H4 : pastille sortante : fondu duration-fast, sortie du flux à sa place, non cliquable (data-leaving) ; retirée à la fin du fondu', async () => {
         await setup({ query: q({ state: ['Close'] }), chips: 'always' });
         stubLayout();
-        tokens();
-        el.querySelector<HTMLElement>('lc-data-table')!.style.setProperty('--lc-sys-duration-fast', '150ms');
         const chip = el.querySelector<HTMLElement>('.lc-data-table__chip')!;
         const animationComplete = vi.fn();
         chipComponent().fadeOutChip({ target: chip, animationComplete });
         expect(chip.hasAttribute('data-leaving')).toBe(true);
         expect(chip.style.left).toMatch(/px$/);
         expect(chip.style.top).toMatch(/px$/);
-        expect(calls[0].keyframes['opacity']).toEqual([1, 0]);
-        expect(calls[0].options).toEqual({ duration: 150, easing: 'ease-out', fill: 'forwards' });
-        expect(animationComplete).not.toHaveBeenCalled();
-        calls[0].finish();
-        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        expect(calls[0].keyframes).toEqual([{ opacity: 1 }, { opacity: 0 }]);
+        expect(calls[0].options).toEqual({ duration: 150, easing: 'ease-out', delay: 0, fill: 'forwards' });
+        await new Promise((resolve) => setTimeout(resolve));
         expect(animationComplete).toHaveBeenCalledOnce();
       });
 
       it('CA-R1 : pastille sortante en réduction de mouvement : retrait immédiat, sans animation', async () => {
         await setup({ query: q({ state: ['Close'] }), chips: 'always' });
         stubLayout(true);
-        tokens();
         const animationComplete = vi.fn();
         chipComponent().fadeOutChip({ target: el.querySelector<HTMLElement>('.lc-data-table__chip')!, animationComplete });
         expect(animationComplete).toHaveBeenCalledOnce();
@@ -1037,37 +957,16 @@ describe('LcDataTableComponent', () => {
       it('CA-H4 : retrait d\'une pastille : le bloc de la liste glisse d\'un seul trait de sa place d\'avant (translateY) vers sa place d\'après', async () => {
         await setup({ query: q({ state: ['Close'] }), chips: 'always' });
         stubLayout();
-        tokens();
-        // La rangée se resserre quand la pastille disparaît : le bloc de la liste remonte de 60 à 20. Comme en navigateur, la mesure compte la translation que le bloc porte à t = 0 (40 px).
-        let shift = 0;
-        const animate = HTMLElement.prototype.animate;
-        (HTMLElement.prototype as { animate?: unknown }).animate = function (this: HTMLElement, ...args: Parameters<typeof animate>) {
-          if (this.classList.contains('lc-data-table__scroll')) shift = 40;
-          return animate.apply(this, args);
-        };
+        // La rangée se resserre quand la pastille disparaît : le bloc de la liste remonte de 60 à 20.
         vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-          const base = (document.querySelector('.lc-data-table__chip') ? 60 : 20) + shift;
-          return { top: this.classList.contains('lc-data-table__scroll') ? base : [...document.querySelectorAll('tbody tr')].indexOf(this) * 40 + base } as DOMRect;
+          return { top: this.classList.contains('lc-data-table__scroll') ? (document.querySelector('.lc-data-table__chip') ? 60 : 20) : 0 } as DOMRect;
         });
         await click(el.querySelector<HTMLButtonElement>('.lc-data-table__chip-remove')!);
         await stable();
-        const slides = calls.filter((call) => call.row.classList.contains('lc-data-table__scroll'));
+        const slides = calls.filter((call) => call.target.classList.contains('lc-data-table__scroll'));
         expect(slides).toHaveLength(1);
-        expect(slides[0].keyframes['transform']).toEqual(['translateY(40px)', 'none']);
-        expect(slides[0].options).toEqual({ duration: 200, easing: 'ease-in-out' });
-        // Bloc + ligne partent de l'ancienne place de la ligne (7 lignes ajoutées en fondu, 3 conservées) : la ligne ne rattrape pas deux fois le décalage de 40 px.
-        expect(calls.filter((call) => 'transform' in call.keyframes && call.row !== slides[0].row).map((call) => call.keyframes['transform'])).toEqual([['translateY(-40px)', 'none'], ['translateY(-120px)', 'none'], ['translateY(-200px)', 'none']]);
-      });
-
-      it('lignes retirées en réduction de mouvement : retrait immédiat', async () => {
-        await setup();
-        stubLayout(true);
-        tokens();
-        const component = fixture.debugElement.query(By.directive(LcDataTableComponent)).componentInstance as { fadeOut(event: unknown): void };
-        const animationComplete = vi.fn();
-        component.fadeOut({ target: rowNodes()[0], animationComplete });
-        expect(animationComplete).toHaveBeenCalledOnce();
-        expect(calls).toHaveLength(0);
+        expect(slides[0].keyframes).toEqual([{ transform: 'translateY(40px)' }, { transform: 'none' }]);
+        expect(slides[0].options).toMatchObject({ duration: 200, easing: 'ease-in-out' });
       });
     });
 

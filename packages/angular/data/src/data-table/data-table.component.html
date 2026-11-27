@@ -86,7 +86,7 @@
         }
       </tr>
     </thead>
-    <tbody>
+    <tbody #body [lcFlip]="rows()" [class.lc-data-table__body--refill]="refill()">
       @if (result.error()) {
         <tr class="lc-data-table__state">
           <td [attr.colspan]="span()">
@@ -104,25 +104,27 @@
           </tr>
         }
       } @else {
-        @for (row of rows(); track trackBy()(row)) {
-          <!-- Cascade des 8 premières cartes au premier affichage seulement (`lcReveal` désactivé sinon) ; ensuite : différence animée. -->
-          <tr [lcReveal]="cascadeIndex($index) === null ? null : 'drop'" [lcRevealIndex]="cascadeIndex($index) ?? undefined" (animate.leave)="fadeOut($event)">
-            <ng-container [ngTemplateOutlet]="rowCells" [ngTemplateOutletContext]="{ $implicit: row }" />
-          </tr>
-        } @empty {
-          <tr class="lc-data-table__state">
-            <td [attr.colspan]="span()">
-              @if (activeColumns().length) {
-                <lc-empty-state icon="search-x" [title]="text.noResultsTitle" [description]="text.noResultsHint">
-                  <button lcEmptyActions lcButton type="button" fillMode="outline" themeColor="neutral" (click)="clearAll()">
-                    <lc-icon name="funnel-x" />{{ text.clearFilters }}
-                  </button>
-                </lc-empty-state>
-              } @else {
-                <p class="lc-data-table__empty">{{ emptyMessage() ?? labels.noData }}</p>
-              }
-            </td>
-          </tr>
+        <!-- Un filtre différent recrée toutes les lignes (nouvelle génération) ; un tri ou une suppression garde celles qui restent, `lcFlip` les fait glisser. -->
+        @for (current of [generation()]; track current) {
+          @for (row of rows(); track trackBy()(row)) {
+            <tr [lcReveal]="cascadeIndex($index) === null ? null : ''" [lcRevealIndex]="cascadeIndex($index) ?? undefined">
+              <ng-container [ngTemplateOutlet]="rowCells" [ngTemplateOutletContext]="{ $implicit: row }" />
+            </tr>
+          } @empty {
+            <tr class="lc-data-table__state">
+              <td [attr.colspan]="span()">
+                @if (activeColumns().length) {
+                  <lc-empty-state icon="search-x" [title]="text.noResultsTitle" [description]="text.noResultsHint">
+                    <button lcEmptyActions lcButton type="button" fillMode="outline" themeColor="neutral" (click)="clearAll()">
+                      <lc-icon name="funnel-x" />{{ text.clearFilters }}
+                    </button>
+                  </lc-empty-state>
+                } @else {
+                  <p class="lc-data-table__empty">{{ emptyMessage() ?? labels.noData }}</p>
+                }
+              </td>
+            </tr>
+          }
         }
       }
     </tbody>
