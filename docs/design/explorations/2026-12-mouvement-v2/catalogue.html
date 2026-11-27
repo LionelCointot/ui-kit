@@ -487,8 +487,8 @@ html[data-theme="dark"] .toast button{color:var(--lc-sys-color-primary)}
 .hl-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem}
 .hrow{padding:.625rem .75rem;border-radius:8px;font-size:.9375rem} /* NÉGATIF documenté : hover instantané (transition 0 s mesurée chez Talmo), pas de transition */
 .hrow:hover{background:color-mix(in srgb,var(--lc-sys-color-on-surface) 8%,transparent)}
-.lift-card{border:1px solid var(--lc-sys-color-border);border-radius:12px;background:var(--lc-sys-color-surface-raised);padding:1rem;transition:transform calc(350ms * var(--lc-m-time)) var(--e-p3),box-shadow calc(350ms * var(--lc-m-time)) var(--e-p3)}
-.lift-card:hover{transform:translateY(-4px);box-shadow:var(--lc-sys-shadow-1)}
+.lift-card{border:1px solid var(--lc-sys-color-border);border-radius:12px;background:var(--lc-sys-color-surface-raised);padding:1rem;transition:transform calc(500ms * var(--lc-m-time)) var(--e-p3)}
+.lift-card:hover{transform:translateY(-4px);transition-duration:calc(450ms * var(--lc-m-time))} /* site : 450 ms à l'entrée, 500 ms au retour, power3.out, sans ombre */
 .lift-l{font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
 .lift-v{font-size:1.375rem;font-weight:600;margin-top:.25rem;font-variant-numeric:tabular-nums}
 
@@ -642,7 +642,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
   /* barre du haut, pop, toast, calendrier */
   --lc-top-h:56px;--lc-title-fade:200ms;--lc-title-threshold:80px;
   --lc-pop-in:450ms;--lc-pop-out:170ms;--lc-pop-scale0:.936;--lc-pop-y0:-5px;
-  --lc-toast-in:450ms;--lc-toast-out:220ms;--lc-toast-y:25px;--lc-toast-out-y:10px;--lc-toast-scale0:.95;--lc-toast-ttl:3270ms;--lc-toast-gap:16px;
+  --lc-toast-in:500ms;--lc-toast-out:250ms;--lc-toast-y:30px;--lc-toast-out-y:16px;--lc-toast-scale0:.94;--lc-toast-ttl:3270ms;--lc-toast-gap:16px;
   --lc-cal-x:18px;--lc-cal-dur:450ms;--lc-cal-op0:.14;--lc-cal-step:30ms;
   --lc-seg-item:85.25px;
   flex:none;margin-inline:auto;position:relative;overflow:hidden;isolation:isolate;
@@ -2825,7 +2825,7 @@ R.d22 = () => replay($('#d22hm').parentElement, 'is-entering');
   function hideToast() {
     clearTimeout(ttl);
     if (RM()) { toast.hidden = true; return; }
-    const a = toast.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(13px)' }], { duration: T(250), easing: 'cubic-bezier(0.55,0.085,0.68,0.53)' }); /* power2.in du site */
+    const a = toast.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(16px)' }], { duration: T(250), easing: 'cubic-bezier(0.55,0.085,0.68,0.53)' }); /* power2.in du site, y 16 px (code du site) */
     a.onfinish = () => { toast.hidden = true; };
   }
   function del() {
@@ -3576,7 +3576,7 @@ function fillPages(el, onPick) {
     clearTimeout(tt); box.replaceChildren();
     const el = mel('div', 'm-toast', msg); box.appendChild(el);
     el.animate([{ opacity: 0, transform: `translateY(${mnum(ph, '--lc-toast-y')}px) scale(${mnum(ph, '--lc-toast-scale0')})` }, { opacity: 1, transform: 'none' }],
-      { duration: mms(ph, '--lc-toast-in'), easing: mcs(ph, '--lc-m-ease-back') });
+      { duration: mms(ph, '--lc-toast-in'), easing: 'cubic-bezier(0.34,1.7,0.64,1)' }); /* comme d29 */
     tt = setTimeout(async () => {
       const a = el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${mnum(ph, '--lc-toast-out-y')}px)` }],
         { duration: mms(ph, '--lc-toast-out'), easing: mcs(ph, '--lc-m-ease-in'), fill: 'forwards' });
