@@ -25,7 +25,9 @@ const storybookDir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'story
 const { chromium } = require('playwright');
 
 /** Table `dNN → story id (future), sélecteurs, déclencheur`. `story` : id Storybook attendu (les ids de composants sans story Animation aujourd'hui sont ceux que T3 à T16 doivent créer). */
-const rejouer = (id) => ({ name: 'Rejouer', mode: 'anim', cat: `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")` });
+/** `opts` (mode anim) : `props` = seules propriétés comparées (des deux côtés) ; `keep` = cibles de la story retenues (regex, filtre le bruit des composants voisins : boutons focalisés, autre barre du même stepper) ; `skip` = cibles ignorées des deux côtés ;
+ *  `edges` = bords d'indicateur comparés en progression 0 → 1 (le catalogue anime `left`/`right`, le kit `left`/clip-path/`translate`) ; `relative` = amplitude de translation ramenée à 100 (la hauteur de la feuille diffère). */
+const rejouer = (id, opts) => ({ name: 'Rejouer', mode: 'anim', cat: `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")`, ...opts });
 /** Déclencheur autre que « Rejouer » (quand « Rejouer » ne lance pas le mouvement) : côté story, l'élément porte `data-trigger`. `action` : 'click' (défaut), 'hover', { drag: dx } ou { key }. */
 const acting = (id, name, cat, action = 'click') => ({ name, mode: 'anim', action, cat, story: `[data-demo="${id}"] [data-trigger]` });
 /** `storyRead` : lecture côté story quand le rendu n'est pas celui du catalogue (ECharts, en SVG, anime par sa boucle rAF : ni CSS ni WAAPI) ; les unités diffèrent alors, seules les courbes normalisées se comparent. */
@@ -41,8 +43,8 @@ const DEMOS = {
   d07: ['data-data-table--animation', 'lc-data-table, lc-table : lignes en cascade ; cascade de lc-activity-feed'],
   d08: ['data-data-table--animation', 'lc-data-table : changement de filtre'],
   d09: ['feedback-progress-bar--animation', 'lc-progress-bar : lcFill'],
-  d10: ['navigation-tabs--animation', 'lc-tabs, lc-nav-list : indicateur à deux bords'],
-  d13: ['navigation-stepper--animation', 'lc-stepper : barres tracées'],
+  d10: ['navigation-tabs--animation', 'lc-tabs, lc-nav-list : indicateur à deux bords', [rejouer('d10', { edges: true, keep: 'lc-tabs__indicator' })]],
+  d13: ['navigation-stepper--animation', 'lc-stepper : points de progression en pop', [rejouer('d13', { keep: 'stepper__badge' })]],
   d14: ['data-kpi-card--animation', 'lc-kpi-card : lcCountUp (rAF)', [sampled('d14', 'Rejouer (échantillonné)', '#d14s [data-cu]', 'text')]],
   d15: ['data-kpi-card--animation', 'lc-kpi-card : aucun effet au survol'],
   d16: ['data-kpi-card--animation', 'lc-kpi-card : lcFlash'],
@@ -51,9 +53,9 @@ const DEMOS = {
   d21: ['feedback-progress-bar--animation', 'lc-timeline-bar, barres de lc-file-upload et lc-message-composer : lcFill'],
   d24: ['charts-bar-chart--animation', 'lc-chart : re-calcul 480 ms, décalage 20 ms', [catalogueOnly(rejouer('d24'), 'ECharts : entrée initiale des barres en rAF, aucune animation CSS ni WAAPI ; la story ne rejoue que le re-calcul'), sampled('d24', 'Changer la période (échantillonné)', '#d24svg rect', 'attr:height', '#d24btn', 'echarts:bar-height')]],
   d25: ['overlays-drawer--animation', 'lc-drawer'],
-  d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur'],
+  d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur', [rejouer('d26', { keep: '^(cdk-dialog-container|div\\.cdk-overlay-backdrop)' })]],
   d28: ['navigation-menu--animation', 'lc-menu, liste de lc-combobox, calendriers : pop depuis l\'ancrage', [acting('d28', 'Ouvrir le menu', '#d28btn')]], // Rejouer du catalogue ouvre puis referme aussitôt (le clic hors du menu le ferme)
-  d29: ['feedback-toast--animation', 'lc-toast'],
+  d29: ['feedback-toast--animation', 'lc-toast', [rejouer('d29', { skip: 'trow' })]], // les lignes `.trow` (FLIP du catalogue) ne sont pas le toast
   d31: ['layout-card--animation', 'lc-card : .lc-lift au survol', [rejouer('d31'), acting('d31', 'Survol de la carte', '#d31s .lift-card', 'hover')]],
   d33: ['data-data-table--animation', 'lc-data-table : suppression, voisines qui glissent', [acting('d33', 'Glisser la barre A (les suivantes suivent)', '#d33a', { drag: 120 })]],
   d36: ['data-data-table--animation', 'lc-data-table : tri, lignes qui glissent', [acting('d36', 'Flèche droite sur la barre', '#d36bar', { key: 'ArrowRight' })]],
@@ -63,19 +65,19 @@ const DEMOS = {
   d42: ['feedback-spinner--animation', 'lc-spinner : valeurs recalées sur les tokens'],
   d44: ['feedback-status-badge--animation', 'lc-status-badge : changement de statut, aucun mouvement'],
   d45: ['navigation-tabs--animation', 'lc-tabs : cascade du panneau à la première ouverture'],
-  d46: ['forms-switch--animation', 'lc-switch : bouton qui glisse'],
+  d46: ['forms-switch--animation', 'lc-switch : bouton qui glisse', [rejouer('d46', { edges: true, props: '^(left|translate)$' })]],
   d48: ['layout-disclosure--animation', 'lc-disclosure, lc-nav-group : ouverture et fermeture'],
   d50: ['overlays-tooltip--animation', 'lc-tooltip, survol de barre : aucun mouvement'],
-  d51: ['navigation-stepper--animation', 'lc-stepper : pastille courante en pop'],
+  d51: ['navigation-stepper--animation', 'lc-stepper : barres tracées', [rejouer('d51', { keep: 'stepper__fill' })]],
   d53: ['layout-app-shell--animation', 'téléphone : empilement iOS'],
   d54: ['overlays-sheet--animation', 'lc-sheet : feuille auto-hauteur'],
   d55: ['overlays-sheet--animation', 'lc-sheet : feuille à contenu long'],
-  d56: ['overlays-sheet--animation', 'lc-dialog présenté en lc-sheet'],
-  d57: ['layout-app-shell--animation', 'téléphone : barre d\'onglets du bas'],
+  d56: ['overlays-sheet--animation', 'lc-dialog présenté en lc-sheet', [rejouer('d56', { relative: true })]],
+  d57: ['layout-app-shell--animation', 'téléphone : barre d\'onglets du bas', [rejouer('d57', { keep: 'lc-tabbar' })]],
   d59: ['layout-app-shell--animation', 'téléphone : titre de l\'en-tête au défilement'],
   d60: ['feedback-toast--animation', 'téléphone : lc-toast au-dessus de la barre d\'onglets'],
   d61: ['forms-date-input--animation', 'calendrier : glissement du changement de mois'],
-  d62: ['forms-segmented-control--animation', 'lc-segmented-control : pastille à deux bords'],
+  d62: ['forms-segmented-control--animation', 'lc-segmented-control : pastille à deux bords', [rejouer('d62', { edges: true })]],
   d63: ['forms-segmented-control--animation', 'lc-segmented-control à 360 px'],
 };
 const TABLE = Object.fromEntries(Object.entries(DEMOS).map(([id, [story, label, triggers]]) => [id, {
@@ -296,6 +298,23 @@ function iosProgress(expected, got) {
 }
 const r6 = (n) => Math.round(n * 1e6) / 1e6;
 
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+/** Progression 0 → 1 de la première grandeur qui varie parmi les 5 valeurs (bord d'indicateur : `left`, `right`, inset du clip-path, translation X). */
+const progress = (xs) => { const k = xs[0].findIndex((_, j) => xs.some((x) => x[j] !== xs[0][j])); return xs.map((x) => r6(k < 0 ? 0 : (x[k] - xs[0][k]) / (xs[4][k] - xs[0][k] || 1))); };
+/** Mise en forme des deux côtés avant comparaison : bruit retiré, animations sans effet visible retirées (un remplissage 0 → 0), puis `edges` et `relative` du déclencheur. */
+function shape(list, trigger, story) {
+  const [keep, skip, props] = [trigger.keep, trigger.skip, trigger.props].map((r) => r && new RegExp(r));
+  let out = list.filter((a) => a.name !== 'lc-page-entering' && !(skip && skip.test(a.target)) && !(story && keep && !keep.test(a.target)) && !(props && !props.test(a.props[0])) && !a.values.every((v) => same(v, a.values[0])));
+  if (trigger.edges) {
+    out = out.filter((a) => !['width', 'color'].includes(a.props[0])).map((a) => { // width : même bord que `left` ; color : le kit ne l'anime pas sur ces indicateurs
+      const edge = a.props.length === 1 && (/^(left|right|clipPath|--lc-m-pill-[lr])$/.test(a.props[0]) ? a.values.map((v) => numbers(v[a.props[0]])) : a.props[0] === 'translate' ? a.values.map((v) => [v.m[4]]) : null);
+      return edge ? { ...a, props: ['p'], values: progress(edge).map((p) => ({ p: String(p) })) } : a;
+    });
+  }
+  if (trigger.relative) out = out.map((a) => (a.values[0].m?.[5] ? { ...a, values: a.values.map((v) => ({ ...v, m: v.m.map((x, i) => (i === 5 ? r6((x * 100) / a.values[0].m[5]) : x)) })) } : a));
+  return out;
+}
+
 function compareAnimations(expected, got, rows = false) {
   const problems = [];
   got = iosProgress(expected, got);
@@ -325,7 +344,7 @@ function timeAtProgress(raw, fromFirstMove = false) {
   const range = Math.max(...raw.map(([, v]) => v)) - Math.min(...raw.map(([, v]) => v));
   const series = raw.length > 2 && Math.abs(raw[0][1] - raw.at(-1)[1]) <= 0.01 * range ? raw.slice(raw.findIndex(([, v]) => v === Math.min(...raw.map(([, x]) => x)))) : raw; // repart du point le plus bas (la remise à zéro), quel que soit le nombre de lectures avant elle
   const [v0, vN] = [series[0][1], series.at(-1)[1]];
-  const origin = fromFirstMove ? series[1][0] : 0; // d19 : le tracé d'ECharts naît dans Angular, une image après le clic ; on compte depuis le premier mouvement des deux côtés
+  const origin = fromFirstMove ? series[1][0] : 0; // d19, d24 : le tracé d'ECharts naît dans Angular, une image après le clic ; on compte depuis le premier mouvement des deux côtés (pas depuis un seuil de progression : il décalerait selon la pente de la courbe)
   return [25, 50, 75, 100].map((p) => {
     const target = v0 + ((vN - v0) * p) / 100;
     const k = series.findIndex(([, v]) => (vN >= v0 ? v >= target : v <= target));
@@ -416,7 +435,7 @@ async function compare(browser, ids, self) {
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
         const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(expected.animations, got.animations ?? [], id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19');
+        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(shape(expected.animations, trigger, false), shape(got.animations ?? [], trigger, !self), id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19' || id === 'd24');
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {
