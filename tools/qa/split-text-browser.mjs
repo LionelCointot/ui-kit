@@ -39,7 +39,8 @@ const INIT = () => {
   const graphemes = (t) => [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(t)].map((x) => x.segment).filter((g) => g.trim() !== '');
   const pose = (el) => {
     const cs = getComputedStyle(el);
-    const t = cs.translate === 'none' ? [0, 0] : cs.translate.split(' ').map(parseFloat);
+    // `translate` calculé garde les pourcentages (largeur / hauteur de la boîte) : on les résout en px.
+    const t = cs.translate === 'none' ? [0, 0] : cs.translate.split(' ').map((v, i) => (v.endsWith('%') ? (parseFloat(v) / 100) * (i ? el.offsetHeight : el.offsetWidth) : parseFloat(v)));
     const m = new DOMMatrix().translateSelf(t[0] || 0, t[1] || 0);
     if (cs.rotate !== 'none') m.rotateSelf(parseFloat(cs.rotate));
     if (cs.scale !== 'none') { const s = cs.scale.split(' ').map(parseFloat); m.scaleSelf(s[0], s[1] ?? s[0]); }
@@ -48,7 +49,8 @@ const INIT = () => {
   };
   /** Animation finie de l'élément (CSS ou WAAPI), état de départ relevé en la mettant en pause à 0. */
   const anim = (el) => el.getAnimations().find((a) => Number.isFinite(a.effect.getComputedTiming().endTime));
-  const info = (a) => { const c = a.effect.getComputedTiming(); return { delay: c.delay, duration: c.duration, easing: flat(a.effect.getTiming().easing), props: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)))] }; };
+  /** La courbe d'`animation-timing-function` d'une CSSAnimation se lit sur les keyframes (`getTiming().easing` vaut toujours `linear`). */
+  const info = (a) => { const c = a.effect.getComputedTiming(); return { delay: c.delay, duration: c.duration, easing: flat(a.effect.getKeyframes()[0].easing), props: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)))] }; };
   window.__st = { ms, flat, raw, letters, words, graphemes, pose, anim, info };
 };
 
