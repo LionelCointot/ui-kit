@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject,
 import type { EChartsCoreOption } from '../echarts-registry';
 import { LcChartFrameComponent } from '../base/chart-frame.component';
 import { textStyle } from '../builders/shared';
+import { updateMotion } from '../theme/chart-motion';
 import { LcChartThemeService } from '../theme/chart-theme.service';
 import type { LcChartPointSelect, LcChartTable } from '../types';
 
@@ -45,7 +46,7 @@ export class LcChartComponent {
       backgroundColor: 'transparent',
       textStyle: textStyle(theme, theme.ink.muted),
       animation: !theme.reducedMotion,
-      animationDuration: 300,
+      ...updateMotion(theme),
       aria: { enabled: true, label: { description: this.ariaLabel() }, decal: { show: theme.patterns } },
       ...(options as object),
     } as EChartsCoreOption;

@@ -101,8 +101,10 @@ export function segmentLabel(part: ResolvedPart, valueFormat: LcValueFormat, for
 export function buildSegmentedBarOption(args: SegmentedBuildArgs): EChartsCoreOption {
   const { prepared, theme, format, valueFormat } = args;
   const tall = args.variant === 'tall';
+  // Segments d'une même barre : pas de décalage par rang (durée et courbe de mise à jour conservées).
+  const { animationDelayUpdate: _rankDelay, ...base } = baseOption(theme, args.summary, args.animate ?? true) as Record<string, unknown>;
   return {
-    ...baseOption(theme, args.summary, args.animate ?? true),
+    ...base,
     grid: { left: 0, right: 0, top: 0, bottom: 0 },
     tooltip: {
       ...tooltipBase(theme),

@@ -2,6 +2,7 @@ import { LC_DEFAULT_ICONS, LcFormatService, LcValueFormat, isoToLocalDate } from
 import type { LcCartesianData, LcChartTheme, LcChartValue, LcResolvedSeries, LcValueAxis } from '../types';
 import { escapeHtml } from './escape-html';
 import { LC_CHART_ROLE_ICONS, patternDecal, roleDecal, roleOutline } from './series-roles';
+import { updateMotion } from '../theme/chart-motion';
 
 export const GRID_BOTTOM = 32;
 export const GRID_LEFT = 56;
@@ -212,12 +213,11 @@ export function ariaOption(summary: string): object {
   return { enabled: true, label: { description: summary }, decal: { show: false } };
 }
 
-/** Options communes : animation courte, coupée sous mouvement réduit. */
+/** Options communes : animation (durées des tokens), coupée sous mouvement réduit. */
 export function baseOption(theme: LcChartTheme, summary: string, animate = true): object {
   return {
     animation: animate && !theme.reducedMotion,
-    animationDuration: 300,
-    animationDurationUpdate: 300,
+    ...updateMotion(theme),
     backgroundColor: 'transparent',
     textStyle: textStyle(theme, theme.ink.muted),
     aria: ariaOption(summary),

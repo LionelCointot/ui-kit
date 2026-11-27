@@ -20,7 +20,7 @@ const theme: LcChartTheme = {
   roles: roleColors,
   surface: '#fcfcfb', gridline: '#e1e0d9', axis: '#c3c2b7',
   ink: { primary: '#0b0b0b', secondary: '#52514e', muted: '#898781' }, markerColor: '#898781',
-  fontFamily: 'sans-serif', fontSize: 14, reducedMotion: false, patterns: false,
+  fontFamily: 'sans-serif', fontSize: 14, reducedMotion: false, motion: { sparklineMs: 300, updateMs: 300, staggerMs: 0 }, patterns: false,
 };
 
 const series = (id: string, extra: Partial<LcChartSeries> = {}): LcChartSeries => ({ id, label: id, values: [1, 2, 3], ...extra });

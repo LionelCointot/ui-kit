@@ -28,7 +28,10 @@ const { chromium } = require('playwright');
 const rejouer = (id) => ({ name: 'Rejouer', mode: 'anim', cat: `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")` });
 /** Déclencheur autre que « Rejouer » (quand « Rejouer » ne lance pas le mouvement) : côté story, l'élément porte `data-trigger`. `action` : 'click' (défaut), 'hover', { drag: dx } ou { key }. */
 const acting = (id, name, cat, action = 'click') => ({ name, mode: 'anim', action, cat, story: `[data-demo="${id}"] [data-trigger]` });
-const sampled = (id, name, cat, read, catTrigger) => ({ name, mode: 'raf', cat: catTrigger ?? `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")`, sampler: { cat, story: `[data-demo="${id}"] [data-sample]`, read } });
+/** `storyRead` : lecture côté story quand le rendu n'est pas celui du catalogue (ECharts, en SVG, anime par sa boucle rAF : ni CSS ni WAAPI) ; les unités diffèrent alors, seules les courbes normalisées se comparent. */
+const sampled = (id, name, cat, read, catTrigger, storyRead) => ({ name, mode: 'raf', cat: catTrigger ?? `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")`, sampler: { cat, story: `[data-demo="${id}"] [data-sample]`, read, ...(storyRead && { storyRead }) } });
+/** Déclencheur CSS/WAAPI du catalogue sans équivalent dans une story ECharts (aucune animation du navigateur) : le mouvement est comparé par le déclencheur échantillonné. */
+const catalogueOnly = (trigger, why) => ({ ...trigger, notInStory: why });
 const DEMOS = {
   d01: ['layout-page--animation', 'lc-page : titre lcSplitText'],
   d02: ['layout-page--animation', 'lc-page : trait sous le titre'],
@@ -44,9 +47,9 @@ const DEMOS = {
   d15: ['data-kpi-card--animation', 'lc-kpi-card : aucun effet au survol'],
   d16: ['data-kpi-card--animation', 'lc-kpi-card : lcFlash'],
   d17: ['feedback-status-badge--animation', 'lc-status-badge : aucun mouvement'],
-  d19: ['charts-sparkline--animation', 'lc-chart : sparkline 1 000 ms', [rejouer('d19'), sampled('d19', 'Rejouer (échantillonné)', '#d19s path.draw', 'css:stroke-dashoffset')]],
+  d19: ['charts-sparkline--animation', 'lc-chart : sparkline 1 000 ms', [catalogueOnly(rejouer('d19'), 'ECharts : tracé par clipPath en rAF, aucune animation CSS ; couvert par l\'échantillonnage'), sampled('d19', 'Rejouer (échantillonné)', '#d19s path.draw', 'css:stroke-dashoffset', undefined, 'echarts:clip-width')]],
   d21: ['feedback-progress-bar--animation', 'lc-timeline-bar, barres de lc-file-upload et lc-message-composer : lcFill'],
-  d24: ['charts-bar-chart--animation', 'lc-chart : re-calcul 480 ms, décalage 20 ms', [rejouer('d24'), sampled('d24', 'Changer la période (échantillonné)', '#d24svg rect', 'attr:height', '#d24btn')]],
+  d24: ['charts-bar-chart--animation', 'lc-chart : re-calcul 480 ms, décalage 20 ms', [catalogueOnly(rejouer('d24'), 'ECharts : entrée initiale des barres en rAF, aucune animation CSS ni WAAPI ; la story ne rejoue que le re-calcul'), sampled('d24', 'Changer la période (échantillonné)', '#d24svg rect', 'attr:height', '#d24btn', 'echarts:bar-height')]],
   d25: ['overlays-drawer--animation', 'lc-drawer'],
   d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur'],
   d28: ['navigation-menu--animation', 'lc-menu, liste de lc-combobox, calendriers : pop depuis l\'ancrage', [acting('d28', 'Ouvrir le menu', '#d28btn')]], // Rejouer du catalogue ouvre puis referme aussitôt (le clic hors du menu le ferme)
@@ -103,7 +106,10 @@ const finishScan = async ({ mode, sampler, scope }) => {
     for (let now = await frame(); now - t0 < MAX_MS; now = await frame()) {
       const el = document.querySelector(sampler.sel);
       if (el) {
-        const raw = sampler.read === 'text' ? el.textContent : sampler.read.startsWith('attr:') ? el.getAttribute(sampler.read.slice(5)) : getComputedStyle(el).getPropertyValue(sampler.read.slice(4));
+        // ECharts (SVG) : tracé de la ligne = largeur du clipPath le plus étroit (`M3 3l234 0…` ; celui de l'entrée s'ajoute à celui de la grille), barre = hauteur de la boîte du 1er tracé rempli.
+        const raw = sampler.read === 'echarts:clip-width' ? Math.min(...[...el.querySelectorAll('clipPath path')].map((p) => parseFloat(p.getAttribute('d')?.match(/l\s*(-?[\d.]+)/)?.[1])))
+          : sampler.read === 'echarts:bar-height' ? el.querySelector('svg > g path:not([fill="none"])')?.getBBox().height
+          : sampler.read === 'text' ? el.textContent : sampler.read.startsWith('attr:') ? el.getAttribute(sampler.read.slice(5)) : getComputedStyle(el).getPropertyValue(sampler.read.slice(4));
         const value = num(raw);
         if (value !== previous) { series.push([r3(now - t0), r3(value)]); previous = value; lastNew = now; }
       }
@@ -190,7 +196,7 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
   await page.locator(rootSel).first().scrollIntoViewIfNeeded().catch(() => {});
   if (!(await page.evaluate(settle))) throw new Error('animations finies encore en cours après 15 s, avant le déclencheur');
   const selector = catalogue ? trigger.cat : trigger.story;
-  const sampler = trigger.sampler ? { sel: catalogue ? trigger.sampler.cat : trigger.sampler.story, read: trigger.sampler.read } : null;
+  const sampler = trigger.sampler ? { sel: catalogue ? trigger.sampler.cat : trigger.sampler.story, read: catalogue ? trigger.sampler.read : (trigger.sampler.storyRead ?? trigger.sampler.read) } : null;
   const target = page.locator(selector).first();
   const action = trigger.action ?? 'click';
   if (action.key) await target.focus();
@@ -276,11 +282,12 @@ function timeAtProgress(raw) {
   });
 }
 
-function compareSeries(expected, got) {
+function compareSeries(expected, got, unitless) {
   if (got.length < 2) return [`échantillons en rAF : ${got.length} valeur(s) distincte(s)`];
   const [e, g] = [timeAtProgress(expected), timeAtProgress(got)];
+  console.log(`   rAF, temps à 25/50/75/100 % : story ${g.map((t) => t.toFixed(1)).join(' / ')} ms ; catalogue ${e.map((t) => t.toFixed(1)).join(' / ')} ms ; écart ${g.map((t, i) => (t - e[i]).toFixed(1)).join(' / ')} ms`);
   const problems = e.flatMap((t, i) => (near(t, g[i], 16.7) ? [] : [`temps à ${[25, 50, 75, 100][i]} % : ${g[i].toFixed(1)} ms attendu ${t.toFixed(1)} ms (±16,7)`]));
-  if (!near(expected.at(-1)[1], got.at(-1)[1], Math.abs(expected.at(-1)[1] - expected[0][1]) * 0.01)) problems.push(`valeur finale ${got.at(-1)[1]} attendu ${expected.at(-1)[1]}`);
+  if (!unitless && !near(expected.at(-1)[1], got.at(-1)[1], Math.abs(expected.at(-1)[1] - expected[0][1]) * 0.01)) problems.push(`valeur finale ${got.at(-1)[1]} attendu ${expected.at(-1)[1]}`);
   return problems;
 }
 
@@ -339,10 +346,11 @@ async function compare(browser, ids, self) {
     for (const [i, trigger] of entry.triggers.entries()) {
       const expected = fingerprint.triggers[i];
       if (!expected) { report(false, `CA-20 ${id} ${trigger.name}`, 'déclencheur sans empreinte'); continue; }
+      if (!self && trigger.notInStory) { console.log(`-- CA-20 ${id} ${trigger.name} non comparable : ${trigger.notInStory}`); continue; }
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
         const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = expected.animations ? compareAnimations(expected.animations, got.animations ?? []) : compareSeries(expected.series, got.series ?? []);
+        const problems = expected.animations ? compareAnimations(expected.animations, got.animations ?? []) : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead);
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {

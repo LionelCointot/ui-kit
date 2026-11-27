@@ -1,5 +1,6 @@
 import type { EChartsCoreOption } from 'echarts/core';
 import type { LcChartTheme, LcChartValue } from '../types';
+import { LC_CHART_EASING } from '../theme/chart-motion';
 import { SERIES_STROKE, ariaOption } from './shared';
 
 export interface SparklineBuildArgs {
@@ -16,7 +17,8 @@ export function buildSparklineOption(args: SparklineBuildArgs): EChartsCoreOptio
   const lastIndex = values.length - 1;
   return {
     animation: !theme.reducedMotion,
-    animationDuration: 300,
+    animationDuration: theme.motion.sparklineMs,
+    animationEasing: LC_CHART_EASING['draw'],
     backgroundColor: 'transparent',
     aria: ariaOption(args.summary),
     grid: { left: 4, right: 4, top: 4, bottom: 4 },
@@ -25,6 +27,7 @@ export function buildSparklineOption(args: SparklineBuildArgs): EChartsCoreOptio
     yAxis: { type: 'value', show: false, scale: true },
     series: [{
       type: 'line',
+      animationEasing: LC_CHART_EASING['draw'], // le défaut `linear` de la série l'emporte sur l'option globale
       data: [...values],
       showSymbol: args.showEndPoint,
       symbol: args.showEndPoint ? (_value: unknown, params: { dataIndex: number }) => (params.dataIndex === lastIndex ? 'circle' : 'none') : 'none',
