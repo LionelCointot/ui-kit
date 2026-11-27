@@ -21,6 +21,29 @@
   }
 }
 
+/* Pop des panneaux ancrés (menu, combobox, calendriers, toggletip) : fondu court et mouvement avec dépassement, deux animations distinctes.
+   --lc-pop-* posées par la règle des panneaux (ui-angular.css) ; --lc-pop-sign vaut -1 quand le panneau s'ouvre au-dessus. */
+@keyframes lc-pop-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lc-pop-move {
+  from {
+    translate: 0 calc(var(--lc-pop-sign, 1) * var(--lc-pop-offset));
+    scale: var(--lc-pop-scale);
+  }
+}
+
+/* Changement de mois du calendrier : les cellules arrivent du sens de la navigation (--lc-calendar-slide-sign : 1 suivant, -1 précédent). */
+@keyframes lc-calendar-slide {
+  from {
+    opacity: var(--lc-calendar-slide-opacity);
+    translate: calc(var(--lc-calendar-slide-sign, 1) * var(--lc-calendar-slide-offset)) 0;
+  }
+}
+
 /* Classe posée par [lcReveal] jusqu'à animationend. Délai = min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */
 .lc-reveal {
   --lc-reveal-x: 0px;

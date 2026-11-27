@@ -523,3 +523,40 @@ describe('calendar-panel, corrections après la QA', () => {
     expect(label()).toBe('janvier 1000');
   });
 });
+
+describe('calendar-panel, glissement du mois (T9c)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  it('aucun sens à l\'ouverture : la grille n\'glisse pas', async () => {
+    const { el } = await setup();
+    expect(el.querySelector('.lc-calendar__months')!.hasAttribute('data-slide')).toBe(false);
+  });
+
+  it('suivant puis précédent : le sens suit le bouton', async () => {
+    const { el, click } = await setup();
+    const months = () => el.querySelector('.lc-calendar__months')!.getAttribute('data-slide');
+    await click('.lc-calendar__nav--next');
+    expect(months()).toBe('next');
+    await click('.lc-calendar__nav:not(.lc-calendar__nav--next)');
+    expect(months()).toBe('prev');
+  });
+
+  it('au clavier, passer au mois suivant glisse aussi', async () => {
+    const { el, press } = await setup({ selection: { from: '2026-11-30', to: null } });
+    await press('ArrowRight');
+    expect(el.querySelector('.lc-calendar__months')!.getAttribute('data-slide')).toBe('next');
+  });
+
+  it('un changement de niveau ne glisse pas', async () => {
+    const { el, click } = await setup();
+    await click('.lc-calendar__nav--next');
+    await click('.lc-calendar__title');
+    expect(el.querySelector('.lc-calendar__months')!.hasAttribute('data-slide')).toBe(false);
+  });
+
+  it('chaque semaine porte son rang, pour le décalage par ligne', async () => {
+    const { el } = await setup();
+    const ranks = [...el.querySelectorAll<HTMLElement>('tbody tr')].map((tr) => tr.style.getPropertyValue('--lc-row'));
+    expect(ranks).toEqual(['0', '1', '2', '3', '4', '5']);
+  });
+});

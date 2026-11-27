@@ -9,8 +9,9 @@ import '../../../../tokens/dist/css/theme-dark.css';
 import '../../../../tokens/dist/css/base.css';
 import '../../../styles/ui-angular.css';
 import { StoryMotionNoticeComponent, commonArgTypes, fixedExample, replayable } from '@lc/storybook';
-import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { LcButtonComponent, LcRevealDirective, LcStaggerDirective } from '@lionelcointot/ui-angular';
 import { LcFormFieldComponent, LcDateInputComponent, LC_DATE_PICKER } from '@lionelcointot/ui-angular/forms';
+import { LcCalendarPanelComponent } from '../date-input/calendar-panel.component';
 
 @Component({
   selector: 'lc-date-input-demo',
@@ -39,7 +40,7 @@ class DateInputDemoComponent {
 const meta: Meta<LcDateInputComponent> = {
   title: 'Forms/Date input',
   component: LcDateInputComponent,
-  decorators: [moduleMetadata({ imports: [DateInputDemoComponent, LcDateInputComponent, LcFormFieldComponent, LcButtonComponent, StoryMotionNoticeComponent] })],
+  decorators: [moduleMetadata({ imports: [DateInputDemoComponent, LcDateInputComponent, LcFormFieldComponent, LcButtonComponent, LcCalendarPanelComponent, LcRevealDirective, LcStaggerDirective, StoryMotionNoticeComponent] })],
   args: {
     min: undefined, max: undefined, disabled: false, readonly: false, required: false, invalid: false, touched: false,
     size: 'medium', fillMode: 'solid', rounded: 'medium', ariaLabel: 'Date',
@@ -317,19 +318,58 @@ export class ExampleComponent {
   readonly date = signal<string | null>('2026-11-12');
 }`;
 
-/** The calendar fades in while moving down from the field (forced calendar mode), and fades out when it closes. "Rejouer" reopens it. */
+const AGENDA = ['10 h · Session A — Maren', '14 h · Revue client', '17 h 30 · Point équipe'];
+
+/**
+ * Three demos. The calendar of the field grows from it with a small overshoot while it fades in (forced calendar mode), and fades out when it closes.
+ * Below, a selected day does not move (no ring animation), while the list of the day, demo content, rises again in cascade. Last, the days slide
+ * in the direction of the month change, row after row. Each "Rejouer" starts its demo again.
+ */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] })],
   render: () => ({
-    props: { date: signal<string | null>('2026-11-12'), ...replayable({ play: (_later, root) => root.querySelector<HTMLElement>('button[aria-expanded]')?.click() }) },
+    props: {
+      date: signal<string | null>('2026-11-12'),
+      agenda: AGENDA,
+      field: replayable({ play: (_later, root) => root.querySelector<HTMLElement>('button[aria-expanded]')?.click() }),
+      list: replayable(),
+      // L'ancienne liste est remplacée d'un coup (comme dans le catalogue) : sans cela chaque ligne rejouerait sa sortie.
+      quiet: (root: HTMLElement) => root.querySelectorAll('li').forEach((item) => (item.style.animation = 'none')),
+      // Novembre 2026 couvre six semaines ; le mois suivant (cinq) puis le retour jouent les deux sens, 1,4 s d'écart.
+      months: replayable({
+        play: (later, root) => {
+          root.querySelector<HTMLElement>('.lc-calendar__nav--next')?.click();
+          later(1400, () => root.querySelector<HTMLElement>('.lc-calendar__nav:not(.lc-calendar__nav--next)')?.click());
+        },
+      }),
+    },
     template: `
       <lc-story-motion-notice />
-      <div #root style="max-width:20rem;min-height:28rem">
-        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
-        @for (key of keys(); track key) {
+      <div #fieldRoot style="max-width:20rem;min-height:28rem">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="field.replay(fieldRoot)">Rejouer</button>
+        @for (key of field.keys(); track key) {
           <lc-form-field label="Date de début"><lc-date-input [(value)]="date" /></lc-form-field>
         }
-      </div>`,
+      </div>
+      <section #listRoot data-demo="d41" style="margin-block-start:var(--lc-sys-space-8)">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="quiet(listRoot); list.replay(listRoot)">Rejouer</button>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-6);align-items:flex-start">
+          <lc-calendar-panel today="2026-11-19" [selection]="{ from: '2026-11-12', to: null }" />
+          @for (key of list.keys(); track key) {
+            <ul lcStagger style="margin:0;padding:0;list-style:none;display:grid;gap:var(--lc-sys-space-2)">
+              @for (item of agenda; track item) {
+                <li lcReveal>{{ item }}</li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+      <section #monthRoot data-demo="d61" style="margin-block-start:var(--lc-sys-space-8)">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="months.replay(monthRoot)">Rejouer</button>
+        @for (key of months.keys(); track key) {
+          <lc-calendar-panel today="2026-11-19" [selection]="{ from: '2026-11-12', to: null }" />
+        }
+      </section>`,
   }),
 };

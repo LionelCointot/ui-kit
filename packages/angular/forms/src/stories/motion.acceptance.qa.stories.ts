@@ -2,6 +2,7 @@ import { Component, input, signal } from '@angular/core';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective } from '@lionelcointot/ui-angular/navigation';
+import { LcToggletipComponent, LcToggletipDirective } from '@lionelcointot/ui-angular/overlay';
 import { LcComboboxComponent } from '../combobox/combobox.component';
 import { LcDateInputComponent } from '../date-input/date-input.component';
 import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
@@ -14,7 +15,7 @@ const CITIES = ['Amsterdam', 'Berlin', 'Bruxelles', 'Paris', 'Rome'];
 
 @Component({
   selector: 'lc-motion-panel',
-  imports: [LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective, LcComboboxComponent, LcDateInputComponent, LcDateRangeInputComponent],
+  imports: [LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective, LcComboboxComponent, LcDateInputComponent, LcDateRangeInputComponent, LcToggletipComponent, LcToggletipDirective],
   template: `<div [style]="place() === 'bottom' ? 'position:fixed;inset-inline:8px;inset-block-end:8px' : place() === 'middle' ? 'position:fixed;inset-inline:8px;inset-block-start:420px' : 'padding:8px'">
     @switch (control()) {
       @case ('menu') {
@@ -30,11 +31,15 @@ const CITIES = ['Amsterdam', 'Berlin', 'Bruxelles', 'Paris', 'Rome'];
       @case ('range') {
         <lc-date-range-input ariaLabel="Période" [(value)]="range" />
       }
+      @case ('toggletip') {
+        <button id="trigger" type="button" style="margin-inline-start:120px" [lcToggletip]="tip">Info</button>
+        <lc-toggletip #tip>Précision sur la valeur</lc-toggletip>
+      }
     }
   </div>`,
 })
 class MotionPanelComponent {
-  readonly control = input<'menu' | 'combobox' | 'date' | 'range'>('menu');
+  readonly control = input<'menu' | 'combobox' | 'date' | 'range' | 'toggletip'>('menu');
   readonly place = input<'top' | 'middle' | 'bottom'>('top');
   protected readonly cities = CITIES;
   protected readonly name = (city: string) => city;

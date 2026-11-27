@@ -127,6 +127,7 @@
     "enter-duration": { "$value": "{sys.duration.slow}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
     "enter-scale": { "$value": "{sys.motion.scale-pop}", "$type": "number" },
+    "enter-offset": { "$value": "-5px", "$type": "dimension", "$description": "Vertical start of the pop, towards the anchor (the sign flips when the panel opens above)." },
     "exit-duration": { "$value": "140ms", "$type": "duration" }
   },
   "toast": {
@@ -178,6 +179,7 @@
     "easing": { "$value": "{overlay.easing}", "$type": "cubicBezier" },
     "slide-offset": { "$value": "18px", "$type": "dimension" },
     "slide-duration": { "$value": "{sys.duration.enter}", "$type": "duration" },
+    "slide-opacity": { "$value": "0.14", "$type": "number", "$description": "Opacity of the cells at the start of a month change." },
     "row-stagger": { "$value": "30ms", "$type": "duration" }
   },
   "chart": {

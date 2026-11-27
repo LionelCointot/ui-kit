@@ -99,7 +99,7 @@ const MONDAY = '2026-11-02';
             }
           </div>
         }
-        <div class="lc-calendar__months" (mouseleave)="previewEnd.set(null)">
+        <div class="lc-calendar__months" [attr.data-slide]="slide()" (mouseleave)="previewEnd.set(null)">
           <div class="lc-calendar__row">
             @for (month of panels(); track month.id; let i = $index; let last = $last) {
               <div class="lc-calendar__header" [class.lc-calendar__month--full]="months() === 2 && level() !== 'day'">
@@ -141,7 +141,7 @@ const MONDAY = '2026-11-02';
                   }
                   <tbody>
                     @for (week of month.rows; track $index) {
-                      <tr role="row">
+                      <tr role="row" [style.--lc-row]="$index">
                         @for (cell of week; track $index) {
                           @if (cell) {
                             <td class="lc-calendar__day" role="gridcell" [attr.tabindex]="cell.iso.startsWith(activeKey()) ? 0 : -1"
@@ -243,6 +243,14 @@ export class LcCalendarPanelComponent {
       const held = previous?.value;
       const visible = untracked(() => this.mode() === 'range' && held && first >= held && first <= addMonths(held, this.months() - 1));
       return visible ? held! : first;
+    },
+  });
+  /** Sens du dernier changement de mois affiché (niveau des jours) ; `null` à l'ouverture et à un changement de niveau : la grille n'y glisse pas. */
+  protected readonly slide = linkedSignal<{ shown: string; level: LcCalendarLevel }, 'next' | 'prev' | null>({
+    source: () => ({ shown: this.shown(), level: this.level() }),
+    computation: (now, previous) => {
+      if (!previous || previous.source.level !== now.level || previous.source.shown === now.shown) return null;
+      return now.shown > previous.source.shown ? 'next' : 'prev';
     },
   });
   /** Début posé au premier clic, fin attendue (mode `range`). */
