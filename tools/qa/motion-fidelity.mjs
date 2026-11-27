@@ -320,21 +320,24 @@ function compareAnimations(expected, got, rows = false) {
 }
 
 /** Temps (ms) où la série atteint 25, 50, 75 et 100 % de sa variation, par interpolation. */
-function timeAtProgress(raw) {
-  const series = raw.length > 2 && raw[0][1] === raw.at(-1)[1] ? raw.slice(1) : raw; // 1re valeur lue avant la remise à zéro du compteur
+function timeAtProgress(raw, fromFirstMove = false) {
+  // 1re valeur lue avant la remise à zéro du compteur (au centième de l'amplitude près : un tracé ECharts relu à 237,0 puis 236,99 n'est pas « égal »)
+  const range = Math.max(...raw.map(([, v]) => v)) - Math.min(...raw.map(([, v]) => v));
+  const series = raw.length > 2 && Math.abs(raw[0][1] - raw.at(-1)[1]) <= 0.01 * range ? raw.slice(raw.findIndex(([, v]) => v === Math.min(...raw.map(([, x]) => x)))) : raw; // repart du point le plus bas (la remise à zéro), quel que soit le nombre de lectures avant elle
   const [v0, vN] = [series[0][1], series.at(-1)[1]];
+  const origin = fromFirstMove ? series[1][0] : 0; // d19 : le tracé d'ECharts naît dans Angular, une image après le clic ; on compte depuis le premier mouvement des deux côtés
   return [25, 50, 75, 100].map((p) => {
     const target = v0 + ((vN - v0) * p) / 100;
     const k = series.findIndex(([, v]) => (vN >= v0 ? v >= target : v <= target));
-    if (k <= 0) return series[Math.max(k, 0)][0];
+    if (k <= 0) return series[Math.max(k, 0)][0] - origin;
     const [t1, a] = series[k - 1], [t2, b] = series[k];
-    return t1 + ((t2 - t1) * (target - a)) / (b - a || 1);
+    return t1 + ((t2 - t1) * (target - a)) / (b - a || 1) - origin;
   });
 }
 
-function compareSeries(expected, got, unitless) {
+function compareSeries(expected, got, unitless, fromFirstMove = false) {
   if (got.length < 2) return [`échantillons en rAF : ${got.length} valeur(s) distincte(s)`];
-  const [e, g] = [timeAtProgress(expected), timeAtProgress(got)];
+  const [e, g] = [timeAtProgress(expected, fromFirstMove), timeAtProgress(got, fromFirstMove)];
   console.log(`   rAF, temps à 25/50/75/100 % : story ${g.map((t) => t.toFixed(1)).join(' / ')} ms ; catalogue ${e.map((t) => t.toFixed(1)).join(' / ')} ms ; écart ${g.map((t, i) => (t - e[i]).toFixed(1)).join(' / ')} ms`);
   const problems = e.flatMap((t, i) => (near(t, g[i], 16.7) ? [] : [`temps à ${[25, 50, 75, 100][i]} % : ${g[i].toFixed(1)} ms attendu ${t.toFixed(1)} ms (±16,7)`]));
   if (!unitless && !near(expected.at(-1)[1], got.at(-1)[1], Math.abs(expected.at(-1)[1] - expected[0][1]) * 0.01)) problems.push(`valeur finale ${got.at(-1)[1]} attendu ${expected.at(-1)[1]}`);
@@ -413,7 +416,7 @@ async function compare(browser, ids, self) {
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
         const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(expected.animations, got.animations ?? [], id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead);
+        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(expected.animations, got.animations ?? [], id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19');
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {
