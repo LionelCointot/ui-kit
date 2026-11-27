@@ -31,6 +31,26 @@
   }
 }
 
+/* Contenu projeté de la barre du haut (hors de l'encapsulation du shell) : même entrée que ses boutons, rang plafonné à 5 au-delà du 6e élément ;
+   il se contient dans la barre (replié sur plusieurs lignes, enfants rétrécissables) quelle que soit l'application. */
+.lc-shell__header-content > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lc-shell__header--entering .lc-shell__header-content > * {
+    animation: lc-topbar-enter var(--lc-topbar-enter-duration) var(--lc-sys-easing-out) backwards;
+    animation-delay: calc(var(--lc-topbar-enter-delay) + min(var(--lc-topbar-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-topbar-enter-stagger));
+  }
+
+  .lc-shell__header-content > :nth-child(2) { --lc-topbar-rank: 1; }
+  .lc-shell__header-content > :nth-child(3) { --lc-topbar-rank: 2; }
+  .lc-shell__header-content > :nth-child(4) { --lc-topbar-rank: 3; }
+  .lc-shell__header-content > :nth-child(5) { --lc-topbar-rank: 4; }
+  .lc-shell__header-content > :nth-child(n + 6) { --lc-topbar-rank: 5; }
+}
+
 @keyframes lc-leave {
   to {
     opacity: 0;
