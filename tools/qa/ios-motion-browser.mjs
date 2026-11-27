@@ -1,6 +1,6 @@
 // Acceptation navigateur de docs/specs/2026-11-mouvement-ios.md (Chromium, Storybook statique dist/storybook ; STORYBOOK_DIR pour une autre construction).
 //   node tools/qa/ios-motion-browser.mjs sheet|collapse|chips|overlays|misc|hover|all [...]
-//   sheet : CA-S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 F1 R1 · collapse : H1 H2 H3 H5 R1 · chips : H4 R1 · overlays : O1 O2 O3 R1 · misc : T1 C1 A1 R1 · hover : V1
+//   sheet : CA-24 (spec 2026-12-mouvement-v2, T9b) + CA-S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 F1 R1 · collapse : H1 H2 H3 H5 R1 · chips : H4 R1 · overlays : O1 O2 O3 R1 · misc : T1 C1 A1 R1 · hover : V1
 // Stories : QA/Overlays/iOS motion (overlay), QA/Motion/Data table, Layout/Disclosure, Navigation/Nav group, etc. Code de sortie 1 au moindre échec.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -33,7 +33,11 @@ const INIT = () => {
   Q.settle = async () => { await Q.raf(); await Promise.allSettled(document.getAnimations().map((a) => a.finished)); await Q.raf(); };
   Q.y = (el) => new DOMMatrix(getComputedStyle(el).transform).m42;
   Q.x = (el) => new DOMMatrix(getComputedStyle(el).transform).m41;
-  Q.anims = (el) => el.getAnimations({ subtree: true }).map((a) => ({ a, prop: a.transitionProperty ?? a.animationName, pseudo: a.effect.pseudoElement, el: a.effect.target, t: a.effect.getComputedTiming(), ease: a.effect.getTiming().easing }));
+  Q.anims = (el) => el.getAnimations({ subtree: true }).map((a) => ({ a, prop: a.transitionProperty ?? a.animationName, pseudo: a.effect.pseudoElement, el: a.effect.target, t: a.effect.getComputedTiming(), ease: a.effect.getTiming().easing, props: a.effect.getKeyframes().flatMap((k) => Object.keys(k)) }));
+  // Position verticale = transform (m42) + propriété individuelle `translate` : la spec laisse le choix (ADR 0011 : translate individuel pour l'entrée et la sortie).
+  Q.ty = (el) => { const cs = getComputedStyle(el); const tr = cs.translate === 'none' ? 0 : parseFloat(cs.translate.split(' ')[1] ?? '0'); return new DOMMatrix(cs.transform).m42 + tr; };
+  // Animations de glissement du <dialog> lui-même (CSS ou WAAPI) : durée, courbe (de l'effet, sinon de la première image clé), propriétés ; `a` est non énumérable (sérialisable).
+  Q.slide = (el) => el.getAnimations().filter((a) => !a.effect.pseudoElement && a.effect.target === el && a.effect.getKeyframes().some((k) => 'transform' in k || 'translate' in k)).map((a) => { const e = a.effect.getTiming().easing; const r = { duration: a.effect.getComputedTiming().duration, ease: e !== 'linear' ? e : (a.effect.getKeyframes()[0].easing ?? e), props: a.effect.getKeyframes().flatMap((k) => Object.keys(k)) }; Object.defineProperty(r, 'a', { value: a }); return r; });
   Q.at = (el, t) => { el.getAnimations({ subtree: true }).forEach((a) => { a.pause(); a.currentTime = t; }); };
   Q.reduced = (el) => Q.anims(el).every((x) => x.t.duration <= 0.01 && x.t.delay <= 0.01);
 };
@@ -41,7 +45,7 @@ const hand = (cs) => cs;
 async function open(ctx, id, args = '') {
   const page = await ctx.newPage(); const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(() => { window.__closeCalls = 0; const c = HTMLDialogElement.prototype.close; HTMLDialogElement.prototype.close = function (...a) { window.__closeCalls += 1; return c.apply(this, a); }; });
+  await page.addInitScript(() => { window.__closeCalls = 0; window.__pm = []; addEventListener('pointerdown', (e) => { window.__pid = e.pointerId; window.__ptype = e.pointerType; }, true); addEventListener('pointermove', (e) => window.__pm.push([e.timeStamp, e.clientY]), true); const c = HTMLDialogElement.prototype.close; HTMLDialogElement.prototype.close = function (...a) { window.__closeCalls += 1; return c.apply(this, a); }; });
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story${args}`);
   await page.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
   await page.evaluate(INIT); // les jetons de :root sont lus à l'appel (CSS chargé)
@@ -54,85 +58,136 @@ const ctxs = { phone: PHONE, desk: DESK, phoneReduced: { ...PHONE, reducedMotion
 const withCtx = async (name, fn) => { const c = await browser.newContext(ctxs[name]); try { await fn(c); } catch (e) { check(`${name} : exception`, false, String(e.message).split('\n')[0]); } finally { await c.close(); } };
 
 // ---------- lc-sheet autonome (story QA) ----------
+// Spec 2026-12-mouvement-v2, CA-24 (T9b) : valeurs 600 / 300 / 500 ms, coins 24 px, 92 dvh ; seuils 1/3 de la hauteur et 0,6 px/ms (constantes du code, pas des jetons) ;
+// ressort et élastique en lcAnimate ; voile = 1 − distance / hauteur. Les durées se lisent sur les animations réelles (CSS ou WAAPI), la position sur transform + translate.
 const SD = 'lc-sheet dialog';
 const SHEET_STORY = 'qa-overlays-ios-motion--overlays';
 const openSheet = async (page) => { await page.click('#qa-open-sheet'); await page.waitForFunction((s) => document.querySelector(s)?.open, SD); await page.evaluate(async () => { await window.Q.settle(); const d = document.querySelector('lc-sheet dialog'); for (const e of d.querySelectorAll('*')) { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); if (e.getAttribute('aria-hidden') === 'true' && Math.abs(r.width - 36) < 1 && Math.abs(r.height - 5) < 1) e.setAttribute('data-qa-handle', ''); if (/auto|scroll/.test(cs.overflowY) && e.scrollHeight > e.clientHeight + 1) e.setAttribute('data-qa-scroller', ''); } }); };
-const m42 = (page) => page.evaluate((s) => window.Q.y(document.querySelector(s)), SD);
+const m42 = (page) => page.evaluate((s) => window.Q.ty(document.querySelector(s)), SD);
 const centre = async (page, sel) => { const b = await page.locator(sel).first().boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
 async function drag(page, from, dy, ms, steps = 10) {
   await page.mouse.move(from.x, from.y); await page.mouse.down();
   for (let i = 1; i <= steps; i++) { await page.mouse.move(from.x, from.y + (dy * i) / steps); await page.waitForTimeout(ms / steps); }
 }
+/** Tire la poignée jusqu'à `to` px sous sa position de départ, à `v` px/ms : pointerdown réel, pointermove synthétiques aux horodatages maîtrisés (boucle dans la page, indépendante de la cadence d'images et de la charge : `page.mouse` fusionne les déplacements quand la machine est chargée). Rappelée, elle continue le même tirage. */
+async function pull(page, to, v) {
+  if (!(await page.evaluate(() => !!window.__drag))) { const h = await centre(page, '[data-qa-handle]'); await page.mouse.move(h.x, h.y); await page.mouse.down(); await page.evaluate((x) => { window.__drag = { x: x.x, y: x.y, at: 0 }; window.__pm.length = 0; }, h); }
+  await page.evaluate(async ({ to, v }) => {
+    const g = window.__drag, from = g.at, total = Math.abs(to - from) / v, n = Math.max(2, Math.ceil(total / 16)), t0 = performance.now(), el = document.querySelector('[data-qa-handle]');
+    for (let i = 1; i <= n; i++) {
+      const due = t0 + (total * i) / n, wait = due - performance.now();
+      if (wait > 6) await new Promise((r) => setTimeout(r, wait - 4));
+      while (performance.now() < due) { /* attente active : l'horodatage de l'événement est celui de sa création */ }
+      g.at = from + ((to - from) * i) / n;
+      el.dispatchEvent(new PointerEvent('pointermove', { pointerId: window.__pid, pointerType: window.__ptype, isPrimary: true, bubbles: true, cancelable: true, clientX: g.x, clientY: g.y + g.at, buttons: 1 }));
+    }
+  }, { to, v });
+}
+/** Relâche : pointerup synthétique à l'horodatage courant (le composant décide au relâchement), puis le bouton réel. */
+async function drop(page) {
+  await page.evaluate(() => { const g = window.__drag; window.__drag = null; document.querySelector('[data-qa-handle]').dispatchEvent(new PointerEvent('pointerup', { pointerId: window.__pid, pointerType: window.__ptype, isPrimary: true, bubbles: true, cancelable: true, clientX: g.x, clientY: g.y + g.at })); });
+  await page.mouse.up();
+}
 const closedCount = (page) => page.evaluate(() => window.__qa?.closed.length ?? 0);
 const isOpen = (page) => page.evaluate((s) => document.querySelector(s).open, SD);
+const veil = (page) => page.evaluate((s) => parseFloat(getComputedStyle(document.querySelector(s), '::backdrop').opacity), SD);
+/** Vitesse réelle du geste (px/ms sur les 100 dernières ms), lue sur les `timeStamp` des pointermove enregistrés par `open()` : elle ne dépend pas de la charge de la machine. */
+const speed = (page) => page.evaluate(() => { const p = window.__pm; const l = p.at(-1); const f = p.find((x) => l[0] - x[0] <= 100); return l[0] === f[0] ? 0 : (l[1] - f[1]) / (l[0] - f[0]); });
+/** Animations de glissement de la feuille (transform ou translate sur le <dialog> lui-même) : durée, courbe et amplitude, mesurées dans la page. */
+const SLIDE = () => window.Q.slide(document.querySelector('lc-sheet dialog'));
+const gone = (page, ms = 1200) => page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: ms }).then(() => true, () => false);
 
 async function sheet() {
   await withCtx('phone', async (c) => {
     const page = await open(c, SHEET_STORY);
-    const idx = await page.evaluate(() => fetch('index.json').then((r) => r.json()).catch(() => ({ entries: {} })));
-    const t = await page.evaluate(() => ({ enter: Q.ms('--lc-slide-enter-duration'), exit: Q.ms('--lc-slide-exit-duration'), normal: Q.ms('--lc-sys-duration-normal'), gap: Q.px('--lc-sheet-top-gap'), ratio: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-sheet-dismiss-ratio')) }));
-    check('CA-S0 jeton --lc-sheet-dismiss-ratio = 0.25', t.ratio === 0.25, String(t.ratio));
-    // CA-S0 : ouverture, Échap animé, focus rendu, closed une seule fois à la fin de la sortie.
-    await openSheet(page);
+    const t = await page.evaluate(() => ({ enter: Q.ms('--lc-sheet-enter-duration'), exit: Q.ms('--lc-sheet-exit-duration'), spring: Q.ms('--lc-sheet-spring-duration'), radius: Q.px('--lc-sheet-top-radius'), ratio: getComputedStyle(document.documentElement).getPropertyValue('--lc-sheet-dismiss-ratio').trim(), enterEase: Q.ease('--lc-sheet-enter-easing'), exitEase: Q.ease('--lc-sheet-exit-easing') }));
+    check('CA-24 jetons : ouverture 600 ms, fermeture 300 ms, ressort 500 ms, coins 24 px', t.enter === 600 && t.exit === 300 && t.spring === 500 && t.radius === 24, JSON.stringify(t));
+    check('CA-24 le seuil de fermeture est une constante du code : plus de jeton --lc-sheet-dismiss-ratio', t.ratio === '', t.ratio);
+    // CA-24 ouverture : durée, courbe et départ mesurés dans le même evaluate que le clic.
+    const op = await page.evaluate(async () => { const b = document.querySelector('#qa-open-sheet'); b.focus(); b.click(); await Q.raf(); const d = document.querySelector('lc-sheet dialog'); const s = Q.slide(d); const h = d.getBoundingClientRect().height; const y = Q.ty(d); const r = { s, h, y, bd: Q.anims(d).filter((x) => x.pseudo === '::backdrop').length }; await Q.settle(); return r; });
+    check('CA-24 ouverture : glissement en 600 ms (--lc-sheet-enter-duration), courbe --lc-sheet-enter-easing, départ hors écran', op.s.length > 0 && op.s.every((x) => near(x.duration, t.enter, 0.5) && x.ease === t.enterEase) && op.y > op.h * 0.5, JSON.stringify(op));
+    // CA-S0 : Échap animé, focus rendu, closed une seule fois à la fin de la sortie.
     check('CA-S0 ouverture : dialog.lc-sheet__dialog modal ouvert', await page.evaluate(() => document.querySelector('lc-sheet dialog.lc-sheet__dialog')?.open === true && document.querySelector('lc-sheet dialog').matches(':modal')));
     await page.keyboard.press('Escape'); // Chrome rend le 2e Échap sans activation non annulable : la double fermeture passe par la croix
     await page.evaluate(() => document.querySelector('lc-sheet dialog button[class*="close"]').click());
-    const mid = await page.evaluate(async () => { await Q.raf(); const d = document.querySelector('lc-sheet dialog'); return { closing: d.hasAttribute('data-closing'), open: d.open, closed: window.__qa?.closed.length ?? 0, y: Q.y(d), durs: Q.anims(d).filter((x) => x.prop === 'transform').map((x) => x.t.duration) }; });
-    check('CA-S0/S2 Échap : data-closing, encore ouverte, closed pas encore émis, descente en --lc-slide-exit-duration', mid.closing && mid.open && mid.closed === 0 && mid.durs.length > 0 && mid.durs.every((d) => near(d, t.exit, 0.5)), JSON.stringify(mid));
+    const mid = await page.evaluate(async () => { await Q.raf(); const d = document.querySelector('lc-sheet dialog'); return { closing: d.hasAttribute('data-closing'), open: d.open, closed: window.__qa?.closed.length ?? 0, s: Q.slide(d) }; });
+    check('CA-24 fermeture : data-closing, encore ouverte, closed pas encore émis, descente en 300 ms (--lc-sheet-exit-duration), courbe --lc-sheet-exit-easing', mid.closing && mid.open && mid.closed === 0 && mid.s.length > 0 && mid.s.every((x) => near(x.duration, t.exit, 0.5) && x.ease === t.exitEase), JSON.stringify(mid));
     await page.waitForFunction((s) => !document.querySelector(s).open, SD); await page.waitForTimeout(700);
     check('CA-S0/S7 closed émis une seule fois, close() appelé une seule fois (Échap puis croix)', (await closedCount(page)) === 1 && (await page.evaluate(() => window.__closeCalls)) === 1, `closed=${await closedCount(page)} close()=${await page.evaluate(() => window.__closeCalls)}`);
     check('CA-S0 focus rendu au bouton d’ouverture', await page.evaluate(() => document.activeElement?.id === 'qa-open-sheet'));
     // CA-S7 : rouvrir pendant la descente.
     await openSheet(page); await page.keyboard.press('Escape');
-    const re = await page.evaluate(async () => { const d = document.querySelector('lc-sheet dialog'); await Q.until(() => d.hasAttribute('data-closing')); await Q.raf(); Q.at(d, Q.ms('--lc-slide-exit-duration') / 2); const before = Q.y(d), h = d.getBoundingClientRect().height; document.querySelector('#qa-open-sheet').click(); await Q.raf(); Q.at(d, 0); return { before, after: Q.y(d), h, closing: d.hasAttribute('data-closing') }; });
+    const re = await page.evaluate(async () => { const d = document.querySelector('lc-sheet dialog'); await Q.until(() => d.hasAttribute('data-closing')); await Q.raf(); Q.at(d, Q.ms('--lc-sheet-exit-duration') / 2); const before = Q.ty(d), h = d.getBoundingClientRect().height; document.querySelector('#qa-open-sheet').click(); await Q.raf(); Q.at(d, 0); return { before, after: Q.ty(d), h, closing: d.hasAttribute('data-closing') }; });
     check('CA-S7 réouverture : repart de la position courante (± 5 %), data-closing retiré', re.before > 0 && Math.abs(re.after - re.before) <= 0.05 * re.h && !re.closing, JSON.stringify(re));
-    await page.evaluate(() => document.getAnimations().forEach((a) => a.play())); await page.waitForTimeout(900);
+    await page.evaluate(() => document.getAnimations().forEach((a) => a.play())); await page.waitForTimeout(1000);
     check('CA-S7 dialog.open === true à la fin, closed non émis', (await isOpen(page)) && (await closedCount(page)) === 1, `open=${await isOpen(page)} closed=${await closedCount(page)}`);
     await page.reload(); await page.waitForSelector('#storybook-root > *'); await page.evaluate(INIT); await page.waitForTimeout(400);
 
-    // CA-S3 : gestes.
+    // Gestes. Hauteur : le contenu (60 lignes) dépasse l'écran, la feuille vaut donc sa hauteur maximale.
     const H = async () => centre(page, '[data-qa-handle]');
     const dh = () => page.evaluate((s) => document.querySelector(s).getBoundingClientRect().height, SD);
+    const restart = async () => { if (!(await isOpen(page))) { await openSheet(page); await page.waitForTimeout(100); } await page.evaluate(() => { window.__pm.length = 0; }); };
     await openSheet(page); const height = await dh(); const h0 = await H();
+    const vh = await page.evaluate(() => innerHeight);
+    check('CA-24 hauteur maximale 92 dvh (contenu long)', near(height, 0.92 * vh, 1), `${height} / ${vh}`);
+    const corners = await page.evaluate((s) => { const cs = getComputedStyle(document.querySelector(s)); return ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(cs[`border${k}Radius`])); }, SD);
+    check('CA-24 coins hauts 24 px, bas droit', corners[0] === 24 && corners[1] === 24 && corners[2] === 0 && corners[3] === 0, JSON.stringify(corners));
     check('CA-S1/S3 poignée 36 × 5 px trouvée (aria-hidden)', await page.locator('[data-qa-handle]').count() === 1);
     await drag(page, h0, 100, 1000);
-    const dragging = await page.evaluate((s) => { const d = document.querySelector(s); const cs = getComputedStyle(d); return { y: Q.y(d), trans: cs.transitionDuration }; }, SD);
-    check('CA-S3 pendant le tirage : transform = doigt (± 1 px), sans transition', near(dragging.y, 100, 1.5) && dragging.trans.split(',').every((v) => parseFloat(v) === 0), JSON.stringify(dragging));
-    await page.mouse.up();
-    const back = await page.evaluate(async () => { const d = document.querySelector('lc-sheet dialog'); await Q.raf(); return { closing: d.hasAttribute('data-closing'), durs: Q.anims(d).filter((x) => x.prop === 'transform').map((x) => x.t.duration), normal: Q.ms('--lc-sys-duration-normal') }; });
-    await page.waitForTimeout(500);
-    check('CA-S3 < 25 % et lent : retour à 0 en 200 ms, reste ouverte', !back.closing && back.durs.every((d) => near(d, back.normal, 0.5)) && near(await m42(page), 0, 0.5) && (await isOpen(page)) && (await closedCount(page)) === 0, JSON.stringify(back));
-    await drag(page, await H(), -120, 400); const up = await m42(page); await page.mouse.up(); await page.waitForTimeout(400);
-    check('CA-S3 vers le haut : jamais au-delà de 0', up === 0 || up > -0.5, String(up));
+    const dragging = await page.evaluate((s) => { const d = document.querySelector(s); const cs = getComputedStyle(d); return { y: Q.ty(d), trans: cs.transitionDuration, anims: Q.slide(d).length }; }, SD);
+    check('CA-S3 pendant le tirage : transform = doigt (± 1 px), sans transition ni animation en cours', near(dragging.y, 100, 1.5) && dragging.trans.split(',').every((v) => parseFloat(v) === 0) && dragging.anims === 0, JSON.stringify(dragging));
+    await page.mouse.up(); await page.waitForTimeout(700);
+    // CA-24 : tirer de 31 % ramène, de 36 % ferme (lent : 0,15 px/ms). Voile mesuré à 25, 50 et 75 % : 1 − distance / hauteur (± 0,02).
+    await restart();
+    for (const frac of [0.25, 0.5, 0.75]) {
+      await pull(page, frac * height, 0.3); await page.evaluate(() => Q.raf()); await page.waitForTimeout(50);
+      const d = await m42(page), v = await veil(page);
+      check(`CA-24 voile à ${frac * 100} % : 1 − distance / hauteur (± 0,02)`, near(v, 1 - d / height, 0.02) && near(d, frac * height, 1.5), `voile=${v} distance=${d} hauteur=${height}`);
+    }
+    await drop(page); await gone(page, 1500); await page.waitForTimeout(600);
+    await restart(); const c0 = await closedCount(page); await pull(page, 0.31 * height, 0.15); const sp = await speed(page); await drop(page);
+    // Le ressort : l'animation de retour est mise en pause, puis balayée (déterministe, indépendant de la charge).
+    const back = await page.evaluate(async () => { const d = document.querySelector('lc-sheet dialog'); await Q.raf(); const s = Q.slide(d); if (!s.length) return { none: true, closing: d.hasAttribute('data-closing') }; const a = s[0].a; a.pause(); const dur = s[0].duration; const ys = []; for (let i = 0; i <= 200; i++) { a.currentTime = (dur * i) / 200; ys.push(Q.ty(d)); } return { none: false, props: s[0].props, dur, ease: s[0].ease, start: ys[0], end: ys.at(-1), min: Math.min(...ys), n: s.length }; });
+    check('CA-24 31 % (lent) ramène : animation de retour de 500 ms (--lc-sheet-spring-duration), courbe --lc-sheet-spring-easing', !back.none && near(back.dur, t.spring, 0.5) && back.ease === (await page.evaluate(() => Q.ease('--lc-sheet-spring-easing'))), JSON.stringify(back));
+    check('CA-5 le ressort n\'anime que transform ou translate', !back.none && back.props.filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)).every((k) => ['transform', 'translate'].includes(k)), JSON.stringify(back.props));
+    check('CA-24 le retour dépasse de 10 ± 3 % de la distance tirée, puis se pose à 0', !back.none && near(back.start, 0.31 * height, 2) && near(-back.min / back.start, 0.10, 0.03) && near(back.end, 0, 0.5), `départ=${back.start} min=${back.min} (dépassement ${(-back.min / back.start * 100).toFixed(1)} %) fin=${back.end}`);
+    await page.evaluate(() => document.getAnimations().forEach((a) => a.finish())); await page.waitForTimeout(700);
+    check(`CA-24 31 % de la hauteur (vitesse réelle ${sp.toFixed(2)} px/ms) : la feuille reste ouverte, closed non émis`, (await isOpen(page)) && near(await m42(page), 0, 0.5) && (await closedCount(page)) === c0, `open=${await isOpen(page)} closed=${await closedCount(page)}`);
+    await page.reload(); await page.waitForSelector('#storybook-root > *'); await page.evaluate(INIT); await page.waitForTimeout(400); // le balayage du ressort a manipulé les animations : page neuve pour la suite
+    await restart(); const c1 = await closedCount(page); await pull(page, 0.36 * height, 0.15); await drop(page);
+    check('CA-24 36 % de la hauteur (lent) : ferme, closed émis une fois de plus', (await gone(page, 1500)) && (await page.waitForTimeout(600), (await closedCount(page)) === c1 + 1), `open=${await isOpen(page)} closed=${await closedCount(page)}`);
+    // CA-24 : vitesse. Même distance (20 %, sous le tiers), seule la vitesse change : 0,45 px/ms ramène, 1,75 px/ms ferme.
+    for (const [v, closes] of [[0.45, false], [1.75, true]]) {
+      await restart(); await pull(page, 0.2 * height, v);
+      const real = await speed(page); await drop(page);
+      const shut = await gone(page, 1200);
+      check(`CA-24 geste à ${v} px/ms (mesuré ${real.toFixed(2)}) sur 20 % de la hauteur : ${closes ? 'ferme' : 'ramène'}`, shut === closes && near(real, v, 0.1 * v), `fermée=${shut} vitesse=${real}`);
+      if (!closes) await page.waitForTimeout(700);
+    }
+    // CA-24 : vers le haut, élastique quasi rigide.
+    await restart(); await pull(page, -160, 0.4); await page.evaluate(() => Q.raf()); await page.waitForTimeout(100);
+    const up = await m42(page); await drop(page); await page.waitForTimeout(700);
+    check('CA-24 tirer vers le haut de 160 px : la feuille bouge de moins de 1 px, reste ouverte', Math.abs(up) < 1 && (await isOpen(page)) && near(await m42(page), 0, 0.5), `déplacement=${up}`);
     const p = await H(); await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(300);
     check('CA-S3 toucher sans déplacement : rien ne ferme', (await isOpen(page)) && !(await page.evaluate((s) => document.querySelector(s).hasAttribute('data-closing'), SD)));
-    // Sans attente entre les pas : la vitesse mesurée ne dépend plus de la charge de la machine.
-    await drag(page, await H(), 60, 0, 4); await page.mouse.up(); await page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: 3000 }).catch(() => {});
-    check('CA-S3 < 25 % mais rapide (> 0,5 px/ms, ≥ 16 px) : ferme', !(await isOpen(page)), 'reste ouverte');
-    await page.reload(); await page.waitForSelector('#storybook-root > *'); await page.evaluate(INIT); await page.waitForTimeout(400);
-    await openSheet(page);
-    await drag(page, await H(), Math.round(height * 0.3), 1500, 15); await page.mouse.up();
-    await page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: 3000 }).catch(() => {});
-    check('CA-S3 > 25 % de la hauteur, lent : ferme, closed émis une fois', !(await isOpen(page)) && (await closedCount(page)) === 1, `open=${await isOpen(page)}`);
-    await openSheet(page); const hd = await centre(page, `${SD} header, ${SD} [class*="header"]`);
-    await drag(page, hd, Math.round(height * 0.3), 1500, 15); await page.mouse.up();
-    await page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: 3000 }).catch(() => {});
-    check('CA-S3 geste depuis l’en-tête : ferme', !(await isOpen(page)));
+    await restart(); const hd = await centre(page, `${SD} header, ${SD} [class*="header"]`);
+    await drag(page, hd, Math.round(0.4 * height), 1500, 15); await page.mouse.up();
+    check('CA-S3 geste depuis l’en-tête : ferme', await gone(page, 1500));
     // CA-S6 : pointercancel, perte de capture.
     for (const kind of ['pointercancel', 'lostpointercapture']) {
-      await openSheet(page); const hp = await H(); await drag(page, hp, 120, 300, 4);
-      await page.evaluate((k) => { const h = document.querySelector('[data-qa-handle]'); const target = h.closest('[class]') ?? h; if (k === 'lostpointercapture') for (const e of [h, h.parentElement, document.querySelector('lc-sheet dialog')]) try { e.releasePointerCapture(1); } catch {} else for (const e of [h, h.parentElement]) e.dispatchEvent(new PointerEvent(k, { pointerId: 1, bubbles: true, pointerType: 'mouse' })); }, kind);
-      await page.waitForTimeout(500); await page.mouse.up(); await page.waitForTimeout(300);
-      check(`CA-S6 ${kind} : retour à 0, feuille ouverte, rien d’émis`, near(await m42(page), 0, 0.5) && (await isOpen(page)) && (await closedCount(page)) === 2 + 0 + (kind === 'lostpointercapture' ? 0 : 0) || near(await m42(page), 0, 0.5) && (await isOpen(page)), `y=${await m42(page)} open=${await isOpen(page)}`);
+      await restart(); const hp = await H(); await drag(page, hp, 120, 300, 4);
+      await page.evaluate((k) => { const h = document.querySelector('[data-qa-handle]'); if (k === 'lostpointercapture') for (const e of [h, h.parentElement, document.querySelector('lc-sheet dialog')]) try { e.releasePointerCapture(1); } catch {} else for (const e of [h, h.parentElement]) e.dispatchEvent(new PointerEvent(k, { pointerId: 1, bubbles: true, pointerType: 'mouse' })); }, kind);
+      await page.waitForTimeout(800); await page.mouse.up(); await page.waitForTimeout(300);
+      check(`CA-S6 ${kind} : retour à 0, feuille ouverte`, near(await m42(page), 0, 0.5) && (await isOpen(page)), `y=${await m42(page)} open=${await isOpen(page)}`);
       await page.keyboard.press('Escape'); await page.waitForFunction((s) => !document.querySelector(s).open, SD);
     }
-    // CA-S4 : défilement tactile du corps.
+    // CA-24 : glisser dans le corps défile sans déplacer la feuille (geste tactile).
     await openSheet(page);
     const s4 = await page.evaluate(() => { const s = document.querySelector('[data-qa-scroller]'); const h = document.querySelector('[data-qa-handle]'); const head = document.querySelector('lc-sheet dialog header, lc-sheet dialog [class*="header"]'); const ta = (e) => { for (let n = e; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).touchAction === 'none') return 'none'; return 'auto'; }; const r = s.getBoundingClientRect(); return { has: !!s, ta: ta(s), handle: ta(h) === 'none', head: head ? ta(head) : 'absent', x: r.x + r.width / 2, y: r.y + r.height / 2, top: s.scrollTop }; });
     const cdp = await c.newCDPSession(page); const tp = (type, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: s4.x, y }] });
     await tp('touchStart', s4.y + 100); for (let i = 1; i <= 10; i++) { await tp('touchMove', s4.y + 100 - 20 * i); await page.waitForTimeout(16); } await tp('touchEnd', 0); await page.waitForTimeout(500);
-    const s4b = await page.evaluate(() => ({ top: document.querySelector('[data-qa-scroller]').scrollTop, y: Q.y(document.querySelector('lc-sheet dialog')) }));
-    check('CA-S4 geste tactile dans la liste : scrollTop augmente, feuille à 0', s4.has && s4b.top > s4.top && s4b.y === 0, JSON.stringify({ s4, s4b }));
+    const s4b = await page.evaluate(() => ({ top: document.querySelector('[data-qa-scroller]').scrollTop, y: Q.ty(document.querySelector('lc-sheet dialog')) }));
+    check('CA-24 glisser dans le corps : scrollTop change, la feuille ne bouge pas', s4.has && s4b.top > s4.top && Math.abs(s4b.y) < 0.5, JSON.stringify({ s4, s4b }));
     check('CA-S4 touch-action: none sur poignée et en-tête seulement', s4.ta !== 'none' && s4.handle && s4.head === 'none', JSON.stringify(s4));
     // CA-S8 à 360 px : le clic sur le fond ne ferme pas.
     await page.mouse.click(180, 5); await page.waitForTimeout(500);
@@ -145,30 +200,30 @@ async function sheet() {
   await withCtx('phone', async (c) => {
     const page = await open(c, 'qa-motion-data-table--table');
     const F = 'button[id$="-filters"]';
-    const state = () => page.evaluate(async (s) => { const d = document.querySelector(s); await Q.until(() => d.hasAttribute('data-closing') || !d.open, 1000); await Q.raf(); return { closing: d.hasAttribute('data-closing'), open: d.open, y: Q.y(d), durs: Q.anims(d).filter((x) => x.prop === 'transform' && x.el === d && !x.pseudo).map((x) => x.t.duration) }; }, SD); // la feuille seule : le chevron d’une section dépliée (500 ms) n’est pas la sortie
-    const t = await page.evaluate(() => ({ enter: Q.ms('--lc-slide-enter-duration'), exit: Q.ms('--lc-slide-exit-duration'), gap: Q.px('--lc-sheet-top-gap'), radius: Q.px('--lc-sheet-radius'), bd: Q.probe('background:var(--lc-sys-color-backdrop)', 'backgroundColor') }));
+    const state = () => page.evaluate(async (s) => { const d = document.querySelector(s); await Q.until(() => d.hasAttribute('data-closing') || !d.open, 1000); await Q.raf(); return { closing: d.hasAttribute('data-closing'), open: d.open, y: Q.ty(d), durs: Q.slide(d).map((x) => x.duration) }; }, SD); // la feuille seule : le chevron d’une section dépliée n’est pas la sortie
+    const t = await page.evaluate(() => ({ enter: Q.ms('--lc-sheet-enter-duration'), exit: Q.ms('--lc-sheet-exit-duration'), radius: Q.px('--lc-sheet-top-radius'), bd: Q.probe('background:var(--lc-sys-color-backdrop)', 'backgroundColor') }));
     check('CA-S0 lc-data-table : plus de <dialog> propre, la fermeture est le bouton texte « Annuler »', await page.evaluate(() => !document.querySelector('dialog.lc-data-table__panel') && document.querySelector('lc-data-table lc-sheet dialog button.lc-sheet__close')?.textContent.trim() === 'Annuler' ));
     await page.evaluate(async (f) => { document.querySelector(f).click(); await Q.raf(); }, F);
-    const e = await page.evaluate((s) => { const d = document.querySelector(s); const r0 = d.getBoundingClientRect(); const a = Q.anims(d); Q.at(d, 0); const cs = getComputedStyle(d); const r = d.getBoundingClientRect(); const bd = a.filter((x) => x.pseudo === '::backdrop'); const hd = [...d.querySelectorAll('[aria-hidden="true"]')].find((x) => Math.abs(x.getBoundingClientRect().width - 36) < 1); const bg = getComputedStyle(d, '::backdrop').backgroundColor; return { y0: Q.y(d), h: r.height, tr: a.filter((x) => x.prop === 'transform' && !x.pseudo).map((x) => x.t.duration), bdAnim: bd.some((x) => x.prop === 'opacity'), bg, hd: !!hd, vh: innerHeight, r0 }; }, SD);
+    const e = await page.evaluate((s) => { const d = document.querySelector(s); const a = Q.anims(d); const sl = Q.slide(d); Q.at(d, 0); const r = d.getBoundingClientRect(); const bd = a.filter((x) => x.pseudo === '::backdrop'); const hd = [...d.querySelectorAll('[aria-hidden="true"]')].find((x) => Math.abs(x.getBoundingClientRect().width - 36) < 1); const bg = getComputedStyle(d, '::backdrop').backgroundColor; return { y0: Q.ty(d), h: r.height, tr: sl.map((x) => x.duration), bdAnim: bd.some((x) => x.prop === 'opacity' || x.props?.includes('opacity')), bg, hd: !!hd, vh: innerHeight }; }, SD);
     await page.evaluate(() => document.getAnimations().forEach((a) => a.finish())); await page.waitForTimeout(100);
-    const g = await page.evaluate((s) => { const d = document.querySelector(s); const r = d.getBoundingClientRect(); const cs = getComputedStyle(d); return { top: r.top, bottom: r.bottom, tl: parseFloat(cs.borderTopLeftRadius), tr: parseFloat(cs.borderTopRightRadius), bl: parseFloat(cs.borderBottomLeftRadius), tableTop: document.querySelector('.lc-data-table__scroll, lc-data-table').getBoundingClientRect().top }; }, SD);
-    check('CA-S1 ancrée en bas, haut à --lc-sheet-top-gap (± 1), coins hauts arrondis, bas droit', near(g.bottom, e.vh, 1) && near(g.top, t.gap, 1) && near(g.tl, t.radius, 0.5) && near(g.tr, t.radius, 0.5) && g.bl === 0, JSON.stringify({ g, t }));
+    const g = await page.evaluate((s) => { const d = document.querySelector(s); const r = d.getBoundingClientRect(); const cs = getComputedStyle(d); return { top: r.top, bottom: r.bottom, h: r.height, tl: parseFloat(cs.borderTopLeftRadius), tr: parseFloat(cs.borderTopRightRadius), bl: parseFloat(cs.borderBottomLeftRadius), tableTop: document.querySelector('.lc-data-table__scroll, lc-data-table').getBoundingClientRect().top }; }, SD);
+    check('CA-S1/CA-24 ancrée en bas, hauteur ≤ 92 dvh, coins hauts 24 px (--lc-sheet-top-radius), bas droit', near(g.bottom, e.vh, 1) && g.h <= 0.92 * e.vh + 1 && near(g.tl, t.radius, 0.5) && near(g.tr, t.radius, 0.5) && g.tl === 24 && g.bl === 0, JSON.stringify({ g, t }));
     check('CA-S1 poignée présente ; le tableau reste au-dessus de la feuille', e.hd && g.tableTop < g.top, JSON.stringify({ hd: e.hd, tableTop: g.tableTop, top: g.top }));
-    check('CA-S1 entrée : translateY 100 % → 0 en --lc-slide-enter-duration', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)), JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
+    check('CA-S1/CA-24 entrée : translateY 100 % → 0 en --lc-sheet-enter-duration (600 ms)', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)) && t.enter === 600, JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
     check('CA-S1 fond ::backdrop = --lc-sys-color-backdrop, en fondu', e.bg === t.bd && e.bdAnim, JSON.stringify({ bg: e.bg, attendu: t.bd, fondu: e.bdAnim }));
     // CA-S9 à 360 px : « Annuler » en tête de l’en-tête, avant le titre ; sans icône ni aria-label ; autofocus.
     const s9 = await page.evaluate((s) => { const d = document.querySelector(s); const h = d.querySelector('.lc-sheet__header'); const b = h.firstElementChild; const title = h.querySelector('.lc-sheet__title'); return { first: b.matches('button.lc-sheet__close'), text: b.textContent.trim(), icon: !!b.querySelector('svg, lc-icon, img'), label: b.getAttribute('aria-label'), before: !!(b.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING), auto: b.hasAttribute('autofocus'), focused: document.activeElement === b, left: b.getBoundingClientRect().left < title.getBoundingClientRect().left }; }, SD);
     check('CA-S9 360 px : premier élément de l’en-tête = bouton « Annuler », avant le titre, sans icône ni aria-label, autofocus', s9.first && s9.text === 'Annuler' && !s9.icon && s9.label === null && s9.before && s9.left && s9.auto && s9.focused, JSON.stringify(s9));
     check('CA-S9 nom accessible « Annuler » (un seul bouton de ce nom dans la feuille)', (await page.locator(SD).getByRole('button', { name: 'Annuler', exact: true }).count()) === 1);
-    // CA-S2 : trois fermetures.
+    // CA-S2 : trois fermetures, toutes en 300 ms.
     const pick = async () => { await page.locator(`${SD} .lc-data-table__section-toggle`).first().click(); await page.locator(`${SD} label.lc-column-filter__option input`).first().check(); };
     const ways = { croix: () => page.click(`${SD} button.lc-sheet__close`), echap: () => page.keyboard.press('Escape'), 'Afficher N': async () => { await pick(); await page.click('.lc-data-table__panel-apply'); } };
     for (const [name, fire] of Object.entries(ways)) {
-      if (!(await page.evaluate((s) => document.querySelector(s).open, SD))) { await page.click(F); await page.waitForFunction((s) => document.querySelector(s).open, SD); await page.waitForTimeout(700); }
+      if (!(await page.evaluate((s) => document.querySelector(s).open, SD))) { await page.click(F); await page.waitForFunction((s) => document.querySelector(s).open, SD); await page.waitForTimeout(900); }
       const n0 = await page.evaluate(() => (window.__emitted ?? []).length);
       await fire(); const s = await state(); await page.waitForFunction((x) => !document.querySelector(x).open, SD, { timeout: 3000 }).catch(() => {});
       const n1 = await page.evaluate(() => (window.__emitted ?? []).length);
-      check(`CA-S2 ${name} : data-closing, descente en --lc-slide-exit-duration, puis fermée`, s.closing && s.open && s.durs.length > 0 && s.durs.every((d) => near(d, t.exit, 0.5)) && !(await page.evaluate((x) => document.querySelector(x).open, SD)), JSON.stringify(s));
+      check(`CA-S2/CA-24 ${name} : data-closing, descente en 300 ms (--lc-sheet-exit-duration), puis fermée`, s.closing && s.open && s.durs.length > 0 && s.durs.every((d) => near(d, t.exit, 0.5)) && t.exit === 300 && !(await page.evaluate((x) => document.querySelector(x).open, SD)), JSON.stringify(s));
       check(`CA-S2 ${name} : ${name === 'Afficher N' ? 'filtres émis' : 'rien d’émis'}, focus sur « Filtres »`, (name === 'Afficher N' ? n1 > n0 : n1 === n0) && (await page.evaluate(() => document.activeElement?.id.endsWith('-filters'))), `émis ${n0}→${n1}`);
     }
     await c.close();
@@ -184,32 +239,37 @@ async function sheet() {
     await page.close();
   });
 
-  // CA-S8 : carte centrée à 1280 px.
+  // CA-24 « sur grand écran, carte inchangée » (CA-S8) : même carte qu'avant (largeur, coins, sans poignée, fond qui ferme), animée aux jetons de la feuille.
   await withCtx('desk', async (c) => {
     const page = await open(c, SHEET_STORY);
-    const t = await page.evaluate(() => ({ w: Q.px('--lc-sheet-card-width'), mh: Q.px('--lc-sheet-card-max-height'), enter: Q.ms('--lc-slide-enter-duration'), exit: Q.ms('--lc-slide-exit-duration') }));
+    const t = await page.evaluate(() => ({ w: Q.px('--lc-sheet-card-width'), mh: Q.px('--lc-sheet-card-max-height'), enter: Q.ms('--lc-sheet-enter-duration'), exit: Q.ms('--lc-sheet-exit-duration') }));
     await page.click('#qa-open-sheet'); await page.waitForFunction((s) => document.querySelector(s).open, SD);
-    const e = await page.evaluate(async (s) => { const d = document.querySelector(s); await Q.raf(); const a = Q.anims(d).filter((x) => !x.pseudo); const r = ['opacity', 'transform'].map((p) => a.some((x) => x.prop === p && Math.abs(x.t.duration - Q.ms('--lc-slide-enter-duration')) < 0.5)); await Q.settle(); return { r, anim: r }; }, SD);
+    const e = await page.evaluate(async (s) => { const d = document.querySelector(s); await Q.raf(); const a = Q.anims(d).filter((x) => !x.pseudo); const en = Q.ms('--lc-sheet-enter-duration'); const r = [(x) => x.prop === 'opacity' || x.props?.includes('opacity'), (x) => /transform|translate/.test(x.prop ?? '') || x.props?.some((p) => /transform|translate/.test(p))].map((f) => a.some((x) => f(x) && Math.abs(x.t.duration - en) < 0.5)); await Q.settle(); return { r }; }, SD);
     const g = await page.evaluate((s) => { const d = document.querySelector(s); const b = d.getBoundingClientRect(); const cs = getComputedStyle(d); const sc = [...d.querySelectorAll('*')].find((x) => /auto|scroll/.test(getComputedStyle(x).overflowY) && x.scrollHeight > x.clientHeight + 1); const hd = [...d.querySelectorAll('[aria-hidden="true"]')].some((x) => Math.abs(x.getBoundingClientRect().width - 36) < 1 && Math.abs(x.getBoundingClientRect().height - 5) < 1 && getComputedStyle(x).display !== 'none'); return { w: b.width, cx: b.x + b.width / 2, cy: b.y + b.height / 2, h: b.height, rad: ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(cs[`border${k}Radius`])), scrolls: !!sc, handle: hd, vw: innerWidth, vh: innerHeight }; }, SD);
-    check('CA-S8 carte : largeur --lc-sheet-card-width, quatre coins arrondis, sans poignée', near(g.w, t.w, 1) && g.rad.every((r) => r > 0) && !g.handle, JSON.stringify({ g, t }));
-    check('CA-S8 carte centrée à l’écran (± 1 px) en contenu long : hauteur ≤ --lc-sheet-card-max-height, le corps défile', near(g.cx, g.vw / 2, 1) && near(g.cy, g.vh / 2, 1) && g.h <= t.mh + 1 && g.scrolls, JSON.stringify({ g, mh: t.mh }));
-    check('CA-S8 entrée en translation et fondu, durée --lc-slide-enter-duration', e.r[0] && e.r[1], JSON.stringify(e));
+    check('CA-S8/CA-24 carte : largeur --lc-sheet-card-width, quatre coins arrondis, sans poignée', near(g.w, t.w, 1) && g.rad.every((r) => r > 0) && !g.handle, JSON.stringify({ g, t }));
+    check('CA-S8/CA-24 carte centrée à l’écran (± 1 px) en contenu long : hauteur ≤ --lc-sheet-card-max-height, le corps défile', near(g.cx, g.vw / 2, 1) && near(g.cy, g.vh / 2, 1) && g.h <= t.mh + 1 && g.scrolls, JSON.stringify({ g, mh: t.mh }));
+    check('CA-S8/CA-24 entrée de la carte en translation et fondu, durée --lc-sheet-enter-duration', e.r[0] && e.r[1], JSON.stringify(e));
     await page.mouse.click(10, 10);
-    const s = await page.evaluate(async (x) => { await Q.raf(); const d = document.querySelector(x); const a = Q.anims(d).filter((y) => !y.pseudo); return { closing: d.hasAttribute('data-closing'), props: a.map((y) => y.prop), durs: a.map((y) => y.t.duration), exit: Q.ms('--lc-slide-exit-duration') }; }, SD);
+    const s = await page.evaluate(async (x) => { await Q.raf(); const d = document.querySelector(x); const a = Q.anims(d).filter((y) => !y.pseudo); return { closing: d.hasAttribute('data-closing'), props: a.flatMap((y) => y.props ?? [y.prop]), durs: a.map((y) => y.t.duration), exit: Q.ms('--lc-sheet-exit-duration') }; }, SD);
     await page.waitForFunction((x) => !document.querySelector(x).open, SD, { timeout: 3000 }).catch(() => {}); await page.waitForTimeout(600);
-    check('CA-S8 1 280 px : clic sur le fond ferme (sortie translation + fondu en --lc-slide-exit-duration), closed émis une fois', s.closing && s.props.includes('transform') && s.props.includes('opacity') && s.durs.every((d) => near(d, s.exit, 0.5)) && !(await isOpen(page)) && (await closedCount(page)) === 1, JSON.stringify(s));
+    check('CA-S8/CA-24 1 280 px : clic sur le fond ferme (sortie translation + fondu en --lc-sheet-exit-duration), closed émis une fois', s.closing && s.props.some((p) => /transform|translate/.test(p)) && s.props.includes('opacity') && s.durs.every((d) => near(d, s.exit, 0.5)) && !(await isOpen(page)) && (await closedCount(page)) === 1, JSON.stringify(s));
     await page.close();
   });
 
   // CA-S5, CA-R1 (feuille), CA-F1.
   await withCtx('phoneReduced', async (c) => {
     const page = await open(c, SHEET_STORY); await openSheet(page);
-    const r = await page.evaluate(() => { const d = document.querySelector('lc-sheet dialog'); return { anim: Q.reduced(d), td: getComputedStyle(d).transitionDuration, y: Q.y(d) }; });
-    check('CA-S5/R1 ouverture : aucune animation > 0,01 ms, état final atteint', r.anim && r.y === 0 && r.td.split(',').every((v) => parseFloat(v) * (v.trim().endsWith('ms') ? 1 : 1000) <= 0.01), JSON.stringify(r));
+    const r = await page.evaluate(() => { const d = document.querySelector('lc-sheet dialog'); return { anim: Q.reduced(d), td: getComputedStyle(d).transitionDuration, y: Q.ty(d) }; });
+    check('CA-S5/R1/CA-3 ouverture : aucune animation > 0,01 ms, état final atteint', r.anim && r.y === 0 && r.td.split(',').every((v) => parseFloat(v) * (v.trim().endsWith('ms') ? 1 : 1000) <= 0.01), JSON.stringify(r));
     const h = await centre(page, '[data-qa-handle]'); await drag(page, h, 260, 1200, 12);
     check('CA-S5 le geste suit le doigt malgré la réduction', near(await m42(page), 260, 1.5), String(await m42(page)));
     await page.mouse.up(); await page.waitForFunction((s) => !document.querySelector(s).open, SD, { timeout: 1500 }).catch(() => {});
-    check('CA-S5 fermeture par geste sans animation de fin (fermée en < 1,5 s, aucune animation)', !(await isOpen(page)) && (await page.evaluate(() => document.getAnimations().every((a) => a.effect.getComputedTiming().duration <= 0.01))), JSON.stringify(await page.evaluate(() => ({ open: document.querySelector('lc-sheet dialog').open, anims: document.getAnimations().map((a) => [a.transitionProperty ?? a.animationName, a.effect.getComputedTiming().duration]) }))));
+    check('CA-S5/CA-3 fermeture par geste sans animation de fin (fermée en < 1,5 s, aucune animation)', !(await isOpen(page)) && (await page.evaluate(() => document.getAnimations().every((a) => a.effect.getComputedTiming().duration <= 0.01))), JSON.stringify(await page.evaluate(() => ({ open: document.querySelector('lc-sheet dialog').open, anims: document.getAnimations().map((a) => [a.transitionProperty ?? a.animationName, a.effect.getComputedTiming().duration]) }))));
+    // Retour au repos (31 %) sous mouvement réduit : immédiat, sans ressort.
+    await openSheet(page); const hh = await page.evaluate((s) => document.querySelector(s).getBoundingClientRect().height, SD);
+    await drag(page, await centre(page, '[data-qa-handle]'), Math.round(0.31 * hh), 1200, 12); await page.mouse.up(); await page.evaluate(() => Q.raf()); await page.evaluate(() => Q.raf());
+    const rb = await page.evaluate(() => { const d = document.querySelector('lc-sheet dialog'); return { y: Q.ty(d), open: d.open, running: document.getAnimations().filter((a) => a.playState === 'running' || a.pending).length }; });
+    check('CA-3 31 % sous mouvement réduit : retour immédiat à 0, aucune animation en cours', rb.open && Math.abs(rb.y) < 0.5 && rb.running === 0, JSON.stringify(rb));
     await page.close();
   });
   await withCtx('phoneForced', async (c) => {
