@@ -2215,9 +2215,9 @@ splitTitle($('#d02s .big-title'), 'Rapports');
 R.d02 = () => replay($('#d02s'), 'is-split');
 
 /* ---------- d03 · Chorégraphie STUDIO ---------- */
-function playCounters(root, delay) {
+function playCounters(root, delay, dur) {
   setTimeout(() => {
-    $$('[data-cu]', root).forEach(el => countUp(el, +el.dataset.cu));
+    $$('[data-cu]', root).forEach(el => countUp(el, +el.dataset.cu, { dur }));
     $$('[data-cu-eur]', root).forEach(el => countUp(el, +el.dataset.cuEur, { fmt: frEUR }));
     $$('[data-cu-pct]', root).forEach(el => countUp(el, +el.dataset.cuPct, { fmt: n => Math.round(n) + ' %' }));
   }, T(delay));
@@ -2547,7 +2547,7 @@ R.d12 = () => d12.next();
 })();
 
 /* ---------- d14 · Count-up KPI ---------- */
-R.d14 = () => playCounters($('#d14s'), 0);
+R.d14 = () => playCounters($('#d14s'), 0, 1200); /* lcCountUp : 1,2 s (talmo-source.md) */
 
 /* ---------- d15 · Hover KPI ---------- */
 (function () {
