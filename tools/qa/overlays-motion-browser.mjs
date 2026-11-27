@@ -108,7 +108,7 @@ for (const [way, button] of [['souris', '#qa-open-dialog'], ['clavier', '#qa-ope
   await page.waitForTimeout(1200);
   const rows = await page.evaluate(() => [...window.__rows.values()]);
   const byRow = [0, 1, 2, 3].map((i) => rows.filter((x) => x.i === i));
-  check('Tiroir : chaque ligne s\'anime en 450 ms avec un décalage de 40 ms par rang', byRow.every((l, i) => l.some((x) => near(x.duration, 450) && near(x.delay, i * 40))), JSON.stringify(rows));
+  check('Tiroir : chaque ligne s\'anime en 550 ms (lcReveal, spec v2 §13 : alignement Talmo) avec un décalage de 40 ms par rang', byRow.every((l, i) => l.some((x) => near(x.duration, 550) && near(x.delay, i * 40))), JSON.stringify(rows));
   check('Tiroir : sans erreur de page', errors.length === 0, errors.join(' ; '));
   await context.close();
 }

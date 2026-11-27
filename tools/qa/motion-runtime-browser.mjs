@@ -56,7 +56,7 @@ try {
       check('CA-19 courbe « entrance » = cubic-bezier(0.16, 1, 0.3, 1) (§5.2)', sameBezier(first.easing, [0.16, 1, 0.3, 1]), String(first.easing));
       check('CA-19 mouvement normal : l\'animation n\'est pas déjà finie', first.playState === 'running' || first.playState === 'pending', first.playState);
       const other = await run(page, { selector: '#qa-default', duration: 'draw', easing: 'pop' });
-      check('CA-19 autre rôle : « draw » = 900 ms, « pop » = cubic-bezier(0.34, 1.7, 0.64, 1)', other.duration === 900 && sameBezier(other.easing, [0.34, 1.7, 0.64, 1]), JSON.stringify(other));
+      check('CA-19 autre rôle : « draw » = 1100 ms (duration-draw, spec v2 §5.2 et brief Talmo), « pop » = cubic-bezier(0.34, 1.7, 0.64, 1)', other.duration === 1100 && sameBezier(other.easing, [0.34, 1.7, 0.64, 1]), JSON.stringify(other));
       const own = await run(page, { selector: '#qa-override', duration: 'enter', easing: 'entrance' });
       check('CA-19 tokens posés sur l\'élément : 123 ms et cubic-bezier(0.1, 0.2, 0.3, 0.4)', own.duration === 123 && sameBezier(own.easing, [0.1, 0.2, 0.3, 0.4]), JSON.stringify(own));
       const inherited = await run(page, { selector: '#qa-inherit', duration: 'slow', easing: 'out' });
