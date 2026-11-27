@@ -994,7 +994,7 @@ async function motionIndicators(context, base, name, tag, width, check) {
       await page.waitForSelector('#item-out.lc-nav-item--active', { state: 'attached' });
       // La couleur de fond est lue une fois les transitions finies (sinon elle est lue à mi-chemin, ou avant leur création : test instable) ; attente bornée.
       await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      await page.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 3000 }).catch(() => {});
+      await finiteIdle(page, `CA-5d ${tag} hors liste`, check, 3000);
       const r = await page.evaluate(() => ({ out: getComputedStyle(document.querySelector('#item-out')).backgroundColor, indicated: document.querySelector('#item-out').classList.contains('lc-nav-item--indicated'), inactive: getComputedStyle(document.querySelector('#item-a')).backgroundColor, primary: (() => { const p = document.createElement('div'); p.style.background = 'var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container))'; document.body.append(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return c; })() }));
       check(!r.indicated && r.out === r.primary && r.out !== 'rgba(0, 0, 0, 0)' && r.out !== r.inactive, `CA-5d ${tag} hors liste : fond actif porté par l'élément`, `fond=${r.out} attendu ${r.primary}, inactif=${r.inactive}, indicated=${r.indicated}`);
       await page.close();
@@ -1320,9 +1320,21 @@ async function animationStoryIds() {
 
 /** Toute animation (CSSTransition, CSSAnimation, WAAPI) d'une story d'animation, relevée une image après chaque « Rejouer » (spec 2026-12-mouvement-v2) :
  *  CA-3 (mouvement réduit : durées et délais ≤ 0,01 ms, rien en cours), CA-5 (propriétés animées), CA-31 (aucun défilement horizontal à 360 px à 0, 50 et 100 %). */
-const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate', 'strokeDashoffset', 'color', 'gridTemplateRows', 'inlineSize', 'clipPath']);
-const CA5_INDICATOR = /indicator|pill|thumb/; // liste blanche écrite : largeur, position et dimensions des indicateurs
-const CA5_INDICATOR_PROPS = new Set(['width', 'height', 'left', 'top', 'insetInlineStart', 'insetBlockStart']);
+const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate', 'strokeDashoffset']);
+const CA5_INDICATORS = '.lc-tabs__indicator, .lc-nav-list__indicator, .lc-segmented-control__indicator, .lc-switch__thumb';
+/** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même)]. Tout le reste est un écart. */
+const CA5_ALLOW = [
+  [['color'], '[lcflash]'], // lcFlash : sélecteur à confirmer quand T5 aura écrit la directive
+  [['gridTemplateRows'], '.lc-disclosure__region, .lc-nav-group__items'],
+  [['inlineSize'], '.lc-shell__nav'], // barre latérale de lc-app-shell
+  [['clipPath'], CA5_INDICATORS], // pastilles à deux bords
+  [['clipPath'], ':root', '::view-transition'],
+  [['width', 'height', 'left', 'top', 'insetInlineStart', 'insetBlockStart'], CA5_INDICATORS],
+];
+// Animations finies en cours : une animation infinie (`.lc-pulse`, spinner, squelette) ne se termine jamais, une animation `fill: forwards` terminée reste dans `getAnimations()` : ni l'une ni l'autre n'est attendue.
+const NO_FINITE_ANIMATION = () => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending));
+/** Attend la fin des animations finies ; une expiration est un échec écrit, pas un silence. */
+const finiteIdle = (page, label, check, timeout = 15000) => page.waitForFunction(NO_FINITE_ANIMATION, null, { timeout }).then(() => true, () => { check(false, `${label} animations finies encore en cours après ${timeout} ms`); return false; });
 async function motionAnimations(context, base, ids, reduced, width, check) {
   const tag = `${reduced ? 'reduced' : 'normal'} ${width}px`;
   for (const id of ids) {
@@ -1335,10 +1347,13 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
     const buttons = page.getByRole('button', { name: 'Rejouer' });
     const count = await buttons.count();
     for (let n = 0; n < count; n += 1) {
-      await page.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 15000 }).catch(() => {});
-      // Dans le même `evaluate` que le clic : les animations de la fenêtre de 900 ms sont relevées à leur première apparition (certains « Rejouer » démarrent après un rendu Angular).
+      const label = `${tag} ${id} « Rejouer » n°${n + 1}/${count}`;
+      await finiteIdle(page, label, check);
+      // Dans le même `evaluate` que le clic : les animations sont relevées à leur première apparition (certains « Rejouer » démarrent après un rendu Angular).
+      // Fenêtre de relevé : 900 ms au moins, prolongée tant qu'une nouvelle animation apparaît (600 ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s).
       // `scrub` (CA-31) : chaque animation est mise en pause à sa première vue, puis amenée à 0, 50 et 100 % ; sinon on ne touche à rien.
-      const scrubRun = async (button, scrub) => {
+      const scrubRun = async (button, { scrub, allow }) => {
+        const MIN_MS = 900, QUIET_MS = 600, MAX_MS = 4000;
         const kind = (a) => (a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'animation' : 'waapi');
         const skip = new Set(['offset', 'computedOffset', 'easing', 'composite']);
         const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
@@ -1346,15 +1361,19 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const row = (a) => {
           const timing = a.effect.getComputedTiming();
           const target = a.effect.target;
-          return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}`, props: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !skip.has(k)))] };
+          const pseudo = a.effect.pseudoElement ?? '';
+          const props = [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !skip.has(k)))];
+          const listed = props.filter((p) => allow.some(([names, selector, pseudoPrefix]) => names.includes(p) && target.matches(selector) && (pseudoPrefix === undefined ? !pseudo : pseudo.startsWith(pseudoPrefix))));
+          return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
-        const collect = () => document.getAnimations().forEach((a) => { if (!seen.has(a)) { seen.set(a, row(a)); if (scrub) a.pause(); } });
+        let lastNew = performance.now();
+        const collect = () => document.getAnimations().forEach((a) => { if (!seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
         button.click();
         const t0 = performance.now();
         await frame();
         await frame();
         const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).map(row); // une image après l'action
-        while (performance.now() - t0 < 900) { collect(); await frame(); }
+        for (let now = t0; now - t0 < MAX_MS && (now - t0 < MIN_MS || now - lastNew < QUIET_MS); now = performance.now()) { collect(); await frame(); }
         collect();
         const overflow = [];
         if (scrub) {
@@ -1367,21 +1386,20 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         }
         return { rows: [...seen.values()], running, overflow };
       };
-      const got = await buttons.nth(n).evaluate(scrubRun, false);
-      const label = `${tag} ${id} « Rejouer » n°${n + 1}/${count}`;
+      const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW });
       if (reduced) {
         const bad = got.rows.filter((r) => r.duration > 0.01 || r.delay > 0.01);
         check(bad.length === 0 && got.running.length === 0, `CA-3 ${label} aucune animation en cours après une image, durées et délais ≤ 0,01 ms`, JSON.stringify([...got.running, ...bad].slice(0, 3)));
       } else {
-        const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !(CA5_INDICATOR.test(r.target) && CA5_INDICATOR_PROPS.has(p))).map((p) => `${r.kind}:${p}@${r.target}`));
+        const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }
       if (width === 360 && !reduced) {
         const fresh = await context.newPage(); // page neuve : les animations de la première passe ont été laissées en l'état
         await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
         await fresh.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
-        await fresh.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 15000 }).catch(() => {});
-        const scrubbed = await fresh.getByRole('button', { name: 'Rejouer' }).nth(n).evaluate(scrubRun, true);
+        await finiteIdle(fresh, `${label} (page neuve)`, check);
+        const scrubbed = await fresh.getByRole('button', { name: 'Rejouer' }).nth(n).evaluate(scrubRun, { scrub: true, allow: CA5_ALLOW });
         await fresh.close();
         check(!scrubbed.overflow.some(Boolean), `CA-31 ${label} aucun défilement horizontal à 0, 50, 100 %`, JSON.stringify(scrubbed.overflow));
       }
