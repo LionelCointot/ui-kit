@@ -525,7 +525,7 @@ const MOTION_INIT = () => {
     });
     snap.t = performance.now();
     q.cardSnaps.push(snap);
-    all.forEach(({ list }) => list.forEach((a) => a.finish()));
+    all.forEach(({ list }) => list.forEach((a) => a.play())); // l'instantané ne doit pas terminer les entrées (sinon les lignes d'un délai de remplissage deviennent visibles : l'observateur fausserait CA-26)
   };
   new MutationObserver((records) => {
     if (records.some((r) => [...r.addedNodes].some(isReveal))) snapCards();
@@ -534,13 +534,13 @@ const MOTION_INIT = () => {
   // Dialogue du téléphone : entrée (à l'attribut `open`) et sortie (à `data-closing`, fondu suspendu pour ne pas dépendre de l'horloge).
   q.watchDialog = () => {
     const dialog = document.querySelector('lc-sheet dialog');
-    const own = () => dialog.getAnimations({ subtree: true }).filter((a) => a instanceof CSSTransition && a.effect.target === dialog);
+    const own = () => dialog.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation) && a.effect.target === dialog); // T9b : glissement et fondu d'ouverture en Web Animations, fondu de sortie du voile en transition CSS
     const read = (list) => {
       list.forEach((a) => a.pause());
       list.forEach((a) => { a.currentTime = 0; });
       const cs = getComputedStyle(dialog);
       const bd = getComputedStyle(dialog, '::backdrop');
-      const info = { height: dialog.offsetHeight, open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
+      const info = { height: dialog.offsetHeight, open: dialog.open, props: list.map((a) => `${a.effect.pseudoElement ?? 'dialog'}:${a.transitionProperty ?? [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)).join('+')}`), durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, startTranslateY: parseFloat(cs.translate.split(' ')[1] ?? '0'), backdropStartOpacity: bd.opacity, cssDuration: cs.transitionDuration, backdropCssDuration: bd.transitionDuration };
       return info;
     };
     q.dlg = { held: [] };
@@ -701,6 +701,8 @@ const PANELS = {
 };
 const panelStory = (spec, control, place) => (spec.table ? ['qa-motion-data-table--table', `place:${place}`] : ['qa-motion-acceptance--panel', `control:${control};place:${place}`]);
 const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
+/** Feuille du téléphone (d54 de fidelite.json) : glissement 600 ms à l'ouverture, 300 ms à la fermeture ; fondu du voile 300 ms. */
+const SHEET = { enter: 600, exit: 300, backdrop: 300 };
 /** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
 const m42 = (value) => (value === 'none' ? 0 : parseFloat(value.slice(value.indexOf('(') + 1, -1).split(',')[value.startsWith('matrix3d') ? 13 : 5]));
 /** Le panneau a été mesuré à l'ouverture (5 s au plus) ; sinon un échec écrit, pas un délai de 30 s qui interrompt la suite. */
@@ -774,9 +776,8 @@ async function motionPhone(context, base, reduced, tag, check) {
   const entry = async (page, label) => {
     const t = await tokens(page);
     const e = await page.evaluate(() => window.__qa.dlg.enter);
-    const dy = m42(e.startTransform);
-    if (reduced) check(quick(e.cssDuration) && quick(e.backdropCssDuration) && e.endOpacity === '1', `CA-10/13 ${tag} ${label} entrée`, `durée dialogue=${e.cssDuration} fond=${e.backdropCssDuration} opacité finale=${e.endOpacity}`);
-    else check(['dialog:transform', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.props.every((p, i) => near(e.durations[i], p.endsWith('transform') ? t.slideEnter : t.enter)) && e.delays.every((d) => d === 0) && near(dy, e.height, 1) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée (feuille : translateY(100%) → 0, fond en fondu)`, `transitions=${e.props} durées=${e.durations} attendu ${t.slideEnter} (feuille) et ${t.enter} (fond), décalageY=${dy} attendu ${e.height}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
+        if (reduced) check(quick(e.cssDuration) && quick(e.backdropCssDuration) && e.endOpacity === '1', `CA-10/13 ${tag} ${label} entrée`, `durée dialogue=${e.cssDuration} fond=${e.backdropCssDuration} opacité finale=${e.endOpacity}`);
+    else check(['dialog:translate', '::backdrop:opacity'].every((p) => e.props.includes(p)) && e.props.every((p, i) => near(e.durations[i], p.endsWith('translate') ? SHEET.enter : SHEET.backdrop)) && e.delays.every((d) => d === 0) && near(e.startTranslateY, e.height, 1) && e.backdropStartOpacity === '0' && e.endOpacity === '1' && e.backdropEndOpacity === '1', `CA-10 ${tag} ${label} entrée (feuille : translateY(100%) → 0, fond en fondu)`, `transitions=${e.props} durées=${e.durations} attendu ${SHEET.enter} (feuille) et ${SHEET.backdrop} (fond), décalageY=${e.startTranslateY} attendu ${e.height}, fond départ=${e.backdropStartOpacity}, fin=${e.endOpacity}/${e.backdropEndOpacity}`);
   };
 
   // CA-10 : sortie (data-closing, puis dialog.open === false après la fin du fondu).
@@ -791,7 +792,7 @@ async function motionPhone(context, base, reduced, tag, check) {
       check(c.open && quick(c.cssDuration) && c.durations.every((d) => d <= 0.01), `CA-10/13 ${tag} ${label} sortie sans attente (dialogue)`, `durée dialogue=${c.cssDuration} transitions=${c.props} durées=${c.durations}`);
       check(quick(c.backdropCssDuration), `CA-13 ${tag} ${label} durée calculée du fond (::backdrop) ≤ 0,01 ms`, `durée du fond=${c.backdropCssDuration} (aucune transition ne joue : ${c.props.includes('::backdrop:opacity') ? 'si, une joue' : 'transition-property: none'})`);
     }
-    else check(c.open && c.props.includes('dialog:transform') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, t.slideExit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${t.slideExit}, descente en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
+    else check(c.open && c.props.includes('dialog:translate') && c.props.includes('::backdrop:opacity') && c.durations.every((d) => near(d, SHEET.exit)) && got.held.open && got.held.closing, `CA-10 ${tag} ${label} sortie`, `data-closing posé, ouvert à ce moment=${c.open}, transitions=${c.props} durées=${c.durations} attendu ${SHEET.exit}, descente en cours : ouvert=${got.held.open} data-closing=${got.held.closing}`);
     check(!after.closingAttr, `CA-10 ${tag} ${label} fermé après le fondu`, `open=false, data-closing retiré=${!after.closingAttr}`);
     check(await focusOnFilters(page), `CA-10 ${tag} ${label} focus rendu au bouton « Filtres »`);
     return after.query;
@@ -1204,12 +1205,15 @@ async function motionList(context, base, reduced, tag, phone, check) {
   const scrollOf = { box: () => page.evaluate(() => document.querySelector('.lc-data-table__scroll').scrollTop), page: () => page.evaluate(() => Math.round(window.scrollY)) };
   const clear = async () => { if (phone) await page.locator('.lc-data-table__chip-remove').first().click(); else await page.getByRole('button', { name: 'Effacer les filtres' }).click(); await idle(`window.__qa.rowKeys().length === 13`); };
   await page.evaluate(() => { const s = document.querySelector('.lc-data-table__scroll'); s.style.maxHeight = '150px'; s.style.overflowY = 'auto'; s.scrollTop = 60; });
+  const boxMax = () => page.evaluate(() => { const s = document.querySelector('.lc-data-table__scroll'); return s.scrollHeight - s.clientHeight; });
   const box0 = await scrollOf.box();
-  await begin(); await beta(); await idle(`window.__qa.rowKeys().length === 10`); const box1 = await scrollOf.box(); await begin(); await clear(); const box2 = await scrollOf.box();
-  console.log(`scrollTop conteneur ${tag} : avant=${box0} après filtre=${box1} après retrait=${box2}`);
-  check(box0 > 0 && box1 === box0 && box2 === box0, `CA-26 ${tag} défilement du conteneur conservé après filtre puis retrait`, `scrollTop ${box0} -> ${box1} -> ${box2}`);
-  await page.evaluate(() => { const s = document.querySelector('.lc-data-table__scroll'); s.style.maxHeight = ''; s.style.overflowY = ''; const sp = document.createElement('div'); sp.id = 'qa-spacer'; sp.style.height = `${2 * innerHeight}px`; document.querySelector('lc-data-table').after(sp); });
-  await page.evaluate(() => window.scrollTo(0, 300)); await page.evaluate(() => window.__qa.frames(4));
+  await begin(); await beta(); await idle(`window.__qa.rowKeys().length === 10`); const box1 = await scrollOf.box(); const max1 = await boxMax(); await begin(); await clear(); const box2 = await scrollOf.box();
+  console.log(`scrollTop conteneur ${tag} : avant=${box0} après filtre=${box1} (plafond naturel ${max1}) après retrait=${box2}`);
+  // Moins de lignes = un plafond de défilement plus bas, que le navigateur impose même sans mouvement : la position attendue est min(avant, plafond) ; le retrait du filtre ne la fait pas reculer davantage ; 8 px de marge : le retour du focus sur l'entonnoir de l'en-tête collant décale de 4 px le conteneur, même en mouvement réduit (mesuré).
+  check(box0 > 0 && Math.abs(box1 - Math.min(box0, Math.floor(max1))) <= 8 && Math.abs(box2 - box1) <= 8, `CA-26 ${tag} défilement du conteneur conservé après filtre puis retrait (hors plafond naturel)`, `scrollTop ${box0} -> ${box1} (attendu ${Math.min(box0, Math.floor(max1))}) -> ${box2}`);
+  await page.evaluate(() => { const s = document.querySelector('.lc-data-table__scroll'); s.style.maxHeight = ''; s.style.overflowY = ''; const sp = document.createElement('div'); sp.id = 'qa-spacer'; sp.style.height = `${2 * innerHeight}px`; document.querySelector('lc-data-table').after(sp); const top = document.createElement('div'); top.style.height = '400px'; document.querySelector('lc-data-table').before(top); });
+  // Défilement de la page à ~300 px, mais en gardant le déclencheur du filtre à 120 px du haut de la fenêtre (cale de 400 px au-dessus du tableau) : sinon le clic de Playwright ou le retour du focus sur le déclencheur déplacent la page eux-mêmes, avec ou sans mouvement (le test mesurerait ce défilement-là).
+  await page.evaluate((sel) => window.scrollTo(0, Math.floor(document.querySelector(sel).getBoundingClientRect().top + scrollY) - 120), phone ? 'button[id$="-filters"]' : '[id$="-funnel-cat"]'); await page.evaluate(() => window.__qa.frames(4));
   const pg0 = scrollOf.page;
   const p0 = await pg0();
   await begin(); await beta(); await idle(`window.__qa.rowKeys().length === 10`); const p1 = await pg0(); await begin(); await clear(); const p2 = await pg0();
@@ -1559,6 +1563,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }
+      await page.keyboard.press('Escape'); // un « Rejouer » qui ouvre un panneau modal (dialogue, feuille) rend les suivants inaccessibles au rôle : on le ferme avant le suivant
       if (width === 360 && !reduced) {
         const fresh = await context.newPage(); // page neuve : les animations de la première passe ont été laissées en l'état
         await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
