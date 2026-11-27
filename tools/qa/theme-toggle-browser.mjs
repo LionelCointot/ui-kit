@@ -124,11 +124,9 @@ await section(3, async () => {
 // ---------- CA-38 / CA-20 / CA-3 / CA-5 : story Animation d37 ; la boucle de `storybook-browser.mjs motion` la mesure ensuite ----------
 await section(4, async () => {
   const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8').catch(() => '{"entries":{}}'));
-  check(!!index.entries[ANIMATION], `CA-38 la story ${ANIMATION} existe dans l'index`, 'story absente de index.json');
-  if (!index.entries[ANIMATION]) return;
+  if (!index.entries[ANIMATION]) { check(false, `CA-20 la story ${ANIMATION} existe dans l'index`, 'story absente de index.json'); return; } // CA-38 : vérifié dans `storybook-browser.mjs motion`
   const { page, context } = await open(ANIMATION);
   check(await page.locator('[data-demo="d37"] lc-theme-toggle').count() >= 1, 'CA-20 [data-demo="d37"] contient un lc-theme-toggle');
-  check(await page.locator('[data-demo="d37"]').getByRole('button', { name: 'Rejouer' }).count() === 1, 'CA-38 [data-demo="d37"] porte un bouton « Rejouer »');
   await context.close();
 });
 

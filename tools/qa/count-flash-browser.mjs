@@ -230,15 +230,9 @@ for (const width of [1280, 360]) {
 }
 
 // ---------- CA-38, CA-3, CA-5 : stories Animation (mesurées aussi par la boucle de `storybook-browser.mjs motion`) ----------
-await section('CA-38', async () => {
-  const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8').catch(() => '{"entries":{}}'));
+await section('CA-14, CA-15', async () => { // CA-38 (existence et « Rejouer ») : vérifié dans `storybook-browser.mjs motion`
   for (const id of ['layout-count-up--animation', 'layout-flash--animation']) {
-    const entry = index.entries[id];
-    check(!!entry, `CA-38 la story ${id} existe dans l'index`, 'story absente de dist/storybook/index.json');
-    if (!entry) continue;
     const { page, context } = await open(id);
-    const buttons = await page.getByRole('button', { name: 'Rejouer' }).count();
-    check(buttons >= 1, `CA-38 ${id} porte un bouton « Rejouer »`, `${buttons}`);
     if (id.includes('count-up')) {
       // Le premier comptage tourne en rAF (que `idle` n'attend pas) : le repos est le texte inchangé sur 5 images, lu après.
       await page.waitForFunction(() => { const el = document.querySelector('[data-sample]'); const w = window.__restWatch ??= { t: el.textContent, n: 0 }; w.n = el.textContent === w.t ? w.n + 1 : 0; w.t = el.textContent; return w.n >= 5; }, null, { polling: 'raf', timeout: 5000 });

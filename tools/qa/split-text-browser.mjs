@@ -1,4 +1,4 @@
-// lcSplitText et titre de lc-page en navigateur réel (spec 2026-12-mouvement-v2, T6) : CA-16, CA-3 (texte non découpé), CA-38 (story Animation), et le contrat de d01 / d02.
+// lcSplitText et titre de lc-page en navigateur réel (spec 2026-12-mouvement-v2, T6) : CA-16, CA-3 (texte non découpé), (CA-38 : voir `storybook-browser.mjs motion`), et le contrat de d01 / d02.
 // Les valeurs attendues viennent de la spec (§5.3, §5.4.1) et des tokens lus dans le navigateur, jamais d'un nombre recopié de l'implémentation.
 //   node tools/qa/split-text-browser.mjs        Storybook statique (STORYBOOK_DIR ou dist/storybook)
 // Contrat de structure (la spec ne nomme aucune classe : le test se fonde sur la structure) :
@@ -184,8 +184,6 @@ await section(4, async () => {
 
 // ---------- CA-38 / d01 / d02 : story Animation de lc-page ----------
 await section(5, async () => {
-  const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-  check(!!index.entries['layout-page--animation'], 'CA-38 story layout-page--animation dans l\'index', 'absente');
   const { page, context } = await open('layout-page--animation');
   for (const [demo, title] of [['d01', 'Projets'], ['d02', 'Rapports']]) {
     const sel = `[data-demo="${demo}"]`;

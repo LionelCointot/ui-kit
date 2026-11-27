@@ -8,7 +8,6 @@
 //              `#s-index-alone` (lcRevealIndex 3 sans lcStagger), bouton `#add` (13e élément de `#s-normal`)
 //   many     : `#many` (lcStagger) avec 500 `span[lcReveal]` rendus au chargement
 //   quiet    : `#quiet` (lcReveal, `animation: none`) : aucune animation ne tourne au premier rendu
-// Autre contrat : la story `layout-reveal--animation` existe dans l'index et porte au moins deux boutons « Rejouer » (lcReveal et lcStagger) : la boucle de CA-3 / CA-5 de `storybook-browser.mjs motion` la mesure.
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -293,17 +292,6 @@ await section(8, async () => {
 });
 
 // ---------- CA-3, CA-5 : la boucle de storybook-browser.mjs doit mesurer la story d'animation de lcReveal / lcStagger ----------
-await section(9, async () => {
-  const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8').catch(() => '{"entries":{}}'));
-  const entry = index.entries['layout-reveal--animation'];
-  check(!!entry, 'CA-3/CA-5 la story layout-reveal--animation existe dans l\'index (mesurée par la boucle « Animation » de storybook-browser.mjs motion)', 'story absente de dist/storybook/index.json');
-  if (entry) {
-    const { page, context } = await open('layout-reveal--animation');
-    const count = await page.getByRole('button', { name: 'Rejouer' }).count();
-    check(count >= 2, 'CA-3/CA-5 layout-reveal--animation porte au moins deux boutons « Rejouer » (lcReveal, lcStagger)', `${count}`);
-    await context.close();
-  }
-});
 
 await browser.close();
 server?.close();

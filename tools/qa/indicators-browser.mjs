@@ -416,11 +416,8 @@ await run('contrat des stories', async () => {
   const index = await (await fetch(`${base}/index.json`)).json();
   const CONTRACT = { 'navigation-tabs--animation': ['d10', 'd45'], 'navigation-stepper--animation': ['d13', 'd51'], 'forms-switch--animation': ['d46'], 'forms-segmented-control--animation': ['d62'], 'navigation-nav-group--animation': ['d48'], 'buttons-button--animation': [] };
   for (const [id, demos] of Object.entries(CONTRACT)) {
-    check(!!index.entries[id], `CA-38 story ${id} dans l'index`, 'story absente');
-    if (!index.entries[id]) continue;
+    if (!index.entries[id]) { check(false, `CA-20 story ${id} dans l'index`, 'story absente'); continue; } // CA-38 : vérifié dans `storybook-browser.mjs motion`
     const { context, page } = await open(id);
-    const rejouer = await page.getByRole('button', { name: 'Rejouer' }).count();
-    check(rejouer >= Math.max(1, demos.length), `CA-38 ${id} : au moins ${Math.max(1, demos.length)} bouton(s) « Rejouer »`, `${rejouer}`);
     for (const d of demos) {
       const inside = await page.locator(`[data-demo="${d}"] >> button:has-text("Rejouer")`).count();
       check(inside === 1, `CA-20 ${id} : [data-demo="${d}"] contient son bouton « Rejouer »`, `${inside} bouton(s)`);

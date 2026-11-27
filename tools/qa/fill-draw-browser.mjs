@@ -237,18 +237,7 @@ await section(6, async () => {
   await context.close();
 });
 
-// ---------- CA-38 : stories Animation des trois primitives ----------
-await section(7, async () => {
-  const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-  for (const id of ['layout-fill--animation', 'layout-draw--animation', 'layout-pulse-lift--animation']) {
-    check(!!index.entries[id], `CA-38 ${id} existe dans l'index (mesurée ensuite par la boucle CA-3 / CA-5 / CA-31 de storybook-browser.mjs motion)`, 'story absente');
-    if (!index.entries[id]) continue;
-    const { page, context } = await open(id, { wait: '#storybook-root > *' });
-    const count = await page.getByRole('button', { name: 'Rejouer' }).count();
-    check(count >= 1, `CA-38 ${id} porte au moins un bouton « Rejouer »`, `${count}`);
-    await context.close();
-  }
-});
+// CA-38 (stories Animation des trois primitives) : vérifié une fois dans `storybook-browser.mjs motion`.
 
 await browser.close();
 server?.close();

@@ -1265,7 +1265,9 @@ async function motion(browser, base, fragments = []) {
     }
     return failures;
   }
-  for (const id of T9C_STORIES) check(animationIds.includes(id), `CA-38 T9c story ${id} dans l'index`);
+  // CA-38 : seule vérification de présence (sans chargement de page) ; les boutons « Rejouer » sont comptés par la boucle générale, les démos citées par la fidélité (motion-fidelity.mjs).
+  const fromTable = Object.values(JSON.parse(await readFile(path.join(root, 'docs', 'design', 'explorations', '2026-12-mouvement-v2', 'fidelite.json'), 'utf8')).table).map((e) => e.story);
+  for (const id of new Set([...fromTable, ...CA38_PRIMITIVES])) check(animationIds.includes(id), `CA-38 story ${id} dans l'index`);
   for (const [name, options] of contexts) {
     const reduced = name === 'reduced';
     for (const [width, height] of sizes) {
@@ -1508,8 +1510,8 @@ async function motionCalendar(context, base, reduced, tag, check) {
   await page.close();
 }
 
-/** Stories d'animation attendues par T9c (CA-38, CA-20 : démos d28, d39, d41, d61, d50) : présentes dans l'index de Storybook. */
-const T9C_STORIES = ['navigation-menu--animation', 'overlays-toggletip--animation', 'overlays-tooltip--animation', 'forms-date-input--animation'];
+/** CA-38 : primitives sans démo dNN dans la table de fidélité. */
+const CA38_PRIMITIVES = ['layout-fill--animation', 'layout-draw--animation', 'layout-pulse-lift--animation', 'layout-count-up--animation', 'layout-flash--animation', 'layout-reveal--animation'];
 
 /** Stories d'animation, dérivées de l'index de Storybook (CA-38 de 2026-12-mouvement-v2 : plus de liste codée en dur) : toute story `Animation*`, la page Foundations/Motion et les deux pages gardées de 2026-11 (Elevation, Playground de Reveal). */
 const ANIMATION_STORY = /--animation|^foundations-(motion|elevation)--|^layout-reveal--playground$/;
