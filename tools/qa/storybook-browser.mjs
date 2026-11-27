@@ -492,7 +492,7 @@ const MOTION_INIT = () => {
     all.forEach(({ list }) => list.forEach((a) => { a.currentTime = 0; }));
     const snap = all.map(({ tr, list }, i) => {
       const cs = getComputedStyle(tr);
-      return { n: i + 1, reveal: tr.classList.contains('lc-reveal') || tr.hasAttribute('lcreveal') || list.length > 0, props: list.map((a) => a.animationName), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), easings: list.map((a) => a.effect.getComputedTiming().easing), startOpacity: cs.opacity, cssDelay: cs.animationDelay, cssDuration: cs.animationDuration };
+      return { n: i + 1, reveal: tr.classList.contains('lc-reveal') || tr.hasAttribute('lcreveal') || list.length > 0, props: list.map((a) => a.animationName), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), easings: list.map((a) => a.effect.getKeyframes()[0]?.easing) /* CSSAnimation : la courbe est celle des keyframes, getComputedTiming().easing vaut toujours linear */, startOpacity: cs.opacity, cssDelay: cs.animationDelay, cssDuration: cs.animationDuration };
     });
     snap.t = performance.now();
     q.cardSnaps.push(snap);
@@ -594,7 +594,7 @@ const MOTION_INIT = () => {
       // T7 : visibilité par image (liste vidée ?), instant du premier changement de lignes, sortie en cours (data-leaving, lc-leave).
       const shown = [...document.querySelectorAll(ROWS)];
       if (rec.changedAt === null && shown.map(rowKey).join() !== rec.keysBefore) rec.changedAt = now;
-      rec.frames.push({ t: now, visible: shown.filter((tr) => parseFloat(getComputedStyle(tr).opacity) > 0.01).length });
+      rec.frames.push({ t: now, visible: shown.filter((tr) => parseFloat(getComputedStyle(tr).opacity) > 0.01 && tr.getClientRects().length > 0 && getComputedStyle(tr).visibility !== 'hidden').length });
       if (document.querySelector('tr[data-leaving], tr.lc-leave')) rec.leavingSeen = true;
       let running = 0;
       for (const tr of all) {
@@ -1138,6 +1138,21 @@ async function motionList(context, base, reduced, tag, phone, check) {
     glides({ ...del, kept: del.kept }, 'suppression', { strict: true });
     check(below.every((k) => lastGlide(del, k.key)?.leavingConnected === 0), `CA-26 ${tag} suppression : le glissement des voisines commence après la disparition de la ligne`, `lignes encore en sortie au début du glissement=${below.map((k) => lastGlide(del, k.key)?.leavingConnected)}`);
   }
+  // 5. Position de défilement conservée quand on applique puis retire un filtre (le tbody est masqué le temps d'un rendu) : conteneur à défilement, puis page (suite de 2 hauteurs de fenêtre sous le tableau : aucun raccourcissement naturel ne peut faire reculer le défilement, comme une vraie page).
+  const scrollOf = { box: () => page.evaluate(() => document.querySelector('.lc-data-table__scroll').scrollTop), page: () => page.evaluate(() => Math.round(window.scrollY)) };
+  const clear = async () => { if (phone) await page.locator('.lc-data-table__chip-remove').first().click(); else await page.getByRole('button', { name: 'Effacer les filtres' }).click(); await idle(`window.__qa.rowKeys().length === 13`); };
+  await page.evaluate(() => { const s = document.querySelector('.lc-data-table__scroll'); s.style.maxHeight = '150px'; s.style.overflowY = 'auto'; s.scrollTop = 60; });
+  const box0 = await scrollOf.box();
+  await begin(); await beta(); await idle(`window.__qa.rowKeys().length === 10`); const box1 = await scrollOf.box(); await begin(); await clear(); const box2 = await scrollOf.box();
+  console.log(`scrollTop conteneur ${tag} : avant=${box0} après filtre=${box1} après retrait=${box2}`);
+  check(box0 > 0 && box1 === box0 && box2 === box0, `CA-26 ${tag} défilement du conteneur conservé après filtre puis retrait`, `scrollTop ${box0} -> ${box1} -> ${box2}`);
+  await page.evaluate(() => { const s = document.querySelector('.lc-data-table__scroll'); s.style.maxHeight = ''; s.style.overflowY = ''; const sp = document.createElement('div'); sp.id = 'qa-spacer'; sp.style.height = `${2 * innerHeight}px`; document.querySelector('lc-data-table').after(sp); });
+  await page.evaluate(() => window.scrollTo(0, 300)); await page.evaluate(() => window.__qa.frames(4));
+  const pg0 = scrollOf.page;
+  const p0 = await pg0();
+  await begin(); await beta(); await idle(`window.__qa.rowKeys().length === 10`); const p1 = await pg0(); await begin(); await clear(); const p2 = await pg0();
+  console.log(`scrollY page ${tag} : avant=${p0} après filtre=${p1} après retrait=${p2}`);
+  check(p0 > 0 && p1 === p0 && p2 === p0, `CA-26 ${tag} défilement de la page conservé après filtre puis retrait`, `scrollY ${p0} -> ${p1} -> ${p2}`);
   check(errors.length === 0, `erreurs page ${tag} liste`, errors.join(' ; '));
   await page.close();
 }
