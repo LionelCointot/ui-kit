@@ -77,6 +77,7 @@ const DEMOS = {
   d59: ['layout-app-shell--animation', 'téléphone : titre de l\'en-tête au défilement'],
   d60: ['feedback-toast--animation', 'téléphone : lc-toast au-dessus de la barre d\'onglets'],
   d61: ['forms-date-input--animation', 'calendrier : glissement du changement de mois'],
+  // d62 : `color` ignoré (edges) : le catalogue anime la couleur du texte (300 ms), le kit ne transitionne que l'indicateur (left, width, clip-path), voir segmented-control.component.css
   d62: ['forms-segmented-control--animation', 'lc-segmented-control : pastille à deux bords', [rejouer('d62', { edges: true })]],
   d63: ['forms-segmented-control--animation', 'lc-segmented-control à 360 px'],
 };
