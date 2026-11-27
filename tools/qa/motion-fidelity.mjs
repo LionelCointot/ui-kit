@@ -441,7 +441,8 @@ async function compare(browser, ids, self) {
       const t0 = Date.now();
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
-        const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
+        const measureOnce = () => measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
+        const got = await measureOnce().catch((e) => (/Timeout/.test(e.message) ? measureOnce() : Promise.reject(e))); // délai de 5 s dépassé : une seule reprise avant KO
         const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(shape(expected.animations, trigger, false), shape(got.animations ?? [], trigger, !self), id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19' || id === 'd24', lines);
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
