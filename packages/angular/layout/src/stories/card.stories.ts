@@ -9,7 +9,7 @@ import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcGridItemComp
   selector: 'lc-card-animation-demo',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcButtonComponent, StoryMotionNoticeComponent],
-  styles: `.lc-demo__handmade { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--lc-sys-space-4); }`,
+  styles: `.lc-demo__handmade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--lc-sys-space-4); }`,
   template: `
     <lc-story-motion-notice />
     <section #root data-demo="d31">
@@ -95,7 +95,7 @@ export const InDialog: Story = {
   render: () => ({
     template: `
       <lc-card style="max-width:28rem">
-        <lc-card-header title="Équipe design" subtitle="5 membres" headingLevel="3" />
+        <lc-card-header title="Équipe design" subtitle="5 membres" [headingLevel]="3" />
         <p>Prochaine réunion : jeudi à 10 h.</p>
       </lc-card>`,
   }),
