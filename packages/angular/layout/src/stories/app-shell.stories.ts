@@ -112,7 +112,18 @@ class AppShellStackDemoComponent {
   }
 }
 
-const ANIMATION_CODE = `// app.routes.ts : routes avec un titre (lc-page) ; lc-app-shell anime tout seul les changements de page.
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { RouterOutlet, type Routes } from '@angular/router';
+import { LcAppShellComponent } from '@lionelcointot/ui-angular/layout';
+
+@Component({ selector: 'app-requests-page', template: \`<h1>Demandes</h1>\` })
+export class RequestsPage {}
+@Component({ selector: 'app-request-page', template: \`<h1>Demande</h1>\` })
+export class RequestPage {}
+@Component({ selector: 'app-plain-page', template: \`<h1>Page simple</h1>\` })
+export class PlainPage {}
+
+// Routes avec un titre (lc-page) ; lc-app-shell anime tout seul les changements de page.
 export const routes: Routes = [
   { path: 'requests', component: RequestsPage },
   { path: 'requests/:id', component: RequestPage },

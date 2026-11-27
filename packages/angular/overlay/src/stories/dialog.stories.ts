@@ -106,6 +106,12 @@ import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcDialogService } from '@lionelcointot/ui-angular/overlay';
 
 @Component({
+  selector: 'app-confirm-content',
+  template: \`<p>Revenir au niveau Simple ?</p>\`,
+})
+export class ConfirmContentComponent {}
+
+@Component({
   selector: 'app-example',
   imports: [LcButtonComponent],
   template: \`<button lcButton type="button" (click)="open()">Ouvrir le dialogue</button>\`,

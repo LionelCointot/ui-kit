@@ -43,9 +43,15 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-const ANIMATION_CODE = `<span class="lc-pulse" aria-hidden="true"></span> En direct
+const ANIMATION_CODE = `import { Component } from '@angular/core';
 
-<div class="lc-lift">Carte</div>`;
+@Component({
+  selector: 'app-example',
+  template: \`
+    <span class="lc-pulse" aria-hidden="true"></span> En direct
+    <div class="lc-lift">Carte</div>\`,
+})
+export class ExampleComponent {}`;
 
 /** A pulsing live dot and two cards that lift on hover. "Rejouer" reinserts them. */
 export const Animation: Story = {
