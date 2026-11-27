@@ -1504,6 +1504,7 @@ const CA5_ALLOW = [
   [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
   [['color'], '.lc-flash'], // lcFlash : l'hôte porte `lc-flash` (contrat fixé par la QA de T5, tools/qa/count-flash-browser.mjs)
   [['gridTemplateRows'], '.lc-disclosure__region, .lc-nav-group__items'],
+  [['visibility'], '.lc-disclosure__region', undefined, 'transition'], // propriété discrète : ne passe à hidden qu'à la fin du repli (décision de l'orchestrateur), sans effet visible
   [['inlineSize'], '.lc-shell__nav'], // barre latérale de lc-app-shell
   [['clipPath'], CA5_INDICATORS], // pastilles à deux bords
   [['clipPath'], ':root', '::view-transition'],
