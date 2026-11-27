@@ -269,6 +269,7 @@ export const MOTION_SCHEMA = [
   {"path":"steps.bar-stagger","cssVar":"--lc-steps-bar-stagger","type":"duration"},
   {"path":"steps.dot-duration","cssVar":"--lc-steps-dot-duration","type":"duration"},
   {"path":"steps.dot-easing","cssVar":"--lc-steps-dot-easing","type":"cubicBezier"},
+  {"path":"steps.dot-scale","cssVar":"--lc-steps-dot-scale","type":"number"},
   {"path":"steps.dot-delay","cssVar":"--lc-steps-dot-delay","type":"duration"},
   {"path":"flash.duration","cssVar":"--lc-flash-duration","type":"duration"},
   {"path":"flash.easing","cssVar":"--lc-flash-easing","type":"cubicBezier"},

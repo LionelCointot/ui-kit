@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChild, effect, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
-import { LC_LABELS, LcIconComponent, lcUniqueId } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterRenderEffect, computed, contentChild, effect, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
+import { LC_LABELS, LcIconComponent, lcAnimate, lcCssMs, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcStepActionDirective } from './step-action.directive';
 
 export type LcStepState = 'done' | 'current' | 'upcoming';
@@ -48,7 +48,7 @@ interface StepMove {
 
 /**
  * Fil d'étapes d'un parcours guidé : liste ordonnée native (`nav` > `ol`), sans rôle `tab`.
- * Pastilles reliées par une piste qui se remplit jusqu'à l'étape en cours. Une étape cliquable est un bouton
+ * Pastilles reliées par des segments de piste, tracés l'un après l'autre jusqu'à l'étape en cours (la pastille des étapes faites et en cours entre en pop). Une étape cliquable est un bouton
  * (`stepSelect`) : avec `linear` (défaut), les étapes faites ; sans, toute étape non désactivée.
  * L'étape en cours porte `aria-current="step"`. Le composant ne change jamais lui-même l'étape : le consommateur met `steps` à jour.
  * Au changement d'étape, la classe `lc-stepper--forward` ou `--backward` est posée sur l'hôte le temps de l'animation et `directionChange` est émis.
@@ -65,7 +65,7 @@ interface StepMove {
           <p class="lc-stepper__where">{{ railSummary() }}</p>
           <div class="lc-stepper__bars" aria-hidden="true">
             @for (view of views(); track view.step.id) {
-              <span class="lc-stepper__bar" [class.lc-stepper__bar--on]="$index <= shownIndex()"></span>
+              <span class="lc-stepper__bar" [class.lc-stepper__bar--on]="$index <= shownIndex()"><span class="lc-stepper__fill" [class.lc-stepper__fill--on]="$index <= shownIndex()"></span></span>
             }
           </div>
           <button type="button" class="lc-stepper__toggle" [attr.aria-expanded]="expanded()" [attr.aria-controls]="answersId" (click)="expanded.set(!expanded())">
@@ -115,7 +115,9 @@ interface StepMove {
         <div class="lc-stepper__body" [style.--lc-stepper-count]="steps().length">
           @if (steps().length > 1) {
             <span class="lc-stepper__rail" aria-hidden="true">
-              <span class="lc-stepper__rail-fill" [style.--lc-stepper-progress]="progress() + '%'"></span>
+              @for (segment of segments(); track segment) {
+                <span class="lc-stepper__segment"><span class="lc-stepper__fill" [class.lc-stepper__fill--on]="segment < shownIndex()"></span></span>
+              }
             </span>
           }
           <ol class="lc-stepper__list">
@@ -172,11 +174,12 @@ interface StepMove {
     '[class.lc-stepper--vertical]': "orientation() === 'vertical' && variant() !== 'rail'",
     '[class.lc-stepper--forward]': "move()?.direction === 'forward'",
     '[class.lc-stepper--backward]': "move()?.direction === 'backward'",
-    '(animationend)': 'onAnimationEnd($event)',
   },
 })
 export class LcStepperComponent {
   protected readonly labels = inject(LC_LABELS);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private running: readonly Animation[] = [];
 
   readonly steps = input.required<readonly LcStep[]>();
   /** Nom accessible du `nav`. */
@@ -212,6 +215,12 @@ export class LcStepperComponent {
     const pending = steps.findIndex((step) => step.state !== 'done');
     return pending >= 0 ? pending : steps.length - 1;
   });
+
+  /** Un segment de piste entre deux pastilles voisines (forme `default`). */
+  protected readonly segments = computed(() => Array.from({ length: Math.max(this.steps().length - 1, 0) }, (_, index) => index));
+
+  /** Index affiché à la passe précédente : sert à ne faire animer que ce qui vient d'être atteint. */
+  private previousShown: number | null = null;
 
   /** Compare l'index affiché avant et après ; vide au premier rendu et une fois l'animation finie. */
   protected readonly move = linkedSignal<number, StepMove | null>({
@@ -251,17 +260,49 @@ export class LcStepperComponent {
     return index < 0 ? '' : `${this.labels.stepOf(index + 1, steps.length)} · ${steps[index].label}`;
   });
 
-  /** Part de la piste remplie : de la première pastille à celle de l'étape affichée. */
-  protected readonly progress = computed(() => {
-    const count = this.steps().length;
-    return count < 2 ? 0 : (this.shownIndex() / (count - 1)) * 100;
-  });
-
   constructor() {
+    // `lcAnimate` n'annule pas à la destruction : on annule les révélations en cours.
+    inject(DestroyRef).onDestroy(() => this.running.forEach((animation) => animation.cancel()));
     effect(() => {
       const move = this.move();
       if (move) untracked(() => this.directionChange.emit(move.direction));
     });
+    afterRenderEffect(() => {
+      this.views();
+      const index = this.shownIndex();
+      const previous = this.previousShown ?? -1;
+      this.previousShown = index;
+      untracked(() => this.reveal(previous, index));
+    });
+  }
+
+  /**
+   * Anime ce qui vient d'être atteint : au premier affichage toutes les barres pleines (tracées l'une après l'autre) et les pastilles faites ou en cours
+   * (en pop, l'une après l'autre) ; à un changement d'étape vers l'avant, la seule barre atteinte et la pastille de l'étape atteinte. Un recul ne joue rien.
+   * La classe de sens de l'hôte reste posée jusqu'à la fin de ces animations (aussitôt sous mouvement réduit).
+   */
+  private reveal(previous: number, index: number): void {
+    if (index <= previous) return this.settle([]);
+    const rail = this.variant() === 'rail';
+    const vertical = this.orientation() === 'vertical' && !rail;
+    // Piste `default` : le segment p relie les étapes p et p + 1 (plein si p < index) ; `rail` : la barre p est pleine si p <= index.
+    const firstFill = previous + (rail ? 1 : 0);
+    const fills = Array.from(this.host.querySelectorAll<HTMLElement>('.lc-stepper__fill')).filter((fill, position) => position >= firstFill && fill.classList.contains('lc-stepper__fill--on'));
+    const steps = this.steps();
+    const dots = Array.from(this.host.querySelectorAll<HTMLElement>('.lc-stepper__badge')).filter((_, position) => position > previous && position <= index && steps[position]?.state !== 'upcoming');
+    const animations = [
+      ...fills.map((fill, rank) => lcAnimate(fill, [{ scale: vertical ? '1 0' : '0 1' }, { scale: '1 1' }], { duration: '--lc-steps-bar-duration', easing: 'entrance', delay: rank * lcCssMs(getComputedStyle(fill), '--lc-steps-bar-stagger') })),
+      ...dots.map((dot, rank) => lcAnimate(dot, [{ scale: 'var(--lc-steps-dot-scale)', opacity: 0 }, { scale: '1', opacity: 1 }], { duration: '--lc-steps-dot-duration', easing: '--lc-steps-dot-easing', delay: rank * lcCssMs(getComputedStyle(dot), '--lc-steps-dot-delay') })),
+    ];
+    this.settle(animations);
+  }
+
+  /** Retire la classe de sens de l'hôte quand les animations lancées sont finies. */
+  private settle(animations: readonly Animation[]): void {
+    const move = this.move();
+    if (!move) return;
+    this.running = animations;
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => untracked(() => this.move() === move && this.move.set(null)));
   }
 
   protected itemClass(view: StepView): string {
@@ -280,10 +321,5 @@ export class LcStepperComponent {
 
   protected select(view: StepView): void {
     if (view.clickable) this.stepSelect.emit(view.step.id);
-  }
-
-  /** Une animation vide de la feuille de style sert de minuterie : à sa fin, la classe de sens est retirée. */
-  protected onAnimationEnd(event: AnimationEvent): void {
-    if (event.animationName.endsWith('lc-stepper-sync')) this.move.set(null);
   }
 }

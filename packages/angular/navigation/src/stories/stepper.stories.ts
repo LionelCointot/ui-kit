@@ -1,5 +1,5 @@
-import { Component, input, signal } from '@angular/core';
-import { fixedExample } from '@lc/storybook';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, signal } from '@angular/core';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcStepActionDirective, LcStepperComponent, type LcStep } from '@lionelcointot/ui-angular/navigation';
@@ -34,23 +34,42 @@ class StepperDemoComponent {
   }
 }
 
-/** Démonstration de l'animation : « Précédent » et « Suivant » changent l'étape en cours, la piste et la pastille suivent le sens. */
+/**
+ * Démonstration de l'animation : à l'affichage les barres sont tracées l'une après l'autre et les pastilles faites ou en cours entrent en pop (d13, d51) ;
+ * « Précédent » et « Suivant » changent l'étape en cours : seule la barre atteinte et la pastille de l'étape atteinte jouent, et rien en reculant.
+ */
 @Component({
   selector: 'lc-stepper-nav-demo',
-  imports: [LcStepperComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcStepperComponent, LcButtonComponent, StoryMotionNoticeComponent],
   template: `
-    <lc-stepper ariaLabel="Progression du parcours" [steps]="steps()" [linear]="false" (stepSelect)="goTo($event)" (directionChange)="direction.set($event)" />
-    <p style="margin-block-start:16px">Étape {{ current() + 1 }} sur 5 · dernier sens : {{ direction() ?? 'aucun' }}</p>
-    <div style="display:flex;gap:var(--lc-sys-space-2)">
-      <button type="button" (click)="move(-1)" [disabled]="current() === 0">Précédent</button>
-      <button type="button" (click)="move(1)" [disabled]="current() === 4">Suivant</button>
-    </div>
+    <lc-story-motion-notice />
+    <section #dots data-demo="d13">
+      <h3>Bullets <button lcButton fillMode="outline" size="small" (click)="dotsDemo.replay(dots)">Rejouer</button></h3>
+      @for (key of dotsDemo.keys(); track key) {
+        <lc-stepper ariaLabel="Progression du parcours" [steps]="steps()" [linear]="false" (stepSelect)="goTo($event)" (directionChange)="direction.set($event)" />
+      }
+      <p style="margin-block-start:16px">Étape {{ current() + 1 }} sur 5 · dernier sens : {{ direction() ?? 'aucun' }}</p>
+      <div style="display:flex;gap:var(--lc-sys-space-2)">
+        <button type="button" lcButton fillMode="outline" size="small" (click)="move(-1)" [disabled]="current() === 0">Précédent</button>
+        <button type="button" lcButton fillMode="outline" size="small" (click)="move(1)" [disabled]="current() === 4">Suivant</button>
+      </div>
+    </section>
+    <section #bars data-demo="d51">
+      <h3>Bars <button lcButton fillMode="outline" size="small" (click)="barsDemo.replay(bars)">Rejouer</button></h3>
+      @for (key of barsDemo.keys(); track key) {
+        <lc-stepper variant="rail" [compact]="true" ariaLabel="Fil du projet" [steps]="railSteps" />
+      }
+    </section>
   `,
 })
 class StepperNavDemoComponent {
-  protected readonly current = signal(0);
+  protected readonly current = signal(2);
   protected readonly direction = signal<string | null>(null);
   protected readonly steps = () => stepsAt(this.current());
+  protected readonly railSteps = stepsAt(3);
+  protected readonly dotsDemo = replayable({ destroyRef: inject(DestroyRef) });
+  protected readonly barsDemo = replayable({ destroyRef: inject(DestroyRef) });
   protected goTo(id: string): void {
     this.current.set(Number(id.replace('step-', '')) - 1);
   }
@@ -214,7 +233,7 @@ export const Disabled: Story = {
   }),
 };
 
-/** "Précédent" / "Suivant": the track grows or shrinks, the bullet scales, `directionChange` gives the direction. */
+/** On display the bars are drawn one after the other and the bullets pop in; "Suivant" draws only the bar reached and pops the new bullet, "Précédent" plays nothing. `directionChange` gives the direction. */
 export const Animation: Story = fixed(`<lc-stepper-nav-demo />`);
 
 /** `rail` variant on desktop: 290 px column in a 1,000 px container (at least 900 px), joined bullets, answer, detail and an edit action per step. */

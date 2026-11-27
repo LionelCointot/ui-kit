@@ -50,6 +50,15 @@
   --lc-icon-size: var(--lc-sys-icon-size-sm);
 }
 
+/* Téléphone : marges réduites, quatre options tiennent dans 328 px sans faire défiler la page. */
+@media (max-width: 767.98px) {
+  .lc-segmented-control__option,
+  :host(.lc-segmented-control--small) .lc-segmented-control__option {
+    gap: var(--lc-sys-space-1);
+    padding-inline: var(--lc-sys-space-2);
+  }
+}
+
 .lc-segmented-control__option + .lc-segmented-control__option {
   border-inline-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }
@@ -72,7 +81,7 @@
 
 /* Sélection : fond et anneau intérieur contrasté (l'anneau porte l'état au-delà de la teinte). */
 .lc-segmented-control__option[aria-checked='true'] {
-  background: var(--lc-segmented-control-selected-bg, var(--lc-sys-color-primary-container));
+  background: transparent;
   color: var(--lc-segmented-control-selected-fg, var(--lc-sys-color-on-primary-container));
   box-shadow: inset 0 0 0 var(--lc-sys-border-width-thick) var(--lc-sys-color-primary);
   font-weight: var(--lc-sys-font-weight-semibold);
@@ -97,20 +106,52 @@
   }
 }
 
-/* Fond qui suit la progression : posé par le composant (`transform` et `width`), sous les segments ; le segment choisi n'a plus son propre fond. */
-.lc-segmented-control__indicator {
+/*
+ * Pastille à deux bords, sous les segments (le segment choisi n'a plus son propre fond) : la boîte va du bord de départ de la pastille au bord droit du dernier
+ * segment (`left` et `width` posés par le composant), le bord de fin est rogné par `clip-path`. Le bord avant (vers les coordonnées croissantes) prend la durée
+ * « avant », l'autre la durée « arrière » décalée ; `data-direction` dit le sens, `forward` par défaut. Le rognage coupe l'anneau : celui de la variante `outline`
+ * reste donc sur le segment choisi. L'ombre de la pastille `solid` est portée par l'enveloppe non rognée (`filter: drop-shadow` s'applique après le rognage de l'enfant).
+ */
+.lc-segmented-control__pill {
   position: absolute;
-  inset-block: 0;
-  left: 0;
-  border-radius: var(--_radius);
-  background: var(--lc-segmented-control-selected-bg, var(--lc-sys-color-primary-container));
-  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thick) var(--lc-sys-color-primary);
+  inset: 0;
   pointer-events: none;
 }
 
-:host(.lc-segmented-control--tracked) .lc-segmented-control__option[aria-checked='true'],
+.lc-segmented-control__indicator {
+  --_front: var(--lc-segmented-control-indicator-front-duration) var(--lc-segmented-control-indicator-front-easing);
+  --_back: var(--lc-segmented-control-indicator-back-duration) var(--lc-segmented-control-indicator-back-easing) var(--lc-segmented-control-indicator-back-delay);
+  --_indicator-radius: var(--_radius);
+
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  border-radius: var(--_indicator-radius);
+  background: var(--lc-segmented-control-selected-bg, var(--lc-sys-color-primary-container));
+  pointer-events: none;
+  transition:
+    left var(--_back),
+    width var(--_back),
+    clip-path var(--_front);
+}
+
+.lc-segmented-control__indicator[data-direction='backward'] {
+  transition:
+    left var(--_front),
+    width var(--_front),
+    clip-path var(--_back);
+}
+
+/* Premier placement, remesure et suivi du doigt : pas de glissement. */
+.lc-segmented-control__indicator--instant,
+.lc-segmented-control__indicator--instant[data-direction='backward'],
+:host(.lc-segmented-control--tracked) .lc-segmented-control__indicator,
+:host(.lc-segmented-control--tracked) .lc-segmented-control__indicator[data-direction='backward'] {
+  transition: none;
+}
+
+/* Variante `solid` : la pastille porte seule la marque du choix, pas d'anneau sur le segment. */
 :host(.lc-segmented-control--solid) .lc-segmented-control__option[aria-checked='true'] {
-  background: transparent;
   box-shadow: none;
 }
 
@@ -151,23 +192,21 @@
 }
 
 :host(.lc-segmented-control--solid) .lc-segmented-control__indicator {
+  --_indicator-radius: var(--_pill-radius);
+
   inset-block: var(--_inset);
-  border-radius: var(--_pill-radius);
   background: var(--lc-segmented-control-pill-bg, var(--lc-sys-color-surface-raised));
-  box-shadow: var(--lc-segmented-control-pill-shadow, var(--lc-sys-shadow-1));
-  transition:
-    transform var(--lc-segmented-control-indicator-front-duration) var(--lc-segmented-control-indicator-front-easing),
-    width var(--lc-segmented-control-indicator-front-duration) var(--lc-segmented-control-indicator-front-easing);
 }
 
-/* Premier placement, remesure et suivi du doigt : pas de glissement. */
-:host(.lc-segmented-control--solid) .lc-segmented-control__indicator--instant,
-:host(.lc-segmented-control--tracked) .lc-segmented-control__indicator {
-  transition: none;
+/* `--lc-segmented-control-pill-shadow` est une valeur de `drop-shadow` (une seule ombre, sans étalement ni `inset`). */
+:host(.lc-segmented-control--solid) .lc-segmented-control__pill {
+  filter: drop-shadow(var(--lc-segmented-control-pill-shadow));
 }
 
+/* Mouvement réduit : la pastille saute (aucune transition, donc aucun objet animation, pas même de 0,01 ms). */
 @media (prefers-reduced-motion: reduce) {
-  :host(.lc-segmented-control--solid) .lc-segmented-control__indicator {
+  .lc-segmented-control__indicator,
+  .lc-segmented-control__indicator[data-direction='backward'] {
     transition: none;
   }
 }

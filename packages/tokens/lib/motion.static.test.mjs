@@ -124,7 +124,6 @@ const WHITELIST = [
   { file: 'forms/src/slider/slider.component.css', motif: 'transform numérique', contient: 'scale(1.1)', raison: 'échelle du pouce du slider, à recaler sur un token (§5.4.1 : « valeurs recalées sur les tokens »)', tache: 'T8' },
   { file: 'src/lib/skeleton/skeleton.component.css', motif: 'mot-clé ease', contient: 'ease-in-out', raison: 'courbe de la pulsation, à porter par un token (§5.2 skeleton.*)', tache: 'T8' },
   { file: 'src/lib/spinner/spinner.component.css', motif: 'mot-clé ease', contient: 'ease-in-out', raison: 'courbe de la pulsation, à porter par un token (§5.2 spinner.*)', tache: 'T8' },
-  { file: 'navigation/src/stepper/stepper.component.css', motif: 'durée', contient: 'animation-duration: 1ms', raison: 'coupure locale sous prefers-reduced-motion (pas un mouvement)', tache: 'permanent' },
   { file: 'feedback/src/message-thread/message-thread-motion.ts', motif: 'durée en TypeScript', contient: 'MAX_STAGGER_MS', raison: 'plafond de cascade propre au fil, remplacé par stagger-cap et le runtime', tache: 'T7' },
   { file: 'feedback/src/toast/toast.service.ts', motif: 'setTimeout', contient: 'this.dismiss', raison: 'minuteur de fermeture du toast ; la sortie animée arrive avec toast.*', tache: 'T10' },
   // Temporisations et seuils fonctionnels : pas de mouvement.

@@ -141,7 +141,35 @@ function declared(selector: string, property: string, media: string | null = nul
   return matches[matches.length - 1].style.getPropertyValue(property);
 }
 
+const filled = (element: HTMLElement) => Array.from(element.querySelectorAll('.lc-stepper__segment')).map((segment) => segment.querySelector('.lc-stepper__fill')!.classList.contains('lc-stepper__fill--on'));
+
 const REDUCED = '(prefers-reduced-motion: reduce)';
+
+/** Appels de `Element.animate` (cible, images clés, options) et résolveurs des `finished` en attente : la fin des animations est pilotée par `endAnimation`. */
+const animated: { target: Element; keyframes: Keyframe[]; options: KeyframeAnimationOptions }[] = [];
+const pending: (() => void)[] = [];
+const TOKENS = { '--lc-steps-bar-duration': '800ms', '--lc-steps-bar-stagger': '117ms', '--lc-steps-dot-duration': '600ms', '--lc-steps-dot-delay': '40ms', '--lc-steps-dot-easing': 'ease', '--lc-steps-dot-scale': '0.6', '--lc-sys-easing-entrance': 'ease' };
+
+beforeEach(() => {
+  animated.length = 0;
+  pending.length = 0;
+  Object.entries(TOKENS).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
+  // jsdom n'a pas `Element.animate` : un faux qui garde les appels et ne finit que sur `endAnimation`.
+  Object.defineProperty(Element.prototype, 'animate', {
+    configurable: true,
+    writable: true,
+    value(this: Element, keyframes: Keyframe[], options: KeyframeAnimationOptions) {
+      animated.push({ target: this, keyframes, options });
+      const finished = new Promise<void>((resolve) => pending.push(resolve));
+      return { finished, cancel() {}, finish() {} } as unknown as Animation;
+    },
+  });
+});
+
+afterEach(() => {
+  Object.keys(TOKENS).forEach((name) => document.documentElement.style.removeProperty(name));
+  delete (Element.prototype as { animate?: unknown }).animate;
+});
 
 describe('LcStepperComponent', () => {
   describe('structure et accessibilité (CA-3)', () => {
@@ -283,12 +311,10 @@ describe('LcStepperComponent', () => {
       expect(tokenPx(declared('.lc-stepper__step', 'min-inline-size'))).toBeGreaterThanOrEqual(44);
     });
 
-    it('CA-4 : la piste décorative est masquée aux lecteurs d\'écran et son remplissage est proportionnel à l\'avancement (index / (N - 1))', async () => {
+    it('CA-4 : la piste décorative est masquée aux lecteurs d\'écran et ses segments sont pleins jusqu\'à l\'étape en cours', async () => {
       const { element } = await setup(STEPS, { compact: true });
       expect(element.querySelector('.lc-stepper__rail')!.getAttribute('aria-hidden')).toBe('true');
-      const fill = element.querySelector<HTMLElement>('.lc-stepper__rail-fill')!;
-      expect(parseFloat(fill.style.getPropertyValue('--lc-stepper-progress'))).toBeCloseTo((2 / 3) * 100, 5);
-      expect(fill.style.getPropertyValue('--lc-stepper-progress')).toMatch(/%$/);
+      expect(filled(element)).toEqual([true, true, false]);
     });
 
     it('CA-4 : sans étape en cours, la forme compacte montre la première étape non faite', async () => {
@@ -299,7 +325,7 @@ describe('LcStepperComponent', () => {
       ];
       const { element } = await setup(steps, { compact: true });
       expect(element.querySelector('.lc-stepper__summary')!.textContent!.trim()).toBe('Étape 2 sur 3 : B');
-      expect(parseFloat(element.querySelector<HTMLElement>('.lc-stepper__rail-fill')!.style.getPropertyValue('--lc-stepper-progress'))).toBeCloseTo(50, 5);
+      expect(filled(element)).toEqual([true, false]);
     });
 
     it('CA-4 : sans étape en cours ni à venir, la forme compacte montre la dernière étape', async () => {
@@ -310,7 +336,7 @@ describe('LcStepperComponent', () => {
       const { element } = await setup(steps, { compact: true });
       expect(element.querySelector('.lc-stepper__summary')!.textContent!.trim()).toBe('Étape 2 sur 2 : B');
       expect(element.querySelector('[aria-current]')).toBeNull();
-      expect(parseFloat(element.querySelector<HTMLElement>('.lc-stepper__rail-fill')!.style.getPropertyValue('--lc-stepper-progress'))).toBeCloseTo(100, 5);
+      expect(filled(element)).toEqual([true]);
     });
 
     it('liste vide : aucun li, aucune piste, résumé vide, pas d\'erreur', async () => {
@@ -373,12 +399,13 @@ describe('LcStepperComponent', () => {
       expect(tokenPx('var(--lc-sys-font-weight-semibold)')).toBe(600);
     });
 
-    it('CA-10 : la piste est un trait de 2 px en border, remplie en primary sur la partie parcourue', async () => {
+    it('CA-10 : la piste est un trait de 2 px en border, rempli en primary sur les segments parcourus (échelle nulle tant qu\'ils ne le sont pas)', async () => {
       await setup();
       expect(declared('.lc-stepper__rail', 'block-size')).toBe('var(--lc-sys-border-width-thick)');
       expect(declared('.lc-stepper__rail', 'background')).toMatch(/--lc-sys-color-border\)+$/);
-      expect(declared('.lc-stepper__rail-fill', 'background')).toMatch(/--lc-sys-color-primary\)+$/);
-      expect(declared('.lc-stepper__rail-fill', 'inline-size')).toBe('var(--lc-stepper-progress)');
+      expect(declared('.lc-stepper__fill', 'background')).toMatch(/--lc-sys-color-primary\)+$/);
+      expect(declared('.lc-stepper__fill', 'scale')).toBe('0 1');
+      expect(declared('.lc-stepper__fill--on', 'scale')).toBe('1');
     });
 
     it('CA-10 : la piste précède la liste dans le corps et chaque étape est une pastille de la liste', async () => {
@@ -388,27 +415,25 @@ describe('LcStepperComponent', () => {
       expect(element.querySelectorAll('.lc-stepper__badge').length).toBe(4);
     });
 
-    it('CA-10 : la progression de la piste vaut index / (N - 1) pour chaque étape en cours', async () => {
-      for (const [current, expected] of [[0, 0], [1, 25], [2, 50], [3, 75], [4, 100]] as const) {
+    it('CA-10 : la piste a un segment par intervalle, plein pour les index inférieurs à l\'étape en cours', async () => {
+      for (const current of [0, 1, 2, 3, 4]) {
         const { element } = await setup(stepsAt(current));
-        const fill = element.querySelector<HTMLElement>('.lc-stepper__rail-fill')!;
-        expect(parseFloat(fill.style.getPropertyValue('--lc-stepper-progress'))).toBeCloseTo(expected, 5);
+        expect(filled(element)).toEqual([0, 1, 2, 3].map((segment) => segment < current));
       }
     });
 
-    it('CA-10 : la progression suit une mise à jour de `steps`', async () => {
+    it('CA-10 : les segments pleins suivent une mise à jour de `steps`', async () => {
       const { fixture, element } = await setup(stepsAt(1));
-      const progress = () => parseFloat(element.querySelector<HTMLElement>('.lc-stepper__rail-fill')!.style.getPropertyValue('--lc-stepper-progress'));
-      expect(progress()).toBeCloseTo(25, 5);
+      expect(filled(element)).toEqual([true, false, false, false]);
       await update(fixture, stepsAt(3));
-      expect(progress()).toBeCloseTo(75, 5);
+      expect(filled(element)).toEqual([true, true, true, false]);
     });
 
     it('CA-10 : avec une seule étape, ni piste ni division par zéro', async () => {
       const { element } = await setup([{ id: 'a', label: 'Seule', state: 'current' }]);
       expect(element.querySelectorAll('ol > li').length).toBe(1);
       expect(element.querySelector('.lc-stepper__rail')).toBeNull();
-      expect(element.querySelector('.lc-stepper__rail-fill')).toBeNull();
+      expect(element.querySelector('.lc-stepper__fill')).toBeNull();
       expect(element.innerHTML).not.toContain('NaN');
       expect(element.innerHTML).not.toContain('Infinity');
     });
@@ -424,7 +449,7 @@ describe('LcStepperComponent', () => {
       expect(element.querySelector('.lc-stepper__rail')).toBeNull();
       await update(fixture, [{ id: 'a', label: 'A', state: 'done' }, { id: 'b', label: 'B', state: 'current' }]);
       expect(element.querySelector('.lc-stepper__rail')).not.toBeNull();
-      expect(parseFloat(element.querySelector<HTMLElement>('.lc-stepper__rail-fill')!.style.getPropertyValue('--lc-stepper-progress'))).toBeCloseTo(100, 5);
+      expect(filled(element)).toEqual([true]);
     });
   });
 
@@ -610,12 +635,13 @@ describe('LcStepperComponent', () => {
       expect(directions).toEqual(['forward']);
     });
 
-    it('CA-12 : reculer pose lc-stepper--backward sur l\'hôte et émet « backward »', async () => {
+    it('CA-12 : reculer émet « backward » et ne joue aucune animation (la classe de sens est retirée aussitôt)', async () => {
       const { fixture, element, directions } = await setup(stepsAt(3));
+      animated.length = 0;
       await update(fixture, stepsAt(2));
-      expect(element.classList).toContain('lc-stepper--backward');
-      expect(element.classList).not.toContain('lc-stepper--forward');
       expect(directions).toEqual(['backward']);
+      expect(animated).toEqual([]);
+      expect(element.classList).not.toContain('lc-stepper--backward');
     });
 
     it('CA-12 : deux changements de même sens émettent chacun', async () => {
@@ -625,14 +651,14 @@ describe('LcStepperComponent', () => {
       expect(directions).toEqual(['forward', 'forward']);
     });
 
-    it('CA-12 : deux changements de même sens, séparés par la fin de l\'animation, émettent chacun', async () => {
-      const { fixture, element, directions } = await setup(stepsAt(3));
-      await update(fixture, stepsAt(2));
-      endAnimation(element);
-      await fixture.whenStable();
+    it('CA-12 : deux changements de même sens, séparés par la fin des animations, émettent chacun', async () => {
+      const { fixture, element, directions } = await setup(stepsAt(0));
       await update(fixture, stepsAt(1));
-      expect(directions).toEqual(['backward', 'backward']);
-      expect(element.classList).toContain('lc-stepper--backward');
+      await endAnimation();
+      await fixture.whenStable();
+      await update(fixture, stepsAt(2));
+      expect(directions).toEqual(['forward', 'forward']);
+      expect(element.classList).toContain('lc-stepper--forward');
     });
 
     it('CA-12 : un changement de sens contraire inverse la classe et émet le nouveau sens', async () => {
@@ -640,7 +666,6 @@ describe('LcStepperComponent', () => {
       await update(fixture, stepsAt(2));
       await update(fixture, stepsAt(1));
       expect(directions).toEqual(['forward', 'backward']);
-      expect(element.classList).toContain('lc-stepper--backward');
       expect(element.classList).not.toContain('lc-stepper--forward');
     });
 
@@ -675,16 +700,25 @@ describe('LcStepperComponent', () => {
       expect(directions).toEqual([]);
     });
 
-    it('CA-12 : la classe de sens est retirée à la fin de l\'animation de l\'hôte, mais pas à celle d\'une autre animation', async () => {
+    it('CA-12 : la classe de sens reste posée tant que les animations de l\'étape atteinte jouent, puis est retirée', async () => {
       const { fixture, element, directions } = await setup(stepsAt(1));
       await update(fixture, stepsAt(2));
-      endAnimation(element, 'autre-animation');
-      await fixture.whenStable();
       expect(element.classList).toContain('lc-stepper--forward');
-      endAnimation(element);
+      await endAnimation();
       await fixture.whenStable();
       expect(element.classList).not.toContain('lc-stepper--forward');
       expect(directions).toEqual(['forward']);
+    });
+
+    it('CA-12 : une animation qui finit après un nouveau changement ne retire pas la classe du nouveau sens', async () => {
+      const { fixture, element } = await setup(stepsAt(1));
+      await update(fixture, stepsAt(2));
+      const [first] = pending.splice(0);
+      await update(fixture, stepsAt(3));
+      first();
+      await new Promise((resolve) => setTimeout(resolve));
+      await fixture.whenStable();
+      expect(element.classList).toContain('lc-stepper--forward');
     });
 
     it('CA-12 : le sens s\'applique aussi en vertical', async () => {
@@ -694,23 +728,11 @@ describe('LcStepperComponent', () => {
       expect(directions).toEqual(['forward']);
     });
 
-    it('CA-12 : la piste s\'allonge ou se raccourcit par une transition de largeur (hauteur en vertical), avec les tokens de durée', async () => {
+    it('CA-12 : la feuille du composant ne déclare ni transition ni @keyframes : le mouvement vient des tokens `steps.*` via lcAnimate', async () => {
       await setup();
-      const transition = declared('.lc-stepper__rail-fill', 'transition');
-      expect(transition).toBe('inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard)');
-      expect(declared('.lc-stepper--vertical .lc-stepper__rail-fill', 'transition-property')).toBe('block-size');
-    });
-
-    it('CA-12 : la pastille qui devient « en cours » grandit par transition de taille, son anneau apparaît en fondu, après la piste', async () => {
-      await setup();
-      expect(declared('.lc-stepper__badge', 'transition')).toBe(
-        'inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard), block-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard)',
-      );
-      expect(declared('.lc-stepper__badge::after', 'transition')).toBe('opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard)');
-      for (const direction of ['forward', 'backward']) {
-        expect(declared(`.lc-stepper--${direction} .lc-stepper__item--current .lc-stepper__badge`, 'transition-delay')).toBe('var(--lc-sys-duration-normal)');
-        expect(declared(`.lc-stepper--${direction} .lc-stepper__item--current .lc-stepper__badge::after`, 'transition-delay')).toBe('var(--lc-sys-duration-normal)');
-      }
+      const { rules, keyframes } = stepperCss();
+      expect(keyframes).toEqual([]);
+      expect(rules.filter((rule) => rule.style.getPropertyValue('transition') || rule.style.getPropertyValue('animation')).map((rule) => rule.selector)).toEqual([]);
     });
 
     it('§13.3 : aucune durée ni courbe en dur hors du bloc prefers-reduced-motion', async () => {
@@ -725,22 +747,6 @@ describe('LcStepperComponent', () => {
 
   describe('CA-13 : prefers-reduced-motion: reduce', () => {
     // jsdom n'évalue pas les @media : on lit les règles CSS du composant.
-    it('CA-13 : transition: none sur la pastille, son anneau et le remplissage de la piste', async () => {
-      await setup();
-      for (const selector of ['.lc-stepper__badge', '.lc-stepper__badge::after', '.lc-stepper__rail-fill']) {
-        expect(declared(selector, 'transition', REDUCED)).toBe('none');
-      }
-    });
-
-    it('CA-13 : toute règle qui déclare une transition hors média est neutralisée sous reduced-motion', async () => {
-      await setup();
-      const { rules } = stepperCss();
-      const animated = new Set(rules.filter((rule) => rule.media === null && rule.style.getPropertyValue('transition')).map((rule) => rule.selector));
-      expect(animated.size).toBeGreaterThan(0);
-      const neutralised = new Set(rules.filter((rule) => rule.media === REDUCED && rule.style.getPropertyValue('transition') === 'none').map((rule) => rule.selector));
-      expect([...animated].filter((selector) => !neutralised.has(selector))).toEqual([]);
-    });
-
     it('CA-13 : le bloc reduced-motion ne déclare aucune transition ou durée non nulle', async () => {
       await setup();
       for (const rule of stepperCss().rules.filter((candidate) => candidate.media === REDUCED)) {
@@ -751,18 +757,11 @@ describe('LcStepperComponent', () => {
       }
     });
 
-    it('CA-13 : sous reduced-motion, les délais d\'enchaînement de l\'animation sont remis à zéro', async () => {
-      await setup();
-      for (const direction of ['forward', 'backward']) {
-        expect(declared(`.lc-stepper--${direction} .lc-stepper__item--current .lc-stepper__badge`, 'transition-delay', REDUCED)).toBe('0s');
-        expect(declared(`.lc-stepper--${direction} .lc-stepper__item--current .lc-stepper__badge::after`, 'transition-delay', REDUCED)).toBe('0s');
-      }
-    });
-
-    it('CA-13 : aucune transformation (transform, scale, translate, rotate) n\'est appliquée nulle part', async () => {
+    it('CA-13 : aucune transformation (transform, scale, translate, rotate) n\'est appliquée hors du remplissage de la piste', async () => {
       await setup();
       const offenders = stepperCss()
-        .rules.flatMap((rule) =>
+        .rules.filter((rule) => !rule.selector.includes('.lc-stepper__fill')) // l'échelle du remplissage (0 1 puis 1) est l'état que le composant anime
+        .flatMap((rule) =>
           Array.from(rule.style)
             .filter((property) => /^(transform|scale|translate|rotate|perspective)/.test(property) || /\b(scale|translate|rotate|matrix)[a-z0-9]*\(/.test(rule.style.getPropertyValue(property)))
             .map((property) => `${rule.selector} ${property}`),
@@ -770,15 +769,20 @@ describe('LcStepperComponent', () => {
       expect(offenders).toEqual([]);
     });
 
-    it('CA-13 : l\'animation de minuterie ne touche aucune propriété visible (variable personnalisée seulement) et dure 1 ms sous reduced-motion', async () => {
-      await setup();
-      const { keyframes } = stepperCss();
-      expect(keyframes.length).toBe(1);
-      for (const frame of Array.from(keyframes[0].cssRules) as CSSKeyframeRule[]) {
-        expect(Array.from(frame.style).every((property) => property.startsWith('--'))).toBe(true);
+    it('CA-13 : sous mouvement réduit, aucune animation n\'est lancée (lcAnimate rend une animation finie) mais la classe de sens est retirée', async () => {
+      const original = window.matchMedia;
+      window.matchMedia = ((query: string) => ({ matches: query === REDUCED, media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+      try {
+        const { fixture, element, directions } = await setup(stepsAt(1));
+        await update(fixture, stepsAt(2));
+        await new Promise((resolve) => setTimeout(resolve));
+        await fixture.whenStable();
+        expect(animated).toEqual([]);
+        expect(directions).toEqual(['forward']);
+        expect(element.classList).not.toContain('lc-stepper--forward');
+      } finally {
+        window.matchMedia = original;
       }
-      expect(declared('.lc-stepper--forward', 'animation-duration', REDUCED)).toBe('1ms');
-      expect(declared('.lc-stepper--backward', 'animation-duration', REDUCED)).toBe('1ms');
     });
   });
 
@@ -789,8 +793,8 @@ describe('LcStepperComponent', () => {
       expect(declared('.lc-stepper--vertical .lc-stepper__list', 'grid-auto-flow')).toBe('row');
       expect(declared('.lc-stepper--vertical .lc-stepper__step', 'flex-direction')).toBe('row');
       expect(declared('.lc-stepper--vertical .lc-stepper__rail', 'inline-size')).toBe('var(--lc-sys-border-width-thick)');
-      expect(declared('.lc-stepper--vertical .lc-stepper__rail-fill', 'block-size')).toBe('var(--lc-stepper-progress)');
-      expect(declared('.lc-stepper--vertical .lc-stepper__rail-fill', 'inline-size')).toBe('100%');
+      expect(declared('.lc-stepper--vertical .lc-stepper__fill', 'scale')).toBe('1 0');
+      expect(declared('.lc-stepper--vertical .lc-stepper__fill--on', 'scale')).toBe('1');
     });
 
     it('CA-14 : horizontal par défaut (pas de classe --vertical, étapes en ligne, libellé sous la pastille)', async () => {
@@ -976,6 +980,73 @@ describe('LcStepperComponent', () => {
 });
 
 /** Variante `rail` (fil du projet) : CA-16 à CA-18 de `docs/specs/2026-11-composants-parcours-guide.md` §14. */
+describe('LcStepperComponent : mouvement des barres et des pastilles', () => {
+  const fills = () => animated.filter((call) => call.target.classList.contains('lc-stepper__fill'));
+  const dots = () => animated.filter((call) => call.target.classList.contains('lc-stepper__badge'));
+  const delays = (calls: typeof animated) => calls.map((call) => call.options.delay);
+
+  it('à l\'affichage : les segments pleins sont tracés l\'un après l\'autre (800 ms, 117 ms), les pastilles faites ou en cours entrent en pop (600 ms, 40 ms)', async () => {
+    await setup(stepsAt(3));
+    expect(delays(fills())).toEqual([0, 117, 234]);
+    expect(fills().map((call) => call.options.duration)).toEqual([800, 800, 800]);
+    expect(fills()[0].keyframes).toEqual([{ scale: '0 1' }, { scale: '1 1' }]);
+    expect(delays(dots())).toEqual([0, 40, 80, 120]);
+    expect(dots().every((call) => call.options.duration === 600)).toBe(true);
+    expect(dots()[0].keyframes).toEqual([{ scale: 'var(--lc-steps-dot-scale)', opacity: 0 }, { scale: '1', opacity: 1 }]);
+  });
+
+  it('à l\'affichage de la première étape : une pastille, aucune barre', async () => {
+    await setup(stepsAt(0));
+    expect(fills()).toEqual([]);
+    expect(delays(dots())).toEqual([0]);
+  });
+
+  it('en avançant : seule la barre atteinte est tracée et seule la pastille de l\'étape atteinte entre, sans décalage', async () => {
+    const { fixture } = await setup(stepsAt(2));
+    animated.length = 0;
+    await update(fixture, stepsAt(3));
+    expect(fills().map((call) => (call.target.closest('.lc-stepper__segment') as HTMLElement).previousElementSibling === null)).toEqual([false]);
+    expect(delays(fills())).toEqual([0]);
+    expect(dots().map((call) => call.target.textContent!.trim())).toEqual(['4']);
+    expect(delays(dots())).toEqual([0]);
+  });
+
+  it('en sautant plusieurs étapes : les barres et pastilles atteintes jouent l\'une après l\'autre', async () => {
+    const { fixture } = await setup(stepsAt(1));
+    animated.length = 0;
+    await update(fixture, stepsAt(4));
+    expect(delays(fills())).toEqual([0, 117, 234]);
+    expect(delays(dots())).toEqual([0, 40, 80]);
+  });
+
+  it('un changement qui ne déplace pas l\'étape en cours (libellé) ne rejoue rien', async () => {
+    const { fixture } = await setup(stepsAt(2));
+    animated.length = 0;
+    await update(fixture, stepsAt(2).map((step) => ({ ...step, label: `${step.label} bis` })));
+    expect(animated).toEqual([]);
+  });
+
+  it('vertical : la barre est tracée sur la hauteur (échelle 1 0 vers 1 1)', async () => {
+    await setup(stepsAt(2), { orientation: 'vertical' });
+    expect(fills()[0].keyframes).toEqual([{ scale: '1 0' }, { scale: '1 1' }]);
+  });
+
+  it('une étape à venir ne fait pas entrer sa pastille, même avant l\'étape en cours (états libres)', async () => {
+    await setup([{ id: 'a', label: 'A', state: 'upcoming' }, { id: 'b', label: 'B', state: 'current' }]);
+    expect(dots().map((call) => call.target.textContent!.trim())).toEqual(['2']);
+  });
+
+  it('variante rail : les barres pleines (une par étape atteinte, la courante comprise) sont tracées', async () => {
+    const fixture = TestBed.createComponent(LcStepperComponent);
+    fixture.componentRef.setInput('steps', stepsAt(2));
+    fixture.componentRef.setInput('ariaLabel', 'Progression');
+    fixture.componentRef.setInput('variant', 'rail');
+    await fixture.whenStable();
+    expect(delays(fills())).toEqual([0, 117, 234]);
+    expect(fills().every((call) => call.target.parentElement!.classList.contains('lc-stepper__bar--on'))).toBe(true);
+  });
+});
+
 describe('LcStepperComponent : variante rail', () => {
   const RAIL_STEPS: readonly LcStep[] = [
     { id: 'e1', label: 'Etape 1', state: 'done', answer: 'Maison à 250 000 €', detail: 'Apport de 20 000 €' },
@@ -1422,9 +1493,8 @@ describe('LcStepperComponent : variante rail', () => {
   });
 });
 
-/** Simule la fin de l'animation CSS de minuterie de l'hôte (jsdom n'exécute pas les animations). */
-function endAnimation(element: HTMLElement, animationName = '_ngcontent-test_lc-stepper-sync'): void {
-  const event = new Event('animationend', { bubbles: true });
-  Object.defineProperty(event, 'animationName', { value: animationName });
-  element.dispatchEvent(event);
+/** Termine les animations lancées par le composant (résout leur `finished`) et laisse passer les microtâches qui retirent la classe de sens ; l'appelant attend ensuite `fixture.whenStable()`. */
+async function endAnimation(): Promise<void> {
+  pending.splice(0).forEach((resolve) => resolve());
+  await new Promise((resolve) => setTimeout(resolve));
 }

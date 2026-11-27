@@ -84,12 +84,9 @@ button.lc-stepper__step:focus-visible {
   font-size: var(--lc-sys-font-size-sm);
   font-weight: var(--lc-sys-font-weight-medium);
   font-variant-numeric: var(--lc-sys-font-numeric-tabular);
-  transition:
-    inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
-    block-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-/* Anneau de l'étape en cours : apparaît en fondu. */
+/* Anneau de l'étape en cours : il arrive avec la pastille, qui entre en pop (animée par le composant). */
 .lc-stepper__badge::after {
   content: '';
   position: absolute;
@@ -97,7 +94,6 @@ button.lc-stepper__step:focus-visible {
   border: var(--lc-sys-space-1) solid var(--lc-sys-color-primary-container);
   border-radius: var(--lc-sys-radius-full);
   opacity: 0;
-  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 .lc-stepper__item--done .lc-stepper__badge {
@@ -164,21 +160,37 @@ button.lc-stepper__step:focus-visible {
   white-space: nowrap;
 }
 
-/* Piste : trait de 2 px derrière les pastilles, de la première à la dernière ; la partie parcourue est remplie. */
+/* Piste : trait de 2 px derrière les pastilles, de la première à la dernière, en un segment par intervalle ; le segment parcouru est rempli. */
 .lc-stepper__rail {
   position: absolute;
   inset-block-start: calc(var(--lc-sys-space-10) / 2 - var(--lc-sys-border-width-thick) / 2);
   inset-inline: calc(100% / (2 * var(--lc-stepper-count)));
+  display: flex;
   block-size: var(--lc-sys-border-width-thick);
   background: var(--lc-stepper-track, var(--lc-sys-color-border));
 }
 
-.lc-stepper__rail-fill {
+.lc-stepper__segment {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* Remplissage d'un segment ou d'une barre : vide (échelle nulle sur l'axe de la piste) tant qu'il n'est pas atteint ; le composant le trace (`scale`) à l'arrivée. */
+.lc-stepper__fill {
   display: block;
-  inline-size: var(--lc-stepper-progress);
+  inline-size: 100%;
   block-size: 100%;
   background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
-  transition: inline-size var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+  scale: 0 1;
+  transform-origin: left center;
+}
+
+:host(:dir(rtl)) .lc-stepper__fill {
+  transform-origin: right center;
+}
+
+.lc-stepper__fill--on {
+  scale: 1;
 }
 
 /* Texte « Étape n sur N : nom » : forme compacte seulement. */
@@ -247,14 +259,23 @@ button.lc-stepper__step:focus-visible {
   inset-block: calc(100% / (2 * var(--lc-stepper-count)));
   inset-inline: auto;
   inset-inline-start: calc(var(--lc-sys-space-10) / 2 - var(--lc-sys-border-width-thick) / 2);
+  flex-direction: column;
   inline-size: var(--lc-sys-border-width-thick);
   block-size: auto;
 }
 
-:host(.lc-stepper--vertical) .lc-stepper__rail-fill {
-  inline-size: 100%;
-  block-size: var(--lc-stepper-progress);
-  transition-property: block-size;
+:host(.lc-stepper--vertical) .lc-stepper__segment {
+  min-inline-size: auto;
+  min-block-size: 0;
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__fill {
+  scale: 1 0;
+  transform-origin: center top;
+}
+
+:host(.lc-stepper--vertical) .lc-stepper__fill--on {
+  scale: 1;
 }
 
 /* Variante rail (fil du projet). Deux formes décrites par les mêmes propriétés personnalisées : étroite (base, aussi sans conteneur) et large
@@ -312,15 +333,13 @@ button.lc-stepper__step:focus-visible {
   gap: var(--lc-sys-space-1);
 }
 
+/* Piste de la barre ; son remplissage (`.lc-stepper__fill`) est tracé à l'arrivée. */
 .lc-stepper__bar {
   flex: 1;
   block-size: var(--lc-sys-space-2);
   border-radius: var(--lc-sys-radius-full);
   background: var(--lc-stepper-track, var(--lc-sys-color-border));
-}
-
-.lc-stepper__bar--on {
-  background: var(--lc-stepper-current-background, var(--lc-sys-color-primary));
+  overflow: hidden;
 }
 
 .lc-stepper__toggle {
@@ -423,7 +442,7 @@ button.lc-stepper__step:focus-visible {
     background: GrayText;
   }
 
-  .lc-stepper__bar--on {
+  .lc-stepper__fill {
     background: Highlight;
   }
 
@@ -433,54 +452,6 @@ button.lc-stepper__step:focus-visible {
 
   :host(.lc-stepper--rail) .lc-stepper__item--done::before {
     background: Highlight;
-  }
-}
-
-/* Sens du changement : la pastille qui devient « en cours » attend que la piste l'atteigne (avance) ou la quitte (recul). */
-:host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge,
-:host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge {
-  transition-delay: var(--lc-sys-duration-normal);
-}
-
-:host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge::after,
-:host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge::after {
-  transition-delay: var(--lc-sys-duration-normal);
-}
-
-/* Minuterie sans effet visible : sa fin (animationend) retire la classe de sens de l'hôte. */
-:host(.lc-stepper--forward),
-:host(.lc-stepper--backward) {
-  animation: lc-stepper-sync calc(var(--lc-sys-duration-normal) * 2) linear;
-}
-
-@keyframes lc-stepper-sync {
-  from {
-    --lc-stepper-sync: 0;
-  }
-
-  to {
-    --lc-stepper-sync: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lc-stepper__badge,
-  .lc-stepper__badge::after,
-  .lc-stepper__rail-fill {
-    transition: none;
-  }
-
-  :host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge,
-  :host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge,
-  :host(.lc-stepper--forward) .lc-stepper__item--current .lc-stepper__badge::after,
-  :host(.lc-stepper--backward) .lc-stepper__item--current .lc-stepper__badge::after {
-    transition-delay: 0s;
-  }
-
-  /* La minuterie ne change aucune propriété visible ; on la raccourcit pour que la classe de sens soit retirée aussitôt. */
-  :host(.lc-stepper--forward),
-  :host(.lc-stepper--backward) {
-    animation-duration: 1ms;
   }
 }
 
@@ -507,9 +478,5 @@ button.lc-stepper__step:focus-visible {
 
   .lc-stepper__rail {
     background: GrayText;
-  }
-
-  .lc-stepper__rail-fill {
-    background: Highlight;
   }
 }

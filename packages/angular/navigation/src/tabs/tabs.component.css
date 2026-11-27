@@ -62,8 +62,15 @@
   color: var(--lc-tabs-selected-color, var(--lc-sys-color-on-surface));
 }
 
-/* Trait glissant : position (`translateX`) et largeur posées par le composant ; `left` reste fixe. */
+/*
+ * Trait à deux bords : la boîte va du bord de départ du trait au bord droit du dernier onglet (`left` et `width` posés par le composant), le bord de fin est
+ * rogné par `clip-path`. Le bord avant (vers les coordonnées croissantes) prend la durée « avant », l'autre la durée « arrière » décalée ; `data-direction`
+ * dit le sens, `forward` par défaut.
+ */
 .lc-tabs__indicator {
+  --_front: var(--lc-tabs-indicator-front-duration) var(--lc-tabs-indicator-front-easing);
+  --_back: var(--lc-tabs-indicator-back-duration) var(--lc-tabs-indicator-back-easing) var(--lc-tabs-indicator-back-delay);
+
   position: absolute;
   left: 0;
   inset-block-end: 0;
@@ -74,11 +81,20 @@
 
 :host(.lc-tabs--ready) .lc-tabs__indicator {
   transition:
-    transform var(--lc-tabs-indicator-front-duration) var(--lc-tabs-indicator-front-easing),
-    width var(--lc-tabs-indicator-front-duration) var(--lc-tabs-indicator-front-easing);
+    left var(--_back),
+    width var(--_back),
+    clip-path var(--_front);
 }
 
-:host(.lc-tabs--ready) .lc-tabs__indicator--instant {
+:host(.lc-tabs--ready) .lc-tabs__indicator[data-direction='backward'] {
+  transition:
+    left var(--_front),
+    width var(--_front),
+    clip-path var(--_back);
+}
+
+:host(.lc-tabs--ready) .lc-tabs__indicator--instant,
+:host(.lc-tabs--ready) .lc-tabs__indicator--instant[data-direction='backward'] {
   transition: none;
 }
 
@@ -101,19 +117,10 @@
   display: none;
 }
 
-/* Le panneau qui s'affiche apparaît en fondu pendant que le trait glisse (`hidden` → affiché : le départ vient de `@starting-style`). */
-.lc-tabs__panel {
-  transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
-}
-
-@starting-style {
-  .lc-tabs__panel {
-    opacity: 0;
-  }
-}
-
+/* Mouvement réduit : le trait saute (aucune transition, donc aucun objet animation, pas même de 0,01 ms). */
 @media (prefers-reduced-motion: reduce) {
-  .lc-tabs__panel {
+  :host(.lc-tabs--ready) .lc-tabs__indicator,
+  :host(.lc-tabs--ready) .lc-tabs__indicator[data-direction='backward'] {
     transition: none;
   }
 }

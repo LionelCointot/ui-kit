@@ -8,7 +8,7 @@ import { LcNavGroupComponent, LcNavItemComponent, LcNavListComponent } from '@li
 @Component({ selector: 'lc-nav-group-page', template: '' })
 class PageComponent {}
 
-/** Demo of the `Animation` story: the active item moves from the first to the last item of the list. */
+/** Demo of the `Animation` story: the active item moves from the first to the last item of the list (two-edge background), then a collapsible group folds and unfolds (d48). */
 @Component({
   selector: 'lc-nav-animation-demo',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,11 +31,34 @@ class PageComponent {}
           </lc-nav-list>
         </nav>
       }
+    </div>
+    <div #fold data-demo="d48">
+      <button lcButton fillMode="outline" size="small" style="margin-block:var(--lc-sys-space-4)" (click)="foldDemo.replay(fold)">Rejouer</button>
+      @for (key of foldDemo.keys(); track key) {
+        <nav aria-label="Navigation repliable" style="max-width:16rem">
+          <lc-nav-list>
+            <lc-nav-group label="Avancé" [collapsible]="true" [(expanded)]="open">
+              <a lcNavItem routerLink="/services" icon="activity">Services</a>
+              <a lcNavItem routerLink="/settings" icon="settings">Paramètres</a>
+            </lc-nav-group>
+          </lc-nav-list>
+        </nav>
+      }
     </div>`,
 })
 class NavAnimationDemoComponent {
   private readonly router = inject(Router);
+  protected readonly open = signal(true);
   protected readonly demo = replayable({ destroyRef: inject(DestroyRef), play: () => void this.router.navigateByUrl('/settings') });
+  /** Folds the group once the demo is rendered, then unfolds it. */
+  protected readonly foldDemo = replayable({
+    destroyRef: inject(DestroyRef),
+    reset: () => this.open.set(true),
+    play: (later) => {
+      this.open.set(false);
+      later(900, () => this.open.set(true));
+    },
+  });
 
   constructor() {
     void this.router.navigateByUrl('/overview');

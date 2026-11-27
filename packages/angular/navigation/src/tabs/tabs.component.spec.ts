@@ -95,6 +95,49 @@ describe('LcTabsComponent', () => {
     await fixture.whenStable();
     expect(fixture.componentInstance.selected()).toBe('echeances');
   });
+
+  describe('cascade du panneau à la première ouverture (D-21)', () => {
+    const revealed = (panel: HTMLElement) => Array.from(panel.children).filter((child) => child.classList.contains('lc-reveal')).map((child) => (child as HTMLElement).style.getPropertyValue('--lc-reveal-rank'));
+    const rows = (host: HTMLElement) => Array.from(host.querySelectorAll<HTMLElement>('[role="tabpanel"]:not([hidden]) > *'));
+
+    it('l\'onglet affiché au départ n\'entre pas en cascade', async () => {
+      const { panels } = await setup();
+      expect(revealed(panels()[0])).toEqual([]);
+    });
+
+    it('la première ouverture donne à chaque enfant direct sa classe, son rang et la courbe « soft » ; la fin de l\'entrée les retire ; la réouverture ne rejoue rien', async () => {
+      const { fixture, element, tabs, panels } = await setup();
+      tabs()[1].click();
+      await fixture.whenStable();
+      expect(revealed(panels()[1])).toEqual(['0']);
+      expect(rows(element)[0].style.getPropertyValue('--lc-reveal-curve')).toBe('var(--lc-sys-easing-soft)');
+      rows(element)[0].dispatchEvent(Object.assign(new Event('animationend', { bubbles: true }), { animationName: 'lc-reveal-in' }));
+      expect(revealed(panels()[1])).toEqual([]);
+      expect(rows(element)[0].style.getPropertyValue('--lc-reveal-curve')).toBe('');
+      tabs()[0].click();
+      await fixture.whenStable();
+      tabs()[1].click();
+      await fixture.whenStable();
+      expect(revealed(panels()[1])).toEqual([]);
+      expect(revealed(panels()[0])).toEqual([]);
+    });
+
+    it('l\'onglet de départ est compté comme ouvert : y revenir ne rejoue rien', async () => {
+      const { fixture, tabs, panels } = await setup();
+      tabs()[3].click();
+      await fixture.whenStable();
+      tabs()[0].click();
+      await fixture.whenStable();
+      expect(revealed(panels()[0])).toEqual([]);
+    });
+
+    it('un onglet choisi par `selected` plutôt que par un clic entre aussi en cascade, une seule fois', async () => {
+      const { fixture, panels } = await setup();
+      fixture.componentInstance.selected.set('graphiques');
+      await fixture.whenStable();
+      expect(revealed(panels()[3])).toEqual(['0']);
+    });
+  });
 });
 
 @Component({
@@ -477,15 +520,21 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
     return { fixture, indicator, tabs };
   }
 
-  it('pose transform et width de l\'onglet sélectionné, et glisse (sans --instant) après un clic', async () => {
+  /** Boîte `[left, bound]` et bord de fin rogné : `bound` est le bord droit du dernier onglet (ici 282 px). */
+  const edges = (indicator: HTMLElement) => ({ left: indicator.style.left, width: indicator.style.width, trailing: /inset\(\S+ (\S+) /.exec(indicator.style.clipPath)?.[1] });
+
+  it('pose left, width et le rognage du bord de fin sous l\'onglet sélectionné, et glisse (sans --instant) après un clic', async () => {
     const { fixture, indicator, tabs } = await setupDynamic();
-    expect(indicator.style.transform).toBe('translateX(0px)');
-    expect(indicator.style.width).toBe('80px');
+    expect(edges(indicator)).toEqual({ left: '0px', width: '282px', trailing: '202px' });
+    expect(indicator.classList.contains(INSTANT)).toBe(true); // premier placement : aucune transition au premier affichage
     tabs()[2].click();
     await fixture.whenStable();
-    expect(indicator.style.transform).toBe('translateX(200px)');
-    expect(indicator.style.width).toBe('82px');
+    expect(edges(indicator)).toEqual({ left: '200px', width: '82px', trailing: '0px' });
+    expect(indicator.dataset['direction']).toBe('forward');
     expect(indicator.classList.contains(INSTANT)).toBe(false);
+    tabs()[0].click();
+    await fixture.whenStable();
+    expect(indicator.dataset['direction']).toBe('backward');
   });
 
   it('pose --instant après un rappel du ResizeObserver, le retire à la sélection suivante', async () => {
@@ -495,7 +544,7 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
     tabs()[1].click();
     await fixture.whenStable();
     expect(indicator.classList.contains(INSTANT)).toBe(false);
-    expect(indicator.style.transform).toBe('translateX(100px)');
+    expect(indicator.style.left).toBe('100px');
   });
 
   it('suit offsetLeft aussi en RTL (direction sans effet sur la mesure)', async () => {
@@ -503,7 +552,7 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
     const { fixture, indicator, tabs } = await setupDynamic();
     tabs()[1].click();
     await fixture.whenStable();
-    expect(indicator.style.transform).toBe('translateX(100px)');
+    expect(indicator.style.left).toBe('100px');
   });
 
   it('ajout d\'onglet ou focus clavier sans changement de sélection : --instant, pas de glissement', async () => {
@@ -512,7 +561,7 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
     await fixture.whenStable();
     fixture.componentInstance.ids.set(['z', 'a', 'b', 'c']);
     await fixture.whenStable();
-    expect(indicator.style.transform).toBe('translateX(100px)');
+    expect(indicator.style.left).toBe('100px');
     expect(indicator.classList.contains(INSTANT)).toBe(true);
   });
 
@@ -521,8 +570,8 @@ describe('LcTabsComponent : placement de l\'indicateur', () => {
     fixture.componentInstance.ids.set(['b', 'c']);
     await fixture.whenStable();
     expect(indicator.hidden).toBe(false);
-    expect(indicator.style.transform).toBe('translateX(0px)');
-    expect(indicator.style.width).toBe('80px');
+    expect(indicator.style.left).toBe('0px');
+    expect(edges(indicator).trailing).toBe('101px');
   });
 });
 

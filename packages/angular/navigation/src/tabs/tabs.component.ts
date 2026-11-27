@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, afterRenderEffect, computed, contentChildren, inject, input, model, output, signal, viewChild, viewChildren } from '@angular/core';
-import { LcIconComponent, lcIndicatorRect, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LcIconComponent, lcIndicatorRect, lcPlaceIndicator, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcSwipePanelDirective, LcSwipePanelsComponent } from '../swipe-panels/swipe-panels.component';
 import { LcTabComponent } from './tab.component';
 
@@ -13,7 +13,8 @@ export interface LcTabsSwipeSettings {
 /**
  * Onglets (`tablist`, `tab`, `tabpanel`). Flèches gauche et droite, Début et Fin ; activation
  * automatique (l'onglet focalisé est sélectionné) ou manuelle (Entrée ou Espace). Le contenu d'un onglet
- * n'est créé qu'à sa première sélection, puis conservé.
+ * n'est créé qu'à sa première sélection, puis conservé ; à cette première ouverture (pas à l'onglet affiché au départ), ses enfants directs entrent
+ * en cascade (`lc-reveal`, voir `motion.css`), une seule fois.
  *
  * Avec `swipe`, les panneaux sont ceux d'un `lc-swipe-panels` (un seul jeu de `tabpanel`, tous créés d'emblée, `inert`
  * hors de vue, jamais `hidden`) : un glissement change d'onglet et le trait suit le doigt. L'hôte remplit son conteneur
@@ -50,7 +51,7 @@ export interface LcTabsSwipeSettings {
       </lc-swipe-panels>
     } @else {
       @for (tab of tabs(); track tab.id()) {
-        <div role="tabpanel" class="lc-tabs__panel" tabindex="0"
+        <div #panel role="tabpanel" class="lc-tabs__panel" tabindex="0" (animationend)="endReveal($event)"
           [id]="panelId(tab.id())" [attr.aria-labelledby]="tabId(tab.id())" [hidden]="tab.id() !== current()">
           @if (visited().has(tab.id()) || tab.id() === current()) {
             <ng-container [ngTemplateOutlet]="tab.contentTemplate()" />
@@ -74,6 +75,7 @@ export class LcTabsComponent {
 
   protected readonly tabs = contentChildren(LcTabComponent);
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
+  private readonly panels = viewChildren<ElementRef<HTMLElement>>('panel');
   private readonly strip = viewChild(LcSwipePanelsComponent);
   private readonly list = viewChild.required<ElementRef<HTMLElement>>('list');
   private readonly indicator = viewChild.required<ElementRef<HTMLElement>>('indicator');
@@ -85,6 +87,8 @@ export class LcTabsComponent {
   /** Vrai après la première mesure de l'indicateur : avant, il se pose sans transition. */
   protected readonly ready = signal(false);
   private placedId: string | null = null;
+  /** Onglets déjà affichés au moins une fois : seule leur première ouverture déclenche la cascade, sauf l'onglet de départ. */
+  private readonly opened = new Set<string>();
   protected readonly visited = signal<ReadonlySet<string>>(new Set());
 
   /** Onglet affiché : `selected` s'il existe et n'est pas désactivé, sinon le premier onglet actif. */
@@ -109,6 +113,14 @@ export class LcTabsComponent {
       this.scrollTabIntoView(this.buttons()[index]?.nativeElement);
       this.updateFades();
       if (!this.swipeOn()) this.placeIndicator(false);
+    });
+    afterRenderEffect(() => {
+      const id = this.current();
+      if (id === null || this.swipeOn() || this.opened.has(id)) return;
+      // shortcut: pas de cascade en swipe (tous les panneaux existent d'emblée), à lever si le swipe doit révéler à la première vue
+      const initial = this.opened.size === 0;
+      this.opened.add(id);
+      if (!initial) this.revealPanel(id);
     });
     // En glissement, le trait suit la progression de la bande (position et largeur interpolées, sans transition).
     afterRenderEffect(() => {
@@ -147,11 +159,17 @@ export class LcTabsComponent {
     indicator.hidden = !button;
     if (!button) return;
     // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
-    indicator.classList.toggle('lc-tabs__indicator--instant', resized || id === this.placedId);
+    // Premier placement (`placedId` nul) : sans transition, même si `lc-tabs--ready` arrive dans le même calcul de style.
+    indicator.classList.toggle('lc-tabs__indicator--instant', resized || this.placedId === null || id === this.placedId);
     this.placedId = id;
-    indicator.style.transform = `translateX(${button.offsetLeft}px)`;
-    indicator.style.width = `${button.offsetWidth}px`;
+    lcPlaceIndicator(indicator, 'x', button.offsetLeft, button.offsetLeft + button.offsetWidth, this.rightEdge());
     this.ready.set(true);
+  }
+
+  /** Bord droit du dernier onglet : bord fixe de la boîte de l'indicateur (`lcPlaceIndicator`). */
+  private rightEdge(): number {
+    const last = this.buttons().at(-1)?.nativeElement;
+    return last ? last.offsetLeft + last.offsetWidth : 0;
   }
 
   private followStrip(): void {
@@ -163,9 +181,29 @@ export class LcTabsComponent {
     indicator.hidden = !rect;
     if (!rect) return;
     indicator.classList.add('lc-tabs__indicator--instant');
-    indicator.style.transform = `translateX(${rect.left}px)`;
-    indicator.style.width = `${rect.width}px`;
+    lcPlaceIndicator(indicator, 'x', rect.left, rect.left + rect.width, this.rightEdge());
     this.ready.set(true);
+  }
+
+  /** Première ouverture d'un onglet : ses enfants directs entrent l'un après l'autre (`lc-reveal`, rang = position, courbe « soft »). */
+  private revealPanel(id: string): void {
+    const panel = this.panels().find((ref) => ref.nativeElement.id === this.panelId(id))?.nativeElement;
+    if (!panel || lcPrefersReducedMotion()) return;
+    Array.from(panel.children, (child, rank) => {
+      const element = child as HTMLElement;
+      element.classList.add('lc-reveal');
+      element.style.setProperty('--lc-reveal-rank', `${rank}`);
+      element.style.setProperty('--lc-reveal-curve', 'var(--lc-sys-easing-soft)');
+    });
+  }
+
+  /** Fin de l'entrée d'un enfant du panneau : la classe et les variables posées par `revealPanel` sont retirées. */
+  protected endReveal(event: AnimationEvent): void {
+    const child = event.target as HTMLElement;
+    if (event.animationName !== 'lc-reveal-in' || child.parentElement !== event.currentTarget) return;
+    child.classList.remove('lc-reveal');
+    child.style.removeProperty('--lc-reveal-rank');
+    child.style.removeProperty('--lc-reveal-curve');
   }
 
   protected onSwipe(index: number): void {

@@ -16,7 +16,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
-import { LC_DEFAULTS, LcFillMode, LcIconComponent, LcOption, LcSize, joinIds, lcIndicatorRect, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_DEFAULTS, LcFillMode, LcIconComponent, LcOption, LcSize, joinIds, lcIndicatorRect, lcPlaceIndicator, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 
 interface SegmentView<T> {
@@ -30,7 +30,7 @@ interface SegmentView<T> {
  * Contrôle segmenté (`role="radiogroup"`, options `role="radio"`) : un seul choix parmi quelques options.
  * Focus itinérant : les flèches déplacent le focus et la sélection, Début et Fin vont aux extrémités,
  * Tab sort du groupe. Implémente `FormValueControl<T | null>` (Signal Forms) et `[(value)]`.
- * L'option active a un fond et un anneau (variante `outline`) ou une pastille levée qui glisse sur une piste creusée (`fillMode="solid"`) :
+ * Une pastille à deux bords glisse sous l'option active, dans les deux variantes : fond teinté et anneau sur l'option (`outline`), ou pastille claire sur une piste creusée (`fillMode="solid"`) :
  * l'état ne tient pas à la seule couleur. Une option sans icône porte une coche quand elle est active ; une option avec icône garde son icône. Avec `controlled`, un choix n'est qu'une demande
  * (`valueRequest`) : `value` ne change que quand le parent la modifie (par exemple après confirmation).
  */
@@ -38,9 +38,7 @@ interface SegmentView<T> {
   selector: 'lc-segmented-control',
   imports: [LcIconComponent],
   template: `
-    @if (hasIndicator()) {
-      <span #indicator class="lc-segmented-control__indicator" aria-hidden="true"></span>
-    }
+    <span class="lc-segmented-control__pill" aria-hidden="true"><span #indicator class="lc-segmented-control__indicator"></span></span>
     @for (segment of segments(); track $index) {
       <button #segment type="button" role="radio" class="lc-segmented-control__option"
         [attr.aria-checked]="segment.selected" [tabIndex]="segment.tabIndex" [disabled]="segment.disabled"
@@ -108,9 +106,6 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
   protected readonly resolvedSize = computed(() => this.size() ?? this.defaults.size);
   protected readonly describedBy = computed(() => joinIds(this.field?.describedBy(), this.extraDescribedBy()));
 
-  /** Le fond mobile existe en suivi de progression et dans la variante `solid`. */
-  protected readonly hasIndicator = computed(() => this.indicatorProgress() !== null || this.fillMode() === 'solid');
-
   private placed = false;
 
   protected readonly segments = computed<readonly SegmentView<T>[]>(() => {
@@ -138,13 +133,19 @@ export class LcSegmentedControlComponent<T> implements FormValueControl<T | null
         return;
       }
       const place = (instant: boolean): void => {
-        const rect = progress < 0 ? null : lcIndicatorRect(buttons.map(({ nativeElement: button }) => ({ left: button.offsetLeft, width: button.offsetWidth })), progress);
+        // Rectangles fractionnaires (les options se partagent la largeur) : `offsetLeft` / `offsetWidth` arrondis décaleraient la pastille d'un pixel.
+        const origin = this.host.getBoundingClientRect().left + this.host.clientLeft;
+        const rects = buttons.map(({ nativeElement: button }) => {
+          const box = button.getBoundingClientRect();
+          return { left: box.left - origin, width: box.width };
+        });
+        const rect = progress < 0 ? null : lcIndicatorRect(rects, progress);
         indicator.hidden = !rect;
         if (!rect) return;
         // shortcut: écriture directe dans le DOM, car la classe `--instant` doit précéder la position dans le même rappel ; à lever si l'on passe aux liaisons de signaux.
         indicator.classList.toggle('lc-segmented-control__indicator--instant', instant);
-        indicator.style.transform = `translateX(${rect.left}px)`;
-        indicator.style.width = `${rect.width}px`;
+        const last = rects.at(-1)!;
+        lcPlaceIndicator(indicator, 'x', rect.left, rect.left + rect.width, Math.max(last.left + last.width, rect.left + rect.width));
       };
       place(tracked !== null || !this.placed);
       this.placed = true;

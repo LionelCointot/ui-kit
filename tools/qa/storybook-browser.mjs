@@ -593,15 +593,29 @@ const MOTION_INIT = () => {
     return value;
   };
   q.rect = (el) => el.getBoundingClientRect().toJSON();
-  // CA-3 : état du trait des onglets à la première mesure (observateur installé avant le premier rendu).
+  // Zone visible d'un indicateur (T8 : deux bords animés, quelle que soit la technique) : boîte rognée par son `clip-path: inset()` calculé ; `{ left, width }` ou `{ top, height }` selon l'axe.
+  q.vis = (el, axis = 'x') => {
+    const r = el.getBoundingClientRect();
+    let [s, e] = axis === 'x' ? [r.left, r.right] : [r.top, r.bottom];
+    const m = /^inset\((.*?)(?: round .*)?\)$/.exec(getComputedStyle(el).clipPath);
+    if (m) {
+      const [t, rt = t, b = t, l = rt] = m[1].trim().split(/\s+/);
+      const len = (x, size) => (x.endsWith('%') ? (parseFloat(x) / 100) * size : parseFloat(x));
+      if (axis === 'x') { s += len(l, r.width); e -= len(rt, r.width); } else { s += len(t, r.height); e -= len(b, r.height); }
+    }
+    return axis === 'x' ? { left: s, right: e, top: r.top, bottom: r.bottom, width: e - s, height: r.height } : { left: r.left, right: r.right, top: s, bottom: e, width: r.width, height: e - s };
+  };
+  // CA-3 : état du trait des onglets à la première mesure (observateur installé avant le premier rendu) ; « mesuré » = déjà sous l'onglet sélectionné (géométrie, et non plus un style en ligne).
   q.tabs3 = { readyAt: null, firstSeen: null };
   new MutationObserver(() => {
     const host = document.querySelector('lc-tabs');
     const ind = host?.querySelector('.lc-tabs__indicator');
     if (!ind) return;
     const ready = host.classList.contains('lc-tabs--ready');
-    if (!q.tabs3.firstSeen) q.tabs3.firstSeen = { ready, measured: ind.style.transform !== '' };
-    if (ready && !q.tabs3.readyAt) q.tabs3.readyAt = { measured: ind.style.transform !== '', animations: ind.getAnimations().map((a) => a.effect.getTiming().duration) };
+    const sel = host.querySelector('[role=tab][aria-selected=true]');
+    const fit = () => { if (!sel) return false; const v = q.vis(ind), t = sel.getBoundingClientRect(); const instant = ind.getAnimations({ subtree: true }); return (Math.abs(v.left - t.left) <= 1 && Math.abs(v.width - t.width) <= 1) || (instant.length > 0 && instant.every((a) => a.effect.getTiming().duration <= 0.01)); }; // mouvement réduit : une animation de 0,01 ms n'a pas encore rendu sa valeur finale à la première lecture
+    if (!q.tabs3.firstSeen) q.tabs3.firstSeen = { ready, measured: fit() };
+    if (ready && !q.tabs3.readyAt) q.tabs3.readyAt = { measured: fit(), animations: ind.getAnimations({ subtree: true }).map((a) => a.effect.getTiming().duration) };
   }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
 
   // --- Différence de liste (T6b, décision 26) : enregistreur par image des animations des lignes de lc-data-table ---
@@ -735,15 +749,16 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.mouse.down();
     const got = await page.evaluate((sel) => {
       const el = document.querySelector(sel);
-      const list = window.__qa.transitions(el, (a) => a.transitionProperty === 'transform');
+      const list = window.__qa.transitions(el, (a) => ['transform', 'scale'].includes(a.transitionProperty));
       const durations = list.map((a) => a.effect.getComputedTiming().duration);
       list.forEach((a) => a.finish());
-      return { durations, scale: parseFloat(getComputedStyle(el).getPropertyValue('--lc-button-press-scale')), a: new DOMMatrix(getComputedStyle(el).transform).a, text: el.textContent.trim(), active: el.matches(':active'), cssDuration: getComputedStyle(el).transitionDuration, pressMs: window.__qa.tokenMs('--lc-sys-duration-fast') };
+      const cs = getComputedStyle(el);
+      return { durations, scale: parseFloat(cs.getPropertyValue('--lc-button-press-scale')), a: new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform).a * (cs.scale === 'none' ? 1 : parseFloat(cs.scale)), text: el.textContent.trim(), active: el.matches(':active'), cssDuration: cs.transitionDuration, pressMs: window.__qa.tokenMs('--lc-button-press-duration') };
     }, FILTERS);
     await page.mouse.move(0, 0); // relâché hors du bouton : pas de clic, le panneau ne s'ouvre pas
     await page.mouse.up();
     if (reduced) check(got.active && quick(got.cssDuration) && got.durations.every((ms) => ms <= 0.01), `CA-6/13 ${tag} ${label} « ${got.text} »`, `durées=${got.cssDuration}`);
-    else check(got.active && got.durations.length > 0 && got.durations.every((ms) => near(ms, got.pressMs)) && near(got.a, got.scale, 0.001), `CA-6 ${tag} ${label} « ${got.text} »`, `échelle=${got.a.toFixed(3)} attendu ${got.scale}, durées=${got.durations} attendu ${got.pressMs}, actif=${got.active}`);
+    else check(got.active && near(got.scale, 0.97, 0.0005) && near(got.pressMs, 100) && got.durations.length > 0 && got.durations.every((ms) => near(ms, 100)) && near(got.a, 0.97, 0.001), `CA-22 (v2) ${tag} ${label} « ${got.text} »`, `échelle=${got.a.toFixed(3)} (token ${got.scale}) attendu 0,97, durées=${got.durations} (token ${got.pressMs}) attendu 100, actif=${got.active}`);
   };
 
   // CA-10 : entrée du dialogue.
@@ -862,8 +877,8 @@ async function motionIndicators(context, base, name, tag, width, check) {
   const TABS = 'qa-motion-navigation--tabs';
   const NAV = 'qa-motion-navigation--nav';
   const byText = (text) => `[...document.querySelectorAll('[role=tab]')].find((b) => b.textContent.includes('${text}'))`;
-  const fitTab = (page) => page.evaluate(() => { const q = window.__qa; const ind = q.rect(document.querySelector('.lc-tabs__indicator')); const tab = q.rect(document.querySelector('[role=tab][aria-selected=true]')); return { ind, tab }; });
-  const finishTabs = (page) => page.evaluate(() => document.querySelector('.lc-tabs__indicator').getAnimations().forEach((a) => a.finish()));
+  const fitTab = (page) => page.evaluate(() => { const q = window.__qa; const ind = q.vis(document.querySelector('.lc-tabs__indicator')); const tab = q.rect(document.querySelector('[role=tab][aria-selected=true]')); return { ind, tab }; });
+  const finishTabs = (page) => page.evaluate(() => document.querySelector('.lc-tabs__indicator').getAnimations({ subtree: true }).forEach((a) => a.finish()));
   const fits = (r) => near(r.ind.left, r.tab.left, 1) && near(r.ind.width, r.tab.width, 1);
   const fmt = (r) => `indicateur x=${r.ind.left.toFixed(1)} l=${r.ind.width.toFixed(1)}, onglet x=${r.tab.left.toFixed(1)} l=${r.tab.width.toFixed(1)}`;
   const start = async (id, args = '', hash = '') => { const r = await motionPage(context, base, id, args, hash); return r; };
@@ -880,20 +895,20 @@ async function motionIndicators(context, base, name, tag, width, check) {
       const q = window.__qa; const ind = document.querySelector('.lc-tabs__indicator');
       const tab = eval(js);
       tab.click(); await q.frames(2);
-      const list = ind.getAnimations().filter((a) => a instanceof CSSTransition);
-      const info = list.map((a) => ({ p: a.transitionProperty, d: a.effect.getTiming().duration, delay: a.effect.getTiming().delay, e: a.effect.getTiming().easing }));
+      const list = ind.getAnimations({ subtree: true });
+      const info = list.map((a) => { const kf = a.effect.getKeyframes(); const t = a.effect.getTiming(); return { p: a.transitionProperty ?? a.animationName ?? '', d: t.duration, delay: t.delay, e: t.easing === 'linear' && kf[0]?.easing && kf[0].easing !== 'linear' ? kf[0].easing : t.easing }; });
       const css = getComputedStyle(ind);
-      const out = { info, cssDuration: css.transitionDuration, cssProp: css.transitionProperty, ms: q.tokenMs('--lc-tabs-indicator-front-duration'), move: q.tokenMs('--lc-sys-duration-move'), ease: q.easing('--lc-tabs-indicator-front-easing'), left: css.left };
+      const out = { info, cssDuration: css.transitionDuration, front: q.tokenMs('--lc-tabs-indicator-front-duration'), back: q.tokenMs('--lc-tabs-indicator-back-duration'), backDelay: q.tokenMs('--lc-tabs-indicator-back-delay'), frontEase: q.easing('--lc-tabs-indicator-front-easing'), backEase: q.easing('--lc-tabs-indicator-back-easing') };
       list.forEach((a) => a.finish());
-      out.rect = q.rect(ind); out.tab = q.rect(tab);
+      out.rect = q.vis(ind); out.tab = q.rect(tab);
       return out;
     }, byText('Graphiques'));
     if (reduced) {
-      check(reducedMs(got.cssDuration) && got.info.every((i) => i.d <= 0.01), `CA-2/13 ${tag} indicateur saute (durée calculée ≤ 0,01 ms)`, `durée=${got.cssDuration} transitions=${JSON.stringify(got.info)}`);
+      check(got.info.every((i) => i.d <= 0.01 && i.delay <= 0.01), `CA-2/13 ${tag} indicateur saute (durées et délais ≤ 0,01 ms)`, `transitions=${JSON.stringify(got.info)}`);
     } else if (!forced) {
-      const props = got.info.map((i) => i.p);
-      check(props.includes('transform') && !props.includes('left') && got.info.every((i) => near(i.d, got.ms) && i.delay === 0), `CA-2 ${tag} transition de transform à la durée du token`, `transitions=${JSON.stringify(got.info)} attendu ${got.ms}ms`);
-      check(got.info.length > 0 && got.info.every((i) => sameEase(i.e, got.ease)) && near(got.ms, 500) && near(got.move, 500), `CA-24 ${tag} onglets : easing-standard, 500 ms`, `durée token=${got.ms} duration-move=${got.move} courbe des transitions=${got.info[0]?.e?.slice(0, 40)}… courbe du token=${got.ease.slice(0, 40)}…`);
+      // CA-21 : deux bords, avant 380 ms « title », arrière 400 ms « inout » décalé de 80 ms (§5.4.1 ; valeurs de la spec, puis tokens résolus). La géométrie des deux bords est mesurée par `indicators-browser.mjs`.
+      check(near(got.front, 380) && near(got.back, 400) && near(got.backDelay, 80), `CA-21 ${tag} onglets : tokens résolus 380 ms / 400 ms / 80 ms`, `front=${got.front} back=${got.back} délai=${got.backDelay}`);
+      check(got.info.some((i) => near(i.d, 380) && i.delay === 0 && sameEase(i.e, got.frontEase)) && got.info.some((i) => near(i.d, 400) && near(i.delay, 80) && sameEase(i.e, got.backEase)), `CA-21 ${tag} onglets : bord avant 380 ms (title), bord arrière 400 ms (inout) décalé de 80 ms`, `animations=${JSON.stringify(got.info.map((i) => [i.p, i.d, i.delay, i.e.slice(0, 30)]))}`);
     }
     check(fits({ ind: got.rect, tab: got.tab }), `CA-2 ${tag} après finish : position et largeur de l'onglet (± 1 px)`, fmt({ ind: got.rect, tab: got.tab }));
     check(errors.length === 0, `erreurs page ${tag} tabs`, errors.join(' ; '));
@@ -909,20 +924,20 @@ async function motionIndicators(context, base, name, tag, width, check) {
       const r = await page.evaluate(async () => {
         const q = window.__qa; const ind = document.querySelector('.lc-tabs__indicator');
         const by = (t) => [...document.querySelectorAll('[role=tab]')].find((b) => b.textContent.includes(t));
-        const x = () => new DOMMatrix(getComputedStyle(ind).transform).m41;
+        const x = () => q.vis(ind).right; // bord de fin, bord avant des déplacements vers la droite (T8 : deux bords animés)
         const c = by('Graphiques'); const j = by('Journal');
         const x0 = x();
         c.click(); await q.frames(4);
-        const mid = x(); const x1 = c.offsetLeft;
+        const mid = x(); const x1 = c.getBoundingClientRect().right;
         j.click(); await q.frames(2);
-        const list = ind.getAnimations().filter((a) => a instanceof CSSTransition && a.transitionProperty === 'transform');
+        const list = ind.getAnimations({ subtree: true });
         list.forEach((a) => a.pause()); list.forEach((a) => { a.currentTime = 0; });
         const startX = x();
-        // `width` anime aussi (même durée) : tout terminer avant de mesurer l'arrivée.
-        ind.getAnimations().forEach((a) => a.finish());
-        return { x0, x1, mid, startX, count: list.length, rect: q.rect(ind), tab: q.rect(j) };
+        // Les deux bords animent : tout terminer avant de mesurer l'arrivée.
+        ind.getAnimations({ subtree: true }).forEach((a) => a.finish());
+        return { x0, x1, mid, startX, count: list.length, rect: q.vis(ind), tab: q.rect(j) };
       });
-      check(r.count > 0 && r.startX > r.x0 + 0.5 && r.startX < r.x1 - 0.5 && r.mid > r.x0 + 0.5 && r.mid < r.x1 - 0.5, `CA-2b ${tag} la seconde transition part de la position courante`, `départ=${r.x0.toFixed(1)}, arrivée de la première=${r.x1.toFixed(1)}, position à mi-course=${r.mid.toFixed(1)}, départ de la seconde=${r.startX.toFixed(1)}`);
+      check(r.count > 0 && r.startX > r.x0 + 0.5 && r.startX < r.x1 - 0.5 && r.mid > r.x0 + 0.5 && r.mid < r.x1 - 0.5, `CA-2b ${tag} la seconde animation part de la position courante (bord de fin)`, `départ=${r.x0.toFixed(1)}, arrivée de la première=${r.x1.toFixed(1)}, position à mi-course=${r.mid.toFixed(1)}, départ de la seconde=${r.startX.toFixed(1)}`);
       check(fits({ ind: r.rect, tab: r.tab }), `CA-2b ${tag} finit sous le dernier onglet cliqué`, fmt({ ind: r.rect, tab: r.tab }));
       await page.close();
     }
@@ -984,21 +999,21 @@ async function motionIndicators(context, base, name, tag, width, check) {
   }
 
   // --- lc-nav-list ---
-  const navRect = (page, item) => page.evaluate((sel) => { const q = window.__qa; return { ind: q.rect(document.querySelector('.lc-nav-list__indicator')), item: q.rect(document.querySelector(sel)) }; }, item);
+  const navRect = (page, item) => page.evaluate((sel) => { const q = window.__qa; return { ind: q.vis(document.querySelector('.lc-nav-list__indicator'), 'y'), item: q.rect(document.querySelector(sel)) }; }, item);
   const navFits = (r) => near(r.ind.top, r.item.top, 1) && near(r.ind.height, r.item.height, 1);
   const navFmt = (r) => `indicateur y=${r.ind.top.toFixed(1)} h=${r.ind.height.toFixed(1)}, élément y=${r.item.top.toFixed(1)} h=${r.item.height.toFixed(1)}`;
   {
     const { page, errors } = await start(NAV, '', '#/a');
     await page.waitForSelector('#item-a.lc-nav-item--active');
     await page.evaluate(() => window.__qa.frames(3));
-    await page.evaluate(() => document.querySelector('.lc-nav-list__indicator').getAnimations().forEach((a) => a.finish()));
+    await page.evaluate(() => document.querySelector('.lc-nav-list__indicator').getAnimations({ subtree: true }).forEach((a) => a.finish()));
     if (!forced) check(navFits(await navRect(page, '#item-a')), `CA-5a ${tag} indicateur sur l'élément actif au départ`, navFmt(await navRect(page, '#item-a')));
     const got = await page.evaluate(async () => {
       const q = window.__qa; const ind = document.querySelector('.lc-nav-list__indicator');
       document.querySelector('#item-b').click(); await q.frames(2);
-      const list = ind.getAnimations().filter((a) => a instanceof CSSTransition);
-      const info = list.map((a) => ({ p: a.transitionProperty, d: a.effect.getTiming().duration, delay: a.effect.getTiming().delay, e: a.effect.getTiming().easing }));
-      const out = { info, cssDuration: getComputedStyle(ind).transitionDuration, ms: q.tokenMs('--lc-nav-item-indicator-front-duration'), move: q.tokenMs('--lc-sys-duration-move'), ease: q.easing('--lc-nav-item-indicator-front-easing') };
+      const list = ind.getAnimations({ subtree: true });
+      const info = list.map((a) => { const kf = a.effect.getKeyframes(); const t = a.effect.getTiming(); return { p: a.transitionProperty ?? a.animationName ?? '', d: t.duration, delay: t.delay, e: t.easing === 'linear' && kf[0]?.easing && kf[0].easing !== 'linear' ? kf[0].easing : t.easing }; });
+      const out = { info, cssDuration: getComputedStyle(ind).transitionDuration, front: q.tokenMs('--lc-nav-item-indicator-front-duration'), back: q.tokenMs('--lc-nav-item-indicator-back-duration'), backDelay: q.tokenMs('--lc-nav-item-indicator-back-delay'), frontEase: q.easing('--lc-nav-item-indicator-front-easing'), backEase: q.easing('--lc-nav-item-indicator-back-easing') };
       list.forEach((a) => a.finish());
       return out;
     });
@@ -1006,11 +1021,11 @@ async function motionIndicators(context, base, name, tag, width, check) {
       const r = await page.evaluate((ink) => { const f = eval(ink); return { active: f(document.querySelector('#item-b')), other: f(document.querySelector('#item-c')), indicator: getComputedStyle(document.querySelector('.lc-nav-list__indicator')).display }; }, ink.toString());
       check(r.active.visible && JSON.stringify(r.active) !== JSON.stringify(r.other) && r.indicator === 'none', `CA-14 ${tag} élément de nav actif distinct d'un inactif, indicateur masqué`, `actif=${JSON.stringify(r.active)} inactif=${JSON.stringify(r.other)} indicateur display=${r.indicator}`);
     } else if (reduced) {
-      check(reducedMs(got.cssDuration) && got.info.filter((i) => i.p !== 'opacity').every((i) => i.d <= 0.01), `CA-5a/13 ${tag} indicateur saute`, `durée=${got.cssDuration} transitions=${JSON.stringify(got.info)}`);
+      check(got.info.every((i) => i.d <= 0.01 && i.delay <= 0.01), `CA-5a/13 ${tag} indicateur saute (durées et délais ≤ 0,01 ms)`, `transitions=${JSON.stringify(got.info)}`);
       check(navFits(await navRect(page, '#item-b')), `CA-5a/13 ${tag} indicateur sur l'élément actif après le clic`, navFmt(await navRect(page, '#item-b')));
     } else {
-      check(got.info.some((i) => i.p === 'transform' && near(i.d, got.ms)), `CA-5a ${tag} transition de transform à la durée du token`, `transitions=${JSON.stringify(got.info.map((i) => [i.p, i.d]))} attendu ${got.ms}ms`);
-      check(got.info.filter((i) => i.p === 'transform' || i.p === 'height').every((i) => sameEase(i.e, got.ease)) && near(got.ms, 500) && near(got.move, 500), `CA-24 ${tag} nav : easing-standard, 500 ms`, `durée token=${got.ms} duration-move=${got.move} courbe=${got.info[0]?.e?.slice(0, 40)}… token=${got.ease.slice(0, 40)}…`);
+      check(near(got.front, 380) && near(got.back, 400) && near(got.backDelay, 80), `CA-21 ${tag} nav : tokens résolus 380 ms / 400 ms / 80 ms`, `front=${got.front} back=${got.back} délai=${got.backDelay}`);
+      check(got.info.some((i) => near(i.d, 380) && i.delay === 0 && sameEase(i.e, got.frontEase)) && got.info.some((i) => near(i.d, 400) && near(i.delay, 80) && sameEase(i.e, got.backEase)), `CA-21 ${tag} nav : bord avant 380 ms (title), bord arrière 400 ms (inout) décalé de 80 ms`, `animations=${JSON.stringify(got.info.map((i) => [i.p, i.d, i.delay, i.e.slice(0, 30)]))}`);
       check(navFits(await navRect(page, '#item-b')), `CA-5a ${tag} après finish : indicateur sur l'élément (± 1 px)`, navFmt(await navRect(page, '#item-b')));
     }
     check(errors.length === 0, `erreurs page ${tag} nav`, errors.join(' ; '));
@@ -1022,18 +1037,18 @@ async function motionIndicators(context, base, name, tag, width, check) {
       const { page } = await start(NAV, 'g2:!false', '#/d');
       await page.waitForSelector('#item-d.lc-nav-item--active', { state: 'attached' });
       await page.evaluate(() => window.__qa.frames(3));
-      const hidden = await page.evaluate(() => { const ind = document.querySelector('.lc-nav-list__indicator'); ind.getAnimations().forEach((a) => a.finish()); return { cls: ind.classList.contains('lc-nav-list__indicator--hidden'), opacity: getComputedStyle(ind).opacity, itemRect: document.querySelector('#item-d').getBoundingClientRect().height }; });
+      const hidden = await page.evaluate(() => { const ind = document.querySelector('.lc-nav-list__indicator'); ind.getAnimations({ subtree: true }).forEach((a) => a.finish()); return { cls: ind.classList.contains('lc-nav-list__indicator--hidden'), opacity: getComputedStyle(ind).opacity, itemRect: document.querySelector('#item-d').getBoundingClientRect().height }; });
       check(hidden.cls && hidden.opacity === '0', `CA-5b ${tag} groupe replié : indicateur masqué`, `masqué=${hidden.cls} opacité=${hidden.opacity} hauteur de l'élément actif=${hidden.itemRect}`);
       const r = await page.evaluate(async () => {
         const q = window.__qa; const ind = document.querySelector('.lc-nav-list__indicator');
         [...document.querySelectorAll('.lc-nav-group__toggle')][1].click();
         const perFrame = [];
-        for (let i = 0; i < 6; i += 1) { await q.frames(1); perFrame.push(ind.getAnimations().filter((a) => a instanceof CSSTransition && a.transitionProperty === 'transform').length); }
-        ind.getAnimations().forEach((a) => a.finish());
+        for (let i = 0; i < 6; i += 1) { await q.frames(1); perFrame.push(ind.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSTransition && a.transitionProperty === 'opacity')).length); }
+        ind.getAnimations({ subtree: true }).forEach((a) => a.finish());
         await q.frames(2);
-        return { perFrame, ind: q.rect(ind), item: q.rect(document.querySelector('#item-d')), opacity: getComputedStyle(ind).opacity };
+        return { perFrame, ind: q.vis(ind, 'y'), item: q.rect(document.querySelector('#item-d')), opacity: getComputedStyle(ind).opacity };
       });
-      check(r.perFrame.every((n) => n === 0), `CA-5c ${tag} au dépliage : aucune transition de transform (6 premières images)`, `transitions de transform par image=${r.perFrame}`);
+      check(r.perFrame.every((n) => n === 0), `CA-5c ${tag} au dépliage : aucune animation de position de l'indicateur (6 premières images)`, `animations hors opacité par image=${r.perFrame}`);
       check(navFits(r) && r.opacity === '1', `CA-5c ${tag} après dépliage : indicateur sous l'élément actif, visible`, `${navFmt(r)}, opacité=${r.opacity}`);
       await page.close();
     }
@@ -1185,18 +1200,21 @@ async function motion(browser, base) {
           await page.mouse.down();
           const got = await page.evaluate((id) => {
             const el = document.getElementById(id);
-            const list = window.__qa.transitions(el, (a) => a.transitionProperty === 'transform');
+            const list = window.__qa.transitions(el, (a) => ['transform', 'scale'].includes(a.transitionProperty));
             const durations = list.map((a) => a.effect.getComputedTiming().duration);
             list.forEach((a) => a.finish());
-            const scale = parseFloat(getComputedStyle(el).getPropertyValue('--lc-button-press-scale'));
-            const matrix = new DOMMatrix(getComputedStyle(el).transform);
-            const pressMs = window.__qa.tokenMs('--lc-button-press-duration' in getComputedStyle(el) ? '--lc-button-press-duration' : '--lc-sys-duration-fast');
-            return { durations, scale, a: matrix.a, d: matrix.d, raw: getComputedStyle(el).transform, pressMs, active: el.matches(':active'), cssDuration: getComputedStyle(el).transitionDuration };
+            const cs = getComputedStyle(el);
+            const scale = parseFloat(cs.getPropertyValue('--lc-button-press-scale'));
+            const matrix = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+            const own = cs.scale === 'none' ? 1 : parseFloat(cs.scale);
+            const pressMs = window.__qa.tokenMs('--lc-button-press-duration');
+            return { durations, scale, a: matrix.a * own, d: matrix.d * own, raw: cs.transform, pressMs, active: el.matches(':active'), cssDuration: cs.transitionDuration };
           }, id);
           await page.mouse.up();
           if (id === 'disabled') check(got.raw === 'none' && got.durations.length === 0, `CA-6 ${tag} ${id}`, `transform=${got.raw}, transitions transform=${got.durations.length}`);
           else if (reduced) check(got.active && msList(got.cssDuration).every((ms) => ms <= 0.01) && got.durations.every((ms) => ms <= 0.01), `CA-6/13 ${tag} ${id}`, `durées=${got.cssDuration}, a=${got.a}`);
-          else check(got.active && got.durations.length > 0 && got.durations.every((ms) => near(ms, got.pressMs)) && near(got.a, got.scale, 0.001) && near(got.d, got.scale, 0.001), `CA-6 ${tag} ${id}`, `échelle=${got.a.toFixed(3)} attendu ${got.scale}, durées=${got.durations} attendu ${got.pressMs}, actif=${got.active}`);
+          // CA-22 : l'appui lit `--lc-button-press-*` ; valeurs de la spec (§5.2, D-11) : 0,97 et 100 ms, découplées de `duration-fast` (150 ms).
+          else check(got.active && near(got.scale, 0.97, 0.0005) && near(got.pressMs, 100) && got.durations.length > 0 && got.durations.every((ms) => near(ms, 100)) && near(got.a, 0.97, 0.001) && near(got.d, 0.97, 0.001), `CA-22 (v2) ${tag} ${id}`, `échelle=${got.a.toFixed(3)} (token ${got.scale}) attendu 0,97, durées=${got.durations} (token ${got.pressMs}) attendu 100, actif=${got.active}`);
         }
         check(errors.length === 0, `erreurs page ${tag} buttons`, errors.join(' ; '));
         await page.close();
@@ -1651,9 +1669,10 @@ async function swipe(browser, base) {
       await frames(page, 3);
       const m = await page.evaluate(() => {
         const r = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.width]; };
+        const visible = (el) => { const b = el.getBoundingClientRect(); const m = /^inset\((.*?)(?: round .*)?\)$/.exec(getComputedStyle(el).clipPath); if (!m) return [b.left, b.width]; const [t, rt = t, , l = rt] = m[1].trim().split(/\s+/); const len = (x) => (x.endsWith('%') ? (parseFloat(x) / 100) * b.width : parseFloat(x)); return [b.left + len(l), b.width - len(l) - len(rt)]; }; // zone visible : boîte rognée par clip-path (T8, deux bords)
         const [o0, o1] = [...document.querySelectorAll('[role=radio]')].map(r);
         const ind = document.querySelector('.lc-segmented-control__indicator');
-        return { progress: parseFloat(document.querySelector('lc-swipe-panels').style.getPropertyValue('--lc-swipe-panels-progress')), o0, o1, ind: r(ind), anims: ind.getAnimations().length };
+        return { progress: parseFloat(document.querySelector('lc-swipe-panels').style.getPropertyValue('--lc-swipe-panels-progress')), o0, o1, ind: visible(ind), anims: ind.getAnimations({ subtree: true }).length };
       });
       check(near(m.progress, 0.5, 0.02), `CA-5 ${tag} --lc-swipe-panels-progress ≈ 0,5`, String(m.progress));
       check(near(m.ind[0], (m.o0[0] + m.o1[0]) / 2) && near(m.ind[1], (m.o0[1] + m.o1[1]) / 2) && m.anims === 0, `CA-5 ${tag} fond du segmenté à mi-chemin (position, largeur, aucune animation)`, JSON.stringify(m));
@@ -1689,9 +1708,10 @@ async function swipe(browser, base) {
       await frames(page, 3);
       const m = await page.evaluate(() => {
         const r = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.width]; };
+        const visible = (el) => { const b = el.getBoundingClientRect(); const m = /^inset\((.*?)(?: round .*)?\)$/.exec(getComputedStyle(el).clipPath); if (!m) return [b.left, b.width]; const [t, rt = t, , l = rt] = m[1].trim().split(/\s+/); const len = (x) => (x.endsWith('%') ? (parseFloat(x) / 100) * b.width : parseFloat(x)); return [b.left + len(l), b.width - len(l) - len(rt)]; }; // zone visible (T8)
         const [t0, t1] = [...document.querySelectorAll('[role=tab]')].map(r);
         const ind = document.querySelector('.lc-tabs__indicator');
-        return { t0, t1, ind: r(ind), anims: ind.getAnimations().length };
+        return { t0, t1, ind: visible(ind), anims: ind.getAnimations({ subtree: true }).length };
       });
       check(near(m.ind[0], (m.t0[0] + m.t1[0]) / 2) && near(m.ind[1], (m.t0[1] + m.t1[1]) / 2) && m.anims === 0, `CA-5 ${tag} trait des onglets à mi-chemin (position, largeur, aucune animation)`, JSON.stringify(m));
       check(errors.length === 0, `CA-11 ${tag} sans erreur`, errors.join(' | '));

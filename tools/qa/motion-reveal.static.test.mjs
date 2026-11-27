@@ -58,7 +58,6 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
     'src/lib/skeleton/skeleton.component.css': ['lc-skeleton-pulse'], // boucle de chargement, hors périmètre des primitives
     'src/lib/spinner/spinner.component.css': ['lc-spinner-spin', 'lc-spinner-pulse'], // boucle de chargement
     'src/lib/button/button.component.css': ['lc-button-spin'], // bouton en chargement
-    'navigation/src/stepper/stepper.component.css': ['lc-stepper-sync'], // refait par T4
     'feedback/src/progress-bar/progress-bar.component.css': ['lc-progress-slide'], // bande indéterminée, gardée
     'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // composant existant, migré en T4
     'forms/src/file-upload/file-upload.component.css': ['lc-file-upload-slide'], // bande indéterminée, gardée
