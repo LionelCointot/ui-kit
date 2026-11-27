@@ -93,7 +93,7 @@ export const Animation: Story = {
           <button lcButton fillMode="outline" size="small" (click)="d54.replay(root54)">Rejouer</button>
           @for (key of d54.keys(); track key) {
             <lc-sheet [(open)]="auto" title="Filtres de la journée">
-              <div style="block-size:224px;padding:var(--lc-sys-space-3) var(--lc-sys-space-4)">Feuille à la hauteur de son contenu (300 px) : tirez la poignée vers le bas, de moins d'un tiers pour la voir revenir en ressort.</div>
+              <div style="block-size:222px;padding:var(--lc-sys-space-3) var(--lc-sys-space-4)">Feuille à la hauteur de son contenu (300 px) : tirez la poignée vers le bas, de moins d'un tiers pour la voir revenir en ressort.</div>
             </lc-sheet>
           }
         </div>

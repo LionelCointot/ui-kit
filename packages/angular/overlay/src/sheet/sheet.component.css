@@ -7,7 +7,7 @@ lc-sheet {
   box-sizing: border-box;
   inline-size: 100%;
   max-inline-size: none;
-  block-size: auto;
+  block-size: fit-content; /* `auto` s'étire : un dialogue modal a inset-block: 0 */
   max-block-size: var(--lc-sheet-max-height);
   margin: auto 0 0;
   padding: 0;
@@ -128,6 +128,7 @@ lc-sheet {
 @media (min-width: 48em) {
   .lc-sheet__dialog {
     inline-size: min(var(--lc-sheet-card-width), 100% - 2 * var(--lc-sys-space-6));
+    block-size: auto;
     max-block-size: var(--lc-sheet-card-max-height);
     margin: auto;
     border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
