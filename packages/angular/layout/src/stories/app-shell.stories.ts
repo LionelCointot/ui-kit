@@ -147,7 +147,8 @@ class AppShellHeaderDemoComponent {
 })
 class AppShellTitleDemoComponent {
   protected replay(): void {
-    window.scrollTo(0, window.scrollY > 0 ? 0 : document.documentElement.scrollHeight);
+    // One crossing of the 80 px threshold per press (a scroll to the very bottom crosses it with every layout shift of the page).
+    window.scrollTo(0, window.scrollY > 0 ? 0 : 120);
   }
 }
 
