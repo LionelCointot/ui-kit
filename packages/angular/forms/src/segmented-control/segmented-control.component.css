@@ -200,7 +200,7 @@
 
 /* `--lc-segmented-control-pill-shadow` est une valeur de `drop-shadow` (une seule ombre, sans étalement ni `inset`). */
 :host(.lc-segmented-control--solid) .lc-segmented-control__pill {
-  filter: drop-shadow(var(--lc-segmented-control-pill-shadow, 0 1px 2px rgb(0 0 0 / 0.1)));
+  filter: drop-shadow(var(--lc-segmented-control-pill-shadow));
 }
 
 /* Mouvement réduit : la pastille saute (aucune transition, donc aucun objet animation, pas même de 0,01 ms). */
