@@ -150,6 +150,38 @@ export const Playground: Story = {
   }),
 };
 
+const ANIMATION_CODE = `import { Component, signal } from '@angular/core';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { LcStepperComponent, type LcStep } from '@lionelcointot/ui-angular/navigation';
+
+const NAMES = ['Profil', 'Objectif', 'Ressources', 'Options', 'Résumé'];
+
+@Component({
+  selector: 'app-example',
+  imports: [LcStepperComponent, LcButtonComponent],
+  template: \`
+    <lc-stepper ariaLabel="Progression du parcours" [steps]="steps()" [linear]="false" (stepSelect)="goTo($event)" />
+    <button type="button" lcButton fillMode="outline" (click)="move(-1)" [disabled]="current() === 0">Précédent</button>
+    <button type="button" lcButton fillMode="outline" (click)="move(1)" [disabled]="current() === 4">Suivant</button>\`,
+})
+export class ExampleComponent {
+  protected readonly current = signal(2);
+  protected readonly steps = (): LcStep[] =>
+    NAMES.map((label, index) => ({
+      id: \`step-\${index + 1}\`,
+      label,
+      state: index < this.current() ? 'done' : index === this.current() ? 'current' : 'upcoming',
+    }));
+
+  protected goTo(id: string): void {
+    this.current.set(Number(id.replace('step-', '')) - 1);
+  }
+
+  protected move(delta: number): void {
+    this.current.update((value) => Math.max(0, Math.min(4, value + delta)));
+  }
+}`;
+
 const fixed = (template: string): Story => ({ parameters: fixedExample, render: () => ({ template }) });
 
 /** Consumer-driven state: activating a done step takes the flow back to it. */
@@ -234,7 +266,10 @@ export const Disabled: Story = {
 };
 
 /** On display the bars are drawn one after the other and the bullets pop in; "Suivant" draws only the bar reached and pops the new bullet, "Précédent" plays nothing. `directionChange` gives the direction. */
-export const Animation: Story = fixed(`<lc-stepper-nav-demo />`);
+export const Animation: Story = {
+  ...fixed(`<lc-stepper-nav-demo />`),
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+};
 
 /** `rail` variant on desktop: 290 px column in a 1,000 px container (at least 900 px), joined bullets, answer, detail and an edit action per step. */
 export const RailDesktop: Story = fixed(`<div style="width:1000px;max-width:100%"><lc-stepper-rail-demo width="bureau" /></div>`);

@@ -24,7 +24,15 @@ export const Playground: Story = {
   render: (args) => ({ props: args, template: `<lc-theme-toggle [size]="size" [fillMode]="fillMode" />` }),
 };
 
-const ANIMATION_CODE = `<lc-theme-toggle />`;
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcThemeToggleComponent } from '@lionelcointot/ui-angular';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcThemeToggleComponent],
+  template: \`<lc-theme-toggle />\`,
+})
+export class ExampleComponent {}`;
 
 /** The new theme spreads as a circle from the button, to the farthest corner (View Transitions; instant without the API or under reduced motion). "Rejouer" clicks the toggle again. */
 export const Animation: Story = {
