@@ -15,6 +15,11 @@
     },
     "enter-scale": { "$value": "0.6", "$type": "number" }
   },
+  "reveal": {
+    "duration": { "$value": "550ms", "$type": "duration", "$description": "Entry of the base variants of lcReveal (Talmo: 550 ms)." },
+    "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" },
+    "tilt-duration": { "$value": "{sys.duration.title}", "$type": "duration", "$description": "Entry of the tilt variant (Talmo KPI: 850 ms), with the overshoot curve of the pop variant." }
+  },
   "tabs": {
     "indicator-front-duration": { "$value": "380ms", "$type": "duration" },
     "indicator-front-easing": { "$value": "{sys.easing.title}", "$type": "cubicBezier" },
@@ -82,7 +87,7 @@
     "radius": { "$value": "{sys.radius.lg}", "$type": "dimension" },
     "top-radius": { "$value": "24px", "$type": "dimension", "$description": "Top corners of the bottom sheet on phones." },
     "max-height": { "$value": "92dvh", "$type": "dimension", "$description": "Maximum height of the bottom sheet on phones." },
-    "enter-duration": { "$value": "{sys.duration.long}", "$type": "duration" },
+    "enter-duration": { "$value": "550ms", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
     "exit-duration": { "$value": "300ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
@@ -104,20 +109,20 @@
   "dialog": {
     "enter-scale": {
       "$description": "Scale a dialog starts from when it opens (unitless number).",
-      "$value": "0.91",
+      "$value": "0.86",
       "$type": "number"
     },
     "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
-    "exit-scale": { "$value": "{sys.motion.scale-enter}", "$type": "number" },
-    "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" },
+    "exit-scale": { "$value": "0.94", "$type": "number" },
+    "exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
     "sheet-radius": { "$value": "20px", "$type": "dimension", "$description": "Top corners of a dialog presented as a bottom sheet on phones." }
   },
   "drawer": {
-    "enter-duration": { "$value": "550ms", "$type": "duration" },
+    "enter-duration": { "$value": "{sys.duration.long}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
-    "exit-duration": { "$value": "300ms", "$type": "duration" },
+    "exit-duration": { "$value": "320ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
     "backdrop-enter-duration": { "$value": "300ms", "$type": "duration" },
     "backdrop-exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" }
@@ -130,17 +135,17 @@
     "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
   },
   "menu": {
-    "enter-duration": { "$value": "{sys.duration.slow}", "$type": "duration" },
+    "enter-duration": { "$value": "400ms", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
-    "enter-scale": { "$value": "{sys.motion.scale-pop}", "$type": "number" },
-    "enter-offset": { "$value": "-5px", "$type": "dimension", "$description": "Vertical start of the pop, towards the anchor (the sign flips when the panel opens above)." },
-    "exit-duration": { "$value": "140ms", "$type": "duration" }
+    "enter-scale": { "$value": "0.92", "$type": "number" },
+    "enter-offset": { "$value": "-6px", "$type": "dimension", "$description": "Vertical start of the pop, towards the anchor (the sign flips when the panel opens above)." },
+    "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
   },
   "toast": {
     "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
-    "enter-offset": { "$value": "28px", "$type": "dimension" },
-    "enter-scale": { "$value": "{sys.motion.scale-enter}", "$type": "number" },
+    "enter-offset": { "$value": "30px", "$type": "dimension" },
+    "enter-scale": { "$value": "0.94", "$type": "number" },
     "exit-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
     "tabbar-gap": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Space left between a toast and the bottom tab bar on phones." }
   },
@@ -158,7 +163,7 @@
     "dot-delay": { "$value": "{sys.motion.stagger-normal}", "$type": "duration" }
   },
   "flash": {
-    "duration": { "$value": "950ms", "$type": "duration" },
+    "duration": { "$value": "{sys.duration.fill}", "$type": "duration" },
     "easing": { "$value": "{sys.easing.title}", "$type": "cubicBezier" }
   },
   "title": {
@@ -167,9 +172,9 @@
     "letter-offset": { "$value": "115%", "$type": "dimension", "$description": "Distance each letter travels from, as a share of its own height." },
     "letter-rotate": { "$value": "{sys.motion.rotate-char}", "$type": "dimension" },
     "letter-stagger": { "$value": "{sys.motion.stagger-chars}", "$type": "duration" },
-    "line-duration": { "$value": "550ms", "$type": "duration" },
+    "line-duration": { "$value": "{sys.duration.view}", "$type": "duration" },
     "line-easing": { "$value": "{sys.easing.inout}", "$type": "cubicBezier" },
-    "line-delay": { "$value": "390ms", "$type": "duration", "$description": "Delay after the first letter starts." }
+    "line-delay": { "$value": "320ms", "$type": "duration", "$description": "Delay after the first letter starts." }
   },
   "live": {
     "duration": { "$value": "2000ms", "$type": "duration" },
@@ -190,14 +195,14 @@
     "row-stagger": { "$value": "30ms", "$type": "duration" }
   },
   "chart": {
-    "sparkline-duration": { "$value": "1000ms", "$type": "duration" },
-    "update-duration": { "$value": "480ms", "$type": "duration" },
+    "sparkline-duration": { "$value": "1300ms", "$type": "duration" },
+    "update-duration": { "$value": "{sys.duration.view}", "$type": "duration" },
     "update-stagger": { "$value": "20ms", "$type": "duration" }
   },
   "topbar": {
     "enter-offset": { "$value": "10px", "$type": "dimension" },
-    "enter-duration": { "$value": "{sys.duration.enter}", "$type": "duration" },
-    "enter-stagger": { "$value": "33ms", "$type": "duration" }
+    "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
+    "enter-stagger": { "$value": "30ms", "$type": "duration" }
   },
   "disclosure": {
     "enter-duration": { "$value": "300ms", "$type": "duration" },

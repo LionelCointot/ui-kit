@@ -50,9 +50,10 @@
   --lc-reveal-y: var(--lc-sys-motion-offset-sm);
   --lc-reveal-scale: 1;
   --lc-reveal-rotate: 0deg;
-  --lc-reveal-curve: var(--lc-sys-easing-soft);
+  --lc-reveal-curve: var(--lc-reveal-easing);
+  --lc-reveal-time: var(--lc-reveal-duration);
 
-  animation: lc-reveal-in var(--lc-sys-duration-enter) var(--lc-reveal-curve) backwards;
+  animation: lc-reveal-in var(--lc-reveal-time) var(--lc-reveal-curve) backwards;
   animation-delay: calc(
     var(--lc-reveal-offset, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
   );
@@ -90,6 +91,8 @@
 
 /* Cartes : l'inclinaison alterne entre frères voisins. */
 .lc-reveal--tilt {
+  --lc-reveal-time: var(--lc-reveal-tilt-duration);
+  --lc-reveal-curve: var(--lc-sys-easing-pop);
   --lc-reveal-y: var(--lc-sys-motion-offset-xl);
   --lc-reveal-scale: var(--lc-sys-motion-scale-enter);
   --lc-reveal-rotate: calc(-1 * var(--lc-sys-motion-rotate-tilt));
@@ -141,7 +144,7 @@
 .lc-fill {
   scale: var(--lc-progress) 1;
   transform-origin: left;
-  transition: scale var(--lc-sys-duration-draw) var(--lc-sys-easing-fill);
+  transition: scale var(--lc-sys-duration-fill) var(--lc-sys-easing-fill);
 }
 
 .lc-fill--y {

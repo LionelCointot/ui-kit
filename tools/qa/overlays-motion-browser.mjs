@@ -91,7 +91,7 @@ for (const [way, button] of [['souris', '#qa-open-dialog'], ['clavier', '#qa-ope
   const rec = await page.waitForFunction(() => window.__origin.rec, null, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => null);
   const cx = r.x + r.width / 2 - (rec?.left ?? 0), cy = r.y + r.height / 2 - (rec?.top ?? 0);
   check(`CA-23 ${way} : origine de transformation = centre du déclencheur`, rec !== null && near(rec.ox, cx, 1) && near(rec.oy, cy, 1), `origine=${rec?.ox},${rec?.oy} attendu ${cx},${cy} (animation d'échelle ${rec ? 'trouvée' : 'absente'})`);
-  check(`CA-23 ${way} : échelle de départ 0,91 en 500 ms`, rec !== null && near(rec.scale0, 0.91, 0.005) && near(rec.d, 500), `échelle=${rec?.scale0} durée=${rec?.d}`);
+  check(`CA-23 ${way} : échelle de départ 0,86 en 500 ms`, rec !== null && near(rec.scale0, 0.86, 0.005) && near(rec.d, 500), `échelle=${rec?.scale0} durée=${rec?.d}`);
   check(`CA-23 ${way} : sans erreur de page`, errors.length === 0, errors.join(' ; '));
   await context.close();
 }

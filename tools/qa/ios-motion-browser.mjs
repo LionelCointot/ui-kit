@@ -101,7 +101,7 @@ async function sheet() {
   await withCtx('phone', async (c) => {
     const page = await open(c, SHEET_STORY);
     const t = await page.evaluate(() => ({ enter: Q.ms('--lc-sheet-enter-duration'), exit: Q.ms('--lc-sheet-exit-duration'), spring: Q.ms('--lc-sheet-spring-duration'), radius: Q.px('--lc-sheet-top-radius'), ratio: getComputedStyle(document.documentElement).getPropertyValue('--lc-sheet-dismiss-ratio').trim(), enterEase: Q.ease('--lc-sheet-enter-easing'), exitEase: Q.ease('--lc-sheet-exit-easing') }));
-    check('CA-24 jetons : ouverture 600 ms, fermeture 300 ms, ressort 500 ms, coins 24 px', t.enter === 600 && t.exit === 300 && t.spring === 500 && t.radius === 24, JSON.stringify(t));
+    check('CA-24 jetons : ouverture 550 ms, fermeture 300 ms, ressort 500 ms, coins 24 px', t.enter === 550 && t.exit === 300 && t.spring === 500 && t.radius === 24, JSON.stringify(t));
     check('CA-24 le seuil de fermeture est une constante du code : plus de jeton --lc-sheet-dismiss-ratio', t.ratio === '', t.ratio);
     // CA-24 ouverture : durée, courbe et départ mesurés dans le même evaluate que le clic.
     const op = await page.evaluate(async () => { const b = document.querySelector('#qa-open-sheet'); b.focus(); b.click(); await Q.raf(); const d = document.querySelector('lc-sheet dialog'); const s = Q.slide(d); const h = d.getBoundingClientRect().height; const y = Q.ty(d); const r = { s, h, y, bd: Q.anims(d).filter((x) => x.pseudo === '::backdrop').length }; await Q.settle(); return r; });
@@ -209,7 +209,7 @@ async function sheet() {
     const g = await page.evaluate((s) => { const d = document.querySelector(s); const r = d.getBoundingClientRect(); const cs = getComputedStyle(d); return { top: r.top, bottom: r.bottom, h: r.height, tl: parseFloat(cs.borderTopLeftRadius), tr: parseFloat(cs.borderTopRightRadius), bl: parseFloat(cs.borderBottomLeftRadius), tableTop: document.querySelector('.lc-data-table__scroll, lc-data-table').getBoundingClientRect().top }; }, SD);
     check('CA-S1/CA-24 ancrée en bas, hauteur ≤ 92 dvh, coins hauts 24 px (--lc-sheet-top-radius), bas droit', near(g.bottom, e.vh, 1) && g.h <= 0.92 * e.vh + 1 && near(g.tl, t.radius, 0.5) && near(g.tr, t.radius, 0.5) && g.tl === 24 && g.bl === 0, JSON.stringify({ g, t }));
     check('CA-S1 poignée présente ; le tableau reste au-dessus de la feuille', e.hd && g.tableTop < g.top, JSON.stringify({ hd: e.hd, tableTop: g.tableTop, top: g.top }));
-    check('CA-S1/CA-24 entrée : translateY 100 % → 0 en --lc-sheet-enter-duration (600 ms)', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)) && t.enter === 600, JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
+    check('CA-S1/CA-24 entrée : translateY 100 % → 0 en --lc-sheet-enter-duration (550 ms)', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)) && t.enter === 550, JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
     check('CA-S1 fond ::backdrop = --lc-sys-color-backdrop, en fondu', e.bg === t.bd && e.bdAnim, JSON.stringify({ bg: e.bg, attendu: t.bd, fondu: e.bdAnim }));
     // CA-S9 à 360 px : « Annuler » en tête de l’en-tête, avant le titre ; sans icône ni aria-label ; autofocus.
     const s9 = await page.evaluate((s) => { const d = document.querySelector(s); const h = d.querySelector('.lc-sheet__header'); const b = h.firstElementChild; const title = h.querySelector('.lc-sheet__title'); return { first: b.matches('button.lc-sheet__close'), text: b.textContent.trim(), icon: !!b.querySelector('svg, lc-icon, img'), label: b.getAttribute('aria-label'), before: !!(b.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING), auto: b.hasAttribute('autofocus'), focused: document.activeElement === b, left: b.getBoundingClientRect().left < title.getBoundingClientRect().left }; }, SD);
@@ -370,8 +370,8 @@ async function chips() {
 }
 
 // ---------- tiroir, dialogue, fonds (spec 2026-12-mouvement-v2, §5.4.1, T9a) ----------
-// Valeurs de la spec, en ms : tiroir 550 entrée / 300 sortie, voile 300 / 200 ; dialogue 500 / 150, voile 250 / 150 ; échelle 0,91 à l'entrée, 0,95 à la sortie.
-const OV = { drawer: { enter: 550, exit: 300, bdEnter: 300, bdExit: 200 }, dialog: { enter: 500, exit: 150, bdEnter: 250, bdExit: 150 } };
+// Valeurs de la spec, en ms : tiroir 600 entrée / 320 sortie, voile 300 / 200 ; dialogue 500 / 200, voile 250 / 150 ; échelle 0,86 à l'entrée, 0,94 à la sortie.
+const OV = { drawer: { enter: 600, exit: 320, bdEnter: 300, bdExit: 200 }, dialog: { enter: 500, exit: 200, bdEnter: 250, bdExit: 150 } };
 /** Côté page : relève chaque animation de la surcouche à sa première image, la mesure à 0 et à sa fin (rectangle, opacité), puis la laisse en pause ; `window.__w.stop()` les termine. */
 const WATCH = () => {
   const w = (window.__w = { recs: [], seen: new Set() });
@@ -410,7 +410,7 @@ async function overlays() {
       if (reduced) check(`CA-3 ${kind} et son voile à l'entrée : aucune animation > 0,01 ms ni en cours`, en.recs.every((r) => r.d <= 0.01 && r.delay <= 0.01) && en.running === 0, JSON.stringify(en));
       else {
         if (kind === 'drawer') check(`CA-20 tiroir : entrée par glissement de toute sa largeur en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.dx, r.width, 1.5)), JSON.stringify(en.recs));
-        else check(`CA-20 dialogue : entrée en fondu et échelle 0,91 → 1 en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.ratio, 0.91, 0.005) && r.o0 === '0'), JSON.stringify(en.recs));
+        else check(`CA-20 dialogue : entrée en fondu et échelle 0,86 → 1 en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.ratio, 0.86, 0.005) && r.o0 === '0'), JSON.stringify(en.recs));
         check(`CA-20 voile du ${kind} : ${V.bdEnter} ms à l'entrée`, bd.length > 0 && bd.every((r) => near(r.d, V.bdEnter) && r.o0 === '0' && r.o1 === '1'), JSON.stringify(bd));
       }
       // Sortie par « Valider » : valeur conservée, `closed` à la fin de la sortie.
@@ -424,7 +424,7 @@ async function overlays() {
       const gone = !(await page.locator(pane).count());
       if (reduced) check(`CA-3 ${kind} sortie immédiate, valeur rendue`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && Date.now() - t0 < 1000 + 350 && ex.recs.every((r) => r.d <= 0.01) && ex.running === 0, JSON.stringify({ res, ex }));
       else {
-        const o = kind === 'dialog' ? exitPanel.every((r) => near(r.ratio, 0.95, 0.005) && r.o1 === '0') : exitPanel.every((r) => near(r.dx, r.width, 1.5));
+        const o = kind === 'dialog' ? exitPanel.every((r) => near(r.ratio, 0.94, 0.005) && r.o1 === '0') : exitPanel.every((r) => near(r.dx, r.width, 1.5));
         check(`CA-20 ${kind} : sortie animée ${V.exit} ms (panneau encore dans le DOM), puis quitte le DOM`, ex.there && exitPanel.length > 0 && exitPanel.every((r) => near(r.d, V.exit)) && o && gone, JSON.stringify({ ex: ex.recs, gone }));
         check(`CA-20 voile du ${kind} : ${V.bdExit} ms à la sortie`, exitBd.length > 0 && exitBd.every((r) => near(r.d, V.bdExit) && r.o0 === '1' && r.o1 === '0'), JSON.stringify(exitBd));
         check(`CA-20 ${kind} : closed émis avec la valeur, après la fin de la sortie`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && res[2] - t0 >= V.exit - 40, JSON.stringify({ res, elapsed: res?.[2] - t0 }));

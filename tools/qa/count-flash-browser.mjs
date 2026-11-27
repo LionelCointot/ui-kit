@@ -7,7 +7,7 @@
 // Contrat pour le développeur (choix où la spec ne tranche pas) :
 //   - `lcFlash` : l'hôte porte la classe `lc-flash` tant que la directive est posée (sélecteur de la liste blanche de CA-5) ; l'animation (CSS ou WAAPI) porte sur l'hôte, `color` seulement,
 //     de `--lc-sys-color-primary` vers la couleur héritée, durée `--lc-flash-duration`, courbe `--lc-flash-easing` ; un nouveau changement pendant un flash le relance (jamais deux animations en même temps).
-//   - `lcCountUp` : durée `--lc-sys-duration-draw` (900 ms), courbe `--lc-sys-easing-out` ; aucune région `aria-live`, aucun attribut ARIA ajouté.
+//   - `lcCountUp` : durée `--lc-sys-duration-draw` (1100 ms), courbe `--lc-sys-easing-out` ; aucune région `aria-live`, aucun attribut ARIA ajouté.
 //   - stories Animation : `layout-count-up--animation` (élément `[data-sample]` au repos sur sa valeur finale, bouton « Rejouer » qui recompte) et `layout-flash--animation` (« Rejouer » change la valeur).
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';

@@ -291,6 +291,7 @@ const MOTION_OFF_CSS = `:root {
   --lc-sys-duration-view: 0ms;
   --lc-sys-duration-title: 0ms;
   --lc-sys-duration-draw: 0ms;
+  --lc-sys-duration-fill: 0ms;
   --lc-sys-motion-stagger-fine: 0ms;
   --lc-sys-motion-stagger-normal: 0ms;
   --lc-sys-motion-stagger-cards: 0ms;

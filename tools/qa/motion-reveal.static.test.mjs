@@ -44,8 +44,8 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
     assert.ok(existsSync(motion), 'packages/angular/styles/motion.css absent');
     const css = strip(read(motion));
     assert.doesNotMatch(css, /cubic-bezier\(/, 'une courbe en dur apparaît dans motion.css');
-    assert.match(css, /--lc-sys-duration-enter/, 'la durée d\'entrée doit lire --lc-sys-duration-enter');
-    assert.match(css, /--lc-reveal-curve: var\(--lc-sys-easing-soft\)/, 'la courbe d\'entrée par défaut doit lire --lc-sys-easing-soft (spec §5.2)');
+    assert.match(css, /--lc-reveal-duration/, 'la durée d\'entrée doit lire --lc-reveal-duration');
+    assert.match(css, /--lc-reveal-curve: var\(--lc-reveal-easing\)/, 'la courbe d\'entrée par défaut doit lire --lc-reveal-easing (Talmo : power3.out)');
     assert.match(css, /--lc-sys-duration-exit/, 'la durée de sortie doit lire --lc-sys-duration-exit');
     assert.match(css, /--lc-sys-motion-stagger-cap/, 'le plafond de rang doit lire --lc-sys-motion-stagger-cap');
   });
