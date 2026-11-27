@@ -79,10 +79,10 @@ export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   render: () => ({
     props: { titles: replayable(), line: replayable() },
-    // The title is 2rem (the catalogue's size): the letters' travel is a share of their height.
+    // The letters travel 115 % of their own height: a 2rem title on a 1.22 line gives the 44.8 px of the design catalogue.
     template: `
       <lc-story-motion-notice />
-      <div style="--lc-sys-font-size-2xl:2rem;--lc-sys-font-line-height-tight:1.25">
+      <div style="--lc-sys-font-size-2xl:2rem;--lc-sys-font-line-height-tight:1.22">
         <section data-demo="d01" #d01>
           <button lcButton fillMode="outline" size="small" (click)="titles.replay(d01)">Rejouer</button>
           @for (key of titles.keys(); track key) {
