@@ -16,7 +16,8 @@ import { LcResponsiveNumber, lcSpaceVar, resolveResponsive } from '../space';
   host: {
     class: 'lc-grid',
     // Cascade de ses enfants (ordre du DOM, rythme des cartes) : même contrat que `lcStagger="cards"`.
-    '[style.--lc-stagger-pace]': "'var(--lc-sys-motion-stagger-cards)'",
+    // Rythme par défaut des enfants : `--lc-reveal-pace` (pas `--lc-stagger-pace`, qui l'emporterait sur le rythme propre de `tilt`, 70 ms).
+    '[style.--lc-reveal-pace]': "'var(--lc-sys-motion-stagger-cards)'",
     '[style.--_gap]': 'gapValue()',
     '[style.--_cols]': 'cols().base',
     '[style.--_cols-sm]': 'cols().sm',
