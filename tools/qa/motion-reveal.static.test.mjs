@@ -22,7 +22,8 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
   test('ui-angular.css ne contient plus de règle [lcReveal] ni de jeton --lc-reveal-*', () => {
     const css = strip(read(sheet));
     assert.doesNotMatch(css, /\[lcReveal\]/i, 'le sélecteur [lcReveal] existe encore dans ui-angular.css');
-    assert.doesNotMatch(css, /--lc-reveal-/, 'un jeton --lc-reveal-* est encore lu par ui-angular.css');
+    // `--lc-reveal-curve` est la variable locale de motion.css (§13 T3) : le tiroir la surcharge (cascade en courbe soft) ; tout autre --lc-reveal-* reste interdit.
+    assert.doesNotMatch(css, /--lc-reveal-(?!curve\b)/, 'un jeton --lc-reveal-* (hors --lc-reveal-curve) est encore lu par ui-angular.css');
   });
 
   test('ui-angular.css importe motion.css', () => {
