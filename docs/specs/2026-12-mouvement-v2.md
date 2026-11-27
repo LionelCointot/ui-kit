@@ -156,7 +156,7 @@ Pas de données métier ; les tokens sont le contrat public. Les rôles `sys` r�
 | `standard` | `cubic-bezier(0.2, 0, 0, 1)` (inchangé) | — |
 | `entrance` | `cubic-bezier(0.16, 1, 0.3, 1)` (expo.out) | d04, d20, d25, d54 |
 | `fill` | `cubic-bezier(0.2, 1, 0.3, 1)` | d09, d21 |
-| `soft` | `cubic-bezier(0.34, 1, 0.64, 1)` | cascades d06-d09 |
+| `soft` | `cubic-bezier(0.34, 1, 0.64, 1)` | approximation du catalogue pour les cascades d06-d09 ; plus lue par `lcReveal` depuis l'alignement sur le site (cascades en `out`) ; T16 la retire si elle reste sans lecteur |
 | `out` | `cubic-bezier(0.215, 0.61, 0.355, 1)` (power3.out) | compteur d14, survol d31, voile d25 |
 | `pop` | `cubic-bezier(0.34, 1.7, 0.64, 1)` (dépassement 12-15 %) | d26, d28, d29, d39, d46, d47 |
 | `pop-strong` | `cubic-bezier(0.34, 2, 0.64, 1)` | d13 |
@@ -176,16 +176,17 @@ Le ressort de la feuille (`back.out(1.6)`, d54) et l'élastique ne sont pas des 
 | `exit` | 200 ms | sorties (toast 250 ms en token composant) |
 | `normal` | 250 ms | voiles, petits fondus |
 | `slow` | 350 ms | survol, ouverture de menu |
-| `enter` | 450 ms | apparitions, pops, toasts |
+| `enter` | 450 ms | pops, popovers, glissement du calendrier, bascule de thème |
 | `move` | 500 ms | empilement iOS, indicateurs |
 | `long` | 600 ms | feuilles, panneaux |
 | `view` | 700 ms | entrée de page ordinateur |
 | `title` | 850 ms | titre lettre par lettre |
-| `draw` | 900 ms | jauges, carte de charge, tracés, compteurs |
+| `fill` | 950 ms | jauges, carte de charge (`lcFill`), éclat (`lcFlash`) |
+| `draw` | 1 100 ms | tracés (`lcDraw`) |
 
 **Distances, décalages, échelles, angles** : `--lc-sys-motion-offset-{sm|md|lg|xl}` = 8 / 16 / 26 / 40 px ; `--lc-sys-motion-stagger-{fine|normal|cards|chars}` = 12 / 40 / 67 / 22 ms ; `--lc-sys-motion-stagger-cap` = 8 rangs ; `--lc-sys-motion-scale-{pop|enter}` = 0,94 / 0,95 ; `--lc-sys-motion-rotate-{tilt|char}` = 2,5° / 6°.
 
-**Tokens composant** (`components/motion.tokens.json`, tous posés par T1 pour éviter les conflits entre tâches) : `button.press-duration` 100 ms et `button.press-scale` 0,97 (D-11, découplés de `duration-fast`) ; `spinner.duration` 700 ms, `skeleton.duration`, boucles de chargement (découplées de `duration-slow`) ; `shell.nav-duration` (valeur actuelle) ; `tabs.*`, `nav-item.*` (deux bords : avant 380 ms `title`, arrière 400 ms `inout` décalé de 80 ms) ; `segmented-control.*` (deux bords : 300 ms `out` / 410 ms `inout` décalé de 75 ms) ; `tabbar.*` (entrée 750 ms après 265 ms, 90 px) ; `page.exit-*` (190 ms, 16 px), `page.enter-*` (700 ms, 26 px), `page.stack-*` (500 ms, recul 30 %, voile 0,12) ; `dialog.*` (échelle 0,91, 500 ms, fermeture 150 ms) ; `drawer.*` (550 ms, fermeture 300 ms, voile 300/200 ms) ; `sheet.*` (600 ms, fermeture 300 ms, ressort 500 ms, coins 24 px, hauteur max 92 dvh) ; `popover.*` (450 ms, échelle 0,95, −3,7 px, fermeture 150 ms) ; `menu.*` (350 ms, échelle 0,94, fermeture 140 ms) ; `toast.*` (entrée 500 ms y 28 px échelle 0,95, sortie 250 ms, durée de vie existante) ; `switch.*` (465 ms `pop`) ; `steps.*` (800 ms, décalage 117 ms) ; `flash.*` (950 ms `title`) ; `title.*` (lettres ≈ 115 %, trait 550 ms `inout` démarrant 390 ms après la première lettre) ; `live.*` (2 000 ms, opacité 0,1 → 0,45) ; `lift.*` (−4 px, 350 ms `out`) ; `calendar.*` (±18 px, 450 ms, 30 ms par ligne) ; `list.move-*` (420 ms `draw`) ; `chart.*` (sparkline 1 000 ms `draw`, re-calcul 480 ms décalage 20 ms) ; `topbar.enter-*` (10 px, 450 ms, décalage 33 ms, au chargement seulement) ; `disclosure.*` (ouverture 300 ms, fermeture 100 ms, −5 px).
+**Tokens composant** (`components/motion.tokens.json`, tous posés par T1 pour éviter les conflits entre tâches) : `button.press-duration` 100 ms et `button.press-scale` 0,97 (D-11, découplés de `duration-fast`) ; `spinner.duration` 700 ms, `skeleton.duration`, boucles de chargement (découplées de `duration-slow`) ; `shell.nav-duration` (valeur actuelle) ; `tabs.*`, `nav-item.*` (deux bords : avant 380 ms `title`, arrière 400 ms `inout` décalé de 80 ms) ; `segmented-control.*` (deux bords : 300 ms `out` / 410 ms `inout` décalé de 75 ms) ; `tabbar.*` (entrée 750 ms après 265 ms, 90 px) ; `page.exit-*` (190 ms, 16 px), `page.enter-*` (700 ms, 26 px), `page.stack-*` (500 ms, recul 30 %, voile 0,12) ; `dialog.*` (échelle 0,86, 500 ms, fermeture 200 ms à l'échelle 0,94) ; `drawer.*` (600 ms, fermeture 320 ms, voile 300/200 ms) ; `sheet.*` (550 ms, fermeture 300 ms, ressort 500 ms, coins 24 px, hauteur max 92 dvh) ; `popover.*` (450 ms, échelle 0,95, −3,7 px, fermeture 150 ms) ; `menu.*` (400 ms, échelle 0,92, −6 px, fermeture 150 ms) ; `toast.*` (entrée 500 ms y 30 px échelle 0,94, sortie 250 ms, durée de vie existante) ; `switch.*` (465 ms `pop`) ; `steps.*` (800 ms, décalage 117 ms) ; `flash.*` (950 ms `title`) ; `title.*` (lettres ≈ 115 %, trait 700 ms `inout` démarrant 320 ms après la première lettre) ; `live.*` (2 000 ms, opacité 0,1 → 0,45) ; `lift.*` (−4 px, 350 ms `out`) ; `calendar.*` (±18 px, 450 ms, 30 ms par ligne) ; `list.move-*` (420 ms `draw`) ; `chart.*` (sparkline 1 300 ms `draw`, re-calcul 700 ms décalage 20 ms) ; `topbar.enter-*` (10 px, 500 ms, décalage 30 ms, au chargement seulement) ; `reveal.*` (apparition 550 ms `out`, variante `tilt` 850 ms `pop`) ; `count-up.duration` (1 200 ms `out`) ; `disclosure.*` (ouverture 300 ms, fermeture 100 ms, −5 px).
 
 **Changements de contrat** (phase de développement : rupture franche, sans alias) : `duration-fast` 100 → 150 ms, `duration-slow` 300 → 350 ms, `duration-long` 350 → 600 ms, `duration-normal` 200 → 250 ms ; nouveaux rôles `exit`, `enter`, `view`, `title`, `draw` ; `--lc-sys-motion-offset` et `--lc-sys-motion-stagger` (feuilles) deviennent des groupes et disparaissent sous ces noms ; `--lc-ref-motion-stagger` aussi. La liste complète des tokens supprimés et renommés est publiée par T1 dans `CATALOGUE.md` et dans §12.
 
@@ -220,28 +221,28 @@ Erreurs : usage incorrect non bloquant = avertissement console en développement
 #### 5.4.1 Composants harmonisés (ordinateur)
 | Composant | Mouvement | Démos |
 |---|---|---|
-| `lc-app-shell` | entrée de la barre du haut au chargement seulement (10 px, 450 ms, décalage 33 ms), jamais rejouée à la navigation | d05 |
-| Titre de page (`lc-page`) | `lcSplitText` ; trait sous le titre 550 ms `inout`, démarrant 390 ms après la première lettre | d01, d02 |
+| `lc-app-shell` | entrée de la barre du haut au chargement seulement (10 px, 500 ms, décalage 30 ms), jamais rejouée à la navigation | d05 |
+| Titre de page (`lc-page`) | `lcSplitText` ; trait sous le titre 700 ms `inout`, démarrant 320 ms après la première lettre | d01, d02 |
 | `lc-nav-list`, `lc-nav-group` | indicateur à deux bords : avant 380 ms `title`, arrière 400 ms `inout` décalé de 80 ms ; repli du groupe comme `lc-disclosure` | d10, d48 |
 | `lc-tabs` | même indicateur à deux bords (choix du kit : le trait de Talmo ne glisse pas, d12) ; cascade du panneau à la première ouverture seulement (D-21) ; aucune animation au premier rendu | d10, d45 |
 | `lc-segmented-control` | pastille à deux bords (300 ms `out` / 410 ms `inout` décalé de 75 ms) partout (D-20) | d62 |
 | `button[lcButton]` | enfoncement 0,97 / 100 ms gardé (D-11) | — |
 | `lc-switch` | bouton qui glisse 465 ms `pop` (dépassement ≈ 2,75 px), piste de couleur 200 ms | d46 |
 | `lc-stepper` | barres tracées l'une après l'autre (800 ms, décalage 117 ms) ; pastille courante en pop 600 ms `pop-strong`, décalage 40 ms | d13, d51 |
-| `lc-progress-bar`, `lc-timeline-bar`, barres de `lc-file-upload` et `lc-message-composer` | `lcFill` 900 ms `fill`, décalage 39 ms (la barre de `file-upload` et `message-composer` passe de `width` à `lcFill` ; leur bande indéterminée reste) | d09, d21 |
-| `lc-kpi-card` | entrée `tilt` ; `lcCountUp` (900 ms `out`) ; `lcFlash` au changement ; aucun effet au survol | d03, d14, d15, d16 |
+| `lc-progress-bar`, `lc-timeline-bar`, barres de `lc-file-upload` et `lc-message-composer` | `lcFill` 950 ms `fill`, décalage 39 ms (la barre de `file-upload` et `message-composer` passe de `width` à `lcFill` ; leur bande indéterminée reste) | d09, d21 |
+| `lc-kpi-card` | entrée `tilt` ; `lcCountUp` (1 200 ms `out`) ; `lcFlash` au changement ; aucun effet au survol | d03, d14, d15, d16 |
 | `lc-status-badge`, `lc-tooltip`, survol de ligne, anneau de sélection d'une date | aucun mouvement, exprès | d17, d44, d50, d41 |
-| `lc-dialog` | ouverture depuis l'élément qui l'a déclenché (rectangle de l'élément actif à l'ouverture ; clavier : centre du déclencheur), échelle 0,91 → 1, `pop`, 500 ms ; fermeture 150 ms `exit`, échelle 0,95 ; sous 768 px : feuille du bas (D-19) | d26, d56 |
-| `lc-drawer` | 550 ms `entrance`, fermeture 300 ms `exit`, voile 300 / 200 ms, contenu en cascade ; sous 768 px : feuille du bas (D-19) | d25 |
-| `lc-menu`, liste de `lc-combobox`, calendrier de `lc-date-input` / `lc-date-range-input` | pop depuis l'ancrage : échelle 0,94, `pop`, 350 ms ; fermeture 140 ms | d28 |
+| `lc-dialog` | ouverture depuis l'élément qui l'a déclenché (rectangle de l'élément actif à l'ouverture ; clavier : centre du déclencheur), échelle 0,86 → 1, `pop`, 500 ms ; fermeture 200 ms `exit`, échelle 0,94 ; sous 768 px : feuille du bas (D-19) | d26, d56 |
+| `lc-drawer` | 600 ms `entrance`, fermeture 320 ms `exit`, voile 300 / 200 ms, contenu en cascade ; sous 768 px : feuille du bas (D-19) | d25 |
+| `lc-menu`, liste de `lc-combobox`, calendrier de `lc-date-input` / `lc-date-range-input` | pop depuis l'ancrage : échelle 0,92, y −6 px, `pop`, 400 ms ; fermeture 150 ms | d28 |
 | `lc-toggletip` | popover : échelle 0,95, y −3,7 px, `pop`, 450 ms, fermeture 150 ms | d39 |
-| `lc-toast` (aujourd'hui sans animation) | entrée y 28 px + échelle 0,95, `pop`, 500 ms ; sortie 250 ms | d29 |
-| `lc-data-table`, `lc-table` | lignes en cascade (8 px, 450 ms `soft`, décalage 40 ms) ; changement de filtre : liste vidée puis cascade ; tri : lignes qui glissent (420 ms `draw`) ; suppression d'une ligne : sortie puis glissement des voisines (gel conservé, CA-22 de 2026-11-mouvement) | d07, d08, d33, d36 |
+| `lc-toast` (aujourd'hui sans animation) | entrée y 30 px + échelle 0,94, `pop`, 500 ms ; sortie 250 ms | d29 |
+| `lc-data-table`, `lc-table` | lignes en cascade (8 px, 550 ms `out`, décalage 40 ms) ; changement de filtre : liste vidée puis cascade ; tri : lignes qui glissent (420 ms `draw`) ; suppression d'une ligne : sortie puis glissement des voisines (gel conservé, CA-22 de 2026-11-mouvement) | d07, d08, d33, d36 |
 | `lc-message-thread` | comportement inchangé ; décalage et tokens communs | — |
 | `lc-activity-feed`, `lc-tree-table`, `lc-description-list` | cascade d'entrée (`lcStagger`) | d06, d07 |
 | `lc-card` | `.lc-lift` au survol (pointeur fin) | d31 |
 | Calendrier (`lc-date-input`) | changement de mois : glissement ±18 px selon le sens, 450 ms, 30 ms par ligne ; liste du jour en re-fondu | d41, d61 |
-| `lc-chart` | durée et courbe ECharts depuis les tokens (table « rôle → nom ECharts » écrite par T11) ; sparkline 1 000 ms ; re-calcul 480 ms, décalage 20 ms ; animation coupée sous mouvement réduit | d19, d24 |
+| `lc-chart` | durée et courbe ECharts depuis les tokens (table « rôle → nom ECharts » écrite par T11) ; sparkline 1 300 ms ; re-calcul 700 ms, décalage 20 ms ; animation coupée sous mouvement réduit | d19, d24 |
 | `lc-theme-toggle` | révélation circulaire depuis le bouton, 450 ms, `cubic-bezier(.65,0,.35,1)`, par View Transitions ; repli : bascule instantanée ; pas d'appel à View Transitions sous mouvement réduit | d37 |
 | `lc-disclosure` | ouverture ≈ 300 ms (hauteur + fondu, −5 px), fermeture 100 ms, chevron 300 ms | d48 |
 | `lc-swipe-panels` | valeurs `entrance` / `long` (sans démo) | — |
@@ -409,6 +410,7 @@ Cochés à la livraison, avec le test qui les prouve. « Token » = valeur réso
 - [ ] CA-37 : La page Foundations/Motion suit §5.4.5 (tableau « Votre besoin / À poser / Ce qui se passe / Exemple », courbes en langage simple, ce qui ne bouge pas, réglages, recettes glisser-déposer et bouton magnétique), chaque ligne a un bouton Rejouer qui relance une animation, et aucun mot de la liste interdite n'apparaît sur le premier écran.
 - [ ] CA-38 : Chaque primitive et chaque composant de §5.4.1 et §5.4.2 a une story Animation avec Rejouer ; la liste est dérivée de l'index de Storybook (plus de liste codée en dur) et sert aux CA-3 et CA-31.
 - [ ] CA-39 : `CATALOGUE.md` liste les primitives, les rôles de tokens, les tokens composant et les tokens supprimés ou renommés ; `npm run catalogue:check` passe.
+- [ ] CA-40 : À l'entrée d'une page, les couches partent dans l'ordre et aux délais des tokens (KPI 100 ms, cartes 120 ms, lignes 400 ms, jauges 500 ms, points 800 ms, ±1 image) ; une ligne ajoutée ou un filtre appliqué après l'entrée apparaît sans délai de couche ; la variante `card` monte de 26 px à l'échelle 0,985 en 800 ms `entrance`, 60 ms entre deux cartes ; sous mouvement réduit, rien ne bouge et aucun délai ne s'applique.
 
 ## 11. Découpage en tâches
 Une tâche = un appel à `senior-developer`, une branche, puis vérification ; `qa-engineer` écrit les tests d'acceptation de la tâche avant. Chaque tâche livre la story Animation et la story QA de ce qu'elle touche, et réécrit les tests existants qu'elle rend faux. Elle retire aussi, de la liste blanche de `tools/qa/motion-reveal.static.test.mjs` (`@keyframes`, `.animate(`, `getAnimations` hors `lib/motion/` et `motion.css`), les entrées des composants qu'elle migre vers les primitives, et `qa-engineer` le vérifie (ajout du 2026-11-27, décision de l'utilisateur : sans cela, l'ancien code d'animation d'un composant peut rester sans que le test le voie).
@@ -425,6 +427,10 @@ Une tâche = un appel à `senior-developer`, une branche, puis vérification ; `
 - [ ] T9b (fusionnée le 2026-11-27, QA en fin de vague) : `lc-sheet` : valeurs, seuils, ressort, élastique, voile ; réécriture de `ios-motion-browser.mjs` (M, couvre CA-24)
 - [x] T9c (livrée le 2026-11-27 ; CA-20 prouvé pour d28, d39, d41, d50, d61) : pops d'ancrage : `lc-menu`, liste de `lc-combobox`, calendriers, `lc-toggletip` ; changement de mois du calendrier (M, couvre CA-20 pour ces démos)
 - [ ] T10 : `lc-toast` ; `lc-progress-bar`, `lc-timeline-bar`, barres de `lc-file-upload` et `lc-message-composer`, `lc-kpi-card`, `lc-card`, `lc-activity-feed`, `lc-tree-table`, `lc-description-list`, `lc-disclosure` (M, couvre CA-25, CA-31) — après T4 et T5
+  - Ajouts du 2026-11-27 (alignement sur le code du site, validé par l'utilisateur : « Et également mettre à jour avec les bonnes valeurs que tu es allé chercher ») :
+    - Variante `card` de `lcReveal`, la cascade des cartes du site : y 26 px (`offset-lg`), échelle 0,985, 800 ms `entrance` (expo.out), 60 ms entre deux cartes. `lc-card` et les cartes de `lc-kpi-card` hors `tilt` l'emploient.
+    - Chorégraphie par couches, pendant l'entrée d'une page seulement (apparition de `lc-page`, première ouverture ou changement de page par `lcPageTransitions`) : chaque type de composant part à un délai fixé par un token. Valeurs médianes des pages du site : KPI 100 ms, cartes 120 ms, lignes et listes 400 ms, jauges 500 ms, points d'état 800 ms. Hors entrée de page (ligne ajoutée, filtre, mise à jour), aucun délai. Couverte par un nouveau CA-40, prouvé au passage navigateur final.
+    - Décalages du site, gardés : cartes 40 à 80 ms (médiane 60), lignes 25 à 40 ms (40 par défaut, 25 pour les listes denses), jauges 30 à 40 ms, points 30 à 40 ms.
 - [ ] T11 (fusionnée le 2026-11-27, QA en fin de vague) : `lc-chart` : table « rôle → nom ECharts », animation depuis les tokens (S, couvre CA-28)
 - [ ] T12 (fusionnée le 2026-11-27, test navigateur final) : `lc-theme-toggle` : révélation circulaire + repli (S, couvre CA-29)
 - [x] T13a (livrée le 2026-11-27 ; CA-32 prouvé pour la fonction de sens et le service avec un routeur de test, coché après T13b) : `LcPageNav` : fonction pure du sens, pile d'historique, titres des routes (M, couvre CA-32 en partie)
@@ -432,15 +438,16 @@ Une tâche = un appel à `senior-developer`, une branche, puis vérification ; `
 - [ ] T14 : retour au geste + en-tête mobile (bouton retour libellé, titre au défilement ; `LcPageNav.parent` vaut `null` quand aucune route ancêtre n'a de `title` : libellé de repli `LC_LABELS.back`) (M, couvre CA-33, CA-34a) — après T13b
 - [ ] T15 : barre d'onglets en bas de `lc-app-shell` (registre, « Plus » → tiroir) (M, couvre CA-36) — après T2 et T13b
 - [ ] T16 : page Foundations/Motion (§5.4.5), recettes, dérivation des stories, `CATALOGUE.md`, retrait de `@angular/animations` ; liste blanche de `motion-reveal.static.test.mjs` rendue stricte (une entrée sans occurrence fait échouer le test) et réduite aux exceptions justifiées ; test statique « aucun token de mouvement sans lecteur » (demandé par `architect` en T3) ; en-tête « remplacée par 2026-12-mouvement-v2 » sur `2026-11-mouvement.md` et `2026-11-mouvement-ios.md` (M, couvre CA-6, CA-37 à CA-39) — en dernier
+- [ ] T17 : page de démonstration combinée dans Storybook (demande du 2026-11-27 : « faire dans le story book une page avec plusieurs composants comme sa page afin de voir tous les composants animés ensemble pour montrer le rendu des animations combinées ensemble (on peut faire 1 page avec les boutons de navigation comme talmo) ») : une story `Vitrine/Démonstration du mouvement`, avec `lc-app-shell` et sa navigation, plusieurs rubriques (tableau de bord avec KPI, cartes, liste, jauges et graphique ; liste et tableau ; réglages en formulaire) et les transitions de page entre elles, dans le style du kit (rien du visuel de Talmo, qui est sous licence). Fiche détaillée et maquette soumises à l'utilisateur avant le code. Après T16.
 
-Ordre : T0 → T1 → T2 → T3 ; puis T4, T5, T6, T7, T8, T9a, T9b, T9c, T11, T12, T13a en parallèle (chacun avec ses fichiers ; `motion.css`, `CATALOGUE.md` et `index.ts` fusionnés par l'orchestrateur) ; T10 après T4 et T5 ; T13b → T14 ; T15 après T13b ; T16 en dernier. Plan de repli : si T15 est coupée, T13 et T14 livrent seuls les transitions de page. Branches d'essai supprimées après le portage des harnais (T0).
+Ordre : T0 → T1 → T2 → T3 ; puis T4, T5, T6, T7, T8, T9a, T9b, T9c, T11, T12, T13a en parallèle (chacun avec ses fichiers ; `motion.css`, `CATALOGUE.md` et `index.ts` fusionnés par l'orchestrateur) ; T10 après T4 et T5 ; T13b → T14 ; T15 après T13b ; T16, puis T17. Plan de repli : si T15 est coupée, T13 et T14 livrent seuls les transitions de page. Branches d'essai supprimées après le portage des harnais (T0).
 
 ## 12. Risques et questions ouvertes
 - **Choix par défaut à confirmer à la validation** :
   - Variante `tilt` (cartes qui s'inclinent à l'entrée, d03) gardée.
   - Seuils de geste et amplitudes propres à un composant en constantes nommées, pas en tokens (évite ≈ 40 tokens) ; les durées, courbes, décalages et distances restent dans les tokens (D-4).
   - Point de rupture 768 px (celui du kit) au lieu de 760 px (Talmo).
-  - Compteurs à 900 ms (démo d14) et non 1,2 s (mesure brute de Talmo).
+  - Compteurs à 1,2 s comme le site (décidé à 900 ms d'après la démo d14, corrigé le 2026-11-27 par l'alignement sur le code du site).
   - `lc-data-table` : filtre = liste vidée puis cascade, comme Talmo (change le comportement validé le 2026-11-21) ; suppression d'une ligne inchangée.
   - Rendu serveur prouvé par simulation (`PLATFORM_ID` serveur), sans ajouter `@angular/platform-server`.
   - Suites navigateur lancées en gate local (comme aujourd'hui), pas en CI.
@@ -541,3 +548,10 @@ Ordre : T0 → T1 → T2 → T3 ; puis T4, T5, T6, T7, T8, T9a, T9b, T9c, T11, T
   - Choix : retour ou avance du navigateur vers une URL absente de la pile = sens jugé au niveau, pile inchangée (commentaire `shortcut:` : pile et navigateur peuvent alors diverger) ; `skipLocationChange` = ni transition ni entrée de pile, titre / niveau / parent mis à jour ; même chemin avec `?query` ou fragment empilé sans `change` ; route à chemin vide qui hérite du titre de son parent (comportement du routeur).
   - Tests : 5 tests d'acceptation fautifs (extras passés au harnais du routeur, écouteur `popstate` absent, cas `lcPageTransition: false` qui ne prouvait rien) corrigés par la QA de vérification, plus un test `replaceUrl` au milieu de la pile ajouté après qu'une mutation a survécu ; 7 mutations du service tuées. Spec corrigée : `navigation` dépend aussi de `@angular/router` (§5.1).
 - État des suites navigateur après T1 (2026-11-27) : la commande `motion` de `storybook-browser.mjs` donne 29 KO attendus sur `main` (anciennes valeurs : appui du bouton 150 ms au lieu de 100, indicateurs 500 ms au lieu de 380…), à réécrire par les tâches qui refont ces composants (T8, T9a-c), conformément au §9 ; `lc-message-thread` laisse tourner une animation d'opacité de 200 ms sous mouvement réduit (CA-3, révélé par l'outillage de T0) : à corriger en T7.
+- Alignement sur le code du site Talmo (2026-11-27, demande de l'utilisateur : « Compare directement au site Talmo et ajuste les durées ») : le catalogue avait relevé les valeurs à l'œil. Les paramètres d'animation lus dans le code public du site (valeurs numériques seulement, sans reprise de code : le site est sous licence) font désormais foi sur le catalogue et sur `fidelite.json`. Le tableau complet est dans `docs/design/explorations/2026-12-mouvement-v2/talmo-source.md`, et les valeurs de §5.2 et §5.4.1 sont mises à jour. Les changements principaux :
+  - `lcReveal` passe à 550 ms `out`, avec ses propres tokens `reveal.*`. T3 l'avait mis en `entrance` à 450 ms, classé à tort parmi les choix « où la spec ne tranchait pas » alors que §5.2 donnait `soft`. Cet écart n'avait pas été soumis à l'utilisateur.
+  - La variante `tilt` passe à 850 ms `pop`.
+  - Nouveau rôle `duration-fill` (950 ms) et `duration-draw` à 1 100 ms. Le compteur reçoit son propre token, à 1 200 ms.
+  - Trait du titre 700 ms / 320 ms, graphiques 1 300 / 700 ms, tiroir 600 / 320 ms, feuille 550 ms, fenêtre 0,86 / 200 ms / 0,94, menu 400 ms / 0,92 / −6 px / 150 ms, barre du haut 500 / 30 ms, toast 30 px / 0,94.
+  - Les empreintes de `fidelite.json` des démos touchées seront régénérées au passage navigateur final.
+- Processus, troisième décision (2026-11-27, utilisateur : « On merge qu'à la fin ») : les tâches restantes (T10, T14, T15, T16, T17) sont fusionnées dans la branche `feat/motion-v2-integration`, pas dans `main`. Le passage navigateur unique, les corrections et la relance ont lieu sur cette branche, qui n'est fusionnée dans `main` qu'à la fin.
