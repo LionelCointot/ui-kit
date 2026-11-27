@@ -14,7 +14,8 @@ const ORDER: Record<LcOverlayDirection, LcOverlayDirection[]> = {
    (pas de token). L'écart avec l'élément est donc un remplissage transparent du panneau du panneau (token `space`), compté dans sa taille :
    il est pris en compte pour le choix de la position et pour la poussée, et le panneau reste entier dans la fenêtre. */
 export const POSITIONS: Record<LcOverlayDirection, ConnectedPosition> = {
-  above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' },
+  // `lc-overlay--above` : le pop du toggletip s'ouvre vers le haut (sans effet sur l'info-bulle, qui ne s'anime pas).
+  above: { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom', panelClass: 'lc-overlay--above' },
   below: { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' },
   start: { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' },
   end: { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' },

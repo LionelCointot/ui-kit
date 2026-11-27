@@ -3,6 +3,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LcToggletipComponent } from './toggletip.component';
 import { LcToggletipDirective } from './toggletip.directive';
+import { POSITIONS } from '../tooltip/tooltip-positions';
 
 @Component({
   imports: [LcToggletipDirective, LcToggletipComponent],
@@ -149,6 +150,33 @@ describe('LcToggletipDirective', () => {
       await click(el('#b'));
       const strategy = create.mock.calls[0][0]!.positionStrategy as FlexibleConnectedPositionStrategy;
       expect(strategy.positions[0]).toMatchObject({ originY: 'bottom', overlayY: 'top' });
+    });
+  });
+
+  describe('pop animé (T9c)', () => {
+    it('le panneau porte lc-toggletip-overlay, et seule la position « au-dessus » ajoute lc-overlay--above', async () => {
+      await click(el('#a'));
+      expect(document.querySelector('.cdk-overlay-pane.lc-toggletip-overlay')).not.toBeNull();
+      expect(POSITIONS.above.panelClass).toBe('lc-overlay--above');
+      expect([POSITIONS.below, POSITIONS.start, POSITIONS.end].map((p) => p.panelClass)).toEqual([undefined, undefined, undefined]);
+    });
+
+    it('rouvrir pendant le fondu de fermeture donne une seule bulle, remplie', async () => {
+      el('#a').click();
+      el('#a').click();
+      el('#a').click();
+      await settle();
+      expect(filledTexts()).toEqual(['Détail A Lien']);
+      await vi.waitFor(() => expect(document.querySelectorAll('.cdk-overlay-pane')).toHaveLength(1)); // l'ancienne bulle finit son fondu
+      expect(filledTexts()).toEqual(['Détail A Lien']);
+    });
+
+    it('la bulle quittée est retirée du DOM et vidée à la fin du fondu', async () => {
+      await click(el('#a'));
+      await click(el('#outside'));
+      await vi.waitFor(() => expect(document.querySelectorAll('.cdk-overlay-pane')).toHaveLength(0));
+      await click(el('#a'));
+      expect(filledTexts()).toEqual(['Détail A Lien']);
     });
   });
 

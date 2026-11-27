@@ -75,17 +75,17 @@ import { LcMenuComponent, LcMenuItemComponent, LcMenuTriggerDirective } from '@l
 })
 export class ExampleComponent {}`;
 
-/** The panel fades in while moving down from its trigger, and fades out when it closes. "Rejouer" reopens it. */
+/** The panel grows from its trigger with a small overshoot while it fades in, and fades out faster when it closes. "Rejouer" reopens it. */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   render: () => ({
     props: { ...replayable({ play: (_later, root) => root.querySelector<HTMLElement>('[data-replay]')?.click() }) },
     template: `
       <lc-story-motion-notice />
-      <div #root>
+      <div #root data-demo="d28">
         <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
         @for (key of keys(); track key) {
-          <button type="button" data-replay [lcMenuTriggerFor]="menu">Actions</button>
+          <button type="button" data-replay data-trigger [lcMenuTriggerFor]="menu">Actions</button>
           <lc-menu #menu ariaLabel="Actions du dossier">
             <button lcMenuItem icon="pencil">Renommer</button>
             <button lcMenuItem icon="copy">Dupliquer</button>

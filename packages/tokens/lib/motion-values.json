@@ -112,6 +112,7 @@
   { "demo": "d28", "valeur": "cubic-bezier(0.34, 1.7, 0.64, 1)", "token": "--lc-menu-enter-easing" },
   { "demo": "d28", "valeur": "350ms", "token": "--lc-menu-enter-duration" },
   { "demo": "d28", "valeur": "140ms", "token": "--lc-menu-exit-duration" },
+  { "demo": "d28", "valeur": "-5px", "token": "--lc-menu-enter-offset" },
 
   { "demo": "d39", "valeur": "0.95", "token": "--lc-popover-enter-scale" },
   { "demo": "d39", "valeur": "-3.7px", "token": "--lc-popover-enter-offset" },
@@ -142,6 +143,7 @@
   { "demo": "d41", "valeur": "18px", "token": "--lc-calendar-slide-offset" },
   { "demo": "d41", "valeur": "450ms", "token": "--lc-calendar-slide-duration" },
   { "demo": "d41", "valeur": "30ms", "token": "--lc-calendar-row-stagger" },
+  { "demo": "d61", "valeur": "0.14", "token": "--lc-calendar-slide-opacity" },
 
   { "demo": "d19", "valeur": "1000ms", "token": "--lc-chart-sparkline-duration" },
   { "demo": "d24", "valeur": "480ms", "token": "--lc-chart-update-duration" },

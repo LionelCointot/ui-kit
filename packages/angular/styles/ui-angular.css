@@ -425,33 +425,51 @@ lc-form-field [lcSuffix] {
    `panelClass` après un premier calcul de style : `@starting-style` ne jouerait jamais ; et une animation sur le conteneur empêcherait
    la transition de sortie pendant l'entrée). `lc-overlay--above` (position « au-dessus » du CDK, sur le conteneur) inverse le sens par
    héritage ; changer le signe ne relance pas l'animation. `lc-overlay--closing` (posée par lcDetachAnimated) fond le conteneur. */
-:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay) > * {
-  animation: lc-overlay-enter var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay) {
+  --lc-pop-duration: var(--lc-menu-enter-duration);
+  --lc-pop-easing: var(--lc-menu-enter-easing);
+  --lc-pop-scale: var(--lc-menu-enter-scale);
+  --lc-pop-offset: var(--lc-menu-enter-offset);
+  --lc-pop-exit-duration: var(--lc-menu-exit-duration);
 }
 
-:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay).lc-overlay--above {
-  --lc-overlay-enter-sign: 1;
+/* Bulle du toggletip : valeurs `popover.*`. */
+.lc-toggletip-overlay {
+  --lc-pop-duration: var(--lc-popover-enter-duration);
+  --lc-pop-easing: var(--lc-popover-enter-easing);
+  --lc-pop-scale: var(--lc-popover-enter-scale);
+  --lc-pop-offset: var(--lc-popover-enter-offset);
+  --lc-pop-exit-duration: var(--lc-popover-exit-duration);
 }
 
-@keyframes lc-overlay-enter {
-  from {
-    opacity: 0;
-    transform: translateY(calc(var(--lc-overlay-enter-sign, -1) * var(--lc-overlay-offset)));
-  }
+/* Pop depuis l'ancrage : deux animations (fondu court, mouvement avec dépassement), origine côté ancrage ; keyframes dans motion.css. */
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay) > * {
+  transform-origin: top;
+  animation:
+    lc-pop-fade var(--lc-sys-duration-fast) var(--lc-sys-easing-out),
+    lc-pop-move var(--lc-pop-duration) var(--lc-pop-easing);
 }
 
-:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay).lc-overlay--closing {
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay).lc-overlay--above {
+  --lc-pop-sign: -1;
+}
+
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay).lc-overlay--above > * {
+  transform-origin: bottom;
+}
+
+:is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay).lc-overlay--closing {
   opacity: 0;
-  transition: opacity var(--lc-overlay-exit-duration) var(--lc-overlay-easing);
+  transition: opacity var(--lc-pop-exit-duration) var(--lc-sys-easing-exit);
   pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay) > * {
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay) > * {
     animation: none;
   }
 
-  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay).lc-overlay--closing {
+  :is(.lc-menu-overlay, .lc-combobox-overlay, .lc-calendar-overlay, .lc-data-table__overlay, .lc-toggletip-overlay).lc-overlay--closing {
     transition: none;
   }
 }
@@ -523,14 +541,17 @@ lc-form-field [lcSuffix] {
 /* Hauteur fixe : ligne des jours + 6 semaines, pour ne pas sauter d'un mois à l'autre. */
 .lc-calendar__month {
   block-size: calc(7 * var(--lc-calendar-cell-size, var(--lc-sys-space-10)));
-  animation: lc-calendar-fade var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-/* La grille est recréée à chaque mois, année ou niveau affiché (`track` par clé) : le fondu se rejoue. */
-@keyframes lc-calendar-fade {
-  from {
-    opacity: 0;
-  }
+/* La grille est recréée à chaque mois affiché (`track` par clé) : ses cellules glissent dans le sens du changement, ligne après ligne
+   (`--lc-row` posée par le gabarit, `data-slide` par le panneau ; keyframes dans motion.css). */
+.lc-calendar__months[data-slide] .lc-calendar__grid tbody td {
+  animation: lc-calendar-slide var(--lc-calendar-slide-duration) var(--lc-sys-easing-entrance) backwards;
+  animation-delay: calc(var(--lc-row, 0) * var(--lc-calendar-row-stagger));
+}
+
+.lc-calendar__months[data-slide='prev'] {
+  --lc-calendar-slide-sign: -1;
 }
 
 .lc-calendar__month,
@@ -1005,7 +1026,7 @@ lc-form-field [lcSuffix] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-calendar__month {
+  .lc-calendar__months[data-slide] .lc-calendar__grid tbody td {
     animation: none;
   }
 

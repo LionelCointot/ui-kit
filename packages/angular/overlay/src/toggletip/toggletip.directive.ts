@@ -1,6 +1,7 @@
 import { FlexibleConnectedPositionStrategy, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { DestroyRef, Directive, ElementRef, Injector, ViewContainerRef, afterNextRender, inject, input, isDevMode, signal } from '@angular/core';
+import { lcDetachAnimated } from '@lionelcointot/ui-angular';
 import { LcToggletipComponent } from './toggletip.component';
 import { type LcOverlayDirection, DIRECTION_OF, positionsFor } from '../tooltip/tooltip-positions';
 
@@ -33,7 +34,7 @@ export class LcToggletipDirective {
     if (isDevMode() && this.element.tagName !== 'BUTTON') {
       console.warn('[lcToggletip] Le déclencheur doit être un <button> natif (clavier et toucher) ; sinon la bulle n\'est pas atteignable.');
     }
-    inject(DestroyRef).onDestroy(() => this.close());
+    inject(DestroyRef).onDestroy(() => this.close(false));
   }
 
   protected toggle(): void {
@@ -44,7 +45,7 @@ export class LcToggletipDirective {
   private open(): void {
     const panel = this.lcToggletip();
     const strategy = this.overlay.position().flexibleConnectedTo(this.element).withPositions(positionsFor(this.lcToggletipPosition())).withPush(true);
-    const ref = (this.overlayRef = this.overlay.create({ positionStrategy: strategy, scrollStrategy: this.overlay.scrollStrategies.reposition() }));
+    const ref = (this.overlayRef = this.overlay.create({ positionStrategy: strategy, scrollStrategy: this.overlay.scrollStrategies.reposition(), panelClass: 'lc-toggletip-overlay' }));
     strategy.positionChanges.subscribe(({ connectionPair }) => {
       panel.direction.set(DIRECTION_OF.get(connectionPair) ?? 'below');
       this.pointArrow(panel, ref);
@@ -53,15 +54,15 @@ export class LcToggletipDirective {
     this.isOpen.set(true);
 
     ref.outsidePointerEvents().subscribe((event) => {
-      if (!this.element.contains(event.target as Node)) this.close();
+      if (this.overlayRef === ref && !this.element.contains(event.target as Node)) this.close();
     });
     ref.keydownEvents().subscribe((event) => {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape' || this.overlayRef !== ref) return;
       event.preventDefault();
       this.close();
       this.element.focus();
     });
-    ref.overlayElement.addEventListener('focusout', (event) => this.onFocusOut(event));
+    ref.overlayElement.addEventListener('focusout', (event) => this.overlayRef === ref && this.onFocusOut(event));
 
     // La région `role="status"` est rendue vide d'abord, puis remplie : une région déjà présente est annoncée, une région qui apparaît avec son texte non.
     afterNextRender(() => {
@@ -82,14 +83,21 @@ export class LcToggletipDirective {
     this.close();
   }
 
-  private close(): void {
-    if (!this.overlayRef) return;
-    this.overlayRef.dispose();
+  /** Fond en fondu (`animated`) : la bulle garde son contenu jusqu'au retrait, une réouverture entre-temps crée une nouvelle bulle. */
+  private close(animated = true): void {
+    const ref = this.overlayRef;
+    if (!ref) return;
     this.overlayRef = undefined;
     this.isOpen.set(false);
     const panel = this.lcToggletip();
-    panel.filled.set(false);
-    panel.arrowOffset.set(null);
+    const release = () => {
+      ref.dispose();
+      if (this.overlayRef) return; // rouverte pendant le fondu : le contenu sert la nouvelle bulle
+      panel.filled.set(false);
+      panel.arrowOffset.set(null);
+    };
+    if (animated) void lcDetachAnimated(ref).then(release);
+    else release();
   }
 
   /** Place la flèche sur le centre du bouton, même quand la bulle a été poussée dans la fenêtre. */

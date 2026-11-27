@@ -1,5 +1,7 @@
+import { signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
 import { LcToggletipComponent, LcToggletipDirective } from '@lionelcointot/ui-angular/overlay';
 
 /**
@@ -12,7 +14,7 @@ import { LcToggletipComponent, LcToggletipDirective } from '@lionelcointot/ui-an
 const meta: Meta<LcToggletipDirective> = {
   title: 'Overlays/Toggletip',
   component: LcToggletipDirective,
-  decorators: [moduleMetadata({ imports: [LcToggletipDirective, LcToggletipComponent] })],
+  decorators: [moduleMetadata({ imports: [LcToggletipDirective, LcToggletipComponent, LcButtonComponent, LcRevealDirective, StoryMotionNoticeComponent] })],
   parameters: { layout: 'fullscreen' },
   args: { lcToggletipPosition: 'below' },
   argTypes: { lcToggletipPosition: { control: 'inline-radio', options: ['below', 'above', 'start', 'end'] } },
@@ -79,4 +81,60 @@ export const InATable: Story = {
       </table>
     </div>`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcToggletipComponent, LcToggletipDirective } from '@lionelcointot/ui-angular/overlay';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcToggletipComponent, LcToggletipDirective],
+  template: \`
+    <button type="button" aria-label="Pourquoi ce changement ?" [lcToggletip]="detail">?</button>
+    <lc-toggletip #detail>Le dossier a été déplacé vers l'équipe voisine.</lc-toggletip>\`,
+})
+export class ExampleComponent {}`;
+
+/* Valeurs du catalogue (d39) pour les lignes de démonstration : 10 px, courbe `soft`, 450 ms (durée d'entrée par défaut de `lcReveal`), sans décalage. */
+const NOTIFICATION = 'style="display:block;--lc-reveal-y:10px;--lc-reveal-curve:var(--lc-sys-easing-soft);padding-block:var(--lc-sys-space-1)"';
+
+/**
+ * The bubble grows from its button with a small overshoot while it fades in, and fades out faster when it closes. The three notifications
+ * inside it are demo content: each rises on its own with `lcReveal`, once the bubble is shown. "Rejouer" reopens it.
+ */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => {
+    const lines = signal(false);
+    return {
+      props: {
+        lines,
+        ...replayable({ reset: () => lines.set(false), play: (_later, root) => root.querySelector<HTMLElement>('[data-trigger]')?.click() }),
+        // Les lignes sont créées une fois la bulle affichée : créées pendant qu'elle est fermée, elles joueraient leur entrée hors de la page.
+        toggled: (trigger: HTMLElement) => {
+          lines.set(false);
+          setTimeout(() => lines.set(trigger.getAttribute('aria-expanded') === 'true'), 120);
+        },
+      },
+      template: `
+        <lc-story-motion-notice />
+        <div #root data-demo="d39" style="padding:var(--lc-sys-space-6) var(--lc-sys-space-4)">
+          <button lcButton fillMode="outline" size="small" (click)="replay(root)">Rejouer</button>
+          @for (key of keys(); track key) {
+            <div style="margin-block-start:var(--lc-sys-space-4)">
+              <button #trigger data-trigger type="button" ${PILL} aria-label="Notifications, 3 non lues" [lcToggletip]="detail" (click)="toggled(trigger)">3</button>
+              <lc-toggletip #detail>
+                <div style="min-inline-size:14rem;min-block-size:7rem">
+                  @if (lines()) {
+                    <div lcReveal ${NOTIFICATION}>Échéance demain</div>
+                    <div lcReveal ${NOTIFICATION}>Nouveau commentaire</div>
+                    <div lcReveal ${NOTIFICATION}>Document ajouté</div>
+                  }
+                </div>
+              </lc-toggletip>
+            </div>
+          }
+        </div>`,
+    };
+  },
 };
