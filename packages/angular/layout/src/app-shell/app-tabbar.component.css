@@ -68,13 +68,13 @@
  * le fond comme sur la pastille. L'onglet qui devient actif attend l'arrivée du bord avant (durée « avant »), celui qui se libère le départ du bord arrière.
  */
 .lc-tabbar__tab {
-  transition: color 0s linear calc(var(--lc-tabbar-indicator-back-delay) + var(--lc-tabbar-indicator-back-duration) * 0.35);
+  transition: color 0s linear calc(var(--lc-tabbar-indicator-back-delay) + var(--lc-tabbar-indicator-back-duration) * var(--lc-tabbar-indicator-label-switch-back));
 }
 
 .lc-tabbar__tab[aria-current='page'],
 .lc-tabbar__tab--active {
   color: var(--lc-tabbar-active-color, var(--lc-sys-color-on-primary));
-  transition: color 0s linear calc(var(--lc-tabbar-indicator-front-duration) * 0.5);
+  transition: color 0s linear calc(var(--lc-tabbar-indicator-front-duration) * var(--lc-tabbar-indicator-label-switch-front));
 }
 
 .lc-tabbar__tab:focus-visible {

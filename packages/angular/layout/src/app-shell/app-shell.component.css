@@ -42,7 +42,6 @@
   flex: 1;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
   gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
   min-width: 0;
 }

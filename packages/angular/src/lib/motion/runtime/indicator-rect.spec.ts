@@ -49,4 +49,12 @@ describe('lcPlaceIndicator', () => {
     expect(indicator.style.width).toBe('50px');
     expect(indicator.style.clipPath).toContain('inset(0 0px 0 0');
   });
+  it('mode edges : left et right sont les deux bords, sans width ni clip-path, et le sens reste suivi', () => {
+    const indicator = document.createElement('span');
+    lcPlaceIndicator(indicator, 'x', 0, 100, 300, 'edges');
+    lcPlaceIndicator(indicator, 'x', 100, 160, 300, 'edges');
+    expect([indicator.style.left, indicator.style.right]).toEqual(['100px', '140px']);
+    expect([indicator.style.width, indicator.style.clipPath]).toEqual(['', '']);
+    expect(indicator.dataset['direction']).toBe('forward');
+  });
 });
