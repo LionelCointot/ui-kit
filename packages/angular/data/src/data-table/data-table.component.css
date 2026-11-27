@@ -510,17 +510,13 @@ lc-data-table {
   border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }
 
-/* Cascade des lignes (`lcReveal`) : à l'ouverture, courbe `out` par défaut ; après un changement de filtre, courbe `entrance` et départ après `table.refill-delay` (invisibles pendant leur délai). */
+/* Cascade des lignes (`lcReveal`) : courbe `out` (power3.out du site), à l'ouverture comme après un changement de filtre ; après un filtre, départ après `table.refill-delay` (invisibles pendant leur délai). */
 .lc-data-table__table tr.lc-reveal {
   --lc-layer: var(--lc-layer-rows);
 }
 
 .lc-data-table__body--refill {
   --lc-reveal-offset: var(--lc-table-refill-delay);
-}
-
-.lc-data-table__table .lc-data-table__body--refill tr.lc-reveal {
-  --lc-reveal-curve: var(--lc-sys-easing-entrance);
 }
 
 /* ---------- Panneau des filtres (téléphone) : contenu de `lc-sheet` ---------- */
