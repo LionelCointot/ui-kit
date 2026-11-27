@@ -9,7 +9,7 @@
 // (démos en rAF : temps à progression égale ±16,7 ms ; origine des temps : le clic, posé dans le même `evaluate` que lui ; pour survol, glissement et touche, le premier changement de valeur).
 // Le relevé met chaque animation en pause à sa première apparition (currentTime fixé), puis lit l'état calculé.
 // Choix assumés : d12 est exclu volontairement (le kit garde un indicateur qui glisse alors que Talmo ne fait pas glisser le trait, §5.4.1) ;
-// les cascades sont comparées par délai trié, sans l'identité des cibles (l'ordre du DOM et le nom des éléments diffèrent entre le catalogue et les stories).
+// d61 est comparé par ligne (nombre de lignes variable : nov. 2026 en a 6, déc. 5). Les cascades sont comparées par délai trié, sans l'identité des cibles (l'ordre du DOM et le nom des éléments diffèrent entre le catalogue et les stories).
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -244,9 +244,44 @@ function compareValue(expected, got, tag, problems) {
   });
 }
 
-function compareAnimations(expected, got) {
+/** d61 : le catalogue enchaîne deux mois de 6 lignes, le calendrier réel n'en a pas toujours 6 (nov. 2026 : 6, déc. : 5). On compare par ligne et non sur le total de cellules (écart consigné). */
+function compareRows(expected, got) {
   const problems = [];
-  const order = (list) => list.map((a, i) => [a, i]).sort((x, y) => x[0].delay - y[0].delay || x[1] - y[1]).map(([a]) => a);
+  const [ref] = expected;
+  const px = (v) => Math.abs(parseFloat(String(v ?? '').match(/-?\d*\.?\d+(?=px)/)?.[0] ?? 'NaN')); // au signe près : 18px, translateX(18px), calc(-1 * 18px) 0
+  // Départ de la cellule : état calculé à 0 % quand il existe (le kit pose `translate` et l'opacité par variables), sinon 1re image clé.
+  const start = (a) => ({ x: a.values?.[0]?.m ? Math.abs(a.values[0].m[4]) : px(a.keyframes[0]?.translate ?? a.keyframes[0]?.transform), opacity: a.values?.[0]?.opacity ?? parseFloat(a.keyframes[0]?.opacity) });
+  const end = (a) => a.values?.[4]?.opacity ?? parseFloat(a.keyframes.at(-1)?.opacity ?? 1);
+  const [x0, o0, o1] = [start(ref).x, start(ref).opacity, end(ref)];
+  const pace = expected.map((a) => a.delay).find((d) => d > 0);
+  const rank = (a) => Math.round(a.delay / pace);
+  const count = (list) => list.reduce((m, a) => m.set(rank(a), (m.get(rank(a)) ?? 0) + 1), new Map());
+  const [ce, cg] = [count(expected), count(got)];
+  const ranks = [...cg.keys()].sort((p, q) => p - q);
+  if (got.length === 0) problems.push('aucune cellule animée');
+  if (ranks.some((r, i) => r !== i)) problems.push(`rangs ${ranks} : les lignes ne se suivent pas depuis 0`);
+  if (ranks.length < 4 || ranks.length > ce.size) problems.push(`${ranks.length} ligne(s), attendu 4 à ${ce.size}`);
+  if (cg.get(0) !== ce.get(0)) problems.push(`${cg.get(0)} cellule(s) à la 1re ligne, attendu ${ce.get(0)}`);
+  for (const [r, n] of cg) if (n > (ce.get(r) ?? 0) || n % 7) problems.push(`ligne ${r} : ${n} cellule(s), attendu un multiple de 7 au plus égal à ${ce.get(r) ?? 0}`);
+  for (const a of got) {
+    const tag = `ligne ${rank(a)} ${a.target}`;
+    if (!near(a.delay, rank(a) * pace, 0.5)) problems.push(`${tag} délai ${a.delay} attendu ${rank(a) * pace} (${pace} ms × rang)`);
+    if (!near(a.duration, ref.duration, 0.5)) problems.push(`${tag} durée ${a.duration} attendu ${ref.duration}`);
+    const [be, bg] = [bezier(ref.easing), bezier(a.easing)];
+    if (!(be && bg && be.every((x, j) => near(x, bg[j], 1e-3)))) problems.push(`${tag} courbe ${a.easing} attendu ${ref.easing}`);
+    const { x, opacity } = start(a);
+    if (!near(x, x0, 0.5)) problems.push(`${tag} amplitude ${x} px attendu ${x0} px (au signe près)`);
+    if (!near(opacity, o0, 0.005) || !near(end(a), o1, 0.005)) problems.push(`${tag} opacité ${opacity} → ${end(a)} attendu ${o0} → ${o1}`);
+  }
+  return problems;
+}
+
+function compareAnimations(expected, got, rows = false) {
+  const problems = [];
+  // Ordre canonique indépendant de l'ordre d'apparition : délai, puis durée et courbe (pas la cible, ni les propriétés : `transform` du catalogue = `translate`/`scale` du kit, ADR 0011).
+  const sig = (a) => `${bezier(a.easing)?.map((x) => x.toFixed(2)) ?? a.easing}`;
+  const order = (list) => list.map((a, i) => [a, i]).sort((x, y) => x[0].delay - y[0].delay || x[0].duration - y[0].duration || sig(x[0]).localeCompare(sig(y[0])) || x[1] - y[1]).map(([a]) => a);
+  if (rows) return compareRows(expected, got);
   if (expected.length !== got.length) problems.push(`${got.length} animation(s) au lieu de ${expected.length}`);
   const [e, g] = [order(expected), order(got)];
   for (let i = 0; i < Math.min(e.length, g.length); i += 1) {
@@ -342,7 +377,7 @@ async function compare(browser, ids, self) {
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
         const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = expected.animations ? compareAnimations(expected.animations, got.animations ?? []) : compareSeries(expected.series, got.series ?? []);
+        const problems = expected.animations ? compareAnimations(expected.animations, got.animations ?? [], id === 'd61') : compareSeries(expected.series, got.series ?? []);
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {

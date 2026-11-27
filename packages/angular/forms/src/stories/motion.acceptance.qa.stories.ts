@@ -32,7 +32,7 @@ const CITIES = ['Amsterdam', 'Berlin', 'Bruxelles', 'Paris', 'Rome'];
         <lc-date-range-input ariaLabel="Période" [(value)]="range" />
       }
       @case ('toggletip') {
-        <button id="trigger" type="button" [lcToggletip]="tip">Info</button>
+        <button id="trigger" type="button" style="margin-inline-start:120px" [lcToggletip]="tip">Info</button>
         <lc-toggletip #tip>Précision sur la valeur</lc-toggletip>
       }
     }

@@ -46,7 +46,8 @@ async function openStory(browser, base, id, theme) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
-  await page.waitForSelector('#storybook-root > *, #storybook-docs', { timeout: 20000 });
+  // `attached` : une story dont le seul enfant est en `position:fixed` (overlays-tooltip--near-edges) a un hôte sans boîte, jamais « visible ».
+  await page.waitForSelector('#storybook-root > *, #storybook-docs', { state: 'attached', timeout: 20000 });
   await page.waitForTimeout(400);
   if (id.includes('--animation')) await page.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 15000 }); // fin de la cascade : sinon axe mesure le contraste d'un texte à mi-fondu
   return { page, context, errors };
