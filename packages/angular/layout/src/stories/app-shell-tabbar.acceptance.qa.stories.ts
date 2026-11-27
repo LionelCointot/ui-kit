@@ -17,11 +17,11 @@ import { StoryNavDirective, TABBAR_DEMO_ROUTES } from './app-shell-tabbar-demo.c
     <lc-app-shell data-qa="shell">
       <strong lcShellHeader>QA</strong>
       <ul lcShellNav style="margin:0;padding:0;list-style:none">
-        <li><a lcStoryNav routerLink="/studio" icon="house" [primary]="primary">Studio</a></li>
-        <li><a lcStoryNav routerLink="/planner" icon="calendar" [primary]="primary">Planner</a></li>
-        <li><a lcStoryNav routerLink="/tasks" icon="list-checks" [primary]="primary">Tasks</a></li>
-        <li><a lcStoryNav routerLink="/projects" icon="layout-dashboard" [primary]="primary">Projects</a></li>
-        <li><a lcStoryNav routerLink="/settings" icon="settings">Settings</a></li>
+        <li><a lcStoryNav routerLink="/tab-studio" icon="house" [primary]="primary">Studio</a></li>
+        <li><a lcStoryNav routerLink="/tab-planner" icon="calendar" [primary]="primary">Planner</a></li>
+        <li><a lcStoryNav routerLink="/tab-tasks" icon="list-checks" [primary]="primary">Tasks</a></li>
+        <li><a lcStoryNav routerLink="/tab-projects" icon="layout-dashboard" [primary]="primary">Projects</a></li>
+        <li><a lcStoryNav routerLink="/tab-settings" icon="settings">Settings</a></li>
       </ul>
       <button id="qa-toast" type="button" (click)="toasts.show({ kind: 'success', message: 'Enregistré' })">Toast</button>
       <router-outlet />
@@ -35,7 +35,7 @@ class QaTabbarComponent {
   constructor() {
     const router = inject(Router);
     router.resetConfig(TABBAR_DEMO_ROUTES);
-    void router.navigateByUrl('/studio');
+    void router.navigateByUrl('/tab-studio');
   }
 }
 
