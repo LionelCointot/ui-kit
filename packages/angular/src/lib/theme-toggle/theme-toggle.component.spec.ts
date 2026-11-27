@@ -63,4 +63,115 @@ describe('LcThemeToggleComponent', () => {
     await fixture.whenStable();
     expect(button().getAttribute('aria-label')).toBe(t.name(t.dark, t.system));
   });
+
+  describe('View Transitions', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      delete (document as { startViewTransition?: unknown }).startViewTransition;
+    });
+
+    it('sans l’API : bascule directe, data-theme à jour', async () => {
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+      button().click();
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+
+    it('sous mouvement réduit : aucun appel à startViewTransition', async () => {
+      const start = vi.fn();
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+      const { button } = await setup();
+      button().click();
+      expect(start).not.toHaveBeenCalled();
+    });
+
+    it('avec l’API : un appel, thème posé dans le rappel, cercle animé dans ready, fondus retirés à la fin', async () => {
+      const animate = vi.fn();
+      (Element.prototype as { animate?: unknown }).animate = animate;
+      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+      let finish!: () => void;
+      const finished = new Promise<void>((r) => (finish = r));
+      const start = vi.fn((update: () => void) => {
+        update();
+        return { ready: Promise.resolve(), finished };
+      });
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+      vi.spyOn(button(), 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20, width: 20, height: 20 } as DOMRect);
+
+      button().click();
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(true);
+      await Promise.resolve();
+      const { clientWidth: w, clientHeight: h } = document.documentElement;
+      const [keyframes, options] = animate.mock.calls[0];
+      expect(keyframes).toEqual([{ clipPath: 'circle(0px at 20px 30px)' }, { clipPath: `circle(${Math.hypot(Math.max(20, w - 20), Math.max(30, h - 30))}px at 20px 30px)` }]);
+      expect(options.pseudoElement).toBe('::view-transition-new(root)');
+      finish();
+      await finished;
+      await Promise.resolve();
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
+    });
+
+    function stubApi(transition: () => { ready: Promise<void>; finished: Promise<void> }) {
+      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel: vi.fn() }));
+      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+      const start = vi.fn((update: () => void) => {
+        update();
+        return transition();
+      });
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      return start;
+    }
+
+    it('second clic pendant la révélation : pas de nouveau startViewTransition, thème appliqué, cercle annulé', async () => {
+      const cancel = vi.fn();
+      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel }));
+      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+      let finish!: () => void;
+      const finished = new Promise<void>((r) => (finish = r));
+      const start = vi.fn((update: () => void) => {
+        update();
+        return { ready: Promise.resolve(), finished };
+      });
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+
+      button().click();
+      await Promise.resolve();
+      button().click();
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(service.choice()).toBe('auto');
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(true);
+      finish();
+      await finished;
+      await Promise.resolve();
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
+      button().click();
+      expect(start).toHaveBeenCalledTimes(2);
+    });
+
+    it('transition abandonnée : fondus retirés, aucun rejet non géré', async () => {
+      const rejections: unknown[] = [];
+      const onRejection = (e: PromiseRejectionEvent) => rejections.push(e.reason);
+      window.addEventListener('unhandledrejection', onRejection);
+      stubApi(() => ({ ready: Promise.reject(new Error('skipped')), finished: Promise.reject(new Error('skipped')) }));
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+      button().click();
+      await new Promise((r) => setTimeout(r, 20));
+      window.removeEventListener('unhandledrejection', onRejection);
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
+      expect(rejections).toEqual([]);
+    });
+  });
 });

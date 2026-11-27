@@ -12,7 +12,7 @@ function finishedAnimation(): Animation {
 /**
  * Joue `keyframes` sur `element` (Web Animations) avec la durée et la courbe demandées, lues dans les tokens de l'élément à chaque appel :
  * un rôle `sys` (`'enter'`, `'entrance'`) ou le nom d'un token composant (`'--lc-sheet-spring-easing'`, réglable par thème). `delay` en millisecondes.
- * `pseudoElement` (`'::backdrop'`) anime le pseudo-élément, avec les tokens de l'élément.
+ * `pseudoElement` (`'::backdrop'`, `'::view-transition-new(root)'` sur `<html>`) anime le pseudo-élément, avec les tokens de l'élément.
  * `fill` vaut `'backwards'` par défaut : l'état de départ s'applique pendant le `delay`, l'état final revient au style de l'élément.
  *
  * Sous « mouvement réduit », ou sans `Element.animate` (rendu serveur, jsdom), rien ne joue et l'objet rendu est une animation déjà terminée,
