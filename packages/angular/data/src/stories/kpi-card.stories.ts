@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
-import { LcButtonComponent, LcCountUpDirective } from '@lionelcointot/ui-angular';
+import { LcButtonComponent, LcCountUpDirective, LcRevealDirective } from '@lionelcointot/ui-angular';
 import { LcGridComponent } from '@lionelcointot/ui-angular/layout';
 import { LcDescriptionListComponent, LcKpiCardComponent, type LcKpiDelta } from '@lionelcointot/ui-angular/data';
 
@@ -9,18 +9,26 @@ import { LcDescriptionListComponent, LcKpiCardComponent, type LcKpiDelta } from 
 @Component({
   selector: 'lc-kpi-animation-demo',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LcKpiCardComponent, LcGridComponent, LcButtonComponent, LcCountUpDirective, StoryMotionNoticeComponent],
-  styles: `.lc-demo__value { font-size: var(--lc-sys-font-size-xl); font-variant-numeric: tabular-nums; }`,
+  imports: [LcKpiCardComponent, LcGridComponent, LcButtonComponent, LcCountUpDirective, LcRevealDirective, StoryMotionNoticeComponent],
+  styles: `
+    .lc-demo__value { font-size: var(--lc-sys-font-size-xl); font-variant-numeric: tabular-nums; }
+    .lc-demo__rows { margin-block-start: var(--lc-sys-space-4); border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); }
+    .srow { display: flex; justify-content: space-between; gap: var(--lc-sys-space-4); padding-block: var(--lc-sys-space-2); border-block-end: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); font-size: var(--lc-sys-font-size-sm); }
+    .srow:last-child { border-block-end: 0; }`,
   template: `
     <lc-story-motion-notice />
     <section #root data-demo="d03">
       <p><button lcButton fillMode="outline" size="small" (click)="replay.replay(root)">Rejouer</button></p>
       @for (key of replay.keys(); track key) {
-        <lc-grid [columns]="3" gap="4">
+        <lc-grid [columns]="{ sm: 1, md: 3 }" gap="4">
           <lc-kpi-card label="Commandes" [value]="1248" format="integer" />
           <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" />
           <lc-kpi-card label="Conversion" [value]="3.2" format="percent" />
         </lc-grid>
+        <div class="lc-demo__rows">
+          <div class="srow" lcReveal [lcRevealIndex]="3"><span>Lun · Session A — Maren</span><span>10 h – 12 h</span></div>
+          <div class="srow" lcReveal [lcRevealIndex]="4"><span>Mar · Atelier maquette</span><span>14 h – 16 h 30</span></div>
+        </div>
       }
     </section>
     <section #counting data-demo="d14">
