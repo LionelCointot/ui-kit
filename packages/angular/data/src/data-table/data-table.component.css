@@ -515,6 +515,11 @@ lc-data-table {
   pointer-events: none;
 }
 
+/* La ligne a sa propre sortie (`fadeOut`), plus courte : Angular retire la ligne dès que la première sortie finit, la classe `lc-leave` de `lcReveal` ne doit donc pas finir avant. */
+.lc-data-table__table tbody tr.lc-leave {
+  animation-duration: calc(2 * var(--lc-sys-duration-exit));
+}
+
 /* ---------- Panneau des filtres (téléphone) : contenu de `lc-sheet` ---------- */
 .lc-data-table__panel-body {
   padding: 0 var(--lc-sys-space-4);

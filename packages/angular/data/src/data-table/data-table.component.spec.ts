@@ -758,7 +758,7 @@ describe('LcDataTableComponent', () => {
       dialog.close = vi.fn();
       return dialog;
     };
-    const rowNodes = () => [...el.querySelectorAll('tbody tr:not(.lc-data-table__state)')];
+    const rowNodes = () => [...el.querySelectorAll<HTMLElement>('tbody tr:not(.lc-data-table__state)')];
 
     it('panneau : la croix pose data-closing, puis close() seulement après la fin du fondu', async () => {
       await setup({ narrow: true });
@@ -827,15 +827,14 @@ describe('LcDataTableComponent', () => {
     it('cartes : lcReveal sur les 8 premières seulement sur téléphone, aucune sur ordinateur', async () => {
       await setup({ narrow: true });
       expect(rowNodes()).toHaveLength(10);
-      const revealed = rowNodes().filter((row) => row.hasAttribute('lcReveal'));
-      expect(revealed).toHaveLength(8);
-      expect(revealed.map((row) => (row as HTMLElement).style.getPropertyValue('--lc-reveal-index'))).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
+      const ranks = rowNodes().map((row) => (row as HTMLElement).style.getPropertyValue('--lc-reveal-rank'));
+      expect(ranks).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '', '']);
     });
 
     it('cartes : aucune lcReveal sur ordinateur', async () => {
       await setup();
       expect(rowNodes()).toHaveLength(10);
-      expect(rowNodes().filter((row) => row.hasAttribute('lcReveal'))).toHaveLength(0);
+      expect(rowNodes().filter((row) => row.style.getPropertyValue('--lc-reveal-rank') !== '' || row.classList.contains('lc-reveal'))).toHaveLength(0);
     });
 
     it('cartes : la cascade ne joue qu\'au premier affichage ; après un filtre, les cartes conservées gardent leur élément, sans lcReveal', async () => {
@@ -851,7 +850,7 @@ describe('LcDataTableComponent', () => {
       await stable();
       const after = rowNodes();
       expect(after).toEqual([before[1], before[4], before[7]]);
-      expect(after.some((row) => row.hasAttribute('lcReveal'))).toBe(false);
+      expect(after.some((row) => row.style.getPropertyValue('--lc-reveal-rank') !== '')).toBe(false);
     });
 
     describe('différence de liste (décision 26)', () => {

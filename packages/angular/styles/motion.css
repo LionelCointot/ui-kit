@@ -1,0 +1,90 @@
+/*
+ * Mouvement du kit : primitives CSS posées par les directives (lcReveal, lcStagger).
+ * Toutes les valeurs viennent des tokens --lc-sys-* ; les directives posent classes et variables, le CSS anime.
+ * Règle de propriété (ADR 0011) : apparition et sortie animent `opacity` et les propriétés individuelles
+ * `translate` / `scale` / `rotate`, jamais `transform` (réservé au FLIP et au survol).
+ */
+
+/* Entrée : état de départ décrit par les variables --lc-reveal-* (une variante les redéfinit) ; l'état final est le style de l'élément. */
+@keyframes lc-reveal-in {
+  from {
+    opacity: 0;
+    translate: var(--lc-reveal-x) var(--lc-reveal-y);
+    scale: var(--lc-reveal-scale);
+    rotate: var(--lc-reveal-rotate);
+  }
+}
+
+@keyframes lc-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Classe posée par [lcReveal] jusqu'à animationend. Délai = min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */
+.lc-reveal {
+  --lc-reveal-x: 0px;
+  --lc-reveal-y: var(--lc-sys-motion-offset-sm);
+  --lc-reveal-scale: 1;
+  --lc-reveal-rotate: 0deg;
+  --lc-reveal-easing: var(--lc-sys-easing-entrance);
+
+  animation: lc-reveal-in var(--lc-sys-duration-enter) var(--lc-reveal-easing) backwards;
+  animation-delay: calc(
+    min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
+  );
+}
+
+/* Variantes : `rise` (défaut) monte depuis +distance ; les autres redéfinissent le départ. */
+.lc-reveal--drop {
+  --lc-reveal-y: calc(-1 * var(--lc-sys-motion-offset-sm));
+}
+
+.lc-reveal--fade {
+  --lc-reveal-y: 0px;
+}
+
+.lc-reveal--scale {
+  --lc-reveal-y: 0px;
+  --lc-reveal-scale: var(--lc-sys-motion-scale-enter);
+}
+
+.lc-reveal--pop {
+  --lc-reveal-y: 0px;
+  --lc-reveal-scale: var(--lc-sys-motion-scale-pop);
+  --lc-reveal-easing: var(--lc-sys-easing-pop);
+}
+
+.lc-reveal--left {
+  --lc-reveal-x: calc(-1 * var(--lc-sys-motion-offset-sm));
+  --lc-reveal-y: 0px;
+}
+
+.lc-reveal--right {
+  --lc-reveal-x: var(--lc-sys-motion-offset-sm);
+  --lc-reveal-y: 0px;
+}
+
+/* Cartes : l'inclinaison alterne entre frères voisins. */
+.lc-reveal--tilt {
+  --lc-reveal-y: var(--lc-sys-motion-offset-xl);
+  --lc-reveal-scale: var(--lc-sys-motion-scale-enter);
+  --lc-reveal-rotate: calc(-1 * var(--lc-sys-motion-rotate-tilt));
+}
+
+.lc-reveal--tilt:nth-child(even) {
+  --lc-reveal-rotate: var(--lc-sys-motion-rotate-tilt);
+}
+
+/* Sortie (animate.leave) : après .lc-reveal, pour l'emporter si l'élément part avant la fin de son entrée. */
+.lc-leave {
+  animation: lc-leave var(--lc-sys-duration-exit) var(--lc-sys-easing-exit) forwards;
+}
+
+/* Sans animation, Angular retire l'élément aussitôt et l'entrée n'est jamais jouée. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-reveal,
+  .lc-leave {
+    animation: none;
+  }
+}

@@ -1,4 +1,6 @@
 export * from './motion.types';
+export * from './directives/reveal.directive';
+export * from './directives/stagger.directive';
 export * from './runtime/animate';
 export * from './runtime/detach-animated';
 export * from './runtime/indicator-rect';

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { StoryMotionNoticeComponent, pressButton, prefersReducedMotion, replayable, tokenMs } from '@lc/storybook';
-import { LcButtonComponent } from '@lionelcointot/ui-angular';
+import { LcButtonComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
 import { baseValues, contrastRatio, cssVarOf } from '@lionelcointot/ui-tokens/theme';
 
 /*
@@ -267,7 +267,7 @@ export class DocElevationComponent {
 const MOTION_VALUES = [
   { key: 'duration.fast', use: 'Button press, closing fades' },
   { key: 'duration.normal', use: 'Panels and menus opening' },
-  { key: 'duration.long', use: 'Each item of a list appearing one after another (lcReveal attribute)' },
+  { key: 'duration.enter', use: 'Each item of a list appearing one after another (lcReveal)' },
   { key: 'duration.move', use: 'Things moving to a new place: list rows, tab and nav indicators' },
   { key: 'motion.stagger-normal', use: 'Delay between two items of such a list' },
   { key: 'motion.offset-sm', use: 'How far an element travels when it appears' },
@@ -304,7 +304,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
 /** Durées, courbes, distance et petites démos du mouvement, chacune avec son « Rejouer ». */
 @Component({
   selector: 'lc-doc-motion',
-  imports: [LcButtonComponent, StoryMotionNoticeComponent],
+  imports: [LcButtonComponent, LcRevealDirective, StoryMotionNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2>Motion</h2>
@@ -348,7 +348,7 @@ const LIST_ITEMS = ['Projet', 'Tâches', 'Équipe', 'Fichiers', 'Paramètres'];
       <section>
         <h3>Cascade of 4 rows <button lcButton fillMode="outline" size="small" (click)="cascadeDemo.replay(host)">Rejouer</button></h3>
         @for (key of cascadeDemo.keys(); track key) {
-          @for (row of cascade; track row) { <div lcReveal [style.--lc-reveal-index]="row" class="row">Ligne {{ row + 1 }}</div> }
+          @for (row of cascade; track row) { <div lcReveal [lcRevealIndex]="row" class="row">Ligne {{ row + 1 }}</div> }
         }
       </section>
       <section>

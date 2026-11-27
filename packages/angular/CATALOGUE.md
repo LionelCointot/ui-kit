@@ -7,6 +7,8 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
+| `[lcReveal]` | LcRevealDirective | directive | lcReveal, lcRevealIndex | – |
+| `[lcStagger]` | LcStaggerDirective | directive | lcStagger | – |
 | `[lcTruncate]` | LcTruncateDirective | directive | – | – |
 | `button[lcButton], a[lcButton]` | LcButtonComponent | composant | themeColor, fillMode, size, rounded, loading, iconOnly, fullWidth, pressed | – |
 | `lc-avatar` | LcAvatarComponent | composant | name (requis), src, size, colorSeed, label | – |
