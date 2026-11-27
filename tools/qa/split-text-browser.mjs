@@ -4,7 +4,7 @@
 // Contrat de structure (la spec ne nomme aucune classe : le test se fonde sur la structure) :
 //   lettre = `span` sans enfant élément, dans l'hôte, qui a un ancêtre (ou lui-même) `aria-hidden="true"` dans l'hôte ; contient un seul graphème ;
 //   mot = `span` parent des lettres, un par mot, `overflow` hidden ou clip (le masque) ; les espaces ne sont pas des lettres ;
-//   hôte : `aria-label` = texte complet ; sous mouvement réduit : aucun `span` dans l'hôte, texte brut.
+//   hôte : pas d'`aria-label` ; une seule copie `.lc-visually-hidden` (enfant direct, hors `aria-hidden`) porte le texte complet ; sous mouvement réduit : aucun `span` dans l'hôte, texte brut.
 //   lc-page : le `h1` porte `tabindex="-1"` et `lcSplitText` ; le trait est un élément `aria-hidden="true"` à classe `lc-page__line`, frère suivant du `h1`
 //   (dans `.lc-page__heading`), `transform-origin` à gauche, entrée en `scale` / `transform` de 0 à 1.
 // Stories : `qa-motion-split-text-acceptance--text` et `--page` (split-text.acceptance.qa.stories.ts), `layout-page--animation` (data-demo d01 « Projets », d02 « Rapports », chacun avec son « Rejouer »).
@@ -51,7 +51,9 @@ const INIT = () => {
   const anim = (el) => el.getAnimations().find((a) => Number.isFinite(a.effect.getComputedTiming().endTime));
   /** La courbe d'`animation-timing-function` d'une CSSAnimation se lit sur les keyframes (`getTiming().easing` vaut toujours `linear`). */
   const info = (a) => { const c = a.effect.getComputedTiming(); return { delay: c.delay, duration: c.duration, easing: flat(a.effect.getKeyframes()[0].easing), props: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)))] }; };
-  window.__st = { ms, flat, raw, letters, words, graphemes, pose, anim, info };
+  /** Texte complet de l'hôte : celui de l'unique copie masquée, et aucun `aria-label` ; sinon un diagnostic (le test échoue). */
+  const full = (host) => { const c = [...host.querySelectorAll('.lc-visually-hidden')]; return c.length === 1 && c[0].parentElement === host && !c[0].closest('[aria-hidden="true"]') && !host.hasAttribute('aria-label') ? c[0].textContent : `INVALIDE copies=${c.length} aria-label=${host.getAttribute('aria-label')}`; };
+  window.__st = { full, ms, flat, raw, letters, words, graphemes, pose, anim, info };
 };
 
 async function open(id, { reduced = false, width = 1280 } = {}) {
@@ -106,12 +108,12 @@ await section(1, async () => {
     for (const id of ['t', 'g-accent', 'g-family', 'g-flag', 'g-words']) {
       const el = document.getElementById(id);
       const text = id === 't' ? 'Projets' : id === 'g-accent' ? 'Café' : id === 'g-family' ? '\u{1F468}‍\u{1F469}‍\u{1F467}‍\u{1F466}' : id === 'g-flag' ? '\u{1F1EB}\u{1F1F7}' : 'Un deux trois';
-      out[id] = { text, label: el.getAttribute('aria-label'), letters: letters(el).map((l) => l.textContent), expected: graphemes(text), hidden: letters(el).every((l) => l.closest('[aria-hidden="true"]')), words: words(el).map((w) => getComputedStyle(w).overflowX), textContent: el.textContent.replace(/\s/g, '') };
+      out[id] = { text, label: window.__st.full(el), letters: letters(el).map((l) => l.textContent), expected: graphemes(text), hidden: letters(el).every((l) => l.closest('[aria-hidden="true"]')), words: words(el).map((w) => getComputedStyle(w).overflowX), textContent: el.textContent.replace(/\s/g, '') };
     }
     return out;
   });
   for (const [id, r] of Object.entries(a)) {
-    check(r.label === r.text, `CA-16 #${id} aria-label = texte complet`, `${JSON.stringify(r.label)}`);
+    check(r.label === r.text, `CA-16 #${id} copie masquée unique = texte complet, sans aria-label`, `${JSON.stringify(r.label)}`);
     check(r.letters.length > 0 && r.hidden, `CA-16 #${id} lettres aria-hidden`, `${r.letters.length} lettres`);
     check(JSON.stringify(r.letters) === JSON.stringify(r.expected), `CA-16 #${id} graphèmes entiers (Intl.Segmenter)`, `${JSON.stringify(r.letters)} attendu ${JSON.stringify(r.expected)}`);
   }
@@ -121,8 +123,8 @@ await section(1, async () => {
   // Changer le texte met à jour l'affichage et l'aria-label, sans lettre résiduelle.
   await page.click('#change');
   await frames(page);
-  const b = await page.evaluate(() => { const { letters } = window.__st; const el = document.getElementById('t'); return { label: el.getAttribute('aria-label'), letters: letters(el).map((l) => l.textContent), text: el.textContent }; });
-  check(b.label === 'Rapports' && b.letters.join('') === 'Rapports' && b.letters.length === 8, 'CA-16 changer le texte met à jour lettres et aria-label', JSON.stringify(b));
+  const b = await page.evaluate(() => { const { letters } = window.__st; const el = document.getElementById('t'); return { label: window.__st.full(el), letters: letters(el).map((l) => l.textContent), text: el.textContent }; });
+  check(b.label === 'Rapports' && b.letters.join('') === 'Rapports' && b.letters.length === 8, 'CA-16 changer le texte met à jour lettres et copie masquée', JSON.stringify(b));
   checkLetters('#t après changement', await probe(page, '#t'), [...'Rapports']);
   check(errors.length === 0, 'CA-16 aucune erreur de page', errors.join(' ; '));
   await context.close();
@@ -154,9 +156,9 @@ const PAGE_LINE = 'lc-page .lc-page__line';
 await section(3, async () => {
   const { page, context } = await open(story('page'));
   await frames(page);
-  const f = await page.evaluate(() => { const h = document.querySelector('lc-page h1'); h.focus(); return { tabindex: h.getAttribute('tabindex'), focused: document.activeElement === h, label: h.getAttribute('aria-label'), next: h.nextElementSibling?.className ?? null }; });
+  const f = await page.evaluate(() => { const h = document.querySelector('lc-page h1'); h.focus(); return { tabindex: h.getAttribute('tabindex'), focused: document.activeElement === h, label: window.__st.full(h), next: h.nextElementSibling?.className ?? null }; });
   check(f.tabindex === '-1' && f.focused, 'CA-16 (T6) h1 de lc-page : tabindex="-1" et focus programmatique', JSON.stringify(f));
-  check(f.label === 'Projets', 'CA-16 (T6) h1 de lc-page : aria-label = titre', JSON.stringify(f));
+  check(f.label === 'Projets', 'CA-16 (T6) h1 de lc-page : copie masquée = titre, sans aria-label', JSON.stringify(f));
   const got = await probe(page, PAGE_H1, PAGE_LINE);
   checkLetters('lc-page', got, [...'Projets']);
   const l = got.lineRow, t = got.tokens;
@@ -193,7 +195,7 @@ await section(5, async () => {
     await page.evaluate((s) => { window.__before = document.querySelector(s + ' h1').getAnimations({ subtree: true }).length; }, sel);
     await page.click(`${sel} >> button:has-text("Rejouer")`);
     await frames(page);
-    const r = await page.evaluate((s) => { const root = document.querySelector(s); const h = root.querySelector('h1'); return { label: h.getAttribute('aria-label'), running: root.getAnimations({ subtree: true }).filter((a) => a.playState === 'running' || a.pending).length, letters: window.__st.letters(h).length }; }, sel);
+    const r = await page.evaluate((s) => { const root = document.querySelector(s); const h = root.querySelector('h1'); return { label: window.__st.full(h), running: root.getAnimations({ subtree: true }).filter((a) => a.playState === 'running' || a.pending).length, letters: window.__st.letters(h).length }; }, sel);
     check(r.label === title && r.letters === title.length && r.running >= title.length + 1, `${demo} Rejouer relance les ${title.length} lettres et le trait`, JSON.stringify(r));
   }
   await context.close();
