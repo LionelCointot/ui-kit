@@ -191,6 +191,7 @@ const settle = async () => {
 async function measure(browser, url, viewport, entry, trigger, { scope, catalogue }) {
   const context = await browser.newContext({ viewport: { width: viewport, height: 900 }, reducedMotion: 'no-preference' });
   const page = await context.newPage();
+  page.setDefaultTimeout(5000); // un sélecteur absent échoue en 5 s, pas 30
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(url);
@@ -200,7 +201,8 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
   if (!(await page.evaluate(settle))) throw new Error('animations finies encore en cours après 15 s, avant le déclencheur');
   const selector = catalogue ? trigger.cat : trigger.story;
   // d37 : la position du cercle se compare au centre du bouton, pas en px absolus (la mise en page de la story n'est pas celle du catalogue).
-  const toggle = catalogue ? null : await page.locator(`${rootSel} lc-theme-toggle button`).first().boundingBox().catch(() => null);
+  const toggleButton = catalogue ? null : page.locator(`${rootSel} lc-theme-toggle button`).first();
+  const toggle = toggleButton && (await toggleButton.count()) > 0 ? await toggleButton.boundingBox() : null; // seul d37 en a un : pas d'attente à vide
   const sampler = trigger.sampler ? { sel: catalogue ? trigger.sampler.cat : trigger.sampler.story, read: catalogue ? trigger.sampler.read : (trigger.sampler.storyRead ?? trigger.sampler.read) } : null;
   const target = page.locator(selector).first();
   const action = trigger.action ?? 'click';
@@ -355,10 +357,10 @@ function timeAtProgress(raw, fromFirstMove = false) {
   });
 }
 
-function compareSeries(expected, got, unitless, fromFirstMove = false) {
+function compareSeries(expected, got, unitless, fromFirstMove = false, lines = []) {
   if (got.length < 2) return [`échantillons en rAF : ${got.length} valeur(s) distincte(s)`];
   const [e, g] = [timeAtProgress(expected, fromFirstMove), timeAtProgress(got, fromFirstMove)];
-  console.log(`   rAF, temps à 25/50/75/100 % : story ${g.map((t) => t.toFixed(1)).join(' / ')} ms ; catalogue ${e.map((t) => t.toFixed(1)).join(' / ')} ms ; écart ${g.map((t, i) => (t - e[i]).toFixed(1)).join(' / ')} ms`);
+  lines.push(`   rAF, temps à 25/50/75/100 % : story ${g.map((t) => t.toFixed(1)).join(' / ')} ms ; catalogue ${e.map((t) => t.toFixed(1)).join(' / ')} ms ; écart ${g.map((t, i) => (t - e[i]).toFixed(1)).join(' / ')} ms`);
   const problems = e.flatMap((t, i) => (near(t, g[i], 16.7) ? [] : [`temps à ${[25, 50, 75, 100][i]} % : ${g[i].toFixed(1)} ms attendu ${t.toFixed(1)} ms (±16,7)`]));
   if (!unitless && !near(expected.at(-1)[1], got.at(-1)[1], Math.abs(expected.at(-1)[1] - expected[0][1]) * 0.01)) problems.push(`valeur finale ${got.at(-1)[1]} attendu ${expected.at(-1)[1]}`);
   return problems;
@@ -416,36 +418,46 @@ function circleProblems(expected, got, toggle) {
   return got.length === 1 ? problems : [...problems, `${got.length} animations au lieu de 1 (hors cercle : ${got.filter((a) => a !== g).map((a) => a.target).join(', ')})`];
 }
 
+const POOL = 3; // pages simultanées dans un seul navigateur (4 cœurs)
+
 async function compare(browser, ids, self) {
   const data = JSON.parse(await readFile(fidelityFile, 'utf8'));
   const index = self ? null : JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
   const server = self ? null : await staticServer(storybookDir);
   const base = server?.base;
-  let failures = 0;
-  const report = (ok, label, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
-  for (const id of ids.length ? ids : Object.keys(TABLE)) {
+  const checkOne = async (id) => { // entrée indépendante : renvoie ses lignes de journal et ses échecs
+    const lines = [];
+    let failed = 0;
+    const report = (ok, label, detail = '') => { if (!ok) failed += 1; lines.push(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
     const entry = data.table[id];
     const fingerprint = data.fingerprints[id];
-    if (!entry) { report(false, `CA-20 ${id}`, 'aucune ligne dans la table'); continue; }
-    if (!fingerprint) { report(false, `CA-20 ${id}`, 'aucune empreinte : lancer --record'); continue; }
-    if (!self && !index.entries[entry.story]) { report(false, `CA-20 ${id} story ${entry.story}`, 'démo citée sans story dans l\'index de Storybook'); continue; }
+    if (!entry) { report(false, `CA-20 ${id}`, 'aucune ligne dans la table'); return { id, lines, failed }; }
+    if (!fingerprint) { report(false, `CA-20 ${id}`, 'aucune empreinte : lancer --record'); return { id, lines, failed }; }
+    if (!self && !index.entries[entry.story]) { report(false, `CA-20 ${id} story ${entry.story}`, 'démo citée sans story dans l\'index de Storybook'); return { id, lines, failed }; }
     for (const [i, trigger] of entry.triggers.entries()) {
       const expected = fingerprint.triggers[i];
       if (!expected) { report(false, `CA-20 ${id} ${trigger.name}`, 'déclencheur sans empreinte'); continue; }
-      if (!self && trigger.notInStory) { console.log(`-- CA-20 ${id} ${trigger.name} non comparable : ${trigger.notInStory}`); continue; }
+      if (!self && trigger.notInStory) { lines.push(`-- CA-20 ${id} ${trigger.name} non comparable : ${trigger.notInStory}`); continue; }
+      const t0 = Date.now();
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
         const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(shape(expected.animations, trigger, false), shape(got.animations ?? [], trigger, !self), id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19' || id === 'd24');
+        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(shape(expected.animations, trigger, false), shape(got.animations ?? [], trigger, !self), id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19' || id === 'd24', lines);
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {
         report(false, `CA-20 ${id} ${entry.story} ${trigger.name}`, error.message.split('\n')[0]);
       }
+      lines.push(`   (${Date.now() - t0} ms)`);
     }
-  }
+    return { id, lines, failed };
+  };
+  const queue = [...(ids.length ? ids : Object.keys(TABLE))];
+  const results = [];
+  await Promise.all(Array.from({ length: Math.min(POOL, queue.length) }, async () => { for (let id; (id = queue.shift());) results.push(await checkOne(id)); }));
+  for (const r of results.sort((a, b) => a.id.localeCompare(b.id))) console.log(r.lines.join('\n'));
   server?.close();
-  return failures;
+  return results.reduce((n, r) => n + r.failed, 0);
 }
 
 const args = process.argv.slice(2);
