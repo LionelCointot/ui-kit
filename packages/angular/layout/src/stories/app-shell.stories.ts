@@ -5,6 +5,7 @@ import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@st
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { StoryMotionNoticeComponent, fixedExample } from '@lc/storybook';
 import { LcAppShellComponent, LcPageComponent } from '@lionelcointot/ui-angular/layout';
+import { AppShellTabbarDemoComponent } from './app-shell-tabbar-demo.component';
 
 /**
  * Application frame: header, side navigation (a drawer on narrow screens) and main content.
@@ -144,12 +145,14 @@ export class AppComponent {}`;
 /**
  * Real page changes in `lc-app-shell`: below 768 px the new page stacks in from the right over the old one, which recedes by 30 % under a veil; above, a fade and a short slide.
  * "Rejouer" opens the request, then goes back to the list on the next press. Narrow the window to a phone width to see the stacking.
+ * Below 768 px, a bottom tab bar also appears for the sections marked `primary` (at most 4, plus "Plus" which opens the drawer): it rises in, and its pill stretches toward the tapped tab.
  */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [
-    moduleMetadata({ imports: [AppShellStackDemoComponent, StoryMotionNoticeComponent] }),
+    moduleMetadata({ imports: [AppShellStackDemoComponent, AppShellTabbarDemoComponent, StoryMotionNoticeComponent] }),
+    // (d57 et d53 partagent le routeur de la story : les routes de d57 s'ajoutent à celles de d53)
     applicationConfig({ providers: [provideLocationMocks()] }),
   ],
-  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo />` }),
+  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo /><lc-app-shell-tabbar-demo />` }),
 };
