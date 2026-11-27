@@ -16,7 +16,7 @@ Bibliothèque de composants Angular et de design tokens, **générique**, réuti
 - Tout installer / lancer Storybook (Node installé au besoin) : `installer.command` / `lancer.command` (macOS), `.cmd` (Windows), `bash installer.command` (Linux) ; équivalent : `bash scripts/dev/bootstrap.sh install|start`. Configuration : `dev.config.json`
 - Installer : `npm ci`
 - Lancer en dev : `npm run storybook`
-- Tests : `npx ng test ui-angular --watch=false` (Vitest) ; pas encore : `test:visual` (Playwright), `lint` (ESLint, stylelint)
+- Tests : `npx ng test ui-angular --watch=false` (Vitest) ; tout (unitaires, statiques, navigateur, journaux dans `.qa-logs/`) : `npm run qa`, seulement les KO du dernier passage : `npm run qa -- --failed`, seulement ce que le diff touche : `npm run qa -- --changed` (`tools/qa/README.md`) ; pas encore : `test:visual` (Playwright), `lint` (ESLint, stylelint)
 - Storybook statique : `npm run build-storybook` (sortie `dist/storybook`) ; vitrine publique sans QA : `npm run build-storybook:public` (publiée sur GitHub Pages par la CI) ; contrôles des Playground : `node tools/qa/storybook-controls.mjs`. Règles des stories : `docs/storybook/CONVENTIONS.md`
 - Build : `npm run build` (tokens puis bibliothèque)
 - Catalogue des composants (livré dans le paquet) : `npm run catalogue:build` régénère `packages/angular/CATALOGUE.md` · `npm run catalogue:check` échoue s'il est périmé · tests `npm run catalogue:test`

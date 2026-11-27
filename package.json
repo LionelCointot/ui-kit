@@ -9,6 +9,7 @@
     "catalogue:check": "node tools/generate-catalogue.mjs --check",
     "catalogue:test": "node --test tools/generate-catalogue.test.mjs tools/generate-catalogue.acceptance.test.mjs",
     "snippets:test": "node --test .storybook/code-snippet.test.mjs",
+    "qa": "node tools/qa/run.mjs",
     "snippets:check": "node tools/qa/storybook-snippets.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

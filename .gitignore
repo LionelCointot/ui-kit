@@ -39,3 +39,7 @@ docs/design/explorations/2026-12-mouvement-v2/captures/
 
 # Worktrees Claude Code
 .claude/worktrees/
+
+# qa : dernier résultat et journaux du lanceur (tools/qa/run.mjs)
+.qa-last.json
+.qa-logs/
