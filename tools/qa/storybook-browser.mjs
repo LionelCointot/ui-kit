@@ -48,7 +48,7 @@ async function openStory(browser, base, id, theme) {
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
   await page.waitForSelector('#storybook-root > *, #storybook-docs', { timeout: 20000 });
   await page.waitForTimeout(400);
-  if (id.includes('--animation')) await page.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 15000 }); // fin de la cascade : sinon axe mesure le contraste d'un texte à mi-fondu
+  if (id.includes('--animation')) await page.waitForFunction(() => document.getAnimations().every((a) => !Number.isFinite(a.effect.getComputedTiming().endTime)), null, { timeout: 15000 }); // fin de la cascade (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées) : sinon axe mesure le contraste d'un texte à mi-fondu
   return { page, context, errors };
 }
 
@@ -59,7 +59,16 @@ async function axeRun(browser, base, entries) {
       const { page, context, errors } = await openStory(browser, base, id, theme);
       await page.addScriptTag({ content: axeSource });
       const result = await page.evaluate(async () => {
-        const run = await window.axe.run(document.querySelector('#storybook-root'), { resultTypes: ['violations'] });
+        // L'addon a11y de Storybook peut avoir son propre axe.run en cours (sous charge) : attendre qu'il finisse.
+        let run;
+        for (let i = 0; !run; i += 1) {
+          try {
+            run = await window.axe.run(document.querySelector('#storybook-root'), { resultTypes: ['violations'] });
+          } catch (error) {
+            if (i >= 50 || !String(error?.message).includes('already running')) throw error;
+            await new Promise((r) => setTimeout(r, 200));
+          }
+        }
         return run.violations.map((violation) => ({ id: violation.id, impact: violation.impact, nodes: violation.nodes.length, target: violation.nodes[0]?.target?.join(' '), summary: violation.nodes[0]?.failureSummary?.split('\n').slice(0, 3).join(' | ') }));
       });
       const ok = result.length === 0 && errors.length === 0;

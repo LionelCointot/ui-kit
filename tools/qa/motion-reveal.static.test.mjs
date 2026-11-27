@@ -156,8 +156,8 @@ describe('information : doublons de runtime (reporté à T7)', () => {
 
 describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
   test('aucun transform dans motion.css : entrée et sortie animent opacity + translate/scale/rotate, transform est réservé au FLIP et au survol (CA-18)', () => {
-    /** Liste blanche vide : seules les règles FLIP (T7) et `.lc-lift` (T4) pourront y figurer ; T4 et T7 l'alimenteront en nommant le sélecteur. */
-    const ALLOWED = [];
+    /** Liste blanche : seules les règles FLIP (T7) et `.lc-lift` (T4, survol, ADR 0011) peuvent y figurer ; T7 l'alimentera en nommant le sélecteur. */
+    const ALLOWED = ['.lc-lift'];
     const css = strip(read(join(angular, 'styles/motion.css')));
     const offenders = [...css.matchAll(/(?<![\w-])transform\b(?!-)/g)].map((m) => css.slice(css.lastIndexOf('}', m.index) + 1, m.index + 40).trim().replace(/\s+/g, ' '))
       .filter((rule) => !ALLOWED.some((s) => rule.includes(s)));
@@ -180,5 +180,45 @@ describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
     }
     // Dette consignée, levée en T7 : les <tr> de lc-data-table (gabarit, pas hôte) portent lcReveal + (animate.leave).
     assert.deepEqual(offenders, []);
+  });
+});
+
+describe('T4 : .lc-pulse, .lc-lift, lcFill, lcDraw dans motion.css (CA-12, CA-13, CA-30, CA-5)', () => {
+  const css = () => strip(read(join(angular, 'styles/motion.css')));
+  const block = (c, selector) => [...c.matchAll(new RegExp(`${selector.replace(/[.]/g, '\\.')}[^{}]*\\{([^}]*)\\}`, 'g'))].map((m) => m[1]).join(';');
+
+  test('.lc-pulse : animation infinie qui lit les tokens --lc-live-* (aucune valeur en dur)', () => {
+    const c = css();
+    const rule = block(c, '.lc-pulse');
+    assert.ok(rule, 'règle .lc-pulse absente de motion.css');
+    assert.match(rule, /animation[^;]*infinite/, '.lc-pulse doit boucler (infinite)');
+    assert.match(c, /--lc-live-duration/, 'durée : --lc-live-duration');
+    assert.match(c, /--lc-live-opacity-from/);
+    assert.match(c, /--lc-live-opacity-to/);
+  });
+
+  test('.lc-lift : survol réservé au pointeur fin, tokens --lc-lift-*, transition sur transform', () => {
+    const c = css();
+    assert.ok(block(c, '.lc-lift'), 'règle .lc-lift absente de motion.css');
+    const media = [...c.matchAll(/@media([^{]*)\{((?:[^{}]|\{[^{}]*\})*)\}/g)].filter((m) => /\.lc-lift:hover/.test(m[2]));
+    assert.ok(media.length, '.lc-lift:hover doit être dans un @media');
+    assert.ok(media.every((m) => /pointer:\s*fine/.test(m[1])), 'le survol de .lc-lift exige (pointer: fine)');
+    for (const t of ['--lc-lift-offset', '--lc-lift-duration', '--lc-lift-easing']) assert.match(c, new RegExp(t), `${t} non lu`);
+    assert.match(block(c, '.lc-lift'), /transition[^;]*transform/, 'transition sur transform');
+  });
+
+  test('lcFill et lcDraw : le CSS lit --lc-progress et anime scale / stroke-dashoffset, jamais width ni transform', () => {
+    const c = css();
+    assert.match(c, /--lc-progress/, '--lc-progress non lu par motion.css');
+    assert.match(c, /scale\s*:[^;]*--lc-progress/, 'scale doit dépendre de --lc-progress');
+    assert.match(c, /stroke-dashoffset\s*:[^;]*--lc-progress/, 'stroke-dashoffset doit dépendre de --lc-progress');
+    assert.doesNotMatch(c, /transition[^;]*\b(width|height)\b/, 'aucune transition de width ou height');
+  });
+
+  test('directives lcFill et lcDraw exportées par lib/motion/index.ts, avec LcFillAxis', () => {
+    const index = read(join(angular, 'src/lib/motion/index.ts'));
+    assert.match(index, /directives\/fill\.directive/);
+    assert.match(index, /directives\/draw\.directive/);
+    assert.match(read(join(angular, 'src/lib/motion/directives/fill.directive.ts')), /export type LcFillAxis\s*=\s*'x'\s*\|\s*'y'/);
   });
 });
