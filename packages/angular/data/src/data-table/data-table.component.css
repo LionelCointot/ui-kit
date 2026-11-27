@@ -515,7 +515,7 @@ lc-data-table {
   pointer-events: none;
 }
 
-/* La ligne a sa propre sortie (`fadeOut`), plus courte : Angular retire la ligne dès que la première sortie finit, la classe `lc-leave` de `lcReveal` ne doit donc pas finir avant. */
+/* shortcut: la ligne a sa propre sortie (fadeOut) en plus de celle de lcReveal ; la sortie de la classe doit finir après fadeOut. Levé par T7 (suppression de ligne par lc-leave seule). */
 .lc-data-table__table tbody tr.lc-leave {
   animation-duration: calc(2 * var(--lc-sys-duration-exit));
 }

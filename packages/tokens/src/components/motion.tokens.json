@@ -52,12 +52,6 @@
   "chip": {
     "enter-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
   },
-  "reveal": {
-    "duration": { "$value": "{sys.duration.long}", "$type": "duration" },
-    "easing": { "$value": "{sys.easing.standard}", "$type": "cubicBezier" },
-    "offset": { "$value": "{sys.motion.offset-sm}", "$type": "dimension" },
-    "stagger": { "$value": "{sys.motion.stagger-normal}", "$type": "duration" }
-  },
   "list": {
     "move-duration": { "$value": "420ms", "$type": "duration" },
     "move-easing": { "$value": "{sys.easing.draw}", "$type": "cubicBezier" }

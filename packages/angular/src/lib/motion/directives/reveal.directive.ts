@@ -21,7 +21,7 @@ export type LcRevealVariant = 'rise' | 'drop' | 'fade' | 'scale' | 'pop' | 'left
 })
 export class LcRevealDirective {
   readonly lcReveal = input<'' | LcRevealVariant | null | undefined>('');
-  /** Rang imposé dans la cascade ; sans `lcStagger`, le décalage est celui de `normal`. */
+  /** Rang imposé dans la cascade ; sans `lcStagger`, le décalage est celui de `normal`. Sous `lcStagger`, l'élément consomme quand même un rang du lot. */
   readonly lcRevealIndex = input<number | undefined>();
 
   private readonly element = inject<ElementRef<Element>>(ElementRef).nativeElement;

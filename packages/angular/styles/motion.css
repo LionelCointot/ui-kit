@@ -27,9 +27,9 @@
   --lc-reveal-y: var(--lc-sys-motion-offset-sm);
   --lc-reveal-scale: 1;
   --lc-reveal-rotate: 0deg;
-  --lc-reveal-easing: var(--lc-sys-easing-entrance);
+  --lc-reveal-curve: var(--lc-sys-easing-entrance);
 
-  animation: lc-reveal-in var(--lc-sys-duration-enter) var(--lc-reveal-easing) backwards;
+  animation: lc-reveal-in var(--lc-sys-duration-enter) var(--lc-reveal-curve) backwards;
   animation-delay: calc(
     min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
   );
@@ -52,7 +52,7 @@
 .lc-reveal--pop {
   --lc-reveal-y: 0px;
   --lc-reveal-scale: var(--lc-sys-motion-scale-pop);
-  --lc-reveal-easing: var(--lc-sys-easing-pop);
+  --lc-reveal-curve: var(--lc-sys-easing-pop);
 }
 
 .lc-reveal--left {
