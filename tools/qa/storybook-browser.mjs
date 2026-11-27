@@ -49,7 +49,7 @@ async function openStory(browser, base, id, theme) {
   // `attached` : une story dont le seul enfant est en `position:fixed` (overlays-tooltip--near-edges) a un hôte sans boîte, jamais « visible ».
   await page.waitForSelector('#storybook-root > *, #storybook-docs', { state: 'attached', timeout: 20000 });
   await page.waitForTimeout(400);
-  if (id.includes('--animation')) await page.waitForFunction(() => document.getAnimations().every((a) => !Number.isFinite(a.effect.getComputedTiming().endTime)), null, { timeout: 15000 }); // fin de la cascade (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées) : sinon axe mesure le contraste d'un texte à mi-fondu
+  if (id.includes('--animation') || id.startsWith('qa-motion')) await page.waitForFunction(() => document.getAnimations().every((a) => !Number.isFinite(a.effect.getComputedTiming().endTime)), null, { timeout: 15000 }); // fin de la cascade (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées) : sinon axe mesure le contraste d'un texte à mi-fondu
   return { page, context, errors };
 }
 
