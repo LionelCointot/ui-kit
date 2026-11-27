@@ -136,6 +136,7 @@ await section(1, async () => {
   }
   const edge = await page.evaluate(async () => {
     document.getElementById('zero').click();
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     for (let i = 0; i < 80 && document.getAnimations().some((a) => Number.isFinite(a.effect.getComputedTiming().endTime) && a.playState === 'running'); i += 1) await new Promise((r) => setTimeout(r, 50));
     return { scale: getComputedStyle(document.getElementById('fill-x')).scale, offset: getComputedStyle(document.getElementById('draw-circle')).strokeDashoffset };
   });
