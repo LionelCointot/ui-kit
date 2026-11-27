@@ -88,3 +88,10 @@
     animation: none;
   }
 }
+
+/* Bascule de thème (lc-theme-toggle) : le composant anime lui-même le pseudo-élément « new » en clip-path ; on retire les fondus par défaut, le temps de la bascule seulement. */
+:root[data-lc-theme-switch]::view-transition-old(root),
+:root[data-lc-theme-switch]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

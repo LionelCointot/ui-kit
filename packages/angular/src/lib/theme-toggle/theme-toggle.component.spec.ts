@@ -63,4 +63,59 @@ describe('LcThemeToggleComponent', () => {
     await fixture.whenStable();
     expect(button().getAttribute('aria-label')).toBe(t.name(t.dark, t.system));
   });
+
+  describe('View Transitions', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      delete (document as { startViewTransition?: unknown }).startViewTransition;
+    });
+
+    it('sans l’API : bascule directe, data-theme à jour', async () => {
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+      button().click();
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+
+    it('sous mouvement réduit : aucun appel à startViewTransition', async () => {
+      const start = vi.fn();
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+      const { button } = await setup();
+      button().click();
+      expect(start).not.toHaveBeenCalled();
+    });
+
+    it('avec l’API : un appel, thème posé dans le rappel, cercle animé dans ready, fondus retirés à la fin', async () => {
+      const animate = vi.fn();
+      (Element.prototype as { animate?: unknown }).animate = animate;
+      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+      let finish!: () => void;
+      const finished = new Promise<void>((r) => (finish = r));
+      const start = vi.fn((update: () => void) => {
+        update();
+        return { ready: Promise.resolve(), finished };
+      });
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+      vi.spyOn(button(), 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20, width: 20, height: 20 } as DOMRect);
+
+      button().click();
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(true);
+      await Promise.resolve();
+      const { clientWidth: w, clientHeight: h } = document.documentElement;
+      const [keyframes, options] = animate.mock.calls[0];
+      expect(keyframes).toEqual([{ clipPath: 'circle(0px at 20px 30px)' }, { clipPath: `circle(${Math.hypot(Math.max(20, w - 20), Math.max(30, h - 30))}px at 20px 30px)` }]);
+      expect(options.pseudoElement).toBe('::view-transition-new(root)');
+      finish();
+      await finished;
+      await Promise.resolve();
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
+    });
+  });
 });

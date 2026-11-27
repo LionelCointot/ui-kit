@@ -29,6 +29,15 @@ describe('lcAnimate', () => {
     expect(animate).toHaveBeenCalledWith(KEYFRAMES, { duration: 190, easing: 'ease-in', delay: 0, fill: 'both' });
   });
 
+  it('transmet pseudoElement à Element.animate', () => {
+    const animate = vi.fn();
+    (Element.prototype as { animate?: unknown }).animate = animate;
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: () => '' }));
+    lcAnimate(document.createElement('div'), KEYFRAMES, { ...OPTIONS, pseudoElement: '::view-transition-new(root)' });
+    expect(animate).toHaveBeenCalledWith(KEYFRAMES, expect.objectContaining({ pseudoElement: '::view-transition-new(root)' }));
+  });
+
   it('mouvement réduit : rien ne joue, l\'animation rendue est finie et attendable', async () => {
     const animate = vi.fn();
     (Element.prototype as { animate?: unknown }).animate = animate;
