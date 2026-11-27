@@ -81,7 +81,7 @@
     "exit-duration": { "$value": "300ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
     "spring-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Return to place after a release that does not close the sheet." },
-    "spring-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
+    "spring-easing": { "$value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "$type": "cubicBezier", "$description": "Spring back with a 10 % overshoot (back.out(1.6) of the catalogue, CA-24); sys pop overshoots by 14 %." },
     "backdrop-enter-duration": { "$value": "300ms", "$type": "duration", "$description": "Backdrop fade-in when the sheet opens (d54)." },
     "backdrop-enter-easing": { "$value": "cubic-bezier(0, 0, 0.58, 1)", "$type": "cubicBezier" },
     "card-width": {
