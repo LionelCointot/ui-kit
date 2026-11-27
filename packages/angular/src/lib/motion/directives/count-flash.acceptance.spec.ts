@@ -67,7 +67,8 @@ describe('CA-14 : rendu initial côté serveur', () => {
 describe('CA-14, CA-3 : compteur côté navigateur (horloge fictive)', () => {
   const reduced = (on: boolean) => vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: on })));
   beforeEach(() => vi.useFakeTimers({ toFake: ['performance', 'requestAnimationFrame', 'cancelAnimationFrame'] }));
-  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+  // Ordre : défaire les stubs posés sous l'horloge fictive avant de la retirer, sinon `rAF` reste celui de l'horloge morte (fuite vers les autres fichiers du worker).
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
   /** Texte de `#plain` toutes les 16 ms pendant `ms`. */
   const sampled = (fixture: ReturnType<typeof render>['fixture'], ms: number) => {

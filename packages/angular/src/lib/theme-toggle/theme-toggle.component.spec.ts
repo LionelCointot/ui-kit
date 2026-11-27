@@ -70,6 +70,7 @@ describe('LcThemeToggleComponent', () => {
       vi.unstubAllGlobals();
       Element.prototype.animate = nativeAnimate;
       delete (document as { startViewTransition?: unknown }).startViewTransition;
+      delete (Element.prototype as { animate?: unknown }).animate; // sinon il fuit vers les autres fichiers du même worker (tests non isolés)
     });
 
     it('sans l’API : bascule directe, data-theme à jour', async () => {
