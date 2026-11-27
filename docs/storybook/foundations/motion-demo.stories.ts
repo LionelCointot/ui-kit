@@ -225,7 +225,7 @@ class ListPageComponent {
   /** Le menu de la ligne est détruit à la fermeture : le focus va au bouton de menu (annulation), à la ligne suivante, ou au titre de la page (suppression). */
   protected async confirmRemove(task: Task): Promise<void> {
     const confirmed = await this.dialogs.confirm({ title: 'Supprimer la tâche ?', message: `« ${task.title} » sera retirée de la liste.`, confirmLabel: 'Supprimer', destructive: true });
-    if (!confirmed) return document.querySelector<HTMLElement>(`[data-menu="${task.id}"]`)?.focus();
+    if (!confirmed) return document.querySelector<HTMLElement>(`[data-menu="${CSS.escape(String(task.id))}"]`)?.focus();
     const rows = this.store.visible();
     const next = rows[rows.indexOf(task) + 1];
     this.store.remove(task);

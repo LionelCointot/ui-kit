@@ -113,7 +113,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `[lcDisclosureGroup]` | LcDisclosureGroupDirective | directive | exclusive | – |
 | `lc-app-shell` | LcAppShellComponent | composant | navMode, navOpen (model), navCollapsed (model), navLabel | – |
 | `lc-card` | LcCardComponent | composant | elevation, padding, collapsible, expanded (model) | – |
-| `lc-card-header` | LcCardHeaderComponent | composant | title (requis), subtitle | – |
+| `lc-card-header` | LcCardHeaderComponent | composant | title (requis), subtitle, headingLevel | – |
 | `lc-disclosure` | LcDisclosureComponent | composant | expanded (model), headingLevel, disabled, lazy, bordered | – |
 | `lc-divider` | LcDividerComponent | composant | orientation | – |
 | `lc-grid` | LcGridComponent | composant | columns, gap | – |
@@ -178,7 +178,7 @@ Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton don
 - `tabs` : `indicator-front-duration` 380ms · `indicator-front-easing` → sys-easing-title · `indicator-back-duration` 400ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 80ms
 - `nav-item` : `indicator-front-duration` 380ms · `indicator-front-easing` → sys-easing-title · `indicator-back-duration` 400ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 80ms
 - `segmented-control` : `indicator-front-duration` 300ms · `indicator-front-easing` → sys-easing-out · `indicator-back-duration` 410ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 75ms
-- `tabbar` : `enter-duration` → sys-duration-view · `enter-delay` 200ms · `enter-easing` → sys-easing-entrance · `enter-offset` 90px · `height` 66px · `indicator-radius` 16px · `indicator-front-duration` → segmented-control-indicator-front-duration · `indicator-front-easing` → segmented-control-indicator-front-easing · `indicator-back-duration` → segmented-control-indicator-back-duration · `indicator-back-easing` → segmented-control-indicator-back-easing · `indicator-back-delay` → segmented-control-indicator-back-delay
+- `tabbar` : `enter-duration` → sys-duration-view · `enter-delay` 200ms · `enter-easing` → sys-easing-entrance · `enter-offset` 90px · `height` 66px · `indicator-radius` 16px · `indicator-front-duration` → segmented-control-indicator-front-duration · `indicator-front-easing` → segmented-control-indicator-front-easing · `indicator-back-duration` → segmented-control-indicator-back-duration · `indicator-back-easing` → segmented-control-indicator-back-easing · `indicator-back-delay` → segmented-control-indicator-back-delay · `indicator-label-switch-front` 0.5 · `indicator-label-switch-back` 0.35
 - `overlay` : `enter-duration` → sys-duration-normal · `exit-duration` → sys-duration-fast · `easing` → sys-easing-standard
 - `chip` : `enter-duration` → sys-duration-fast
 - `list` : `move-duration` 420ms · `move-easing` → sys-easing-draw
