@@ -40,8 +40,10 @@
 .lc-shell__header-content {
   display: flex;
   flex: 1;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--lc-sys-space-3);
+  justify-content: flex-end;
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
   min-width: 0;
 }
 
@@ -51,18 +53,11 @@
     animation: lc-page-entering calc(var(--lc-topbar-enter-delay) + var(--lc-topbar-enter-duration) + var(--lc-sys-motion-stagger-cap) * var(--lc-topbar-enter-stagger));
   }
 
-  .lc-shell__header--entering > button,
-  .lc-shell__header--entering .lc-shell__header-content > * {
+  .lc-shell__header--entering > button {
     animation: lc-topbar-enter var(--lc-topbar-enter-duration) var(--lc-sys-easing-out) backwards;
-    animation-delay: calc(var(--lc-topbar-enter-delay) + min(var(--lc-topbar-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-topbar-enter-stagger));
+    animation-delay: var(--lc-topbar-enter-delay);
   }
-
-  /* Rang plafonné à 5 au-delà du 6e élément. */
-  .lc-shell__header-content > :nth-child(2) { --lc-topbar-rank: 1; }
-  .lc-shell__header-content > :nth-child(3) { --lc-topbar-rank: 2; }
-  .lc-shell__header-content > :nth-child(4) { --lc-topbar-rank: 3; }
-  .lc-shell__header-content > :nth-child(5) { --lc-topbar-rank: 4; }
-  .lc-shell__header-content > :nth-child(n + 6) { --lc-topbar-rank: 5; }
+  /* Le contenu projeté `[lcShellHeader]` échappe à l'encapsulation : ses règles d'entrée sont dans `styles/motion.css`. */
 }
 
 .lc-shell__body {
@@ -149,6 +144,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 0 1 auto;
     font-weight: var(--lc-sys-font-weight-semibold);
     opacity: 0;
     transition: opacity var(--lc-sys-duration-exit) var(--lc-sys-easing-standard);
@@ -183,7 +179,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-shell__title {
+  .lc-shell__title,
+  .lc-shell__main {
     transition: none;
   }
 

@@ -25,7 +25,9 @@ function resolve(root: ActivatedRouteSnapshot, level: number): Resolved {
   const chain = [root];
   while (chain[chain.length - 1].firstChild) chain.push(chain[chain.length - 1].firstChild!);
   const leaf = chain[chain.length - 1];
-  const ancestor = level > 1 ? chain.slice(0, -1).reverse().find((route) => route.title) : undefined;
+  // Une route d'ancêtre à chemin vide hérite du titre et a la même URL que la feuille : ce n'est pas une page parente.
+  const leafUrl = urlOf(leaf);
+  const ancestor = level > 1 ? chain.slice(0, -1).reverse().find((route) => route.title && urlOf(route) !== leafUrl) : undefined;
   return {
     title: leaf.title ?? '',
     parent: ancestor ? { title: ancestor.title!, url: urlOf(ancestor) } : null,
