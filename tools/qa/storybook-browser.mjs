@@ -1121,10 +1121,12 @@ async function motionList(context, base, reduced, tag, phone, check) {
   // 4. Suppression de « Demande 5 » : sortie par lc-leave seule (durée du token d'exit, sans fondu propre), puis glissement des voisines.
   await page.evaluate(() => window.__qa.frames(40));
   await begin();
+  const orderBefore = await page.evaluate(() => window.__qa.rowKeys()); // le tri précédent reste appliqué : l'ordre se lit, il ne se suppose pas
+  const followers = orderBefore.slice(orderBefore.indexOf('Demande 5') + 1);
   await page.click('#qa-remove');
   await idle(`window.__qa.rowKeys().length === 13`);
   const del = await report();
-  check(del.order.join() === all.filter((k) => k !== 'Demande 5').join() && del.removed.length === 1 && del.removed[0].key === 'Demande 5' && del.removed[0].gone, `CA-26 ${tag} suppression : ligne retirée du DOM à la fin de la sortie`, `ordre=${del.order}, retirées=${JSON.stringify(del.removed)}`);
+  check(del.order.join() === orderBefore.filter((k) => k !== 'Demande 5').join() && del.removed.length === 1 && del.removed[0].key === 'Demande 5' && del.removed[0].gone, `CA-26 ${tag} suppression : ligne retirée du DOM à la fin de la sortie`, `ordre=${del.order}, retirées=${JSON.stringify(del.removed)}`);
   if (reduced) {
     check(del.anims.length === 0, `CA-23 ${tag} suppression : aucune animation en réduction`, `animations=${JSON.stringify(del.anims.map((a) => [a.key, a.kind, a.name, a.props.join('+')]))}`);
   } else {
@@ -1132,7 +1134,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
     const leave = out.find((a) => a.name === 'lc-leave');
     check(!!leave && near(leave.duration, 200) && near(leave.duration, del.exit) && leave.connected && out.every((a) => a.name === 'lc-leave'), `CA-26 ${tag} suppression : une seule sortie, lc-leave de ${del.exit} ms (200 ms), sans fondu ni second délai`, `animations de la ligne=${JSON.stringify(out.map((a) => [a.kind, a.name, a.duration, a.props.join('+')]))}`);
     const below = del.kept.filter((k) => Math.abs(k.from - k.to) >= 0.5);
-    check(below.length === 9 && below.every((k) => Number(k.key.split(' ')[1]) > 5), `CA-26 ${tag} suppression : seules les voisines suivantes bougent (9)`, `déplacées=${below.map((k) => k.key)}`);
+    check(followers.length > 0 && below.length === followers.length && below.every((k) => followers.includes(k.key)), `CA-26 ${tag} suppression : seules les voisines suivantes bougent (${followers.length})`, `déplacées=${below.map((k) => k.key)}, attendues=${followers}`);
     glides({ ...del, kept: del.kept }, 'suppression', { strict: true });
     check(below.every((k) => lastGlide(del, k.key)?.leavingConnected === 0), `CA-26 ${tag} suppression : le glissement des voisines commence après la disparition de la ligne`, `lignes encore en sortie au début du glissement=${below.map((k) => lastGlide(del, k.key)?.leavingConnected)}`);
   }
