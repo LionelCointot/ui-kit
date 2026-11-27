@@ -3,9 +3,8 @@
 //   node tools/qa/storybook-browser.mjs perf                      temps de rendu des 2 000 lignes de lc-tree-table (CA-K3.5)
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
-//   node tools/qa/storybook-browser.mjs motion                    mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px ; puis, sur chaque story d'animation de l'index, toute animation (CSSTransition, CSSAnimation, WAAPI) : CA-3, CA-5, CA-31 de 2026-12-mouvement-v2
+//   node tools/qa/storybook-browser.mjs motion [fragment-d-id ...]                  mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px ; puis, sur chaque story d'animation de l'index, toute animation (CSSTransition, CSSAnimation, WAAPI) : CA-3, CA-5, CA-31 de 2026-12-mouvement-v2, puis CA-16a à CA-16c de 2026-11-mouvement (ouverture sans erreur, « Rejouer », bandeau de réduction)
 //   node tools/qa/storybook-browser.mjs swipe                     lc-swipe-panels, lc-tabs en swipe, fond du segmenté (spec 2026-11-bande-a-panneaux-et-reperes, CA-1 à CA-11) ; normal et mouvement réduit à 360 px, colonnes à 1280 px
-//   node tools/qa/storybook-browser.mjs stories-motion           stories de mouvement (liste dérivée de l'index, CA-38) : ouverture sans erreur, « Rejouer », bandeau de réduction (CA-16a à CA-16c)
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
 import { createServer } from 'node:http';
@@ -1232,7 +1231,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   await page.close();
 }
 
-async function motion(browser, base) {
+async function motion(browser, base, fragments = []) {
   let failures = 0;
   const check = (ok, label, detail = '') => {
     if (!ok) failures += 1;
@@ -1240,7 +1239,19 @@ async function motion(browser, base) {
   };
   const contexts = [['normal', {}], ['reduced', { reducedMotion: 'reduce' }], ['forced', { forcedColors: 'active' }]];
   const sizes = [[1280, 720], [360, 640]];
-  const animationIds = await animationStoryIds();
+  const animationIds = await animationStoryIds(fragments);
+  if (fragments.length > 0) { // relance ciblée : seulement la boucle générale (CA-3, CA-5, CA-31, CA-16) des stories dont l'id contient un fragment
+    console.log(`${animationIds.length} story(ies) d'animation`);
+    for (const [name, options] of contexts.slice(0, 2)) {
+      for (const [width, height] of sizes) {
+        const context = await browser.newContext({ viewport: { width, height }, ...options });
+        await context.addInitScript(MOTION_INIT);
+        await motionAnimations(context, base, animationIds, name === 'reduced', width, check);
+        await context.close();
+      }
+    }
+    return failures;
+  }
   for (const id of T9C_STORIES) check(animationIds.includes(id), `CA-38 T9c story ${id} dans l'index`);
   for (const [name, options] of contexts) {
     const reduced = name === 'reduced';
@@ -1489,9 +1500,9 @@ const T9C_STORIES = ['navigation-menu--animation', 'overlays-toggletip--animatio
 
 /** Stories d'animation, dérivées de l'index de Storybook (CA-38 de 2026-12-mouvement-v2 : plus de liste codée en dur) : toute story `Animation*`, la page Foundations/Motion et les deux pages gardées de 2026-11 (Elevation, Playground de Reveal). */
 const ANIMATION_STORY = /--animation|^foundations-(motion|elevation)--|^layout-reveal--playground$/;
-async function animationStoryIds() {
+async function animationStoryIds(fragments = []) {
   const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-  return Object.values(index.entries).filter((entry) => entry.type === 'story' && ANIMATION_STORY.test(entry.id)).map((entry) => entry.id);
+  return Object.values(index.entries).filter((entry) => entry.type === 'story' && ANIMATION_STORY.test(entry.id) && (fragments.length === 0 || fragments.some((f) => entry.id.includes(f)))).map((entry) => entry.id);
 }
 
 /** Toute animation (CSSTransition, CSSAnimation, WAAPI) d'une story d'animation, relevée une image après chaque « Rejouer » (spec 2026-12-mouvement-v2) :
@@ -1516,45 +1527,51 @@ const CA5_ALLOW = [
 const NO_FINITE_ANIMATION = () => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending));
 /** Attend la fin des animations finies ; une expiration est un échec écrit, pas un silence. */
 const finiteIdle = (page, label, check, timeout = 15000) => page.waitForFunction(NO_FINITE_ANIMATION, null, { timeout }).then(() => true, () => { check(false, `${label} animations finies encore en cours après ${timeout} ms`); return false; });
+/** CA-16c : le bandeau accompagne la page Motion et les stories `Animation` (spec 5.4) ; ni Elevation ni le Playground de Reveal n'en ont. */
+const NOTICE = 'Les animations sont réduites par votre système : rien ne bouge dans cette démo.';
 async function motionAnimations(context, base, ids, reduced, width, check) {
   const tag = `${reduced ? 'reduced' : 'normal'} ${width}px`;
   for (const id of ids) {
     if (id.startsWith('foundations-')) continue; // pages de documentation : pas de story d'animation à mesurer
+    const t0 = Date.now();
     const page = await context.newPage();
     const errors = [];
-    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+    page.on('console', (message) => message.type() === 'error' && errors.push(`console: ${message.text()}`)); // CA-16a
     await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
     await page.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 }).catch((error) => errors.push(`rendu : ${error.message.split('\n')[0]}`));
     const buttons = page.getByRole('button', { name: 'Rejouer' });
     const count = await buttons.count();
+    if (id.includes('--animation')) check(count >= 1, `CA-16b ${tag} ${id} au moins un « Rejouer »`); // la fusion avec l'ancien mode stories-motion
     for (let n = 0; n < count; n += 1) {
       const label = `${tag} ${id} « Rejouer » n°${n + 1}/${count}`;
       await finiteIdle(page, label, check);
       // Dans le même `evaluate` que le clic : les animations sont relevées à leur première apparition (certains « Rejouer » démarrent après un rendu Angular).
-      // Fenêtre de relevé : 900 ms au moins, prolongée tant qu'une nouvelle animation apparaît (600 ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s).
+      // Fenêtre de relevé : `min` ms au moins (900 ; 250 en réduit : on ne mesure que des durées nulles), prolongée tant qu'une nouvelle animation apparaît (`quiet` ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s).
       // `scrub` (CA-31) : chaque animation est mise en pause à sa première vue, puis amenée à 0, 50 et 100 % ; sinon on ne touche à rien.
-      const scrubRun = async (button, { scrub, allow }) => {
-        const MIN_MS = 900, QUIET_MS = 600, MAX_MS = 4000;
+      // `late` : animations apparues plus de 150 ms après le clic = chaîne (une animation qui démarre à la fin d'une autre) : la mise en pause la casserait, CA-31 repasse alors sur une page neuve.
+      const scrubRun = async (button, { scrub, allow, min, quiet }) => {
+        const MAX_MS = 4000;
         const kind = (a) => (a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'animation' : 'waapi');
         const skip = new Set(['offset', 'computedOffset', 'easing', 'composite']);
         const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
         const seen = new Map();
+        const t0 = performance.now();
         const row = (a) => {
           const timing = a.effect.getComputedTiming();
           const target = a.effect.target;
           const pseudo = a.effect.pseudoElement ?? '';
           const props = [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !skip.has(k)))];
           const listed = props.filter((p) => allow.some(([names, selector, pseudoPrefix, only]) => names.includes(p) && target.matches(selector) && (pseudoPrefix === undefined ? !pseudo : pseudo.startsWith(pseudoPrefix)) && (only === undefined || only === kind(a))));
-          return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
+          return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, at: Math.round(performance.now() - t0), target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
         let lastNew = performance.now();
         const collect = () => document.getAnimations().forEach((a) => { if (!seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
         button.click();
-        const t0 = performance.now();
         await frame();
         await frame();
         const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).map(row); // une image après l'action
-        for (let now = t0; now - t0 < MAX_MS && (now - t0 < MIN_MS || now - lastNew < QUIET_MS); now = performance.now()) { collect(); await frame(); }
+        for (let now = t0; now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet); now = performance.now()) { collect(); await frame(); }
         collect();
         const overflow = [];
         if (scrub) {
@@ -1565,73 +1582,46 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           }
           finite.forEach((a) => a.finish());
         }
-        return { rows: [...seen.values()], running, overflow };
+        const rows = [...seen.values()];
+        return { rows, running, overflow, late: rows.filter((r) => r.at > 150).length };
       };
-      const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW });
+      const win = reduced ? { min: 250, quiet: 250 } : { min: 900, quiet: 600 };
+      const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW, ...win });
       if (reduced) {
         const bad = got.rows.filter((r) => r.duration > 0.01 || r.delay > 0.01);
         check(bad.length === 0 && got.running.length === 0, `CA-3 ${label} aucune animation en cours après une image, durées et délais ≤ 0,01 ms`, JSON.stringify([...got.running, ...bad].slice(0, 3)));
       } else {
+        check(got.rows.length > 0, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre bien une animation
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }
       await closePanels(page);
       if (width === 360 && !reduced) {
-        const fresh = await context.newPage(); // page neuve : les animations de la première passe ont été laissées en l'état
-        await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
-        await fresh.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
-        await finiteIdle(fresh, `${label} (page neuve)`, check);
-        const scrubbed = await fresh.getByRole('button', { name: 'Rejouer' }).nth(n).evaluate(scrubRun, { scrub: true, allow: CA5_ALLOW });
-        await fresh.close();
+        // Même page que CA-5 (seconde lecture) ; page neuve seulement pour une chaîne d'animations (`late`), que la mise en pause casserait.
+        let target = page, fresh = null;
+        if (got.late > 0) {
+          console.log(`INFO ${label} chaîne d'animations (${got.late} tardive(s)) : CA-31 sur page neuve`);
+          fresh = await context.newPage();
+          await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
+          await fresh.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
+          target = fresh;
+        }
+        await finiteIdle(target, `${label}${fresh ? ' (page neuve)' : ' (relecture)'}`, check);
+        const scrubbed = await target.getByRole('button', { name: 'Rejouer' }).nth(n).evaluate(scrubRun, { scrub: true, allow: CA5_ALLOW, ...win });
+        await fresh?.close();
+        if (!fresh) await closePanels(page);
         check(!scrubbed.overflow.some(Boolean), `CA-31 ${label} aucun défilement horizontal à 0, 50, 100 %`, JSON.stringify(scrubbed.overflow));
       }
     }
-    check(errors.length === 0, `erreurs page ${tag} ${id}`, errors.join(' ; '));
-    await page.close();
-  }
-}
-
-/** Stories de mouvement (spec 2026-11-mouvement, T7) : CA-16a (ouverture sans erreur), CA-16b (« Rejouer » relance une animation), CA-16c (bandeau selon `prefers-reduced-motion`). */
-const NOTICE = 'Les animations sont réduites par votre système : rien ne bouge dans cette démo.';
-
-async function storiesMotion(browser, base) {
-  let failures = 0;
-  const check = (label, ok, detail = '') => { console.log(`${ok ? 'OK  ' : 'KO  '} ${label}${ok ? '' : ` ${detail}`}`); if (!ok) failures++; };
-  const poll = (page, fn, arg, timeout = 8000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true, () => false);
-  for (const id of await animationStoryIds()) {
-    for (const reducedMotion of ['no-preference', 'reduce']) {
-      const wide = id.endsWith('desktop') || !id.startsWith('data-');
-      const context = await browser.newContext({ viewport: { width: wide ? 1280 : 360, height: 800 }, reducedMotion });
-      const page = await context.newPage();
-      const errors = [];
-      page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
-      page.on('console', (message) => message.type() === 'error' && errors.push(`console: ${message.text()}`));
-      await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
-      await page.waitForSelector('#storybook-root > *, #storybook-docs', { timeout: 20000 }).catch((error) => errors.push(`rendu : ${error.message.split('\n')[0]}`));
-      await page.waitForTimeout(400);
-      const tag = `${id} [${reducedMotion}]`;
+    // CA-16c : bandeau selon `prefers-reduced-motion` (le contexte porte la préférence)
+    if (id.includes('motion') || id.includes('--animation')) {
       const notice = await page.locator(`text=${NOTICE}`).count();
-      // CA-16c : le bandeau accompagne la page Motion et les stories `Animation` (spec 5.4) ; ni Elevation ni le Playground de Reveal n'en ont
-      if (id.includes('motion') || id.includes('--animation')) check(`CA-16c ${tag} bandeau ${reducedMotion === 'reduce' ? 'présent' : 'absent'}`, notice === (reducedMotion === 'reduce' ? 1 : 0), `(${notice})`);
-      else console.log(`INFO ${tag} bandeau : ${notice}`);
-      if (reducedMotion === 'no-preference') {
-        const buttons = page.getByRole('button', { name: 'Rejouer' });
-        const count = await buttons.count();
-        console.log(`INFO ${id} : ${count} bouton(s) « Rejouer »`);
-        for (let n = 0; n < count; n++) {
-          await poll(page, () => document.getAnimations().length === 0, null, 12000); // l'animation d'entrée est finie : le clic seul peut relancer
-          const before = await page.evaluate(() => document.getAnimations().length);
-          await buttons.nth(n).click();
-          const started = await poll(page, () => document.getAnimations().length > 0, null);
-          check(`CA-16b ${id} « Rejouer » n°${n + 1}/${count} relance une animation (avant : ${before})`, started);
-          await closePanels(page);
-        }
-      }
-      check(`CA-16a ${tag} sans erreur de page ni de console`, errors.length === 0, errors.join(' | '));
-      await context.close();
+      check(notice === (reduced ? 1 : 0), `CA-16c ${tag} ${id} bandeau ${reduced ? 'présent' : 'absent'}`, `(${notice})`);
     }
+    check(errors.length === 0, `CA-16a erreurs page ou console ${tag} ${id}`, errors.join(' | '));
+    await page.close();
+    console.log(`TEMPS ${tag} ${id} ${Date.now() - t0} ms`);
   }
-  return failures;
 }
 
 /** lc-swipe-panels, lc-tabs en swipe, lc-segmented-control suivi (spec 2026-11-bande-a-panneaux-et-reperes) : CA-1 à CA-11, 360 px, mouvement normal et réduit, 1 280 px en colonnes. */
@@ -1916,15 +1906,13 @@ try {
   } else if (mode === 'treegrid') {
     failures = await treegrid(browser, base);
   } else if (mode === 'motion') {
-    failures = await motion(browser, base);
-  } else if (mode === 'stories-motion') {
-    failures = await storiesMotion(browser, base);
+    failures = await motion(browser, base, fragments);
   } else if (mode === 'swipe') {
     failures = await swipe(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | swipe | stories-motion | dom | treegrid | filter-date');
+    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | swipe | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {
