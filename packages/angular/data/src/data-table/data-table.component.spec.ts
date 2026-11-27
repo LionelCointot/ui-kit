@@ -845,25 +845,31 @@ describe('LcDataTableComponent', () => {
       expect(el.querySelector('tbody')!.classList.contains('lc-data-table__body--refill')).toBe(false);
     });
 
-    it('filtre : la liste est reconstruite (aucune ligne conservée), la cascade attend le délai de remplissage (classe du corps)', async () => {
+    it('filtre : liste vide pendant table.refill-delay, puis lignes recréées (aucune conservée) en cascade', async () => {
       await setup();
+      el.querySelector<HTMLElement>('lc-data-table')!.style.setProperty('--lc-table-refill-delay', '30ms');
+      vi.stubGlobal('matchMedia', () => ({ matches: false }));
       const before = rowNodes();
       host.query.set(q({ state: ['Close'] })); // lignes 2, 5, 8
+      await stable();
+      expect(rowNodes()).toHaveLength(0); // liste vidée d'un coup
+      expect(el.querySelector('tbody')!.hidden).toBe(false); // masqué le temps du rendu seulement
+      await new Promise((resolve) => setTimeout(resolve, 60));
       await stable();
       const after = rowNodes();
       expect(after).toHaveLength(3);
       expect(after.some((row) => before.includes(row))).toBe(false);
       expect(ranks()).toEqual(['0', '1', '2']);
       expect(el.querySelector('tbody')!.classList.contains('lc-data-table__body--refill')).toBe(true);
-      expect(el.querySelector('tbody')!.hidden).toBe(false); // masqué le temps du rendu seulement
       host.source.set([...ROWS]); // un tri ou une suppression ensuite : plus de refill
       await stable();
       expect(el.querySelector('tbody')!.classList.contains('lc-data-table__body--refill')).toBe(false);
+      vi.unstubAllGlobals();
     });
 
     it('filtre : seules les 8 premières lignes de la nouvelle liste portent une entrée', async () => {
       await setup();
-      host.query.set(q({ city: ['Annecy', 'Brest', 'Caen', 'Dijon', 'Évry', 'Fréjus', 'Gap', 'Hyères', 'Istres'] }));
+      host.query.set(q({ city: ['Annecy', 'Brest', 'Caen', 'Dijon', 'Évry', 'Fréjus', 'Gap', 'Hyères', 'Istres'] })); // sans délai de jeton : lignes remplacées à la volée
       await stable();
       expect(rowNodes()).toHaveLength(9);
       expect(ranks().filter((rank) => rank !== '')).toHaveLength(8);
@@ -885,7 +891,7 @@ describe('LcDataTableComponent', () => {
         });
         vi.stubGlobal('matchMedia', () => ({ matches: reduced }));
         vi.stubGlobal('getComputedStyle', () => ({
-          getPropertyValue: (name: string) => ({ '--lc-list-move-duration': '200ms', '--lc-list-move-easing': 'ease-in-out', '--lc-sys-duration-fast': '150ms', '--lc-overlay-easing': 'ease-out' })[name] ?? '',
+          getPropertyValue: (name: string) => ({ '--lc-list-move-duration': '200ms', '--lc-list-move-easing': 'ease-in-out', '--lc-sys-duration-fast': '150ms', '--lc-overlay-easing': 'ease-out', '--lc-table-refill-delay': '30ms' })[name] ?? '',
         }));
       };
 
@@ -911,8 +917,11 @@ describe('LcDataTableComponent', () => {
 
       it('filtre : aucune ligne ne glisse (la liste est reconstruite)', async () => {
         await setup();
+        el.querySelector<HTMLElement>('lc-data-table')!.style.setProperty('--lc-table-refill-delay', '30ms');
         stubLayout();
         host.query.set(q({ state: ['Close'] }));
+        await stable();
+        await new Promise((resolve) => setTimeout(resolve, 60));
         await stable();
         expect(calls).toHaveLength(0);
       });

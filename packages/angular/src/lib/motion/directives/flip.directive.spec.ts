@@ -89,7 +89,7 @@ describe('LcFlipDirective', () => {
     fixture.detectChanges();
     expect(animate).not.toHaveBeenCalled(); // b sort encore sur place : rien ne bouge
     fixture.nativeElement.querySelector('[data-k="b"]')?.remove();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve));
     expect(moved()).toEqual(['c']);
     expect(offsets()).toEqual(['translateY(10px)']);
   });

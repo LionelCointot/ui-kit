@@ -30,8 +30,11 @@ export class LcFlipDirective implements OnChanges {
       if (typeof MutationObserver === 'undefined') return;
       this.observer = new MutationObserver((records) => {
         if (!records.some((record) => record.removedNodes.length)) return;
-        this.before = this.settled;
-        this.flip();
+        // shortcut: un retrait pendant un glissement attend la fin de celui-ci (une seule lecture par lot) ; les suivants sautent puis glissent de leur place d'avant.
+        void Promise.allSettled(this.playing.map((animation) => animation.finished)).then(() => {
+          this.before ??= this.settled;
+          this.flip();
+        });
       });
       this.observer.observe(this.host, { childList: true });
     });

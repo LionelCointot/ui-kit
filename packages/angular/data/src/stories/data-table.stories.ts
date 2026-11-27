@@ -196,8 +196,9 @@ class RefillDemoComponent {
   protected readonly columns = CONTRACT_COLUMNS;
   protected readonly trackBy = (contract: Contract) => contract.id;
   protected readonly query = signal<LcTableQuery>({ filters: {}, sort: null });
+  /** Changes the filters without changing the rows (a key that no column uses): the table is rebuilt, the headers stay as they are. */
   replay(): void {
-    this.query.update((current) => ({ filters: Object.keys(current.filters).length ? {} : { status: ['actif', 'pause'] }, sort: null }));
+    this.query.update((current) => query(Object.keys(current.filters).length ? {} : { replay: ['1'] }));
   }
 }
 

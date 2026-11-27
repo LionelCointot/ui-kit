@@ -21,8 +21,7 @@
   }
 }
 
-/* Classe posée par [lcReveal] jusqu'à animationend. Délai = décalage de départ (--lc-reveal-offset, 0 par défaut) + min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */
-.lc-reveal {
+/* Classe posée par [lcReveal] jusqu'à animationend. Délai = min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */.lc-reveal {
   --lc-reveal-x: 0px;
   --lc-reveal-y: var(--lc-sys-motion-offset-sm);
   --lc-reveal-scale: 1;
@@ -31,7 +30,7 @@
 
   animation: lc-reveal-in var(--lc-sys-duration-enter) var(--lc-reveal-curve) backwards;
   animation-delay: calc(
-    var(--lc-reveal-offset, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
+    min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
   );
 }
 
