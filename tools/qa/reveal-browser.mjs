@@ -6,11 +6,10 @@
 // Story attendue (à écrire par T3, `*.acceptance.qa.stories.ts`) : `qa-motion-reveal-acceptance--lists`, dont les éléments portent `lcReveal` :
 //   `#if-block` (sous @if) ; `#list > li[data-id]` (sous @for, 7 éléments `data-id` 1 à 7) ; boutons `#toggle` (retire/remet #if-block), `#remove` (retire l'élément `data-id="2"`),
 //   `#reverse` (inverse la liste), `#append` et `#prepend` (ajoutent un élément, `data-id` 8 puis 9).
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -18,26 +17,18 @@ const storybookDir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'story
 const { chromium } = require('playwright');
 const STORY = 'qa-motion-reveal-acceptance--lists';
 
-let server;
-let base = process.env.BASE;
-if (!base) {
-  const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-  server = createServer(async (request, response) => {
-    const file = path.join(storybookDir, path.normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname)).replace(/^(\.\.[/\\])+/, ''));
-    try {
-      const body = await readFile(file);
-      response.writeHead(200, { 'content-type': types[path.extname(file)] ?? 'application/octet-stream' }).end(body);
-    } catch {
-      response.writeHead(404).end();
-    }
-  });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  base = `http://127.0.0.1:${server.address().port}`;
-}
+const server = await staticServer(storybookDir);
+const { base } = server;
 
 const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
 let failures = 0;
 const check = (ok, label, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
+
+/** Preuve négative : deux images (une animation d'entrée démarre au plus une ou deux images après le changement du DOM), puis plus aucune animation finie en cours. */
+const quiet = async (page) => {
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.waitForFunction(() => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending)), null, { timeout: 5000 });
+};
 
 /** Ouvre la story ; `window.__starts` consigne chaque `animationstart` (« nom|data-id »). */
 async function open(reduced) {
@@ -89,17 +80,17 @@ const leave = (page, button, gone) => page.evaluate(async ([button, gone]) => {
   // CA-10 : réordonnancement et ajout (entrées relancées seulement pour l'élément ajouté).
   await page.evaluate(() => { window.__starts.length = 0; });
   await page.click('#reverse');
-  await page.waitForTimeout(150);
+  await quiet(page);
   const reverse = await page.evaluate(() => window.__starts.filter((s) => s.startsWith('lc-reveal-in')));
   check(reverse.length === 0, 'CA-10 inverser la liste ne relance aucune animation d\'entrée', JSON.stringify(reverse));
   await page.evaluate(() => { window.__starts.length = 0; });
   await page.click('#append');
-  await page.waitForTimeout(150);
+  await quiet(page);
   const appended = await page.evaluate(() => window.__starts.filter((s) => s.startsWith('lc-reveal-in')));
   check(appended.length === 1 && appended[0].endsWith('|8'), 'CA-10 ajouter un élément n\'anime que lui', JSON.stringify(appended));
   await page.evaluate(() => { window.__starts.length = 0; });
   await page.click('#prepend');
-  await page.waitForTimeout(150);
+  await quiet(page);
   const prepended = await page.evaluate(() => window.__starts.filter((s) => s.startsWith('lc-reveal-in')));
   check(prepended.length === 1 && prepended[0].endsWith('|9'), 'CA-10 ajouter en tête n\'anime que le nouvel élément', JSON.stringify(prepended));
   check(errors.length === 0, 'erreurs de page (mouvement normal)', errors.join(' ; '));

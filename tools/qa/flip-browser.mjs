@@ -6,11 +6,10 @@
 // Story attendue (à écrire par T7, `*.acceptance.qa.stories.ts`) : `qa-motion-flip-acceptance--flip`, qui lit dans l'URL `n` (nombre de lignes, 8 par défaut) et `reveal` (1 : les lignes portent aussi `lcReveal`) :
 //   `#list` (porte `lcFlip`) contient les lignes `.row[data-k]` de 36 px de haut, empilées, clés 1 à n ; boutons `#reverse` (inverse), `#filter` (garde les clés paires), `#prepend` (ajoute en tête la clé 1000, puis 1001…),
 //   `#shuffle` (mélange, graine fixe), `#all` (inverse, filtre et ajoute en une fois).
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -18,22 +17,8 @@ const storybookDir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'story
 const { chromium } = require('playwright');
 const STORY = 'qa-motion-flip-acceptance--flip';
 
-let server;
-let base = process.env.BASE;
-if (!base) {
-  const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-  server = createServer(async (request, response) => {
-    const file = path.join(storybookDir, path.normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname)).replace(/^(\.\.[/\\])+/, ''));
-    try {
-      const body = await readFile(file);
-      response.writeHead(200, { 'content-type': types[path.extname(file)] ?? 'application/octet-stream' }).end(body);
-    } catch {
-      response.writeHead(404).end();
-    }
-  });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  base = `http://127.0.0.1:${server.address().port}`;
-}
+const server = await staticServer(storybookDir);
+const { base } = server;
 
 const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
 let failures = 0;
@@ -112,7 +97,7 @@ for (const button of ['reverse', 'shuffle', 'all']) {
     await run(40);
     const jumps = frames.slice(1).map((frame, i) => Math.max(...Object.keys(frame).map((k) => Math.abs(frame[k] - frames[i][k]))));
     const top = list.getBoundingClientRect().top;
-    return { atSwitch: jumps[5], before: Math.max(...jumps.slice(0, 5)), finalOk: Object.entries(frames.at(-1)).every(([k, cy]) => Math.abs(cy - (top + (+k - 1) * 36 + 18)) <= 0.5), animations: [...list.children].reduce((n, el) => n + el.getAnimations().length, 0) };
+    return { atSwitch: Math.max(...jumps.slice(5, 8)), before: Math.max(...jumps.slice(0, 5)), finalOk: Object.entries(frames.at(-1)).every(([k, cy]) => Math.abs(cy - (top + (+k - 1) * 36 + 18)) <= 0.5), animations: [...list.children].reduce((n, el) => n + el.getAnimations().length, 0) };
   });
   check(r.atSwitch <= r.before + 0.5, 'CA-17 deuxième changement en cours : aucun saut à l\'image du changement', `déplacement à l'image du changement ${r.atSwitch.toFixed(1)} px, maximum avant ${r.before.toFixed(1)} px`);
   check(r.finalOk && r.animations === 0, 'CA-17 deuxième changement en cours : état final exact, aucune animation restante', JSON.stringify(r));
@@ -123,7 +108,8 @@ for (const button of ['reverse', 'shuffle', 'all']) {
 const worstJump = async (reveal) => {
   const { page, context } = await open({ n: '4', reveal: reveal ? '1' : '0' });
   await page.evaluate(() => document.getElementById('prepend').click());
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => [...document.getElementById('list').children].some((el) => el.getAnimations().length > 0)); // le premier ajout est en cours : le deuxième le pousse à mi-chemin
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const worst = await page.evaluate(async () => {
     const el = document.querySelector('#list [data-k="1000"]');
     const cy = () => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };

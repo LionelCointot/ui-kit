@@ -3,16 +3,16 @@
 // focus sur le h1, défilement de la page quittée conservé, aucune copie après 4 navigations en rafale), CA-3 (mouvement réduit : aucune animation).
 // Issu de l'essai `spike/motion-pages` (tools/spike-motion-pages/run.mjs), réécrit pour la directive du kit : le harnais (tools/qa/page-transitions/) ne contient aucune logique de transition.
 //   node tools/qa/page-transitions-browser.mjs [scénario ...]   scénarios : sens, copie, geste, reduit (tous par défaut) ; construit d'abord le harnais (`npm run build` doit avoir produit dist/ui-angular)
-// Avant T13 la construction échoue (`LcPageTransitionsDirective` n'existe pas dans `@lionelcointot/ui-angular/layout`) : échec attendu, signalé comme tel.
+// Avant T13 la construction échoue (`LcPageTransitionsDirective` n'existe pas dans `@lionelcointot/ui-angular/layout`) : échec attendu, signalé comme tel seulement si le point d'entrée `layout` n'exporte pas la directive.
 // Non couvert ici : « sans routeur, rien ne se passe » (test unitaire ou story), bouton « ‹ titre parent » et barre d'onglets (CA-33 mobile, CA-36 : stories de `lc-app-shell`).
 // Le sens est lu sur ce qui s'anime, sans connaître les interns du kit : aucune animation = aucune transition ; animation d'opacité seule = « même niveau » ; sinon le signe du premier décalage
 // de la page entrante (hors copie `[inert]`) donne le sens, calibré sur la première navigation avant (liste → détail).
 import { execFileSync } from 'node:child_process';
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -22,25 +22,13 @@ const { chromium } = require('playwright');
 try {
   execFileSync('npx', ['ng', 'build'], { cwd: app, stdio: 'pipe', encoding: 'utf8' });
 } catch (error) {
-  console.log(`KO  construction du harnais (échec attendu avant T13 : directive absente) : ${`${error.stdout}${error.stderr}`.split('\n').filter((l) => /error|erreur/i.test(l)).slice(0, 3).join(' | ')}`);
+  const exported = /page-?transitions/i.test(readFileSync(path.join(here, '..', '..', 'packages', 'angular', 'layout', 'src', 'public-api.ts'), 'utf8'));
+  console.log(`KO  construction du harnais (${exported ? 'directive exportée : vrai échec (dist/ui-angular à jour ? `npm run build`)' : 'échec attendu avant T13 : directive absente'}) : ${`${error.stdout}${error.stderr}`.split('\n').filter((l) => /error|erreur/i.test(l)).slice(0, 3).join(' | ')}`);
   process.exit(1);
 }
 
-const dist = path.join(app, 'dist', 'browser');
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
-const server = await new Promise((resolve) => {
-  const s = createServer(async (request, response) => {
-    const p = new URL(request.url ?? '/', 'http://x').pathname;
-    try {
-      const body = await readFile(path.join(dist, path.extname(p) ? p : 'index.html'));
-      response.writeHead(200, { 'content-type': types[path.extname(p)] ?? 'text/html' }).end(body);
-    } catch {
-      response.writeHead(404).end();
-    }
-  });
-  s.listen(0, '127.0.0.1', () => resolve(s));
-});
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(path.join(app, 'dist', 'browser'), { spa: true, base: null }); // BASE ignoré : ce harnais sert l'application qu'il vient de construire
+const { base } = server;
 const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
 const wanted = process.argv.slice(2);
 let failures = 0;
@@ -68,7 +56,9 @@ const settled = (page) => page.waitForFunction(() => document.querySelectorAll('
 async function observe(page, action) {
   await page.evaluate(() => { window.__seen = []; const tick = () => { for (const a of document.getAnimations()) { const t = a.effect?.target; if (!t || t.closest?.('[inert]') || !t.closest?.('main')) continue; const k = a.effect.getKeyframes()[0]; window.__seen.push({ transform: `${k.translate ?? ''} ${k.transform ?? ''}`, props: Object.keys(k).join() }); } if (window.__watch) requestAnimationFrame(tick); }; window.__watch = true; tick(); });
   await action();
-  await page.waitForTimeout(120);
+  // Navigation finie : deux images (le routeur et le rendu ont tourné, le relevé a vu démarrer ce qui démarre), puis plus d'animation finie en cours.
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.waitForFunction(() => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending)), null, { timeout: 6000 });
   const seen = await page.evaluate(() => { window.__watch = false; return window.__seen; });
   if (seen.length === 0) return 'none';
   const shifted = seen.map((s) => parseFloat((s.transform.match(/-?\d+(\.\d+)?/) ?? [])[0])).filter((n) => Number.isFinite(n) && n !== 0);
