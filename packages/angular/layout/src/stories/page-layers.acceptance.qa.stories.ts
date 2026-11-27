@@ -3,6 +3,7 @@ import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vit
 import { StoryMotionNoticeComponent } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcActivityFeedComponent, LcActivityItemComponent, LcDescriptionListComponent, LcKpiCardComponent } from '@lionelcointot/ui-angular/data';
+import { LcProgressBarComponent } from '@lionelcointot/ui-angular/feedback';
 import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcPageComponent } from '@lionelcointot/ui-angular/layout';
 
 /**
@@ -15,7 +16,7 @@ import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcPageComponen
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LcPageComponent, LcGridComponent, LcKpiCardComponent, LcCardComponent, LcCardHeaderComponent, LcActivityFeedComponent, LcActivityItemComponent,
-    LcDescriptionListComponent, LcButtonComponent, StoryMotionNoticeComponent,
+    LcDescriptionListComponent, LcButtonComponent, StoryMotionNoticeComponent, LcProgressBarComponent,
   ],
   template: `
     <lc-story-motion-notice />
@@ -48,6 +49,9 @@ import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcPageComponen
           <lc-card>
             <lc-card-header title="Résumé" />
             <lc-description-list id="summary" [items]="summary" />
+            <div id="gauges" style="display:grid;gap:var(--lc-sys-space-2)">
+              <lc-progress-bar [value]="80" label="Budget" /><lc-progress-bar [value]="60" label="Délai" /><lc-progress-bar [value]="40" label="Qualité" />
+            </div>
           </lc-card>
         </lc-grid>
       </lc-page>
@@ -79,3 +83,14 @@ type Story = StoryObj;
 
 /** Page complète : KPI, grille de cartes, fil d'activité et liste de définitions. */
 export const FullPage: Story = { render: () => ({ template: '<lc-qa-page-layers />' }) };
+
+/** Deux grilles faites à la main (`div` voisines, sans `lc-grid`) : chacune repart du rang 0 (CA-40, cartes). */
+export const HandmadeGrids: Story = {
+  decorators: [moduleMetadata({ imports: [LcPageComponent, LcCardComponent] })],
+  render: () => ({
+    template: `<lc-page title="Grilles">
+      <div id="g1" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"><lc-card>A1</lc-card><lc-card>A2</lc-card><lc-card>A3</lc-card></div>
+      <div id="g2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px"><lc-card>B1</lc-card><lc-card>B2</lc-card><lc-card>B3</lc-card></div>
+    </lc-page>`,
+  }),
+};

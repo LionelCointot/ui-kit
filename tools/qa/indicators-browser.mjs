@@ -236,7 +236,7 @@ await run('bloc 3', async () => {
       for (const a of list) byRow.set(a.text, Math.min(byRow.get(a.text) ?? Infinity, a.delay));
       const delays = [...byRow.values()].sort((x, y) => x - y);
       check(delays.length === 3 && delays.every((d, i) => near(d, i * 40)), `D-21 ${label} : trois lignes en cascade, décalage 40 ms (0, 40, 80)`, JSON.stringify([...byRow]));
-      check(list.length > 0 && list.every((a) => near(a.duration, 450) && sameCurve(a.easing, EASE.soft)), `D-21 ${label} : 450 ms, courbe « soft »`, JSON.stringify(list.slice(0, 2)));
+      check(list.length > 0 && list.every((a) => near(a.duration, 550) && sameCurve(a.easing, EASE.out)), `D-21 ${label} : 550 ms, courbe « out » (lcReveal, spec 2026-12-mouvement-v2 §13 « Alignement sur le code du site Talmo »)`, JSON.stringify(list.slice(0, 2)));
     };
     await page.evaluate(() => window.__t8.frames(30));
     check((await since(page, 0, 'lc-tabs')).length === 0 && (await events(page, 'lc-tabs')) === 0, 'D-21 premier affichage du panneau ouvert : aucune animation', 'animation(s) au premier affichage');

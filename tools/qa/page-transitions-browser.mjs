@@ -297,7 +297,8 @@ const scenarios = {
       return () => cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     };
     const during = (page) => page.evaluate(() => ({ url: location.pathname, copy: document.querySelector('[inert] h1')?.textContent ?? null, inert: !!document.querySelector('[inert]') }));
-    const replayed = (page) => page.evaluate(() => document.getAnimations().some((a) => { const t = a.effect?.target; if (!t || t.closest?.('[inert]') || !t.closest?.('main')) return false; const k = a.effect.getKeyframes()[0]; const n = parseFloat((`${k.translate ?? ''} ${k.transform ?? ''}`.match(/-?\d+(\.\d+)?/) ?? [])[0]); return Math.abs(n) >= 25; }));
+    // Rejouée = une animation d'entrée de la page entrante (premier keyframe à +26 px ou 100 %, spec 2026-12-mouvement-v2 §5.4.3) ; l'animation de relâchement part du décalage du doigt et n'en fait pas partie.
+    const replayed = (page) => page.evaluate(() => document.getAnimations().some((a) => { const t = a.effect?.target; if (!t || t.closest?.('[inert]') || !t.closest?.('main')) return false; const k = a.effect.getKeyframes()[0]; return /^(26px|100%)(\s|$)/.test(`${k.translate ?? ''}`.trim()) || /translate(?:X|3d)?\(\s*(26px|100%)/.test(`${k.transform ?? ''}`); }));
     for (const [label, points, engaged] of [
       ['20 % lent : la page revient, sans navigation', [[5, 0], [30, 80], [55, 80], [77, 80]], false],
       ['70 % lent : navigation vers la page précédente', [[5, 0], [80, 80], [160, 80], [255, 80]], true],
