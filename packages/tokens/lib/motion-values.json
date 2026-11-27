@@ -41,6 +41,7 @@
   { "demo": "d05", "valeur": "10px", "token": "--lc-topbar-enter-offset" },
   { "demo": "d05", "valeur": "500ms", "token": "--lc-topbar-enter-duration" },
   { "demo": "d05", "valeur": "30ms", "token": "--lc-topbar-enter-stagger" },
+  { "demo": "d05", "valeur": "80ms", "token": "--lc-topbar-enter-delay" },
 
   { "demo": "d01", "valeur": "115%", "token": "--lc-title-letter-offset" },
   { "demo": "d01", "valeur": "850ms", "token": "--lc-title-letter-duration" },

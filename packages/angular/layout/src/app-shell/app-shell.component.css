@@ -45,6 +45,25 @@
   min-width: 0;
 }
 
+/* Entrée au premier rendu : la classe est retirée à la fin de la fenêtre (animation témoin), donc jamais rejouée ; les éléments projetés suivent le rang de leur position. */
+@media (prefers-reduced-motion: no-preference) {
+  .lc-shell__header--entering {
+    animation: lc-page-entering calc(var(--lc-topbar-enter-delay) + var(--lc-topbar-enter-duration) + var(--lc-sys-motion-stagger-cap) * var(--lc-topbar-enter-stagger));
+  }
+
+  .lc-shell__header--entering > button,
+  .lc-shell__header--entering .lc-shell__header-content > * {
+    animation: lc-topbar-enter var(--lc-topbar-enter-duration) var(--lc-sys-easing-out) backwards;
+    animation-delay: calc(var(--lc-topbar-enter-delay) + min(var(--lc-topbar-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-topbar-enter-stagger));
+  }
+
+  .lc-shell__header-content > :nth-child(2) { --lc-topbar-rank: 1; }
+  .lc-shell__header-content > :nth-child(3) { --lc-topbar-rank: 2; }
+  .lc-shell__header-content > :nth-child(4) { --lc-topbar-rank: 3; }
+  .lc-shell__header-content > :nth-child(5) { --lc-topbar-rank: 4; }
+  .lc-shell__header-content > :nth-child(n + 6) { --lc-topbar-rank: 5; }
+}
+
 .lc-shell__body {
   position: relative;
   display: flex;

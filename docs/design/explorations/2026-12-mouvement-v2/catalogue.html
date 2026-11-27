@@ -92,7 +92,8 @@ html[data-theme="dark"]{
 body{--lc-m-time:1;--lc-m-dist:10px}
 /* Distances mesurées chez Talmo (départ en dessous, montée vers la position) : calendrier et jours Planner 8 px, lignes 10 px, cartes Tasks 12 px, colonnes Tasks 26 px. */
 body[data-dist="md"] #d06s,body[data-dist="md"] #d09s{--lc-m-dist:8px}
-#d05s{--st-reveal:30ms;--d-reveal:500ms}
+#d05s{--st-reveal:30ms;--d-reveal:500ms;--lc-m-dist:-10px}
+#d05s.is-entering [lcReveal]{animation-delay:calc(80ms * var(--lc-m-time) + var(--i,0) * var(--st-reveal) * var(--lc-m-time))}
 #d07s .kh{animation-duration:calc(600ms * var(--lc-m-time))}
 body[data-dist="md"] #d07s .kh{--lc-m-dist:26px}
 body[data-dist="md"] #d07s .kc{--lc-m-dist:12px}
@@ -922,7 +923,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             <span class="tb-ava" lcReveal aria-hidden="true"></span>
           </div>
         </div>
-        <p class="legend"><code>[lcReveal]</code> sur les blocs chrome, au chargement seulement · montée translateY +10 px (le logo : 18 px) → 0 + fondu, ≈ 330-450 ms <code>cubic-bezier(0.34,1,0.64,1)</code> · stagger ≈ 33 ms/élément (mesuré : début à 272, 305, 339, 372, 389, 422 ms après le chargement) · pas de ré-entrée à la navigation (mesuré) — distance ajustable via <code>--lc-m-dist</code></p>
+        <p class="legend">Barre du haut de <code>lc-app-shell</code>, au premier rendu seulement : marque, liens et outils descendent de y −10 px → 0 + fondu · 500 ms <code>cubic-bezier(0.215,0.61,0.355,1)</code> (power3.out, <code>--lc-sys-easing-out</code>) · départ à 80 ms, 30 ms entre éléments · jamais rejouée à la navigation · coupée sous mouvement réduit</p>
       </article>
 
       <article class="demo" id="d06" data-auto>
