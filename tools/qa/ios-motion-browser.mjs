@@ -239,20 +239,20 @@ async function sheet() {
     await page.close();
   });
 
-  // CA-24 « sur grand écran, carte inchangée » (CA-S8) : même carte qu'avant (largeur, coins, sans poignée, fond qui ferme), animée aux jetons de la feuille.
+  // CA-24 « sur grand écran, carte inchangée » (CA-S8) : même carte qu'avant (largeur, coins, sans poignée, fond qui ferme), mouvement actuel, durées des jetons --lc-slide-*.
   await withCtx('desk', async (c) => {
     const page = await open(c, SHEET_STORY);
-    const t = await page.evaluate(() => ({ w: Q.px('--lc-sheet-card-width'), mh: Q.px('--lc-sheet-card-max-height'), enter: Q.ms('--lc-sheet-enter-duration'), exit: Q.ms('--lc-sheet-exit-duration') }));
+    const t = await page.evaluate(() => ({ w: Q.px('--lc-sheet-card-width'), mh: Q.px('--lc-sheet-card-max-height'), enter: Q.ms('--lc-slide-enter-duration'), exit: Q.ms('--lc-slide-exit-duration') }));
     await page.click('#qa-open-sheet'); await page.waitForFunction((s) => document.querySelector(s).open, SD);
-    const e = await page.evaluate(async (s) => { const d = document.querySelector(s); await Q.raf(); const a = Q.anims(d).filter((x) => !x.pseudo); const en = Q.ms('--lc-sheet-enter-duration'); const r = [(x) => x.prop === 'opacity' || x.props?.includes('opacity'), (x) => /transform|translate/.test(x.prop ?? '') || x.props?.some((p) => /transform|translate/.test(p))].map((f) => a.some((x) => f(x) && Math.abs(x.t.duration - en) < 0.5)); await Q.settle(); return { r }; }, SD);
+    const e = await page.evaluate(async (s) => { const d = document.querySelector(s); await Q.raf(); const a = Q.anims(d).filter((x) => !x.pseudo); const en = Q.ms('--lc-slide-enter-duration'); const r = [(x) => x.prop === 'opacity' || x.props?.includes('opacity'), (x) => /transform|translate/.test(x.prop ?? '') || x.props?.some((p) => /transform|translate/.test(p))].map((f) => a.some((x) => f(x) && Math.abs(x.t.duration - en) < 0.5)); await Q.settle(); return { r }; }, SD);
     const g = await page.evaluate((s) => { const d = document.querySelector(s); const b = d.getBoundingClientRect(); const cs = getComputedStyle(d); const sc = [...d.querySelectorAll('*')].find((x) => /auto|scroll/.test(getComputedStyle(x).overflowY) && x.scrollHeight > x.clientHeight + 1); const hd = [...d.querySelectorAll('[aria-hidden="true"]')].some((x) => Math.abs(x.getBoundingClientRect().width - 36) < 1 && Math.abs(x.getBoundingClientRect().height - 5) < 1 && getComputedStyle(x).display !== 'none'); return { w: b.width, cx: b.x + b.width / 2, cy: b.y + b.height / 2, h: b.height, rad: ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(cs[`border${k}Radius`])), scrolls: !!sc, handle: hd, vw: innerWidth, vh: innerHeight }; }, SD);
     check('CA-S8/CA-24 carte : largeur --lc-sheet-card-width, quatre coins arrondis, sans poignée', near(g.w, t.w, 1) && g.rad.every((r) => r > 0) && !g.handle, JSON.stringify({ g, t }));
     check('CA-S8/CA-24 carte centrée à l’écran (± 1 px) en contenu long : hauteur ≤ --lc-sheet-card-max-height, le corps défile', near(g.cx, g.vw / 2, 1) && near(g.cy, g.vh / 2, 1) && g.h <= t.mh + 1 && g.scrolls, JSON.stringify({ g, mh: t.mh }));
-    check('CA-S8/CA-24 entrée de la carte en translation et fondu, durée --lc-sheet-enter-duration', e.r[0] && e.r[1], JSON.stringify(e));
+    check('CA-S8/CA-24 entrée de la carte en translation et fondu, durée --lc-slide-enter-duration', e.r[0] && e.r[1], JSON.stringify(e));
     await page.mouse.click(10, 10);
-    const s = await page.evaluate(async (x) => { await Q.raf(); const d = document.querySelector(x); const a = Q.anims(d).filter((y) => !y.pseudo); return { closing: d.hasAttribute('data-closing'), props: a.flatMap((y) => y.props ?? [y.prop]), durs: a.map((y) => y.t.duration), exit: Q.ms('--lc-sheet-exit-duration') }; }, SD);
+    const s = await page.evaluate(async (x) => { await Q.raf(); const d = document.querySelector(x); const a = Q.anims(d).filter((y) => !y.pseudo); return { closing: d.hasAttribute('data-closing'), props: a.flatMap((y) => y.props ?? [y.prop]), durs: a.map((y) => y.t.duration), exit: Q.ms('--lc-slide-exit-duration') }; }, SD);
     await page.waitForFunction((x) => !document.querySelector(x).open, SD, { timeout: 3000 }).catch(() => {}); await page.waitForTimeout(600);
-    check('CA-S8/CA-24 1 280 px : clic sur le fond ferme (sortie translation + fondu en --lc-sheet-exit-duration), closed émis une fois', s.closing && s.props.some((p) => /transform|translate/.test(p)) && s.props.includes('opacity') && s.durs.every((d) => near(d, s.exit, 0.5)) && !(await isOpen(page)) && (await closedCount(page)) === 1, JSON.stringify(s));
+    check('CA-S8/CA-24 1 280 px : clic sur le fond ferme (sortie translation + fondu en --lc-slide-exit-duration), closed émis une fois', s.closing && s.props.some((p) => /transform|translate/.test(p)) && s.props.includes('opacity') && s.durs.every((d) => near(d, s.exit, 0.5)) && !(await isOpen(page)) && (await closedCount(page)) === 1, JSON.stringify(s));
     await page.close();
   });
 
