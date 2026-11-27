@@ -28,10 +28,12 @@ class CountHostComponent {
   readonly fmt = (v: unknown) => `<${v}>`;
 }
 
-function render() {
+/** `created` : appelé entre la création et le premier rendu (le planificateur d'Angular 22 sans zone appelle rAF dès la création, hors directive). */
+function render(created?: () => void) {
   expect(exported['LcCountUpDirective'], 'LcCountUpDirective n\'est pas exportée par @lionelcointot/ui-angular').toBeDefined();
   TestBed.overrideComponent(CountHostComponent, { add: { imports: [exported['LcCountUpDirective']] } });
   const fixture = TestBed.createComponent(CountHostComponent);
+  created?.();
   fixture.detectChanges();
   const text = (id: string) => (fixture.nativeElement.querySelector(`#${id}`) as HTMLElement).textContent;
   return { fixture, text };
@@ -52,7 +54,7 @@ describe('CA-14 : rendu initial côté serveur', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('le texte final de chaque format est dans le premier rendu, sans rAF ni mesure', () => {
-    const { text } = render();
+    const { text } = render(() => vi.mocked(requestAnimationFrame).mockClear());
     expect(text('plain')).toBe(NUMBER(1200));
     expect(text('money')).toBe(intl(1850, { style: 'currency', currency: 'EUR' }));
     expect(text('int')).toBe(intl(1850, { minimumFractionDigits: 0, maximumFractionDigits: 0 }));

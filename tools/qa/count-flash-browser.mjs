@@ -240,8 +240,10 @@ await section('CA-38', async () => {
     const buttons = await page.getByRole('button', { name: 'Rejouer' }).count();
     check(buttons >= 1, `CA-38 ${id} porte un bouton « Rejouer »`, `${buttons}`);
     if (id.includes('count-up')) {
-      const rest = await page.locator('[data-sample]').first().textContent();
+      // Le premier comptage tourne en rAF (que `idle` n'attend pas) : le repos est le texte inchangé sur 5 images, lu après.
+      await page.waitForFunction(() => { const el = document.querySelector('[data-sample]'); const w = window.__restWatch ??= { t: el.textContent, n: 0 }; w.n = el.textContent === w.t ? w.n + 1 : 0; w.t = el.textContent; return w.n >= 5; }, null, { polling: 'raf', timeout: 5000 });
       await idle(page).catch(() => undefined);
+      const rest = await page.locator('[data-sample]').first().textContent();
       const run = await page.evaluate(() => window.__qa.sample(null, ['[data-sample]'], 0)); // texte au repos
       const clickRun = await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Rejouer')); const p = window.__qa.sample(null, ['[data-sample]'], 1600); b.click(); return p; });
       const texts = clickRun.map((r) => r.texts[0]).filter((t) => t !== null);
