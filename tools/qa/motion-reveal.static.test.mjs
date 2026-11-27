@@ -311,3 +311,19 @@ describe('T10a : barres en lcFill, toast, disclosure lisent leurs tokens (CA-25,
     assert.doesNotMatch(c, /--lc-collapse-duration/);
   });
 });
+
+describe('fidélité au site Talmo (d08, d25, d46)', () => {
+  test('d08 : les lignes de data-table gardent la courbe `out` après un filtre (aucune surcharge de --lc-reveal-curve)', () => {
+    assert.doesNotMatch(read(join(angular, 'data/src/data-table/data-table.component.css')), /--lc-reveal-curve/);
+  });
+  test('d25 : le contenu du tiroir lit les jetons drawer.content-* (y, durée, départ, rythme)', () => {
+    const css = read(join(angular, 'styles/motion.css'));
+    const rule = css.match(/\.lc-drawer__content \.lc-reveal \{([^}]*)\}/)?.[1] ?? '';
+    for (const name of ['offset', 'duration', 'delay', 'stagger']) assert.match(rule, new RegExp(`var\\(--lc-drawer-content-${name}\\)`));
+  });
+  test('d46 : l\'interrupteur n\'anime que la couleur de la piste et le glissement du bouton', () => {
+    const css = read(join(angular, 'forms/src/switch/switch.component.css'));
+    assert.equal((css.match(/transition:/g) ?? []).length, 3); // piste, bouton, mouvement réduit
+    assert.doesNotMatch(css, /border-color var/);
+  });
+});
