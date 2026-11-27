@@ -92,7 +92,7 @@ const leave = (page, button, gone) => page.evaluate(async ([button, gone]) => {
 const tokens = (page) => page.evaluate(() => {
   const { ms, num, px, flat } = window.__rv;
   const raw = (n) => flat(getComputedStyle(document.documentElement).getPropertyValue(n));
-  return { enter: ms('--lc-sys-duration-enter'), exit: ms('--lc-sys-duration-exit'), easeEntrance: raw('--lc-sys-easing-entrance'), easeExit: raw('--lc-sys-easing-exit'), easePop: raw('--lc-sys-easing-pop'),
+  return { enter: ms('--lc-reveal-duration'), tiltDur: ms('--lc-reveal-tilt-duration'), easeOut: raw('--lc-sys-easing-out'), exit: ms('--lc-sys-duration-exit'), easeEntrance: raw('--lc-sys-easing-entrance'), easeExit: raw('--lc-sys-easing-exit'), easePop: raw('--lc-sys-easing-pop'),
     offsets: { sm: px('--lc-sys-motion-offset-sm'), md: px('--lc-sys-motion-offset-md'), lg: px('--lc-sys-motion-offset-lg'), xl: px('--lc-sys-motion-offset-xl') },
     scaleEnter: num('--lc-sys-motion-scale-enter'), scalePop: num('--lc-sys-motion-scale-pop'), tilt: num('--lc-sys-motion-rotate-tilt'),
     pace: { fine: ms('--lc-sys-motion-stagger-fine'), normal: ms('--lc-sys-motion-stagger-normal'), cards: ms('--lc-sys-motion-stagger-cards') }, cap: num('--lc-sys-motion-stagger-cap') };
@@ -131,9 +131,10 @@ await section(1, async () => {
     if (r.missing) continue;
     check(r.count === 1 && r.kinds[0] === 'CSSAnimation:lc-reveal-in', `CA-7 ${id} n'a qu'une animation (lc-reveal-in), aucune CSSTransition`, JSON.stringify(r.kinds));
     check(r.className.split(' ').includes('lc-reveal'), `CA-8 ${id} porte la classe lc-reveal pendant l'entrée`, r.className);
-    check(near(r.duration, t.enter, 0.01), `CA-8 ${id} durée = --lc-sys-duration-enter (${t.enter} ms)`, String(r.duration));
-    const expected = id === 'v-pop' ? t.easePop : t.easeEntrance;
-    check(r.easings.includes(expected), `CA-8 ${id} courbe = ${id === 'v-pop' ? 'easing-pop' : 'easing-entrance'} (${expected})`, JSON.stringify(r.easings));
+    const tilt = id.startsWith('v-tilt'), overshoot = tilt || id === 'v-pop', dur = tilt ? t.tiltDur : t.enter;
+    check(near(r.duration, dur, 0.01), `CA-8 ${id} durée = ${tilt ? '--lc-reveal-tilt-duration' : '--lc-reveal-duration'} (${dur} ms)`, String(r.duration));
+    const expected = overshoot ? t.easePop : t.easeOut;
+    check(r.easings.includes(expected), `CA-8 ${id} courbe = ${overshoot ? 'easing-pop' : 'easing-out'} (${expected})`, JSON.stringify(r.easings));
     check(r.start.opacity === 0 && near(r.end.opacity, 1, 0.001) && near(r.end.dx, 0) && near(r.end.dy, 0) && near(r.end.scale, 1, 0.001) && near(r.end.rot, 0, 0.01), `CA-8 ${id} : opacité 0 → 1 et fin sans décalage, échelle ni rotation`, JSON.stringify({ start: r.start, end: r.end }));
   }
   const S = (id) => got[id].start ?? {};
@@ -285,7 +286,7 @@ await section(8, async () => {
     const starts = window.__ev.filter((e) => e[0] === 'animationstart').map((e) => e[1]);
     const ends = window.__ev.filter((e) => e[0] === 'animationend').map((e) => e[1]);
     const { ms, num } = window.__rv;
-    return { starts: starts.length, ends: ends.length, span: Math.max(...ends) - Math.min(...starts), bound: num('--lc-sys-motion-stagger-cap') * ms('--lc-sys-motion-stagger-normal') + ms('--lc-sys-duration-enter') + 50 };
+    return { starts: starts.length, ends: ends.length, span: Math.max(...ends) - Math.min(...starts), bound: num('--lc-sys-motion-stagger-cap') * ms('--lc-sys-motion-stagger-normal') + ms('--lc-reveal-duration') + 50 };
   });
   check(r.starts === 500 && r.ends === 500 && r.span <= r.bound, 'CA-11 500 éléments : dernier animationend − premier animationstart ≤ cap × décalage + durée + 50 ms', JSON.stringify(r));
   await context.close();

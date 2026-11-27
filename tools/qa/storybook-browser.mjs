@@ -672,7 +672,7 @@ const MOTION_INIT = () => {
       cascades: q.cardSnaps.length - r.cardSnapsBefore,
       snaps: q.cardSnaps.slice(r.cardSnapsBefore).map((s) => ({ t: s.t, rows: s.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) })),
       frames: r.frames, changedAt: r.changedAt, leavingSeen: r.leavingSeen,
-      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-sys-duration-enter'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
+      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-reveal-duration'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
     };
   };
 };
@@ -687,7 +687,7 @@ const popRef = (demo, target) => {
   return { opacity: { ms: opacity.duration, easing: opacity.easing }, move: { ms: move.duration, easing: move.easing }, ty, scale };
 };
 // Valeurs de la spec (§5.4.1) : `menu.*` pour le menu, la liste du combobox, les calendriers et le menu de filtre ; `popover.*` pour lc-toggletip.
-const MENU = { tokens: 'menu', enterMs: 350, exitMs: 140, scale: 0.94, ref: popRef('d28', 'div.menu-panel') };
+const MENU = { tokens: 'menu', enterMs: 400, exitMs: 150, scale: 0.92, ref: popRef('d28', 'div.menu-panel') };
 const POPOVER = { tokens: 'popover', enterMs: 450, exitMs: 150, scale: 0.95, ref: popRef('d39', 'div#d39pop'), revive: false };
 const PANELS = {
   menu: { ...MENU, pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'Enter' },
@@ -1087,7 +1087,7 @@ const closePanels = async (page) => {
   }
 };
 /** Liste de lc-data-table (spec mouvement-v2, T7) : CA-26 sur de vraies actions ; cartes à 360 px, lignes à 1 280 px.
- *  Attendus tirés de la spec (§5.4.2) et des démos d07, d08, d33, d36 du catalogue, pas du code : filtre (et retrait du filtre) = liste vidée, puis cascade après 200 ms (40 ms par rang, 450 ms, 8 rangs au plus) ;
+ *  Attendus tirés de la spec (§5.4.2) et des démos d07, d08, d33, d36 du catalogue, pas du code : filtre (et retrait du filtre) = liste vidée, puis cascade après 200 ms (40 ms par rang, 550 ms, 8 rangs au plus) ;
  *  tri = glissement de 420 ms `draw` des lignes qui changent de place, rien d'autre ; suppression = sortie `lc-leave` (token d'exit, sans fondu propre), puis glissement des voisines (420 ms `draw`). */
 async function motionList(context, base, reduced, tag, phone, check) {
   const ID = 'qa-motion-data-table--table';
@@ -1136,7 +1136,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
     }
   };
 
-  /** Filtre : liste vidée d'un coup (rien ne sort), puis cascade des lignes affichées après `refill` (200 ms, d08), 40 ms par rang, 450 ms, rang plafonné à 8. */
+  /** Filtre : liste vidée d'un coup (rien ne sort), puis cascade des lignes affichées après `refill` (200 ms, d08), 40 ms par rang, 550 ms, rang plafonné à 8. */
   const refill = (r, label, expectCount) => {
     if (reduced) {
       check(r.anims.length === 0, `CA-23 ${tag} ${label} aucune animation de ligne en réduction`, `animations=${JSON.stringify(r.anims.map((a) => [a.key, a.kind, a.props.join('+')]))}`);
@@ -1147,14 +1147,14 @@ async function motionList(context, base, reduced, tag, phone, check) {
     check(r.changedAt !== null && !r.leavingSeen && !r.anims.some((a) => a.leaving || a.name === 'lc-leave' || (a.props.includes('opacity') && String(a.last.opacity) === '0' && a.kind === 'waapi')), `CA-26 ${tag} ${label} rien ne sort : aucune ligne retirée n'est animée en sortie`, `changement vu=${r.changedAt !== null}, sortie vue=${r.leavingSeen}`);
     const during = r.frames.filter((f) => r.changedAt !== null && f.t >= r.changedAt + 40 && f.t <= r.changedAt + r.refill - 40);
     check(during.length >= 3 && during.every((f) => f.visible === 0), `CA-26 ${tag} ${label} liste vidée : aucune ligne visible pendant le délai de ${r.refill} ms`, `images=${during.length}, lignes visibles=${during.map((f) => f.visible)}`);
-    check(near(r.refill, 200) && near(r.stagger, 40) && near(r.reveal, 450), `CA-26 ${tag} ${label} tokens : délai 200 ms, rang 40 ms, entrée 450 ms`, `refill=${r.refill} stagger=${r.stagger} reveal=${r.reveal}`);
+    check(near(r.refill, 200) && near(r.stagger, 40) && near(r.reveal, 550), `CA-26 ${tag} ${label} tokens : délai 200 ms, rang 40 ms, entrée 550 ms`, `refill=${r.refill} stagger=${r.stagger} reveal=${r.reveal}`);
     // Cascade lue dans l'instantané pris à l'insertion des lignes (les entrées sont terminées aussitôt) : celui qui compte le plus de lignes animées.
     const snap = [...r.snaps].sort((x, y) => y.rows.filter((c) => c.reveal).length - x.rows.filter((c) => c.reveal).length)[0];
     const rows = snap?.rows ?? [];
     const first = snap ? snap.t + rows[0]?.delay : NaN;
     // Rangs 0 à 7 : une entrée chacun (délai = rang × 40 ms) ; au-delà (cascade plafonnée, comme les cartes de CA-12) : pas d'entrée obligatoire, mais jamais après le plafond.
     const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !sameEase(c.easing, r.entrance) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
-    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 450 ms entrance (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
+    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 550 ms entrance (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
     check(!!snap && first - r.changedAt >= r.refill - 40 && first - r.changedAt <= r.refill + 60, `CA-26 ${tag} ${label} la première ligne entre ${r.refill} ms après le changement (à une image près)`, `écart=${(first - r.changedAt).toFixed(1)} ms`);
     check(!waapiOf(r).some((a) => a.props.includes('transform')), `CA-26 ${tag} ${label} aucune glissade de ligne (la liste est reconstruite)`, `glissades=${waapiOf(r).filter((a) => a.props.includes('transform')).map((a) => a.key)}`);
   };
@@ -1281,12 +1281,12 @@ async function motion(browser, base) {
       // lc-data-table (T6) : téléphone seulement ici ; le menu de filtre est dans la boucle des panneaux.
       if (width === 360 && name !== 'forced') await motionPhone(context, base, reduced, tag, check);
       if (width === 1280 && name === 'normal') {
-        // Spec v2 §5.4.1 (d07 relevé à 1280 px) : cascade à l'ouverture aussi sur ordinateur, 450 ms `soft`, 40 ms par rang, 8 px.
+        // Spec v2 §5.4.1 (d07 relevé à 1280 px) : cascade à l'ouverture aussi sur ordinateur, 550 ms `out`, 40 ms par rang, 8 px.
         const { page } = await motionPage(context, base, 'qa-motion-data-table--table');
         await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1, undefined, { timeout: 5000 }).catch(() => {});
-        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], soft: window.__qa.easing('--lc-sys-easing-soft'), reveal: window.__qa.tokenMs('--lc-sys-duration-enter') }));
+        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], out: window.__qa.easing('--lc-sys-easing-out'), reveal: window.__qa.tokenMs('--lc-reveal-duration') }));
         const rows8 = open.snap.slice(0, 8);
-        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 450) && near(open.reveal, 450) && sameEase(c.easing, open.soft) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 450 ms soft, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
+        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 550) && near(open.reveal, 550) && sameEase(c.easing, open.out) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 550 ms out, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
         await page.close();
       }
 
@@ -1306,7 +1306,7 @@ async function motion(browser, base) {
             const timing = a?.effect.getComputedTiming();
             return { i: Number(el.dataset.i), delay: timing?.delay ?? null, duration: timing?.duration ?? null, cssDelay: getComputedStyle(el).animationDelay, cssDuration: getComputedStyle(el).animationDuration };
           });
-          return { rows, stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), enter: q.tokenMs('--lc-sys-duration-enter'), cap: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-sys-motion-stagger-cap')) };
+          return { rows, stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), enter: q.tokenMs('--lc-reveal-duration'), cap: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-sys-motion-stagger-cap')) };
         });
         if (reduced) {
           await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));

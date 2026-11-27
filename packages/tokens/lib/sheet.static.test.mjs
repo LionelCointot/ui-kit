@@ -32,7 +32,7 @@ test('CA-S0 : lc-data-table n’a plus de <dialog> propre et utilise lc-sheet', 
 
 test('CA-R2 / spec 5.2 : jetons de composant du mouvement iOS', () => {
   const tk = JSON.parse(readFileSync(path.resolve(PACKAGE_ROOT, 'src/components/motion.tokens.json'), 'utf8'));
-  const refs = { 'collapse.duration': '{sys.duration.move}', 'slide.enter-duration': '{sys.duration.move}', 'slide.exit-duration': '{sys.duration.normal}', 'sheet.top-gap': '{sys.space.10}', 'sheet.radius': '{sys.radius.lg}', 'dialog.enter-scale': '0.91', 'shell.nav-duration': '350ms' };
+  const refs = { 'collapse.duration': '{sys.duration.move}', 'slide.enter-duration': '{sys.duration.move}', 'slide.exit-duration': '{sys.duration.normal}', 'sheet.top-gap': '{sys.space.10}', 'sheet.radius': '{sys.radius.lg}', 'dialog.enter-scale': '0.86', 'shell.nav-duration': '350ms' };
   for (const [k, v] of Object.entries(refs)) assert.equal(k.split('.').reduce((o, p) => o?.[p], tk)?.$value, v, k);
   for (const k of ['sheet.card-width', 'sheet.card-max-height']) assert.ok(k.split('.').reduce((o, p) => o?.[p], tk)?.$value, k);
 });

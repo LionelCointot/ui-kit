@@ -180,7 +180,11 @@
         "$type": "duration"
       },
       "draw": {
-        "$value": "900ms",
+        "$value": "1100ms",
+        "$type": "duration"
+      },
+      "fill": {
+        "$value": "950ms",
         "$type": "duration"
       }
     },

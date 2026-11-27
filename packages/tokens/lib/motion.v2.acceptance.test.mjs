@@ -18,7 +18,7 @@ const EASINGS = {
   pop: [0.34, 1.7, 0.64, 1], 'pop-strong': [0.34, 2, 0.64, 1], title: [0.22, 1, 0.36, 1], draw: [0.455, 0.03, 0.515, 0.955],
   inout: [0.645, 0.045, 0.355, 1], exit: [0.42, 0, 1, 1], stack: [0.32, 0.72, 0, 1],
 };
-const DURATIONS = { fast: 150, exit: 200, normal: 250, slow: 350, enter: 450, move: 500, long: 600, view: 700, title: 850, draw: 900 };
+const DURATIONS = { fast: 150, exit: 200, normal: 250, slow: 350, enter: 450, move: 500, long: 600, view: 700, title: 850, draw: 1100, fill: 950 };
 const OTHERS = {
   'motion-offset-sm': '8px', 'motion-offset-md': '16px', 'motion-offset-lg': '26px', 'motion-offset-xl': '40px',
   'motion-stagger-fine': '12ms', 'motion-stagger-normal': '40ms', 'motion-stagger-cards': '67ms', 'motion-stagger-chars': '22ms',
@@ -74,22 +74,24 @@ const GROUPS = {
   'nav-item': ['380ms', E('title'), '400ms', E('inout'), '80ms'],
   'segmented-control': ['300ms', E('out'), '410ms', E('inout'), '75ms'],
   page: ['190ms', '16px', '700ms', '26px', '500ms', '30%', '0.12'],
-  dialog: ['0.91', '500ms', '150ms'],
-  drawer: ['550ms', '300ms', '200ms'],
-  sheet: ['600ms', '300ms', '500ms', '24px', '92dvh'],
+  dialog: ['0.86', '500ms', '200ms', '0.94'],
+  drawer: ['600ms', '320ms', '200ms'],
+  sheet: ['550ms', '300ms', '500ms', '24px', '92dvh'],
   popover: ['450ms', '0.95', '-3.7px', '150ms'],
-  menu: ['350ms', '0.94', '140ms'],
-  toast: ['500ms', '28px', '0.95', '250ms'],
+  menu: ['400ms', '0.92', '150ms', '-6px'],
+  toast: ['500ms', '30px', '0.94', '250ms'],
   switch: ['465ms'],
   steps: ['800ms', '117ms'],
+  'count-up': ['1200ms'],
   flash: ['950ms'],
-  title: ['115%', '550ms', E('inout'), '390ms'],
+  title: ['115%', '700ms', E('inout'), '320ms'],
   live: ['2000ms', '0.1', '0.45'],
   lift: ['-4px', '350ms', E('out')],
   calendar: ['18px', '450ms', '30ms'],
   list: ['420ms', E('draw')],
-  chart: ['1000ms', '480ms', '20ms'],
-  topbar: ['10px', '450ms', '33ms'],
+  chart: ['1300ms', '700ms', '20ms'],
+  topbar: ['10px', '500ms', '30ms'],
+  reveal: ['550ms', E('out'), '850ms'],
   disclosure: ['300ms', '100ms', '-5px'],
 };
 const matches = (value, expected) => sameValue(value, expected) || (/^\d+%$/.test(expected) && sameValue(value, String(parseFloat(expected) / 100)));

@@ -161,9 +161,9 @@ await section(3, async () => {
   checkLetters('lc-page', got, [...'Projets']);
   const l = got.lineRow, t = got.tokens;
   check(!!l && l.hidden === 'true', 'T6 trait : élément .lc-page__line aria-hidden avec animation finie', JSON.stringify(l));
-  check(!!l && near(l.duration, 550, 0.5), 'T6 trait : 550 ms (spec §5.4.1)', `${l?.duration}`);
+  check(!!l && near(l.duration, 700, 0.5), 'T6 trait : 700 ms (Talmo)', `${l?.duration}`);
   check(!!l && l.easing === t.lineEasing, 'T6 trait : courbe inout (sys.easing.inout)', `${l?.easing} attendu ${t.lineEasing}`);
-  check(!!l && near(l.delay - got.rows[0].delay, 390, 0.5), 'T6 trait : démarre 390 ms après la première lettre', `${l?.delay} - ${got.rows[0]?.delay}`);
+  check(!!l && near(l.delay - got.rows[0].delay, 320, 0.5), 'T6 trait : démarre 320 ms après la première lettre', `${l?.delay} - ${got.rows[0]?.delay}`);
   check(!!l && near(l.sx, 0, 0.001) && /^0(px|%)?\b/.test(l.origin), 'T6 trait : de scaleX 0 depuis la gauche', `sx=${l?.sx} origine=${l?.origin}`);
   check(!!l && l.props.every((p) => ['scale', 'transform'].includes(p)), 'CA-5 trait : scale / transform seulement', JSON.stringify(l?.props));
   await context.close();

@@ -5,7 +5,7 @@
 //   fill-draw  : `#fill-static` (lcFill 0.7) et `#draw-static` (path, lcDraw 0.7) au chargement ; bouton `#show` monte `#fill-x`, `#fill-y` (axe y), `#draw-path`, `#draw-circle`, `#draw-line`, `#draw-polyline` ;
 //                boutons `#low` (valeur 0.3) et `#zero` (valeur 0) changent la valeur des éléments montés (départ : 0.7)
 //   pulse-lift : `#pulse` (.lc-pulse) et `#lift` (.lc-lift)
-// Contrat de durée et de courbe (choix de QA, la spec dit « avec les tokens ») : lcFill = --lc-sys-duration-draw + --lc-sys-easing-fill ; lcDraw = --lc-sys-duration-draw + --lc-sys-easing-draw ;
+// Contrat de durée et de courbe (choix de QA, la spec dit « avec les tokens ») : lcFill = --lc-sys-duration-fill + --lc-sys-easing-fill ; lcDraw = --lc-sys-duration-draw + --lc-sys-easing-draw ;
 // .lc-pulse = --lc-live-* ; .lc-lift = --lc-lift-* (la transition porte sur `transform`, ADR 0011).
 // Stories d'animation attendues dans l'index (CA-38) : layout-fill--animation, layout-draw--animation, layout-pulse-lift--animation, chacune avec au moins un bouton « Rejouer ».
 import { readFile } from 'node:fs/promises';
@@ -90,7 +90,7 @@ const observe = (page, button, ids) => page.evaluate(async ([button, ids, keyOf,
 // ---------- CA-12, CA-13 : rendu initial, apparition, changement de valeur ----------
 await section(1, async () => {
   const { page, context } = await open(story('fill-draw'), { wait: '#fill-static' });
-  const tok = await page.evaluate(() => { const q = window.__q; return { draw: q.ms('--lc-sys-duration-draw'), fill: q.flat(q.raw('--lc-sys-easing-fill')), curve: q.flat(q.raw('--lc-sys-easing-draw')) }; });
+  const tok = await page.evaluate(() => { const q = window.__q; return { draw: q.ms('--lc-sys-duration-draw'), fillMs: q.ms('--lc-sys-duration-fill'), fill: q.flat(q.raw('--lc-sys-easing-fill')), curve: q.flat(q.raw('--lc-sys-easing-draw')) }; });
   await idle(page);
   const st = await page.evaluate(() => {
     const f = document.getElementById('fill-static'), d = document.getElementById('draw-static');
@@ -109,7 +109,8 @@ await section(1, async () => {
     check(!r.missing, `CA-12/13 ${id} : animation (${KEY(id)}) à l'apparition`, 'aucune animation de ' + KEY(id));
     if (r.missing) continue;
     const curve = id.startsWith('fill') ? tok.fill : tok.curve;
-    check(near(r.duration, tok.draw, 0.01), `CA-12/13 ${id} apparition : durée = --lc-sys-duration-draw (${tok.draw} ms)`, String(r.duration));
+    const dur = id.startsWith('fill') ? tok.fillMs : tok.draw;
+    check(near(r.duration, dur, 0.01), `CA-12/13 ${id} apparition : durée = ${id.startsWith('fill') ? '--lc-sys-duration-fill' : '--lc-sys-duration-draw'} (${dur} ms)`, String(r.duration));
     check(r.easings.includes(curve), `CA-12/13 ${id} apparition : courbe = ${id.startsWith('fill') ? 'easing-fill' : 'easing-draw'} (${curve})`, JSON.stringify(r.easings));
     const from = progress(id, r.start), to = progress(id, r.last);
     if (id.startsWith('fill')) check(near(from, 0) && near(to, 0.7, 0.02), `CA-12 ${id} apparition : de 0 à 0.7`, `${r.start} → ${r.last}`);
@@ -130,7 +131,7 @@ await section(1, async () => {
     check(!r.missing, `CA-12/13 ${id} : animation au changement de valeur`, 'aucune animation de ' + KEY(id));
     if (r.missing) continue;
     const curve = id.startsWith('fill') ? tok.fill : tok.curve;
-    check(near(r.duration, tok.draw, 0.01) && r.easings.includes(curve), `CA-12/13 ${id} changement : durée et courbe = tokens`, `${r.duration} ${JSON.stringify(r.easings)}`);
+    check(near(r.duration, id.startsWith('fill') ? tok.fillMs : tok.draw, 0.01) && r.easings.includes(curve), `CA-12/13 ${id} changement : durée et courbe = tokens`, `${r.duration} ${JSON.stringify(r.easings)}`);
     const [a, b] = id.startsWith('fill') ? [0.7, 0.3] : [0.3, 0.7];
     check(near(progress(id, r.start), a) && near(progress(id, r.last), b, 0.02), `CA-12/13 ${id} changement 0.7 → 0.3 : de ${a} à ${b}`, `${r.start} → ${r.last}`);
   }

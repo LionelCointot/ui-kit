@@ -26,7 +26,7 @@ function curveOf(css: string): (t: number) => number {
  * Écrit `lcCountUp` dans le texte de l'élément, formaté par `LcFormatService` comme `lc-data-table` (`number` : 2 décimales).
  * Le texte final est dans le premier rendu (serveur compris) ; à la première apparition côté navigateur il compte de 0 à la valeur,
  * jamais à l'hydratation d'un texte déjà affiché ; à chaque changement il compte de la valeur affichée à la nouvelle, sans repasser par 0.
- * Durée `--lc-sys-duration-draw`, courbe `--lc-sys-easing-out`. Sous mouvement réduit, la valeur finale est immédiate.
+ * Durée `--lc-count-up-duration`, courbe `--lc-sys-easing-out`. Sous mouvement réduit, la valeur finale est immédiate.
  * Aucun attribut ARIA n'est posé : les valeurs intermédiaires ne sont pas annoncées (le consommateur gère son éventuelle région `aria-live`).
  */
 @Directive({ selector: '[lcCountUp]' })
@@ -59,7 +59,7 @@ export class LcCountUpDirective implements OnChanges {
       this.element.textContent = this.formatter.format(value, format);
     };
     if (!this.browser || !this.window || from === target || lcPrefersReducedMotion()) return write(target);
-    const { duration, easing } = lcReadMotion(this.element, 'draw', 'out');
+    const { duration, easing } = lcReadMotion(this.element, '--lc-count-up-duration', 'out');
     if (duration <= 0) return write(target);
     const curve = curveOf(easing);
     const start = performance.now();

@@ -404,6 +404,10 @@
       "draw": {
         "$value": "{ref.duration.draw}",
         "$type": "duration"
+      },
+      "fill": {
+        "$value": "{ref.duration.fill}",
+        "$type": "duration"
       }
     },
     "easing": {
