@@ -50,7 +50,7 @@ async function axeRun(browser, base, entries) {
     for (const theme of ['default', 'dark']) {
       if (theme === 'dark') { // même page : le sélecteur de thème de Storybook ne fait que poser ces deux attributs (.storybook/preview.ts)
         // Graphiques : ChartThemeService relit les tokens sur mutation de `data-theme` puis ECharts redessine ; état observable = le tracé (canvas ou svg) a changé puis ne bouge plus 5 images (5 s au plus : un graphique sans texte ni couleur de thème ne change pas).
-        const sig = () => [...document.querySelectorAll('lc-chart canvas, lc-chart svg')].map((e) => (e.tagName === 'CANVAS' ? e.toDataURL() : e.outerHTML)).join('|');
+        const sig = () => [...document.querySelectorAll('lc-chart-host canvas, lc-chart-host svg')].map((e) => (e.tagName === 'CANVAS' ? e.toDataURL() : e.outerHTML)).join('|');
         const hadChart = await page.evaluate(`(() => { window.__sigBefore = (${sig.toString()})(); return window.__sigBefore !== ''; })()`);
         await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); document.documentElement.style.colorScheme = 'dark'; });
         if (hadChart) {

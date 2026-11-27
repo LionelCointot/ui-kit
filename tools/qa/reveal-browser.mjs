@@ -8,7 +8,6 @@
 //              `#s-index-alone` (lcRevealIndex 3 sans lcStagger), bouton `#add` (13e élément de `#s-normal`)
 //   many     : `#many` (lcStagger) avec 500 `span[lcReveal]` rendus au chargement
 //   quiet    : `#quiet` (lcReveal, `animation: none`) : aucune animation ne tourne au premier rendu
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
