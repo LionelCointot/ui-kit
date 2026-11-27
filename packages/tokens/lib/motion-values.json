@@ -170,8 +170,9 @@
   { "demo": "d55", "valeur": "500ms", "token": "--lc-sheet-spring-duration" },
   { "demo": "d55", "valeur": "cubic-bezier(0.34, 1.56, 0.64, 1)", "token": "--lc-sheet-spring-easing" },
 
-  { "demo": "d57", "valeur": "750ms", "token": "--lc-tabbar-enter-duration" },
-  { "demo": "d57", "valeur": "265ms", "token": "--lc-tabbar-enter-delay" },
+  { "demo": "d57", "valeur": "700ms", "token": "--lc-tabbar-enter-duration" },
+  { "demo": "d57", "valeur": "200ms", "token": "--lc-tabbar-enter-delay" },
+  { "demo": "d57", "valeur": "cubic-bezier(0.16, 1, 0.3, 1)", "token": "--lc-tabbar-enter-easing" },
   { "demo": "d57", "valeur": "90px", "token": "--lc-tabbar-enter-offset" },
   { "demo": "d57", "valeur": "300ms", "token": "--lc-tabbar-indicator-front-duration" },
   { "demo": "d57", "valeur": "410ms", "token": "--lc-tabbar-indicator-back-duration" },

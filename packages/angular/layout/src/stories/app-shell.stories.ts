@@ -5,6 +5,7 @@ import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@st
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { StoryMotionNoticeComponent, fixedExample } from '@lc/storybook';
 import { LcAppShellComponent, LcPageComponent } from '@lionelcointot/ui-angular/layout';
+import { AppShellTabbarDemoComponent } from './app-shell-tabbar-demo.component';
 
 /**
  * Application frame: header, side navigation (a drawer on narrow screens) and main content.
@@ -161,12 +162,13 @@ export class AppComponent {}`;
  * "Rejouer" opens the request, then goes back to the list on the next press. Narrow the window to a phone width to see the stacking.
  * On a phone, a request (level 2) shows a back button `‹ Mes demandes` in the header (the `title` of its parent route; `Retour` without one) and the page title fades in after 80 px of scroll;
  * dragging from the left edge also goes back, the previous page showing under the finger. Give the parent routes a `title` for the back button.
+ * Below 768 px, a bottom tab bar also appears for the sections marked `primary` (at most 4, plus "Plus" which opens the drawer): it rises in, and its pill stretches toward the tapped tab.
  */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [
-    moduleMetadata({ imports: [AppShellStackDemoComponent, AppShellTitleDemoComponent, StoryMotionNoticeComponent] }),
+    moduleMetadata({ imports: [AppShellStackDemoComponent, AppShellTitleDemoComponent, AppShellTabbarDemoComponent, StoryMotionNoticeComponent] }),
     applicationConfig({ providers: [provideLocationMocks()] }),
   ],
-  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo /><lc-app-shell-title-demo />` }),
+  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo /><lc-app-shell-title-demo /><lc-app-shell-tabbar-demo />` }),
 };

@@ -69,7 +69,7 @@ test('CA-1 : --lc-sys-motion-offset, --lc-sys-motion-stagger et --lc-ref-motion-
 // Un nombre de pourcentage est accepté en pourcentage ou en fraction.
 const E = (role) => `cubic-bezier(${EASINGS[role].join(', ')})`;
 const GROUPS = {
-  tabbar: ['750ms', '265ms', '90px'],
+  tabbar: ['700ms', '200ms', '90px'],
   tabs: ['380ms', E('title'), '400ms', E('inout'), '80ms'],
   'nav-item': ['380ms', E('title'), '400ms', E('inout'), '80ms'],
   'segmented-control': ['300ms', E('out'), '410ms', E('inout'), '75ms'],
@@ -121,6 +121,15 @@ test('CA-1 : --lc-spinner-duration vaut 700ms ; --lc-skeleton-duration existe (1
   const skeleton = resolve(map, '--lc-skeleton-duration');
   assert.equal(toMs(skeleton.value), 1500);
   for (const t of [spinner, skeleton]) assert.ok(!t.chain.includes('--lc-sys-duration-slow'), 'doit être découplé de --lc-sys-duration-slow (350 ms)');
+});
+
+test('CA-36 : --lc-tabbar-enter-easing = expo.out du site (sys entrance), barre de 66px, pastille de rayon 16px', () => {
+  const map = tokenMap(css, 'default');
+  const easing = resolve(map, '--lc-tabbar-enter-easing');
+  assert.ok(matches(easing.value, E('entrance')), `--lc-tabbar-enter-easing = ${easing.value}`);
+  assert.ok(easing.chain.includes('--lc-sys-easing-entrance'), 'doit référencer le rôle sys entrance');
+  assert.equal(resolve(map, '--lc-tabbar-height').value, '66px');
+  assert.equal(resolve(map, '--lc-tabbar-indicator-radius').value, '16px');
 });
 
 test('CA-1 : --lc-shell-nav-duration garde sa valeur actuelle (350ms) malgré la revalorisation de duration-long', () => {

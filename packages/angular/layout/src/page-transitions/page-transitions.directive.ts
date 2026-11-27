@@ -4,13 +4,14 @@ import { ResolveEnd, Router } from '@angular/router';
 import { lcAnimate, lcPrefersReducedMotion, type LcMotionToken } from '@lionelcointot/ui-angular';
 import { PAGE_BACK_FLICK_WINDOW_MS, pageBackSettleMs, pageBackShouldEngage, pageBackTranslation, type LcPageSample } from './page-gesture';
 import { pathOf } from './page-nav.direction';
+import { LC_PHONE_QUERY } from '../phone-query';
 import { LcPageNav, type LcPageChange } from './page-nav.service';
 
 const COPY = 'data-lc-page-copy';
 const VEIL = 'data-lc-page-veil';
 /** Bande du bord gauche posée par `lc-app-shell` (< 768 px, niveau ≥ 2) : seul endroit où le geste de retour démarre. */
 const EDGE = 'data-lc-page-edge';
-const PHONE = '(max-width: 767.98px)';
+const PHONE = LC_PHONE_QUERY;
 
 /** `value` (« 16px », « 30% ») avec le signe `sign` ; 0 si le token est absent. */
 function signed(value: string, sign: number): string {

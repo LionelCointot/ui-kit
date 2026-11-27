@@ -15,6 +15,13 @@
   }
 }
 
+/* Barre d'onglets du bas (`lc-app-shell`) : entrée par le bas sur `translate` ; l'offset du token est positif, le départ est vers le bas. */
+@keyframes lc-tabbar-enter {
+  from {
+    translate: 0 var(--lc-tabbar-enter-offset);
+  }
+}
+
 @keyframes lc-leave {
   to {
     opacity: 0;
