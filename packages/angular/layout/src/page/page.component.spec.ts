@@ -30,4 +30,11 @@ describe('lc-page : entrée de page (couches de délai)', () => {
     expect(first.host.classList).not.toContain('lc-page--entering');
     expect(mount().host.classList).toContain('lc-page--entering');
   });
+
+  it('une animation d\'entrée annulée (page retirée du rendu, onglet masqué) retire aussi la classe', () => {
+    const { host, fixture } = mount();
+    host.dispatchEvent(Object.assign(new Event('animationcancel'), { animationName: 'lc-page-entering' }));
+    fixture.detectChanges();
+    expect(host.classList).not.toContain('lc-page--entering');
+  });
 });

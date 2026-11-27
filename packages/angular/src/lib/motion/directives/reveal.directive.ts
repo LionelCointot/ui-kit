@@ -6,19 +6,32 @@ export type LcRevealVariant = 'rise' | 'drop' | 'fade' | 'scale' | 'pop' | 'left
 
 /** Variante d'un composant dont l'hôte entre seul (`lc-card`, `lc-kpi-card`) quand `lcReveal` est vide. */
 const REVEAL_DEFAULT = new InjectionToken<LcRevealVariant>('LC_REVEAL_DEFAULT');
-/** Lot commun des cartes sans `lcStagger` au-dessus : elles prennent leur rang dans l'ordre de création du rendu, qui est l'ordre du DOM entre frères. */
-const SHARED_BATCH = new InjectionToken<LcStaggerBatch>('LC_REVEAL_SHARED_BATCH', { providedIn: 'root', factory: () => new LcStaggerBatch() });
+/** Lot dont l'hôte d'une carte prend son rang : celui du `lcStagger` ou de la grille au-dessus, sinon un lot par élément parent. */
+const REVEAL_BATCH = new InjectionToken<LcStaggerBatch>('LC_REVEAL_BATCH');
+/** Lots des cartes posées dans un conteneur sans `lcStagger` (grille faite main) : un par élément parent, donc une cascade par grille. */
+const SIBLING_BATCHES = new WeakMap<Element, LcStaggerBatch>();
 
 /**
- * Providers d'un composant dont l'hôte porte `LcRevealDirective` en `hostDirectives` : variante par défaut, et rang pris auprès du `lcStagger` le plus proche
- * (sinon d'un lot commun, pour une grille faite main). Une carte ajoutée seule plus tard repart du rang 0.
+ * Providers d'un composant dont l'hôte porte `LcRevealDirective` en `hostDirectives` : variante par défaut, rang d'après le `lcStagger` le plus proche
+ * (sinon d'après ses frères : une cascade par conteneur, dans l'ordre du DOM), et lot propre pour son contenu, qui ne décale donc pas les cartes voisines.
+ * Une carte ajoutée seule plus tard repart du rang 0.
  *
  * @internal Réservé aux points d'entrée du kit.
  */
 export function lcRevealHost(variant: LcRevealVariant): Provider[] {
   return [
     { provide: REVEAL_DEFAULT, useValue: variant },
-    { provide: LcStaggerBatch, useFactory: () => inject(LcStaggerBatch, { skipSelf: true, optional: true }) ?? inject(SHARED_BATCH) },
+    {
+      provide: REVEAL_BATCH,
+      useFactory: () => {
+        const above = inject(LcStaggerBatch, { skipSelf: true, optional: true });
+        // Élément parent de la déclaration : le parent DOM n'existe pas encore pour la racine d'un `@for`.
+        const parent = inject(ElementRef, { skipSelf: true, optional: true })?.nativeElement as Element | undefined;
+        if (above || !parent) return above ?? new LcStaggerBatch();
+        return SIBLING_BATCHES.get(parent) ?? SIBLING_BATCHES.set(parent, new LcStaggerBatch()).get(parent)!;
+      },
+    },
+    { provide: LcStaggerBatch, useFactory: () => new LcStaggerBatch() },
   ];
 }
 
@@ -45,7 +58,7 @@ export class LcRevealDirective {
 
   private readonly element = inject<ElementRef<Element>>(ElementRef).nativeElement;
   /** Rang d'arrivée auprès du `lcStagger` le plus proche (0 hors d'un `lcStagger`) ; le plafond est appliqué en CSS. */
-  private readonly arrival = inject(LcStaggerBatch, { optional: true })?.next(Infinity) ?? 0;
+  private readonly arrival = (inject(REVEAL_BATCH, { self: true, optional: true }) ?? inject(LcStaggerBatch, { optional: true }))?.next(Infinity) ?? 0;
   private readonly byDefault = inject(REVEAL_DEFAULT, { optional: true });
   private readonly playing = signal(true);
   private readonly active = computed(() => this.lcReveal() != null);

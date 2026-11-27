@@ -19,7 +19,7 @@ import { lcSpaceVar } from '../space';
   `,
   styleUrl: './card.component.css',
   providers: lcRevealHost('card'),
-  hostDirectives: [LcRevealDirective],
+  hostDirectives: [{ directive: LcRevealDirective, inputs: ['lcReveal', 'lcRevealIndex'] }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-card',

@@ -25,7 +25,7 @@ import { LcSplitTextDirective } from '@lionelcointot/ui-angular';
   imports: [LcSplitTextDirective],
   styleUrl: './page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-page', '[class.lc-page--entering]': 'entering()', '(animationend)': 'ended($event)' },
+  host: { class: 'lc-page', '[class.lc-page--entering]': 'entering()', '(animationend)': 'ended($event)', '(animationcancel)': 'ended($event)' },
 })
 export class LcPageComponent {
   readonly title = input.required<string>();

@@ -18,14 +18,15 @@ const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as
   selector: 'lc-kpi-card',
   imports: [LcIconComponent, LcSkeletonComponent, LcCountUpDirective, LcFlashDirective],
   providers: lcRevealHost('tilt'),
-  hostDirectives: [LcRevealDirective],
+  hostDirectives: [{ directive: LcRevealDirective, inputs: ['lcReveal', 'lcRevealIndex'] }],
   template: `
     <p class="lc-kpi-card__label">{{ label() }}</p>
     @if (loading()) {
       <lc-skeleton shape="text" width="60%" height="2rem" />
     } @else {
       @if (counted()) {
-        <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()" [lcCountUp]="value()!" [lcCountUpFormat]="format()" [lcFlash]="value()"></p>
+        <!-- Le comptage démarre au montage, sans délai de couche, comme sur le site : la carte, elle, entre à 100 ms + rang × rythme. -->
+        <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()" [lcCountUp]="value() ?? 0" [lcCountUpFormat]="format()" [lcFlash]="value()"></p>
       } @else {
         <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()">{{ displayText() }}</p>
       }

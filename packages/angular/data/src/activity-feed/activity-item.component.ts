@@ -26,7 +26,7 @@ import { LcIconComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
     </div>
   `,
   styleUrl: './activity-item.component.css',
-  hostDirectives: [LcRevealDirective],
+  hostDirectives: [{ directive: LcRevealDirective, inputs: ['lcReveal', 'lcRevealIndex'] }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'lc-activity-item' },
 })

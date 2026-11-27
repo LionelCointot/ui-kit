@@ -3,6 +3,7 @@
  * Toutes les valeurs viennent des tokens --lc-sys-* ; les directives posent classes et variables, le CSS anime.
  * Règle de propriété (ADR 0011) : apparition et sortie animent `opacity` et les propriétés individuelles
  * `translate` / `scale` / `rotate`, jamais `transform` (réservé au FLIP et au survol).
+ * Contrat de la cascade : un compteur (`--lc-reveal-rank`), deux rythmes (`--lc-stagger-pace` de l'ancêtre, puis `--lc-reveal-pace` de la variante), un décalage de couche (`--lc-layer`).
  */
 
 /* Entrée : état de départ décrit par les variables --lc-reveal-* (une variante les redéfinit) ; l'état final est le style de l'élément. */
@@ -226,7 +227,6 @@
 .lc-pulse {
   opacity: var(--lc-live-opacity-from);
   animation: lc-pulse var(--lc-live-duration) var(--lc-sys-easing-inout) infinite;
-  animation-delay: var(--lc-layer-dots, 0ms);
 }
 
 /* Soulèvement au survol : `transform` est la propriété du survol (ADR 0011), le survol exige un pointeur fin. */

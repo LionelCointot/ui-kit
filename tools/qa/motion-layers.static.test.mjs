@@ -50,3 +50,21 @@ describe('variante card (CA-40)', () => {
     assert.deepEqual([card['card-duration'].$value, card['card-scale'].$value, card['card-easing'].$value], ['800ms', '0.985', '{sys.easing.entrance}']);
   });
 });
+
+describe('lc-page et lcPageTransitions sur le même élément (CA-40)', () => {
+  test('la fenêtre d\'entrée n\'anime qu\'une variable : aucune propriété CSS visible en conflit', () => {
+    const rule = css.match(/@keyframes lc-page-entering\s*\{([^}]*\{[^}]*\})\s*\}/)[1];
+    assert.match(rule, /--lc-page-entering-tick/);
+    assert.doesNotMatch(rule, /\b(opacity|translate|scale|rotate|transform)\b/);
+  });
+
+  test('lcPageTransitions anime par WAAPI (lcAnimate) sans écrire la propriété `animation` de la page', () => {
+    const code = read('packages/angular/layout/src/page-transitions/page-transitions.directive.ts');
+    assert.match(code, /lcAnimate\(/);
+    assert.doesNotMatch(code, /setProperty\(\s*['"]animation|\.style\.animation|\[style\.animation\]/);
+  });
+
+  test('aucune feuille de composant ne pose `animation` sur l\'hôte de lc-page', () => {
+    assert.doesNotMatch(read('packages/angular/layout/src/page/page.component.css').replace(/\.lc-page__line\s*\{[^}]*\}/g, '').replace(/@media[^{]*\{[^}]*\{[^}]*\}\s*\}/g, ''), /animation\s*:/);
+  });
+});
