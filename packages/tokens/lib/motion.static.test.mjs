@@ -130,6 +130,7 @@ const WHITELIST = [
   { file: 'charts/src/builders/sparkline.builder.ts', motif: 'durée en TypeScript', contient: 'animationDuration', raison: 'durée ECharts, à lire dans les tokens chart.*', tache: 'T11' },
   { file: 'charts/src/components/chart.component.ts', motif: 'durée en TypeScript', contient: 'animationDuration', raison: 'durée ECharts, à lire dans les tokens chart.*', tache: 'T11' },
   { file: 'src/lib/motion/runtime/stagger.ts', motif: 'durée en TypeScript', contient: 'MAX_STAGGER_MS', raison: 'plafond du lot d\'arrivées du fil de messages (staggerDelay, déménagé au runtime par T7) : à exprimer en jeton si un second composant l\'emploie', tache: 'T7' },
+  { file: 'data/src/data-table/data-table.component.ts', motif: 'setTimeout', contient: 'this.holding.set(false)', raison: 'liste vidée pendant table.refill-delay : durée lue dans le jeton, minuteur de remplissage', tache: 'T7' },
   { file: 'feedback/src/toast/toast.service.ts', motif: 'setTimeout', contient: 'this.dismiss', raison: 'minuteur de fermeture du toast ; la sortie animée arrive avec toast.*', tache: 'T10' },
   // Temporisations et seuils fonctionnels : pas de mouvement.
   { file: 'feedback/src/toast/toast.service.ts', motif: 'durée en TypeScript', contient: 'DEFAULT_DURATION_MS', raison: 'durée de vie du toast (conservée par §5.2), pas une durée de mouvement', tache: 'permanent' },
