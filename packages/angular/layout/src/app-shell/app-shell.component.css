@@ -102,6 +102,17 @@
   outline: none;
 }
 
+/* Barre d'onglets du bas (téléphone) : « Plus » remplace le bouton de menu, et le contenu garde sa place au-dessus de la barre. */
+@media (max-width: 767.98px) {
+  :host(.lc-app-shell--tabbar) .lc-shell__menu {
+    display: none;
+  }
+
+  :host(.lc-app-shell--tabbar) .lc-shell__main {
+    padding-block-end: calc(var(--lc-tabbar-height, var(--lc-sys-space-16)) + var(--lc-sys-space-6) + env(safe-area-inset-bottom));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lc-shell__nav,
   .lc-shell__nav--drawer,

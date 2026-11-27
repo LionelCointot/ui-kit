@@ -1,0 +1,133 @@
+:host {
+  display: contents;
+}
+
+/* Téléphone seulement : masquée au-dessus par media query (aucun flash au rendu serveur). */
+.lc-tabbar {
+  --_front: var(--lc-tabbar-indicator-front-duration) var(--lc-tabbar-indicator-front-easing);
+  --_back: var(--lc-tabbar-indicator-back-duration) var(--lc-tabbar-indicator-back-easing) var(--lc-tabbar-indicator-back-delay);
+  --_indicator-radius: var(--lc-tabbar-pill-radius, var(--lc-sys-radius-md));
+
+  position: fixed;
+  inset-inline: var(--lc-sys-space-3);
+  inset-block-end: calc(var(--lc-sys-space-3) + env(safe-area-inset-bottom));
+  z-index: var(--lc-sys-z-sticky);
+  display: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  box-sizing: border-box;
+  block-size: var(--lc-tabbar-height, var(--lc-sys-space-16));
+  padding: var(--lc-sys-space-1);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-tabbar-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-tabbar-background, var(--lc-sys-color-surface));
+  box-shadow: var(--lc-sys-shadow-3);
+}
+
+@media (max-width: 767.98px) {
+  .lc-tabbar {
+    display: grid;
+    animation: lc-tabbar-enter var(--lc-tabbar-enter-duration) var(--lc-tabbar-enter-easing) var(--lc-tabbar-enter-delay) backwards;
+  }
+}
+
+.lc-tabbar__tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+  min-block-size: var(--lc-sys-control-height-lg);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lc-tabbar-color, var(--lc-sys-color-on-surface-muted));
+  font: inherit;
+  font-size: var(--lc-sys-font-size-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lc-tabbar__label {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lc-tabbar__tab[aria-current='page'],
+.lc-tabbar__tab--active {
+  color: var(--lc-tabbar-active-color, var(--lc-sys-color-on-primary));
+}
+
+.lc-tabbar__tab:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
+}
+
+/*
+ * Pastille à deux bords : la boîte va du bord de départ de la pastille au bord droit du dernier onglet (`left` et `width` posés par le composant), le bord de
+ * fin est rogné par `clip-path`. Le bord avant (vers les coordonnées croissantes) prend la durée « avant », l'autre la durée « arrière » décalée.
+ */
+.lc-tabbar__indicator {
+  position: absolute;
+  left: 0;
+  inset-block: var(--lc-sys-space-1);
+  border-radius: var(--_indicator-radius);
+  background: var(--lc-tabbar-active-background, var(--lc-sys-color-primary));
+  pointer-events: none;
+}
+
+.lc-tabbar__indicator--hidden {
+  opacity: 0;
+}
+
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator {
+  transition:
+    left var(--_back),
+    width var(--_back),
+    clip-path var(--_front);
+}
+
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator[data-direction='backward'] {
+  transition:
+    left var(--_front),
+    width var(--_front),
+    clip-path var(--_back);
+}
+
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator--instant,
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator--instant[data-direction='backward'] {
+  transition: none;
+}
+
+/* Mouvement réduit : la barre apparaît et la pastille saute, sans objet animation. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-tabbar {
+    animation: none;
+  }
+
+  :host(.lc-app-tabbar--ready) .lc-tabbar__indicator,
+  :host(.lc-app-tabbar--ready) .lc-tabbar__indicator[data-direction='backward'] {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-tabbar {
+    border-color: CanvasText;
+  }
+
+  .lc-tabbar__indicator {
+    display: none;
+  }
+
+  .lc-tabbar__tab[aria-current='page'],
+  .lc-tabbar__tab--active {
+    color: Highlight;
+    text-decoration: underline;
+  }
+}
