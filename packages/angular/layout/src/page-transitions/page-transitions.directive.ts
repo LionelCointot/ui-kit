@@ -11,7 +11,6 @@ const COPY = 'data-lc-page-copy';
 const VEIL = 'data-lc-page-veil';
 /** Bande du bord gauche posée par `lc-app-shell` (< 768 px, niveau ≥ 2) : seul endroit où le geste de retour démarre. */
 const EDGE = 'data-lc-page-edge';
-const PHONE = LC_PHONE_QUERY;
 
 /** `value` (« 16px », « 30% ») avec le signe `sign` ; 0 si le token est absent. */
 function signed(value: string, sign: number): string {
@@ -177,7 +176,7 @@ export class LcPageTransitionsDirective {
     const token = (name: string) => style.getPropertyValue(name).trim();
     const forward = change.direction !== 'back';
     const sign = forward ? 1 : -1;
-    const mode = change.direction === 'same' ? 'fade' : typeof matchMedia === 'function' && matchMedia(PHONE).matches ? 'stack' : 'slide';
+    const mode = change.direction === 'same' ? 'fade' : typeof matchMedia === 'function' && matchMedia(LC_PHONE_QUERY).matches ? 'stack' : 'slide';
     const pages = this.pages();
     const recede = signed(token('--lc-page-stack-recede'), -1);
     const dim = parseFloat(token('--lc-page-stack-dim')) || 0;
@@ -256,7 +255,7 @@ export class LcPageTransitionsDirective {
   /** Sans page parente titrée, le geste n'est pas armé : le bouton garde `Location.back()`. */
   protected onDown(event: PointerEvent): void {
     const edge = (event.target as Element).closest?.(`[${EDGE}]`);
-    if (!edge || this.drag || !this.nav.parent() || !event.isPrimary || event.pointerType === 'mouse' || !this.animates() || !matchMedia(PHONE).matches || this.blocked(event)) return;
+    if (!edge || this.drag || !this.nav.parent() || !event.isPrimary || event.pointerType === 'mouse' || !this.animates() || !matchMedia(LC_PHONE_QUERY).matches || this.blocked(event)) return;
     this.settle();
     const rect = this.host.getBoundingClientRect();
     const style = getComputedStyle(this.host);
