@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationStart, ResolveEnd, Router, type ActivatedRouteSnapshot } from '@angular/router';
 import { LcNavRegistry } from '@lionelcointot/ui-angular';
-import { LC_NAV_HISTORY_EMPTY, lcNavStep, lcPathLevel, type LcNavStepInput, type LcPageDirection } from './page-nav.direction';
+import { LC_NAV_HISTORY_EMPTY, lcNavStep, lcPathLevel, pathOf, type LcNavStepInput, type LcPageDirection } from './page-nav.direction';
 
 /** Une navigation qui déclenche une transition ; un nouvel objet à chaque fois, y compris deux fois le même sens. */
 export interface LcPageChange {
@@ -17,7 +17,6 @@ interface Resolved {
   readonly transition: boolean;
 }
 
-const pathOf = (url: string): string => url.split(/[?#]/, 1)[0];
 const urlOf = (snapshot: ActivatedRouteSnapshot): string =>
   '/' + snapshot.pathFromRoot.flatMap((route) => route.url.map((segment) => segment.path)).join('/');
 
@@ -74,6 +73,7 @@ export class LcPageNav {
         const to = pathOf(event.urlAfterRedirects);
         this._level.set(lcPathLevel(to));
         this._resolved.set(resolved);
+        // shortcut: après un saut du navigateur vers une URL absente de la pile, la pile et l'index du navigateur divergent ; le sens est jugé au niveau. À lever si une transition est jugée fausse.
         // skipLocationChange : le navigateur n'a pas bougé, la pile non plus.
         if (step.skip) return;
         const from = history.urls[history.index] ?? null;

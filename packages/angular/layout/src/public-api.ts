@@ -12,5 +12,4 @@ export * from './page/page.component';
 export * from './app-shell/app-shell.component';
 export * from './disclosure/disclosure.component';
 export * from './page-transitions/page-nav.service';
-export type { LcPageDirection, LcNavHistory, LcNavStepInput } from './page-transitions/page-nav.direction';
-export { lcNavStep, lcPathLevel } from './page-transitions/page-nav.direction';
+export type { LcPageDirection } from './page-transitions/page-nav.direction';

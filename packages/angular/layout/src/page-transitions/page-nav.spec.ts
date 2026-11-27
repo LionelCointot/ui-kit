@@ -50,6 +50,18 @@ describe('lcNavStep : cas limites', () => {
   });
 });
 
+describe('lcNavStep : cas directs', () => {
+  const h = { urls: ['/a', '/a/b'], index: 1 };
+  it.each([
+    ['popstate vers une URL inconnue : jugé au niveau, pile inchangée', h, { url: '/x', trigger: 'popstate' as const }, [], 'back', h],
+    ['même niveau, rubrique absente du registre : same', { urls: ['/a'], index: 0 }, { url: '/b', trigger: 'imperative' as const }, ['/z'], 'same', { urls: ['/a', '/b'], index: 1 }],
+    ['même niveau, rang qui avance : forward', { urls: ['/a'], index: 0 }, { url: '/b', trigger: 'imperative' as const }, ['/a', '/b'], 'forward', { urls: ['/a', '/b'], index: 1 }],
+    ['même niveau, rang qui recule : back', { urls: ['/b'], index: 0 }, { url: '/a', trigger: 'imperative' as const }, ['/a', '/b'], 'back', { urls: ['/b', '/a'], index: 1 }],
+  ])('%s', (_name, history, step, order, direction, expected) => {
+    expect(lcNavStep(history, step, order)).toEqual({ direction, history: expected });
+  });
+});
+
 describe('LcPageNav : titres et pile', () => {
   it('parent : route ancêtre la plus proche qui a un titre, feuille exclue ; URL reconstruite', async () => {
     const { nav, go } = setup();

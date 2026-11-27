@@ -17,7 +17,8 @@ export interface LcNavStepInput {
 /** Pile de départ, avant tout affichage. @internal */
 export const LC_NAV_HISTORY_EMPTY: LcNavHistory = { urls: [], index: -1 };
 
-const pathOf = (url: string): string => url.split(/[?#]/, 1)[0];
+/** @internal */
+export const pathOf = (url: string): string => url.split(/[?#]/, 1)[0];
 const segmentsOf = (url: string): string[] => pathOf(url).split('/').filter(Boolean);
 
 /** Niveau d'une page : nombre de segments non vides du chemin, au moins 1. @internal */
