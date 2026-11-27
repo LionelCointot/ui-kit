@@ -153,3 +153,32 @@ describe('information : doublons de runtime (reporté à T7)', () => {
     console.log(`INFO CA-7 (T7) : staggerDelay défini ${count('staggerDelay')} fois, lcCssMs défini ${count('lcCssMs')} fois (attendu 1 chacun à la fin de T7)`);
   });
 });
+
+describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
+  test('aucun transform dans motion.css : entrée et sortie animent opacity + translate/scale/rotate, transform est réservé au FLIP et au survol (CA-18)', () => {
+    /** Liste blanche vide : seules les règles FLIP (T7) et `.lc-lift` (T4) pourront y figurer ; T4 et T7 l'alimenteront en nommant le sélecteur. */
+    const ALLOWED = [];
+    const css = strip(read(join(angular, 'styles/motion.css')));
+    const offenders = [...css.matchAll(/(?<![\w-])transform\b(?!-)/g)].map((m) => css.slice(css.lastIndexOf('}', m.index) + 1, m.index + 40).trim().replace(/\s+/g, ' '))
+      .filter((rule) => !ALLOWED.some((s) => rule.includes(s)));
+    assert.deepEqual(offenders, []);
+  });
+
+  test('aucun lcReveal ni animate.leave sur l\'hôte d\'un composant du kit (host: {} et hostDirectives)', () => {
+    const offenders = [];
+    for (const file of sources(angular, ['.component.ts']).filter((f) => !/\/testing\//.test(f))) {
+      const code = strip(read(file));
+      for (const m of code.matchAll(/\bhost\s*:\s*\{/g)) {
+        let depth = 1, i = m.index + m[0].length;
+        while (depth && i < code.length) depth += code[i] === '{' ? 1 : code[i] === '}' ? -1 : 0, i++;
+        if (/lcReveal|animate\.leave/.test(code.slice(m.index, i))) offenders.push(`${relative(angular, file)} : host`);
+      }
+      for (const m of code.matchAll(/\bhostDirectives\s*:\s*\[/g)) {
+        const end = code.indexOf(']', m.index);
+        if (/LcRevealDirective/.test(code.slice(m.index, end))) offenders.push(`${relative(angular, file)} : hostDirectives`);
+      }
+    }
+    // Dette consignée, levée en T7 : les <tr> de lc-data-table (gabarit, pas hôte) portent lcReveal + (animate.leave).
+    assert.deepEqual(offenders, []);
+  });
+});
