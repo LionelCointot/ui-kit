@@ -13,4 +13,3 @@ export * from './app-shell/app-shell.component';
 export * from './disclosure/disclosure.component';
 export * from './page-transitions/page-nav.service';
 export type { LcPageDirection } from './page-transitions/page-nav.direction';
-export * from './page-transitions/page-transitions.directive';

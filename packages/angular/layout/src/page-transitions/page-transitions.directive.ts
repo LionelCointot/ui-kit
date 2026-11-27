@@ -2,7 +2,6 @@ import { Directive, ElementRef, Injector, afterNextRender, effect, inject } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ResolveEnd, Router } from '@angular/router';
 import { lcAnimate, lcPrefersReducedMotion, type LcMotionToken } from '@lionelcointot/ui-angular';
-import { pathOf } from './page-nav.direction';
 import { LcPageNav, type LcPageChange } from './page-nav.service';
 
 const COPY = 'data-lc-page-copy';
@@ -49,9 +48,9 @@ interface Snapshot {
  * Transitions entre pages, posée par `lc-app-shell` sur `<main>` : à chaque `LcPageNav.change`, une copie figée de la page quittée (prise au `ResolveEnd`,
  * insérée au `NavigationEnd` à sa place, `inert`) sort pendant que la nouvelle entre ; ordinateur : fondu et glissement ; téléphone (< 768 px) : empilement iOS ;
  * même niveau sans ordre : fondu. Le focus va sur le `h1` de la nouvelle page (repli sur `<main>`), même sans animation. Sans routeur actif, rien ne se passe.
- * Le contenu routé doit être un bloc (comme `lc-page`) : `translate` ne s'applique pas à un élément `inline`.
+ * Un hôte de page `inline` (`<ng-component>`) devient `block` le temps de la transition : `translate` ne s'applique pas à un élément `inline`.
  *
- * @internal Posée par `lc-app-shell`.
+ * @internal Posée par `lc-app-shell` seule : exportée par aucun point d'entrée.
  */
 @Directive({ selector: '[lcPageTransitions]' })
 export class LcPageTransitionsDirective {
@@ -87,7 +86,7 @@ export class LcPageTransitionsDirective {
 
   private capture(url: string): void {
     this.snapshot = null;
-    if (!this.animates() || pathOf(url) === pathOf(this.router.url)) return;
+    if (!this.animates() || !this.nav.willTransition()) return;
     // Seule lecture de position de la transition : avant toute écriture.
     this.snapshot = { rect: this.host.getBoundingClientRect(), pages: this.pages().map(frozenCopy) };
   }
@@ -118,6 +117,8 @@ export class LcPageTransitionsDirective {
       undo.push(() => element.style.setProperty(name, before));
     };
     set(this.host, 'overflow-x', 'clip'); // le glissement ne crée pas de défilement horizontal de la page
+    // Un composant routé sans sélecteur s'affiche dans `<ng-component>`, `inline` : `translate` n'y a aucun effet.
+    for (const page of pages as HTMLElement[]) if (getComputedStyle(page).display === 'inline') set(page, 'display', 'block');
     if (mode === 'stack' && forward) {
       for (const page of pages as HTMLElement[]) {
         set(page, 'position', 'relative');
@@ -150,8 +151,8 @@ export class LcPageTransitionsDirective {
       if (mode === 'stack') {
         const veil = overlay(VEIL, snapshot.rect, forward ? 2 : 1);
         veil.style.setProperty('opacity', '0');
-        veil.style.setProperty('background', 'var(--lc-sys-color-backdrop)');
-        veil.style.setProperty('background', 'rgb(from var(--lc-sys-color-backdrop) r g b)'); // opaque : l'opacité animée est celle du token
+        veil.style.setProperty('background', 'var(--lc-sys-color-backdrop)'); // repli si la couleur relative n'est pas prise en charge
+        veil.style.setProperty('background', 'rgb(from var(--lc-sys-color-backdrop) r g b / 1)'); // opaque : l'opacité animée est celle du token (Baseline 2024)
         this.host.append(veil);
         removeAt(lcAnimate(veil, forward ? [{ opacity: 0 }, { opacity: dim }] : [{ opacity: dim }, { opacity: 0 }], exitTiming), veil);
       }

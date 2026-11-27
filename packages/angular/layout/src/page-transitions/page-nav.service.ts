@@ -53,6 +53,12 @@ export class LcPageNav {
   readonly parent = computed(() => this._resolved()?.parent ?? null);
   readonly title = computed(() => this._resolved()?.title ?? '');
   readonly change = this._change.asReadonly();
+  private transitions = false;
+
+  /** @internal Vrai entre le `ResolveEnd` et le `NavigationEnd` d'une navigation qui va transitionner : seule règle d'éligibilité, lue par `lcPageTransitions` pour ne copier la page quittée que si une transition suit. */
+  willTransition(): boolean {
+    return this.transitions;
+  }
 
   constructor() {
     let history = LC_NAV_HISTORY_EMPTY;
@@ -69,6 +75,7 @@ export class LcPageNav {
         };
       } else if (event instanceof ResolveEnd) {
         resolved = resolve(event.state.root, lcPathLevel(event.urlAfterRedirects));
+        this.transitions = !step.skip && resolved.transition && pathOf(event.urlAfterRedirects) !== pathOf(this.router.url);
       } else if (event instanceof NavigationEnd && resolved) {
         const to = pathOf(event.urlAfterRedirects);
         this._level.set(lcPathLevel(to));

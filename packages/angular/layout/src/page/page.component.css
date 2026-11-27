@@ -23,7 +23,7 @@
   line-height: var(--lc-sys-font-line-height-tight);
 }
 
-/* Reçoit le focus après un changement de page (lcPageTransitions) : repère pour les lecteurs d'écran, pas un contrôle. */
+/* Reçoit le focus par programme après un changement de page (lcPageTransitions) : repère pour les lecteurs d'écran, élément non interactif, donc sans anneau de focus (tabindex -1, pas dans l'ordre de tabulation). */
 .lc-page__title:focus {
   outline: none;
 }

@@ -40,10 +40,12 @@ describe('lcPageTransitions : copie figée et sens', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     document.documentElement.style.setProperty('--lc-page-exit-offset', '16px');
     document.documentElement.style.setProperty('--lc-page-enter-offset', '26px');
+    for (const [name, value] of Object.entries({ '--lc-page-stack-duration': '300ms', '--lc-page-stack-easing': 'ease', '--lc-page-stack-recede': '30%' })) document.documentElement.style.setProperty(name, value);
   });
   afterEach(() => {
     delete (Element.prototype as { animate?: unknown }).animate;
     document.documentElement.removeAttribute('style');
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -102,5 +104,57 @@ describe('lcPageTransitions : copie figée et sens', () => {
     played.length = 0;
     await go('/a?x=1');
     expect(played.length).toBe(0);
+  });
+
+  it('téléphone (stack) : le voile finit à page.stack-dim, au-dessus de la page courante ; la page quittée est sous la nouvelle', async () => {
+    document.documentElement.style.setProperty('--lc-page-stack-dim', '0.12');
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('max-width') }));
+    const { root, go } = await setup();
+    await go('/a');
+    await go('/a/b');
+    const veil = root.querySelector<HTMLElement>('[data-lc-page-veil]')!;
+    const dim = played.find((animation) => animation.target === veil)!;
+    expect(dim.keyframes).toEqual([{ opacity: 0 }, { opacity: 0.12 }]);
+    expect(veil.style.zIndex).toBe('2');
+    expect(root.querySelector<HTMLElement>('[data-lc-page-copy]')!.style.zIndex).toBe('1');
+  });
+
+  it('rafale : une nouvelle navigation retire les copies et le voile de la précédente', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('max-width') }));
+    const { root, go } = await setup();
+    await go('/a');
+    await go('/a/b');
+    await go('/a');
+    expect(root.querySelectorAll('[data-lc-page-copy]').length).toBe(2); // la copie précédente finit sa sortie
+    played.forEach((animation) => animation.finish());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(root.querySelector('[data-lc-page-copy], [data-lc-page-veil]')).toBeNull();
+  });
+
+  it('un hôte de page inline (ng-component) devient block pendant la transition', async () => {
+    const { root, go } = await setup();
+    await go('/a');
+    await go('/a/b');
+    const page = [...root.querySelector('main')!.children].find((el) => el.localName === 'ng-component') as HTMLElement;
+    const entering = played.find((animation) => animation.target === page)!;
+    expect(entering).toBeDefined();
+    expect(page.style.display).toBe('block');
+  });
+
+  it('navigation sans transition (skipLocationChange) : aucune copie, rien ne s\'anime', async () => {
+    const { root, go } = await setup();
+    await go('/a');
+    played.length = 0;
+    await TestBed.inject(Router).navigateByUrl('/a/b', { skipLocationChange: true });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(played.length).toBe(0);
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
+  });
+
+  it('destruction : plus d\'écoute du routeur, aucune copie ne naît', async () => {
+    const { root, go } = await setup();
+    await go('/a');
+    TestBed.resetTestingModule();
+    expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
   });
 });
