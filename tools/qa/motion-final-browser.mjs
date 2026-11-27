@@ -7,6 +7,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { staticServer } from './static-server.mjs';
+import { calm, stable } from './wait.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -18,6 +19,8 @@ const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromiu
 const wanted = process.argv.slice(2);
 let failures = 0;
 const check = (ok, label, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
+const idle = (page) => calm(page).then((ok) => ok || check(false, 'animations finies encore en cours après 15 s'));
+const still = (page, selector) => stable(page, selector).then((ok) => ok || check(false, `${selector} ne cesse de bouger pendant 15 s`));
 const near = (a, b, tolerance) => Math.abs(a - b) <= tolerance;
 const FRAME = 17; // ± une image à 60 Hz
 
@@ -48,7 +51,7 @@ const token = (page, name) => page.evaluate((n) => { const v = getComputedStyle(
 if (!wanted.length || wanted.includes('layers')) {
   const { page, context, errors } = await open('qa-motion-page-layers--full-page');
   await page.waitForSelector('lc-page h1');
-  await page.waitForTimeout(3500);
+  await idle(page);
   const stagger = await token(page, '--lc-sys-motion-stagger-normal');
   const tilt = await token(page, '--lc-reveal-tilt-pace');
   const cards = await token(page, '--lc-sys-motion-stagger-cards');
@@ -74,11 +77,11 @@ if (!wanted.length || wanted.includes('layers')) {
   check(gaugeDelays.length === 3 && near(gaugeDelays[0], 500, FRAME), 'CA-40 couche jauges : premier délai 500 ms', JSON.stringify(gaugeDelays));
   check(gaugeDelays.every((d, i) => near(d, 500 + i * stagger, 1) || (i === 0 && near(d, 500, FRAME))), `CA-40 jauges sœurs : cascade par rang, ${stagger} ms entre deux jauges, sans rang écrit`, JSON.stringify(gaugeDelays));
   check(sorted(kpi)[0] < sorted(cardsIn)[0] && sorted(cardsIn)[0] < sorted(rows)[0] && sorted(rows)[0] < gaugeDelays[0], 'CA-40 ordre des couches : KPI, cartes, lignes, jauges', '');
-  await page.waitForTimeout(3000);
+  await idle(page);
   const added = await play('#add-event');
   const newRow = added.filter((a) => a.name === 'lc-reveal-in' && a.zone === 'feed');
   check(newRow.length === 1 && newRow[0].delay <= FRAME, 'CA-40 ligne ajoutée après l\'entrée : aucun délai de couche', JSON.stringify(newRow));
-  await page.waitForTimeout(2000);
+  await idle(page);
   const addedCard = (await play('#add-card')).filter((a) => a.name === 'lc-reveal-in' && a.tag === 'lc-card');
   check(addedCard.length === 1 && addedCard[0].delay <= FRAME, 'CA-40 carte ajoutée après l\'entrée : aucun délai de couche', JSON.stringify(addedCard));
   check(errors.length === 0, 'CA-40 aucune erreur de page ni de console', errors.join(' | '));
@@ -86,7 +89,7 @@ if (!wanted.length || wanted.includes('layers')) {
 
   const reduced = await open('qa-motion-page-layers--full-page', { reduced: true });
   await reduced.page.waitForSelector('lc-page h1');
-  await reduced.page.waitForTimeout(500);
+  await idle(reduced.page);
   await reduced.page.evaluate(() => document.querySelector('#new-page').click());
   await reduced.page.waitForTimeout(60);
   const quiet = await reduced.page.evaluate(SNAP);
@@ -114,10 +117,10 @@ if (!wanted.length || wanted.includes('toast')) {
   for (const width of [360, 390]) {
     const { page, context, errors } = await open('qa-layout-app-shell-tab-bar--tab-bar', { width, height: 740, touch: true });
     await page.waitForSelector('nav[aria-label="Navigation principale"]');
-    await page.waitForTimeout(1500);
+    await idle(page);
     await page.click('#qa-toast');
     await page.waitForSelector('.lc-toast');
-    await page.waitForTimeout(1500);
+    await still(page, '.lc-toast');
     const m = await page.evaluate(() => ({ toast: document.querySelector('.lc-toast').getBoundingClientRect().bottom, bar: document.querySelector('nav[aria-label="Navigation principale"]').getBoundingClientRect().top }));
     check(near(m.bar - m.toast, 16, 0.5), `CA-25 toast à 16 px au-dessus de la barre d'onglets à ${width} px`, JSON.stringify(m));
     check(errors.length === 0, `CA-25 ${width} px : aucune erreur de console`, errors.join(' | '));
@@ -129,7 +132,7 @@ if (!wanted.length || wanted.includes('toast')) {
 const demo = async (width) => {
   const session = await open('foundations-motion-demo--demo', { width, height: width < 768 ? 740 : 900, touch: width < 768 });
   await session.page.waitForSelector('lc-page h1');
-  await session.page.waitForTimeout(2500);
+  await idle(session.page);
   return session;
 };
 const heading = (page) => page.evaluate(() => document.querySelector('lc-page h1 .lc-visually-hidden')?.textContent?.trim());
@@ -144,7 +147,7 @@ if (!wanted.length || wanted.includes('tabbar')) {
   // Couleur du texte des onglets pendant le glissement de la pastille : contraste ≥ 3 contre ce qui est réellement derrière (pastille visible ou fond de la barre), à chaque image.
   const { page, context } = await open('foundations-motion-demo--demo', { width: 390, height: 740, touch: true }); // la story QA de la barre n'a pas de routes valides (voir constats)
   await page.waitForSelector('.lc-tabbar__indicator');
-  await page.waitForTimeout(2000);
+  await idle(page);
   await page.evaluate(() => {
     const lum = (c) => { const [r, g, b] = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
@@ -168,7 +171,8 @@ if (!wanted.length || wanted.includes('tabbar')) {
   });
   await page.evaluate(() => window.__start());
   await page.getByRole('link', { name: 'Liste', exact: true }).locator('visible=true').first().click();
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => window.__tab.some((x) => x.tab === 'Liste' && x.current === 'page'));
+  await idle(page);
   const samples = await page.evaluate(() => { cancelAnimationFrame(window.__raf); return window.__tab; });
   const worst = samples.reduce((m, x) => (x.ratio < m.ratio ? x : m), samples[0]);
   check(samples.length > 40 && worst.ratio >= 3, 'tabbar : texte des onglets lisible (≥ 3:1) à chaque image du glissement de la pastille', `${samples.length} mesures, pire ${worst.ratio.toFixed(2)} : ${JSON.stringify(worst)} ; ${new Set(samples.filter((x) => x.ratio < 3).map((x) => x.t)).size} images sous 3:1 (de ${Math.min(...samples.filter((x) => x.ratio < 3).map((x) => x.t))} à ${Math.max(...samples.filter((x) => x.ratio < 3).map((x) => x.t))} ms)`);
@@ -182,7 +186,7 @@ if (!wanted.length || wanted.includes('ca36')) {
   for (const [width, bar] of [[360, true], [767, true], [768, false], [1023, false], [1024, false]]) {
     const { page, context } = await open('foundations-motion-demo--demo', { width, height: 800, touch: width < 768 });
     await page.waitForSelector('lc-page h1');
-    await page.waitForTimeout(1500);
+    await idle(page);
     const m = await page.evaluate(() => {
       const nav = document.querySelector('nav[aria-label="Navigation principale"].lc-tabbar, .lc-tabbar');
       const tabs = nav ? [...nav.querySelectorAll('.lc-tabbar__tab')].map((t) => ({ text: t.textContent.trim(), h: t.getBoundingClientRect().height, w: t.getBoundingClientRect().width, current: t.getAttribute('aria-current') })) : [];
@@ -193,7 +197,7 @@ if (!wanted.length || wanted.includes('ca36')) {
       check(m.tabs.length === 4 && m.tabs.filter((t) => t.current === 'page').length === 1 && m.tabs.at(-1).text === 'Plus', `CA-36 ${width} px : trois rubriques primary et « Plus », un seul onglet aria-current="page"`, JSON.stringify(m.tabs));
       check(m.tabs.every((t) => t.h >= 44 && t.w >= 44), `CA-36 ${width} px : cibles ≥ 44 px`, JSON.stringify(m.tabs));
       await page.getByRole('button', { name: 'Plus' }).click();
-      await page.waitForTimeout(700);
+      await idle(page);
       const open = await page.evaluate(() => !!document.querySelector('.lc-shell__nav[aria-hidden="false"], #lc-shell-nav-1') && getComputedStyle(document.querySelector('#lc-shell-nav-1')).visibility !== 'hidden');
       check(open, `CA-36 ${width} px : « Plus » ouvre le tiroir`, '');
     }
@@ -219,7 +223,7 @@ if (!wanted.length || wanted.includes('topbar')) {
     },
   });
   await page.waitForSelector('lc-page h1');
-  await page.waitForTimeout(1500);
+  await idle(page);
   const list = (await page.evaluate(() => [...window.__top.values()])).sort((a, b) => a.delay - b.delay);
   const delay = await token(page, '--lc-topbar-enter-delay');
   const stagger = await token(page, '--lc-topbar-enter-stagger');
@@ -229,7 +233,7 @@ if (!wanted.length || wanted.includes('topbar')) {
   check(list.length > 1 && list.every((a, i) => i === 0 || near(a.delay - list[i - 1].delay, 30, 1) || a.delay === list[i - 1].delay), 'd05 décalage de 30 ms d\'un élément au suivant', JSON.stringify(list.map((a) => a.delay)));
   await page.evaluate(() => window.__top.clear());
   await page.getByRole('link', { name: 'Liste' }).first().click();
-  await page.waitForTimeout(400);
+  await idle(page);
   const replayed = await page.evaluate(() => window.__top.size);
   check(replayed === 0, 'd05 jamais rejouée à la navigation', `${replayed}`);
   check(errors.length === 0, 'd05 aucune erreur de console', errors.join(' | '));
@@ -255,7 +259,7 @@ if (!wanted.length || wanted.includes('demo')) {
     check(entering === true, `démo ${tag} : la page entrante porte la fenêtre de couches`, `${entering}`);
     await page.waitForSelector('lc-page h1 .lc-visually-hidden:text-is("Liste")', { state: 'attached' });
     check(await page.evaluate(() => document.activeElement?.tagName === 'H1'), `démo ${tag} : focus sur le titre après navigation`, await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 80)));
-    await page.waitForTimeout(2000);
+    await idle(page);
     await overflow('liste');
     await axe(page, `${tag} liste`);
 
@@ -266,10 +270,10 @@ if (!wanted.length || wanted.includes('demo')) {
     await trigger.click();
     await page.getByRole('menuitem', { name: 'Supprimer' }).click();
     await page.getByRole('alertdialog').waitFor();
-    await page.waitForTimeout(600);
+    await idle(page);
     await page.getByRole('button', { name: 'Annuler' }).click();
     await page.getByRole('alertdialog').waitFor({ state: 'detached' });
-    await page.waitForTimeout(300);
+    await idle(page);
     const afterCancel = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
     check(afterCancel === 'Actions : Maquette de l\'accueil' && await rows() === before, `démo ${tag} : annulation, focus sur le bouton de menu de la ligne, rien de supprimé`, `${afterCancel} / ${before} -> ${await rows()}`);
 
@@ -277,17 +281,17 @@ if (!wanted.length || wanted.includes('demo')) {
     await trigger.click();
     await page.getByRole('menuitem', { name: 'Supprimer' }).click();
     await page.getByRole('alertdialog').waitFor();
-    await page.waitForTimeout(600);
+    await idle(page);
     await page.getByRole('alertdialog').getByRole('button', { name: 'Supprimer' }).click();
     await page.getByRole('alertdialog').waitFor({ state: 'detached' });
-    await page.waitForTimeout(800);
+    await idle(page);
     const afterDelete = await page.evaluate(() => ({ task: document.activeElement?.getAttribute('data-task'), rows: document.querySelectorAll('[data-task]').length }));
     check(afterDelete.task === '2' && afterDelete.rows === before - 1, `démo ${tag} : suppression, focus sur la ligne suivante, une ligne en moins`, JSON.stringify(afterDelete));
 
     // Détail (niveau 2) puis retour.
     await page.locator('[data-task="2"]').click();
     await page.waitForSelector('lc-page h1 .lc-visually-hidden:text-is("Plan de test")', { state: 'attached' });
-    await page.waitForTimeout(1500);
+    await idle(page);
     if (width < 768) {
       check(await page.getByRole('button', { name: /‹?\s*Liste/ }).count() > 0, `démo ${tag} : bouton retour portant le titre du parent`, '');
     }
@@ -295,7 +299,7 @@ if (!wanted.length || wanted.includes('demo')) {
     await axe(page, `${tag} détail`);
     await go('Réglages');
     await page.waitForSelector('lc-page h1 .lc-visually-hidden:text-is("Réglages")', { state: 'attached' });
-    await page.waitForTimeout(2000);
+    await idle(page);
     await overflow('réglages');
     await axe(page, `${tag} réglages`);
     await go('Tableau de bord');
