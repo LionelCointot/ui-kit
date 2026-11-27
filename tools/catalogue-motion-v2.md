@@ -5,13 +5,15 @@ Supprimés (aucun alias : les consommateurs passent aux nouveaux noms) :
 - `--lc-sys-motion-stagger` (80 ms) : remplacé par `--lc-sys-motion-stagger-{fine|normal|cards|chars}` (12 / 40 / 60 / 22 ms) et `--lc-sys-motion-stagger-cap` (8 rangs).
 - `--lc-ref-motion-stagger` : remplacé par `--lc-ref-motion-stagger-*` et `--lc-ref-motion-offset-*`, mêmes suffixes que les rôles.
 - `--lc-reveal-offset`, `--lc-reveal-stagger` (groupe `reveal` des jetons composant) : plus lus par personne, `lcReveal` lit `--lc-sys-motion-offset-sm` et `--lc-sys-motion-stagger-normal` ; `--lc-reveal-offset` n'est plus un jeton mais le délai de départ posé par l'hôte (0 par défaut). `--lc-reveal-duration`, `--lc-reveal-easing` (550 ms, `--lc-sys-easing-out`, variantes de base) et `--lc-reveal-tilt-duration` (850 ms, courbe `pop`, variante `tilt`) sont les jetons propres de `lcReveal`, séparés de `--lc-sys-duration-enter` (popover, calendrier, bascule de thème).
+- `--lc-sys-easing-soft` (et `--lc-ref-easing-soft`) : plus lu depuis l'alignement des cascades sur le site (`out`).
+- `--lc-overlay-offset` (le décalage d'ouverture est joué par les keyframes de chaque composant), `--lc-sheet-top-gap` (feuille à la hauteur de son contenu) et `--lc-dialog-sheet-radius` (la feuille porte son propre rayon, `--lc-sheet-top-radius`) : sans lecteur.
 
 Renommés :
 - `--lc-tabs-indicator-duration`, `--lc-nav-item-indicator-duration`, `--lc-segmented-control-indicator-duration` : `--lc-<composant>-indicator-front-duration` (bord avant).
 - `--lc-tabs-indicator-easing`, `--lc-nav-item-indicator-easing`, `--lc-segmented-control-indicator-easing` : `--lc-<composant>-indicator-front-easing` (bord avant) ; le bord arrière a ses propres jetons `-indicator-back-duration`, `-indicator-back-easing` et `-indicator-back-delay`.
 
 Règle de signe des décalages (`*-offset`) :
-- Valeur positive, sans signe : le CSS applique le sens voulu (`translateY(calc(-1 * …))`, départ du bas, du haut ou du côté). C'est le cas de `--lc-sys-motion-offset-*`, `--lc-overlay-offset`, `--lc-page-exit-offset`, `--lc-page-enter-offset`, `--lc-toast-enter-offset`, `--lc-tabbar-enter-offset`, `--lc-topbar-enter-offset`, `--lc-calendar-slide-offset` (le sens du mois s'ajoute) et `--lc-title-letter-offset` (part de la hauteur de la lettre).
+- Valeur positive, sans signe : le CSS applique le sens voulu (`translateY(calc(-1 * …))`, départ du bas, du haut ou du côté). C'est le cas de `--lc-sys-motion-offset-*`, `--lc-page-exit-offset`, `--lc-page-enter-offset`, `--lc-toast-enter-offset`, `--lc-tabbar-enter-offset`, `--lc-topbar-enter-offset`, `--lc-calendar-slide-offset` (le sens du mois s'ajoute) et `--lc-title-letter-offset` (part de la hauteur de la lettre).
 - Valeur signée, appliquée telle quelle : `--lc-popover-enter-offset` (−3,7 px), `--lc-lift-offset` (−4 px) et `--lc-disclosure-offset` (−5 px).
 
 Même nom, autre valeur :

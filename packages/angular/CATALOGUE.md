@@ -162,6 +162,55 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-theme-editor` | LcThemeEditorComponent | composant | theme (requis, model), mode | – |
 | `lc-theme-preview` | LcThemePreviewComponent | composant | – | – |
 
+## Tokens de mouvement
+
+Rôles (`--lc-sys-*`, valeurs du thème par défaut) :
+
+- durées : `--lc-sys-duration-fast` 150ms · `--lc-sys-duration-exit` 200ms · `--lc-sys-duration-normal` 250ms · `--lc-sys-duration-slow` 350ms · `--lc-sys-duration-enter` 450ms · `--lc-sys-duration-move` 500ms · `--lc-sys-duration-long` 600ms · `--lc-sys-duration-view` 700ms · `--lc-sys-duration-title` 850ms · `--lc-sys-duration-draw` 1100ms · `--lc-sys-duration-fill` 950ms
+- courbes : `--lc-sys-easing-standard` cubic-bezier(0.2, 0, 0, 1) · `--lc-sys-easing-emphasized` cubic-bezier(0.3, 0, 0, 1) · `--lc-sys-easing-entrance` cubic-bezier(0.16, 1, 0.3, 1) · `--lc-sys-easing-fill` cubic-bezier(0.2, 1, 0.3, 1) · `--lc-sys-easing-out` cubic-bezier(0.215, 0.61, 0.355, 1) · `--lc-sys-easing-pop` cubic-bezier(0.34, 1.7, 0.64, 1) · `--lc-sys-easing-pop-strong` cubic-bezier(0.34, 2, 0.64, 1) · `--lc-sys-easing-title` cubic-bezier(0.22, 1, 0.36, 1) · `--lc-sys-easing-draw` cubic-bezier(0.455, 0.03, 0.515, 0.955) · `--lc-sys-easing-inout` cubic-bezier(0.645, 0.045, 0.355, 1) · `--lc-sys-easing-exit` cubic-bezier(0.42, 0, 1, 1) · `--lc-sys-easing-stack` cubic-bezier(0.32, 0.72, 0, 1)
+- distances, décalages, plafond, échelles et angles : `--lc-sys-motion-offset-sm` 8px · `--lc-sys-motion-offset-md` 16px · `--lc-sys-motion-offset-lg` 26px · `--lc-sys-motion-offset-xl` 40px · `--lc-sys-motion-stagger-fine` 12ms · `--lc-sys-motion-stagger-normal` 40ms · `--lc-sys-motion-stagger-cards` 60ms · `--lc-sys-motion-stagger-chars` 22ms · `--lc-sys-motion-stagger-cap` 8 · `--lc-sys-motion-scale-pop` 0.94 · `--lc-sys-motion-scale-enter` 0.95 · `--lc-sys-motion-rotate-tilt` 2.5deg · `--lc-sys-motion-rotate-char` 6deg
+
+Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton dont la valeur est reprise) :
+
+- `button` : `press-scale` 0.97 · `press-duration` 100ms · `spinner-duration` → spinner-duration
+- `message-thread` : `enter-duration` 550ms · `enter-fade-duration` → sys-duration-normal · `enter-stagger` → sys-motion-stagger-normal · `enter-easing` linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.4%, 1.067, 1.099 24.3%, 1.108 26%, 1.104, 1.088 30.6%, 1.03 37.7%, 1.008 41.4%, 0.993 45.8%, 0.988 50%, 0.993 59.8%, 1.002 75.4%, 1) · `enter-scale` 0.6
+- `reveal` : `duration` 550ms · `easing` → sys-easing-out · `tilt-duration` → sys-duration-title · `card-duration` 800ms · `card-easing` → sys-easing-entrance · `card-scale` 0.985
+- `tabs` : `indicator-front-duration` 380ms · `indicator-front-easing` → sys-easing-title · `indicator-back-duration` 400ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 80ms
+- `nav-item` : `indicator-front-duration` 380ms · `indicator-front-easing` → sys-easing-title · `indicator-back-duration` 400ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 80ms
+- `segmented-control` : `indicator-front-duration` 300ms · `indicator-front-easing` → sys-easing-out · `indicator-back-duration` 410ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 75ms
+- `tabbar` : `enter-duration` → sys-duration-view · `enter-delay` 200ms · `enter-easing` → sys-easing-entrance · `enter-offset` 90px · `height` 66px · `indicator-radius` 16px · `indicator-front-duration` → segmented-control-indicator-front-duration · `indicator-front-easing` → segmented-control-indicator-front-easing · `indicator-back-duration` → segmented-control-indicator-back-duration · `indicator-back-easing` → segmented-control-indicator-back-easing · `indicator-back-delay` → segmented-control-indicator-back-delay
+- `overlay` : `enter-duration` → sys-duration-normal · `exit-duration` → sys-duration-fast · `easing` → sys-easing-standard
+- `collapse` : `duration` → sys-duration-move
+- `chip` : `enter-duration` → sys-duration-fast
+- `list` : `move-duration` 420ms · `move-easing` → sys-easing-draw
+- `slide` : `enter-duration` → sys-duration-move · `exit-duration` → sys-duration-normal
+- `page` : `exit-duration` 190ms · `exit-offset` → sys-motion-offset-md · `enter-duration` → sys-duration-view · `enter-easing` → sys-easing-entrance · `enter-offset` → sys-motion-offset-lg · `stack-duration` → sys-duration-move · `stack-easing` → sys-easing-stack · `stack-recede` 30% · `layer-kpi` 100ms · `layer-cards` 120ms · `layer-rows` 400ms · `layer-gauges` → sys-duration-move · `layer-dots` 800ms · `layer-window` 1500ms · `stack-dim` 0.12
+- `sheet` : `radius` → sys-radius-lg · `top-radius` 24px · `max-height` 92dvh · `enter-duration` 550ms · `enter-easing` → sys-easing-entrance · `exit-duration` 300ms · `exit-easing` → sys-easing-exit · `spring-duration` → sys-duration-move · `spring-easing` cubic-bezier(0.34, 1.56, 0.64, 1) · `backdrop-enter-duration` 300ms · `backdrop-enter-easing` cubic-bezier(0, 0, 0.58, 1) · `card-width` 35rem · `card-max-height` 80dvh
+- `dialog` : `enter-scale` 0.86 · `enter-duration` → sys-duration-move · `enter-easing` → sys-easing-pop · `exit-scale` 0.94 · `exit-duration` → sys-duration-exit · `exit-easing` → sys-easing-exit
+- `drawer` : `enter-duration` → sys-duration-long · `enter-easing` → sys-easing-entrance · `exit-duration` 320ms · `exit-easing` → sys-easing-exit · `backdrop-enter-duration` 300ms · `backdrop-exit-duration` → sys-duration-exit
+- `popover` : `enter-duration` → sys-duration-enter · `enter-easing` → sys-easing-pop · `enter-scale` → sys-motion-scale-enter · `enter-offset` -3.7px · `exit-duration` → sys-duration-fast
+- `menu` : `enter-duration` 400ms · `enter-easing` → sys-easing-pop · `enter-scale` 0.92 · `enter-offset` -6px · `exit-duration` → sys-duration-fast
+- `toast` : `enter-duration` → sys-duration-move · `enter-easing` → sys-easing-pop · `enter-offset` 30px · `enter-scale` 0.94 · `exit-duration` → sys-duration-normal · `exit-offset` → sys-motion-offset-md · `exit-easing` cubic-bezier(0.55, 0.085, 0.68, 0.53) · `tabbar-gap` → sys-motion-offset-md
+- `switch` : `duration` 465ms · `easing` → sys-easing-pop · `track-duration` → sys-duration-exit
+- `steps` : `bar-duration` 800ms · `bar-stagger` 117ms · `dot-duration` → sys-duration-long · `dot-easing` → sys-easing-pop-strong · `dot-scale` 0.6 · `dot-delay` → sys-motion-stagger-normal
+- `count-up` : `duration` 1200ms
+- `flash` : `duration` → sys-duration-fill · `easing` → sys-easing-title
+- `title` : `letter-duration` → sys-duration-title · `letter-easing` → sys-easing-title · `letter-offset` 115% · `letter-rotate` → sys-motion-rotate-char · `letter-stagger` → sys-motion-stagger-chars · `line-duration` → sys-duration-view · `line-easing` → sys-easing-inout · `line-delay` 320ms
+- `live` : `duration` 2000ms · `opacity-from` 0.1 · `opacity-to` 0.45
+- `lift` : `offset` -4px · `duration` → sys-duration-slow · `easing` → sys-easing-out
+- `calendar` : `duration` → overlay-enter-duration · `easing` → overlay-easing · `slide-offset` 18px · `slide-duration` → sys-duration-enter · `slide-opacity` 0.14 · `row-stagger` 30ms
+- `chart` : `sparkline-duration` 1300ms · `update-duration` → sys-duration-view · `update-stagger` 20ms
+- `topbar` : `enter-offset` 10px · `enter-duration` → sys-duration-move · `enter-stagger` 30ms
+- `disclosure` : `enter-duration` 300ms · `exit-duration` 100ms · `offset` -5px · `chevron-duration` → disclosure-enter-duration
+- `theme-toggle` : `duration` → sys-duration-enter · `easing` cubic-bezier(0.65, 0, 0.35, 1)
+- `spinner` : `duration` 700ms · `pulse-duration` 1500ms
+- `progress-bar` : `indeterminate-duration` 1500ms
+- `file-upload` : `indeterminate-duration` → progress-bar-indeterminate-duration
+- `message-composer` : `shake-duration` → sys-duration-normal · `indeterminate-duration` → progress-bar-indeterminate-duration
+- `table` : `filter-spinner-duration` → spinner-duration · `refill-delay` 200ms
+- `skeleton` : `duration` 1500ms
+- `shell` : `nav-duration` 350ms
+
 ## Tokens de mouvement supprimés, renommés ou revalorisés (mouvement v2)
 
 Supprimés (aucun alias : les consommateurs passent aux nouveaux noms) :
@@ -169,13 +218,15 @@ Supprimés (aucun alias : les consommateurs passent aux nouveaux noms) :
 - `--lc-sys-motion-stagger` (80 ms) : remplacé par `--lc-sys-motion-stagger-{fine|normal|cards|chars}` (12 / 40 / 60 / 22 ms) et `--lc-sys-motion-stagger-cap` (8 rangs).
 - `--lc-ref-motion-stagger` : remplacé par `--lc-ref-motion-stagger-*` et `--lc-ref-motion-offset-*`, mêmes suffixes que les rôles.
 - `--lc-reveal-offset`, `--lc-reveal-stagger` (groupe `reveal` des jetons composant) : plus lus par personne, `lcReveal` lit `--lc-sys-motion-offset-sm` et `--lc-sys-motion-stagger-normal` ; `--lc-reveal-offset` n'est plus un jeton mais le délai de départ posé par l'hôte (0 par défaut). `--lc-reveal-duration`, `--lc-reveal-easing` (550 ms, `--lc-sys-easing-out`, variantes de base) et `--lc-reveal-tilt-duration` (850 ms, courbe `pop`, variante `tilt`) sont les jetons propres de `lcReveal`, séparés de `--lc-sys-duration-enter` (popover, calendrier, bascule de thème).
+- `--lc-sys-easing-soft` (et `--lc-ref-easing-soft`) : plus lu depuis l'alignement des cascades sur le site (`out`).
+- `--lc-overlay-offset` (le décalage d'ouverture est joué par les keyframes de chaque composant), `--lc-sheet-top-gap` (feuille à la hauteur de son contenu) et `--lc-dialog-sheet-radius` (la feuille porte son propre rayon, `--lc-sheet-top-radius`) : sans lecteur.
 
 Renommés :
 - `--lc-tabs-indicator-duration`, `--lc-nav-item-indicator-duration`, `--lc-segmented-control-indicator-duration` : `--lc-<composant>-indicator-front-duration` (bord avant).
 - `--lc-tabs-indicator-easing`, `--lc-nav-item-indicator-easing`, `--lc-segmented-control-indicator-easing` : `--lc-<composant>-indicator-front-easing` (bord avant) ; le bord arrière a ses propres jetons `-indicator-back-duration`, `-indicator-back-easing` et `-indicator-back-delay`.
 
 Règle de signe des décalages (`*-offset`) :
-- Valeur positive, sans signe : le CSS applique le sens voulu (`translateY(calc(-1 * …))`, départ du bas, du haut ou du côté). C'est le cas de `--lc-sys-motion-offset-*`, `--lc-overlay-offset`, `--lc-page-exit-offset`, `--lc-page-enter-offset`, `--lc-toast-enter-offset`, `--lc-tabbar-enter-offset`, `--lc-topbar-enter-offset`, `--lc-calendar-slide-offset` (le sens du mois s'ajoute) et `--lc-title-letter-offset` (part de la hauteur de la lettre).
+- Valeur positive, sans signe : le CSS applique le sens voulu (`translateY(calc(-1 * …))`, départ du bas, du haut ou du côté). C'est le cas de `--lc-sys-motion-offset-*`, `--lc-page-exit-offset`, `--lc-page-enter-offset`, `--lc-toast-enter-offset`, `--lc-tabbar-enter-offset`, `--lc-topbar-enter-offset`, `--lc-calendar-slide-offset` (le sens du mois s'ajoute) et `--lc-title-letter-offset` (part de la hauteur de la lettre).
 - Valeur signée, appliquée telle quelle : `--lc-popover-enter-offset` (−3,7 px), `--lc-lift-offset` (−4 px) et `--lc-disclosure-offset` (−5 px).
 
 Même nom, autre valeur :

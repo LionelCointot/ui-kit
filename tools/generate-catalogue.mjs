@@ -3,7 +3,7 @@
 // output(), sélecteur en chaîne littérale). Usage : node tools/generate-catalogue.mjs [--check]
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PKG_DIR = path.join(ROOT, 'packages', 'angular');
@@ -141,7 +141,26 @@ export function renderCatalogue(version, entryPoints) {
   return lines.join('\n') + '\n';
 }
 
-function build() {
+/** Rôles et jetons composant du mouvement, relus des sources de tokens (le catalogue suit donc le code : `catalogue:check` échoue si un jeton change). */
+export function renderMotionTokens(roles, components) {
+  const unit = (v) => String(v).replace(/\|/g, '\\|');
+  const lines = ['', '## Tokens de mouvement', '', 'Rôles (`--lc-sys-*`, valeurs du thème par défaut) :', ''];
+  for (const family of ['duration', 'easing', 'motion']) {
+    const items = Object.entries(roles).filter(([k]) => k.startsWith(`${family}.`)).map(([k, v]) => `\`--lc-sys-${k.replace('.', '-')}\` ${unit(v)}`);
+    lines.push(`- ${family === 'motion' ? 'distances, décalages, plafond, échelles et angles' : family === 'duration' ? 'durées' : 'courbes'} : ${items.join(' · ')}`);
+  }
+  lines.push('', 'Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton dont la valeur est reprise) :', '');
+  for (const [group, tokens] of Object.entries(components)) {
+    const items = Object.entries(tokens).map(([k, t]) => {
+      const value = typeof t.$value === 'string' && /^\{[\w.-]+\}$/.test(t.$value) ? `→ ${t.$value.slice(1, -1).replace(/\./g, '-')}` : t.$value;
+      return `\`${k}\` ${unit(value)}`;
+    });
+    lines.push(`- \`${group}\` : ${items.join(' · ')}`);
+  }
+  return lines.join('\n') + '\n';
+}
+
+async function build() {
   const { name, version } = JSON.parse(readFileSync(path.join(PKG_DIR, 'package.json'), 'utf8'));
   const secondary = readdirSync(PKG_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory() && existsSync(path.join(PKG_DIR, e.name, 'ng-package.json')))
@@ -156,12 +175,14 @@ function build() {
     console.log(`${n} : ${decls.length}`);
     return { name: n, decls };
   });
+  const { baseValues } = await import(pathToFileURL(path.join(ROOT, 'packages/tokens/theme/index.js')).href);
+  const components = JSON.parse(readFileSync(path.join(ROOT, 'packages/tokens/src/components/motion.tokens.json'), 'utf8'));
   // Tokens supprimés ou renommés : note écrite à la main, ajoutée telle quelle à la fin du catalogue.
-  return renderCatalogue(version, entryPoints) + '\n' + readFileSync(path.join(ROOT, 'tools', 'catalogue-motion-v2.md'), 'utf8');
+  return renderCatalogue(version, entryPoints) + renderMotionTokens(baseValues('default'), components) + '\n' + readFileSync(path.join(ROOT, 'tools', 'catalogue-motion-v2.md'), 'utf8');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const content = build();
+  const content = await build();
   if (process.argv.includes('--check')) {
     const current = existsSync(OUTPUT) ? readFileSync(OUTPUT, 'utf8') : '';
     if (current !== content) {
