@@ -233,6 +233,8 @@ export const MOTION_SCHEMA = [
   {"path":"sheet.exit-easing","cssVar":"--lc-sheet-exit-easing","type":"cubicBezier"},
   {"path":"sheet.spring-duration","cssVar":"--lc-sheet-spring-duration","type":"duration"},
   {"path":"sheet.spring-easing","cssVar":"--lc-sheet-spring-easing","type":"cubicBezier"},
+  {"path":"sheet.backdrop-enter-duration","cssVar":"--lc-sheet-backdrop-enter-duration","type":"duration"},
+  {"path":"sheet.backdrop-enter-easing","cssVar":"--lc-sheet-backdrop-enter-easing","type":"cubicBezier"},
   {"path":"dialog.enter-scale","cssVar":"--lc-dialog-enter-scale","type":"number"},
   {"path":"dialog.enter-duration","cssVar":"--lc-dialog-enter-duration","type":"duration"},
   {"path":"dialog.enter-easing","cssVar":"--lc-dialog-enter-easing","type":"cubicBezier"},

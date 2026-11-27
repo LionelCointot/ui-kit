@@ -750,6 +750,8 @@ describe('LcDataTableComponent', () => {
       let finish!: () => void;
       const finished = new Promise<void>((resolve) => (finish = resolve));
       node.getAnimations = (() => [{ finished }]) as unknown as typeof node.getAnimations;
+      // La feuille joue sa sortie par `lcAnimate` (Element.animate) sur son dialogue, pas par une transition.
+      if (node instanceof HTMLDialogElement) node.animate = (() => ({ finished, cancel() {} })) as unknown as typeof node.animate;
       return finish;
     };
     const openPanel = async () => {
