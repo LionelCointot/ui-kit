@@ -18,7 +18,6 @@ const EXPECTED_EASING: Record<string, string> = {
   standard: 'cubicOut', // écart 0,039 : pas d'équivalent exact
   entrance: 'exponentialOut', // 0,004
   fill: 'quinticOut', // 0,021
-  soft: 'cubicOut', // 0,003
   out: 'cubicOut', // 0,011
   pop: 'backOut', // 0,039 : le dépassement (12-15 %) n'est qu'approché
   'pop-strong': 'backOut', // 0,127 : dépassement de 30 % non reproductible

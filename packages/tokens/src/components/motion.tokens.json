@@ -60,8 +60,7 @@
   "overlay": {
     "enter-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
     "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" },
-    "easing": { "$value": "{sys.easing.standard}", "$type": "cubicBezier" },
-    "offset": { "$value": "{sys.motion.offset-sm}", "$type": "dimension" }
+    "easing": { "$value": "{sys.easing.standard}", "$type": "cubicBezier" }
   },
   "collapse": {
     "duration": { "$value": "{sys.duration.move}", "$type": "duration" }
@@ -95,7 +94,6 @@
     "stack-dim": { "$value": "0.12", "$type": "number", "$description": "Veil opacity over the receding page (unitless number)." }
   },
   "sheet": {
-    "top-gap": { "$value": "{sys.space.10}", "$type": "dimension" },
     "radius": { "$value": "{sys.radius.lg}", "$type": "dimension" },
     "top-radius": { "$value": "24px", "$type": "dimension", "$description": "Top corners of the bottom sheet on phones." },
     "max-height": { "$value": "92dvh", "$type": "dimension", "$description": "Maximum height of the bottom sheet on phones." },
@@ -128,8 +126,7 @@
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
     "exit-scale": { "$value": "0.94", "$type": "number" },
     "exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" },
-    "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
-    "sheet-radius": { "$value": "20px", "$type": "dimension", "$description": "Top corners of a dialog presented as a bottom sheet on phones." }
+    "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" }
   },
   "drawer": {
     "enter-duration": { "$value": "{sys.duration.long}", "$type": "duration" },

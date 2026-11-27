@@ -427,10 +427,6 @@
         "$value": "{ref.easing.fill}",
         "$type": "cubicBezier"
       },
-      "soft": {
-        "$value": "{ref.easing.soft}",
-        "$type": "cubicBezier"
-      },
       "out": {
         "$value": "{ref.easing.out}",
         "$type": "cubicBezier"
