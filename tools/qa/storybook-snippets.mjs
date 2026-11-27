@@ -1,5 +1,5 @@
 // CA-12 et CA-13 de la spec vitrine : le code affiché pour chaque story publique est un composant Angular qui compile tel quel.
-// Usage : npm run build-storybook:public && node tools/qa/storybook-snippets.mjs [fragment-d-id ...]
+// Usage : npm run build-storybook && node tools/qa/storybook-snippets.mjs [fragment-d-id ...]
 // 1. Sert dist/storybook en local (aucun accès réseau) et relève, pour chaque story, le code de l'onglet Code
 //    (`parameters.docs.source.code` s'il est écrit à la main, sinon l'extrait émis par le décorateur de .storybook/code-snippet-docs.ts).
 // 2. CA-12 : dans chaque Playground, change un contrôle (liste ou booléen) et vérifie que le code affiché change.
@@ -42,7 +42,7 @@ const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
 const ids = Object.values(index.entries)
-  .filter((entry) => entry.type === 'story')
+  .filter((entry) => entry.type === 'story' && !entry.title.startsWith('QA/')) // la vitrine publique n'a pas les stories de QA : le même contrôle sert sur la construction complète
   .map((entry) => entry.id)
   .filter((id) => filters.length === 0 || filters.some((fragment) => id.includes(fragment)));
 
