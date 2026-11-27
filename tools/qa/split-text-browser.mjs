@@ -8,7 +8,6 @@
 //   lc-page : le `h1` porte `tabindex="-1"` et `lcSplitText` ; le trait est un élément `aria-hidden="true"` à classe `lc-page__line`, frère suivant du `h1`
 //   (dans `.lc-page__heading`), `transform-origin` à gauche, entrée en `scale` / `transform` de 0 à 1.
 // Stories : `qa-motion-split-text-acceptance--text` et `--page` (split-text.acceptance.qa.stories.ts), `layout-page--animation` (data-demo d01 « Projets », d02 « Rapports », chacun avec son « Rejouer »).
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -9,7 +9,6 @@
 //     de `--lc-sys-color-primary` vers la couleur héritée, durée `--lc-flash-duration`, courbe `--lc-flash-easing` ; un nouveau changement pendant un flash le relance (jamais deux animations en même temps).
 //   - `lcCountUp` : durée `--lc-count-up-duration` (1200 ms), courbe `--lc-sys-easing-out` ; aucune région `aria-live`, aucun attribut ARIA ajouté.
 //   - stories Animation : `layout-count-up--animation` (élément `[data-sample]` au repos sur sa valeur finale, bouton « Rejouer » qui recompte) et `layout-flash--animation` (« Rejouer » change la valeur).
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

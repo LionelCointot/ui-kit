@@ -8,20 +8,19 @@
 // Limites : le geste tactile réel et la lecture d'écran ne sont pas essayés ; les avertissements « développement » (CA-T17) sont dans message-thread.acceptance.spec.ts (Storybook statique = mode production).
 // Interprétations de la spec à confirmer (voir le rapport) : CA-T3(b) = aucun trou POSITIF > 1 px entre la dernière bulle précédente et la première nouvelle à t = 0 (la nouvelle bulle est réduite à enter-scale) ;
 //   CA-T1 écart entre groupes mesuré en minimum (≥ group-gap), le contenu de l'en-tête n'étant pas spécifié ; bord gauche des « autres » mesuré sans avatar, avec avatar on mesure l'avatar.
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const pw = require('playwright');
 const axeSource = await readFile(require.resolve('axe-core/axe.min.js'), 'utf8');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); const body = await readFile(f); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(body); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir);
+const { base } = server;
 let browser = await pw.chromium.launch();
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };

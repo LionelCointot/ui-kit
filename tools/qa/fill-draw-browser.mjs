@@ -8,7 +8,6 @@
 // Contrat de durée et de courbe (choix de QA, la spec dit « avec les tokens ») : lcFill = --lc-sys-duration-fill + --lc-sys-easing-fill ; lcDraw = --lc-sys-duration-draw + --lc-sys-easing-draw ;
 // .lc-pulse = --lc-live-* ; .lc-lift = --lc-lift-* (la transition porte sur `transform`, ADR 0011).
 // Stories d'animation attendues dans l'index (CA-38) : layout-fill--animation, layout-draw--animation, layout-pulse-lift--animation, chacune avec au moins un bouton « Rejouer ».
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -2,19 +2,17 @@
 // Chrome réel (Playwright, channel chrome) sur le Storybook statique (`npm run build-storybook`, dist/storybook ; STORYBOOK_DIR pour une autre construction).
 //   node tools/qa/motion-runtime-browser.mjs
 // Story : QA/Motion/Runtime (packages/angular/src/lib/motion/stories/motion-runtime.acceptance.qa.stories.ts). Les valeurs attendues viennent de la spec (§5.2). Code de sortie 1 au moindre échec.
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { let body; let f; try { f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); body = await readFile(f); } catch { rs.writeHead(404).end(); return; } rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(body); }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir);
+const { base } = server;
 const browser = await chromium.launch({ channel: 'chrome' });
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };

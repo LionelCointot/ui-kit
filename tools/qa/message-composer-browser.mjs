@@ -7,11 +7,11 @@
 // CSP (CA-S5) : l'en-tête CSP de la spec est servi avec toutes les réponses (mode csp). Storybook et Angular violent eux-mêmes cette CSP (scripts et styles
 //   en ligne, eval ; script-src est donc élargi à 'unsafe-inline' 'unsafe-eval', seule différence avec la CSP de la spec) : ces violations sont mesurées une fois l'histoire affichée (référence), et seules les violations NOUVELLES pendant les gestes du composant,
 //   ou toute violation d'image, de réseau ou portant sur un élément du composant (attribut style en ligne compris), comptent.
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 import { calm } from './wait.mjs';
 
 const require = createRequire(import.meta.url);
@@ -19,11 +19,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
 const axeSource = await readFile(require.resolve('axe-core/axe.min.js'), 'utf8');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const CSP = "default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'"; // script-src élargi : Storybook compile ses histoires (eval) et ouvre ses pages par des scripts en ligne ; le reste est celui de la spec
 let csp = false;
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); const body = await readFile(f); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream', ...(csp ? { 'content-security-policy': CSP } : {}) }).end(body); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir, { base: null, headers: () => (csp ? { 'content-security-policy': CSP } : {}) });
+const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };

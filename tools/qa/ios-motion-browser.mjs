@@ -2,19 +2,17 @@
 //   node tools/qa/ios-motion-browser.mjs sheet|collapse|chips|overlays|misc|hover|all [...]
 //   sheet : CA-24 (spec 2026-12-mouvement-v2, T9b) + CA-S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 F1 R1 · collapse : H1 H2 H3 H5 R1 · chips : H4 R1 · overlays : O1 O2 O3 R1 · misc : T1 C1 A1 R1 · hover : V1
 // Stories : QA/Overlays/iOS motion (overlay), QA/Motion/Data table, Layout/Disclosure, Navigation/Nav group, etc. Code de sortie 1 au moindre échec.
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); const body = await readFile(f); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(body); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir);
+const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };
