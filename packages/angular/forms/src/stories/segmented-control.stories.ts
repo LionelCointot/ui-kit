@@ -22,9 +22,23 @@ const COLUMNS = ['À faire', 'En cours', 'En revue', 'Terminé'].map((label, ind
           <lc-segmented-control ariaLabel="Colonne (variante outline)" [options]="columns" [(value)]="outline" />
         </div>
       }
+    </div>
+    <div #narrowRoot data-demo="d63">
+      <button lcButton fillMode="outline" size="small" style="margin-block:var(--lc-sys-space-4)" (click)="narrowDemo.replay(narrowRoot)">Rejouer</button>
+      @for (key of narrowDemo.keys(); track key) {
+        <div style="width:22.5rem;max-width:100%">
+          <lc-segmented-control ariaLabel="Colonne à 360 px" [options]="columns" [(value)]="narrow" />
+        </div>
+      }
     </div>`,
 })
 class SegmentedAnimationDemoComponent {
+  protected readonly narrow = signal<string | null>('column-0');
+  protected readonly narrowDemo = replayable({
+    destroyRef: inject(DestroyRef),
+    reset: () => this.narrow.set('column-0'),
+    play: () => this.narrow.set('column-3'),
+  });
   protected readonly columns = COLUMNS;
   protected readonly solid = signal<string | null>('column-0');
   protected readonly outline = signal<string | null>('column-0');

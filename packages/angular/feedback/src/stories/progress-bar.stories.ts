@@ -29,7 +29,7 @@ const upload = (progress: number): LcFileUploadItem => ({ id: 'up', name: 'rappo
           <lc-progress-bar [value]="value() - 45" label="Export" />
         </div>
         <div data-demo="d21" style="display:grid;gap:var(--lc-sys-space-4)">
-          <lc-timeline-bar [segments]="phases" description="Trois phases de 60, 24 et 36 mois." />
+          <lc-timeline-bar [segments]="phases" label="Phases du projet" description="Trois phases de 60, 24 et 36 mois." />
           <lc-file-upload [items]="[item()]" ariaLabel="Pièces jointes" />
           <lc-message-composer [items]="[item()]" ariaLabel="Votre message" />
         </div>

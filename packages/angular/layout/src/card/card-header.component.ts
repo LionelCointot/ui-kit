@@ -15,7 +15,7 @@ import { LcCardComponent } from './card.component';
           <span class="lc-card-header__title">{{ title() }}</span>
         </button>
       } @else {
-        <h3 class="lc-card-header__title">{{ title() }}</h3>
+        <h2 class="lc-card-header__title">{{ title() }}</h2>
       }
       @if (subtitle()) {
         <p class="lc-card-header__subtitle">{{ subtitle() }}</p>

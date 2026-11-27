@@ -179,9 +179,9 @@ class DocTextComponent {
     <section class="auto" aria-labelledby="auto-title">
       <h3 id="auto-title">Ce qui est automatique</h3>
       <ul>
-        <li><strong>Rien à écrire :</strong> <code>lc-app-shell</code> + <code>lc-page</code> + les composants du kit donnent tout le mouvement : changement de page, cartes, listes, jauges, fenêtres, onglets.</li>
-        <li><strong>Un attribut pour votre contenu fait main :</strong> <code>lcReveal</code> pour un bloc, <code>lcStagger</code> pour une série ; le tableau ci-dessous dit lequel poser.</li>
-        <li><strong>Pour couper :</strong> <code>[lcReveal]="null"</code> sur un élément, ou rien du tout : quand l’utilisateur a réduit les animations sur son appareil, tout s’affiche d’un coup dans son état final.</li>
+        <li><strong>Rien à écrire :</strong>&ngsp;<code>lc-app-shell</code> + <code>lc-page</code> + les composants du kit donnent tout le mouvement : changement de page, cartes, listes, jauges, fenêtres, onglets.</li>
+        <li><strong>Un attribut pour votre contenu fait main :</strong>&ngsp;<code>lcReveal</code> pour un bloc, <code>lcStagger</code> pour une série ; le tableau ci-dessous dit lequel poser.</li>
+        <li><strong>Pour couper :</strong>&ngsp;<code>[lcReveal]="null"</code> sur un élément, ou rien du tout : quand l’utilisateur a réduit les animations sur son appareil, tout s’affiche d’un coup dans son état final.</li>
       </ul>
     </section>
 

@@ -1,7 +1,32 @@
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
-import { fixedExample, sizeOptions } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable, sizeOptions } from '@lc/storybook';
 import { LcBadgeComponent, LcStatusBadgeComponent } from '@lionelcointot/ui-angular/feedback';
+
+/** Demo of the `Animation` story (d17, d44): a status badge never animates, neither when it appears nor when its status changes. */
+@Component({
+  selector: 'lc-status-badge-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcStatusBadgeComponent, LcButtonComponent, StoryMotionNoticeComponent],
+  template: `
+    <lc-story-motion-notice />
+    <section #appear data-demo="d17">
+      <p><button lcButton fillMode="outline" size="small" (click)="appearing.replay(appear)">Rejouer</button> Aucun mouvement, exprès.</p>
+      @for (key of appearing.keys(); track key) {
+        <lc-status-badge kind="success">Opérationnel</lc-status-badge>
+      }
+    </section>
+    <section #change data-demo="d44">
+      <p><button lcButton fillMode="outline" size="small" (click)="changing.replay(change)">Rejouer</button> Le statut change sans mouvement, exprès.</p>
+      <lc-status-badge [kind]="degraded() ? 'warning' : 'success'">{{ degraded() ? 'Dégradé' : 'Opérationnel' }}</lc-status-badge>
+    </section>`,
+})
+class StatusBadgeAnimationDemoComponent {
+  protected readonly degraded = signal(false);
+  protected readonly appearing = replayable();
+  protected readonly changing = replayable({ reset: () => this.degraded.set(false), play: () => this.degraded.set(true) });
+}
 
 const KINDS = [
   { kind: 'success', label: 'Opérationnel' },
@@ -21,7 +46,7 @@ const KINDS = [
 const meta: Meta<LcStatusBadgeComponent> = {
   title: 'Feedback/Status badge',
   component: LcStatusBadgeComponent,
-  decorators: [moduleMetadata({ imports: [LcStatusBadgeComponent, LcBadgeComponent, LcButtonComponent] })],
+  decorators: [moduleMetadata({ imports: [LcStatusBadgeComponent, LcBadgeComponent, LcButtonComponent, StatusBadgeAnimationDemoComponent] })],
   argTypes: {
     kind: { control: 'select', options: KINDS.map((item) => item.kind) },
     size: { control: 'inline-radio', options: [...sizeOptions] },
@@ -80,6 +105,22 @@ export const LongLabel: Story = {
   render: () => ({
     template: `<div style="max-width:12rem"><lc-status-badge kind="warning">Dégradé depuis plus de trois jours</lc-status-badge></div>`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcStatusBadgeComponent } from '@lionelcointot/ui-angular/feedback';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcStatusBadgeComponent],
+  template: \`<lc-status-badge kind="success">Opérationnel</lc-status-badge>\`,
+})
+export class ExampleComponent {}`;
+
+/** A status badge does not move on purpose: it appears at once and a new status replaces the old one without any transition. "Rejouer" shows it again, then changes its status. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({ template: '<lc-status-badge-animation-demo />' }),
 };
 
 /** The `highlight` role is also available on `lc-badge` and `button[lcButton]`. */
