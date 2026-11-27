@@ -75,7 +75,8 @@ const DEMOS = {
   d56: ['overlays-sheet--animation', 'lc-dialog présenté en lc-sheet', [rejouer('d56', { relative: true })]],
   d57: ['layout-app-shell--animation', 'téléphone : barre d\'onglets du bas', [rejouer('d57', { keep: 'lc-tabbar' })]],
   d59: ['layout-app-shell--animation', 'téléphone : titre de l\'en-tête au défilement'],
-  d60: ['feedback-toast--animation', 'téléphone : lc-toast au-dessus de la barre d\'onglets'],
+  // Le « Rejouer » du catalogue ouvre et ferme le menu (m-pop, ~1,8 s) puis affiche le toast (entrée à ~2,2 s, sortie 3,27 s plus tard) : `quiet` (catalogue seulement) attend la sortie du toast, `skip` écarte le menu, que la story ne joue pas ; `live` : les animations ne restent pas en pause (la fermeture du menu attend la fin de la sienne avant le toast), leurs valeurs sont relevées à l'apparition.
+  d60: ['feedback-toast--animation', 'téléphone : lc-toast au-dessus de la barre d\'onglets', [rejouer('d60', { skip: 'm-pop', quiet: 3600, live: true })]],
   d61: ['forms-date-input--animation', 'calendrier : glissement du changement de mois'],
   // d62 : `color` ignoré (edges) : le catalogue anime la couleur du texte (300 ms), le kit ne transitionne que l'indicateur (left, width, clip-path), voir segmented-control.component.css
   d62: ['forms-segmented-control--animation', 'lc-segmented-control : pastille à deux bords', [rejouer('d62', { edges: true })]],
@@ -92,13 +93,13 @@ const TABLE = Object.fromEntries(Object.entries(DEMOS).map(([id, [story, label, 
 const startScan = (el) => { window.__fid = { before: new Set(document.getAnimations()), t0: performance.now() }; el?.click(); };
 
 /** Après le déclencheur : relève chaque nouvelle animation à sa première apparition (puis la met en pause à 0), ou échantillonne `sampler` en rAF. */
-const finishScan = async ({ mode, sampler, scope }) => {
+const finishScan = async ({ mode, sampler, scope, quiet, live }) => {
   const { before, t0 } = window.__fid;
   const frame = () => new Promise((resolve) => requestAnimationFrame(resolve)); // résout avec l'horodatage de l'image
   const r3 = (n) => Math.round(n * 1000) / 1000;
   const SKIP = new Set(['offset', 'computedOffset', 'easing', 'composite']);
   const FAMILY = new Set(['transform', 'translate', 'scale', 'rotate', 'opacity']);
-  const MIN_MS = 700, QUIET_MS = 1600, MAX_MS = 8000; // 1,6 s de calme : certains « Rejouer » enchaînent (d61 : 300 ms puis 1,4 s ; d63 : 1,2 s)
+  const MIN_MS = 700, QUIET_MS = quiet ?? 1600, MAX_MS = 8000; // 1,6 s de calme : certains « Rejouer » enchaînent (d61 : 300 ms puis 1,4 s ; d63 : 1,2 s)
   let lastNew = performance.now();
 
   if (mode === 'raf') {
@@ -126,25 +127,6 @@ const finishScan = async ({ mode, sampler, scope }) => {
   const kind = (a) => (a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'animation' : 'waapi');
   const describe = (el) => `${el.localName}${el.id ? `#${el.id}` : ''}${typeof el.className === 'string' && el.className.trim() ? `.${el.className.trim().split(/\s+/).join('.')}` : ''}`;
   const rootEl = scope ? document.querySelector(scope) : null;
-  while (performance.now() - t0 < MAX_MS) {
-    for (const a of document.getAnimations()) {
-      if (before.has(a) || seen.has(a) || !a.effect?.target) continue;
-      seen.add(a);
-      const { target, pseudoElement } = a.effect;
-      if (rootEl && !rootEl.contains(target) && !pseudoElement) continue;
-      const timing = a.effect.getComputedTiming();
-      // Une CSSAnimation porte sa courbe sur ses keyframes (animation-timing-function), l'effet reste `linear` : on retient la courbe effective.
-      const frames = a.effect.getKeyframes();
-      const easing = timing.easing === 'linear' && frames[0]?.easing && frames[0].easing !== 'linear' ? frames[0].easing : timing.easing;
-      const keyframes = a.effect.getKeyframes().map((k) => Object.fromEntries(Object.entries(k).filter(([p]) => p !== 'computedOffset').map(([p, v]) => [p, typeof v === 'number' ? r3(v) : String(v)])));
-      const props = [...new Set(keyframes.flatMap((k) => Object.keys(k)))].filter((p) => !SKIP.has(p));
-      recs.push({ a, target, pseudo: pseudoElement ?? '', rec: { type: kind(a), name: a.animationName ?? a.transitionProperty ?? null, target: describe(target) + (pseudoElement ?? ''), seenAtMs: r3(performance.now() - t0), delay: r3(timing.delay), duration: r3(timing.duration), endDelay: r3(timing.endDelay), iterations: timing.iterations, direction: timing.direction, easing, props, keyframes } });
-      a.pause();
-      lastNew = performance.now();
-    }
-    if (performance.now() - t0 > MIN_MS && performance.now() - lastNew > QUIET_MS) break;
-    await frame();
-  }
   const len = (v, ref) => (v.endsWith('%') ? (parseFloat(v) / 100) * ref : parseFloat(v));
   const state = ({ target, pseudo, rec }) => {
     const out = {};
@@ -163,10 +145,40 @@ const finishScan = async ({ mode, sampler, scope }) => {
     for (const p of rec.props) if (!FAMILY.has(p)) out[p] = cs.getPropertyValue(p.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
     return out;
   };
+  while (performance.now() - t0 < MAX_MS) {
+    for (const a of document.getAnimations()) {
+      if (before.has(a) || seen.has(a) || !a.effect?.target) continue;
+      seen.add(a);
+      const { target, pseudoElement } = a.effect;
+      if (rootEl && !rootEl.contains(target) && !pseudoElement) continue;
+      const timing = a.effect.getComputedTiming();
+      // Une CSSAnimation porte sa courbe sur ses keyframes (animation-timing-function), l'effet reste `linear` : on retient la courbe effective.
+      const frames = a.effect.getKeyframes();
+      const easing = timing.easing === 'linear' && frames[0]?.easing && frames[0].easing !== 'linear' ? frames[0].easing : timing.easing;
+      const keyframes = a.effect.getKeyframes().map((k) => Object.fromEntries(Object.entries(k).filter(([p]) => p !== 'computedOffset').map(([p, v]) => [p, typeof v === 'number' ? r3(v) : String(v)])));
+      const props = [...new Set(keyframes.flatMap((k) => Object.keys(k)))].filter((p) => !SKIP.has(p));
+      recs.push({ a, target, pseudo: pseudoElement ?? '', rec: { type: kind(a), name: a.animationName ?? a.transitionProperty ?? null, target: describe(target) + (pseudoElement ?? ''), seenAtMs: r3(performance.now() - t0), delay: r3(timing.delay), duration: r3(timing.duration), endDelay: r3(timing.endDelay), iterations: timing.iterations, direction: timing.direction, easing, props, keyframes } });
+      const resume = a.currentTime;
+      a.pause();
+      const last = recs.at(-1);
+      last.early = [0, 25, 50, 75, 100].map((pct) => { a.currentTime = last.rec.delay + (pct / 100) * last.rec.duration - (pct === 100 ? 0.01 : 0); return state(last); }); a.currentTime = 0; if (live) { a.currentTime = resume; a.play(); last.live = true; } // relevé dès l'apparition : la cible peut être retirée avant la fin du relevé (sortie du toast, d29 et d60)
+      lastNew = performance.now();
+    }
+    if (performance.now() - t0 > MIN_MS && performance.now() - lastNew > QUIET_MS) break;
+    await frame();
+  }
   for (const entry of recs) entry.rec.values = [];
-  for (const pct of [0, 25, 50, 75, 100]) {
-    for (const { a, rec } of recs) a.currentTime = rec.delay + (pct / 100) * rec.duration - (pct === 100 ? 0.01 : 0);
-    for (const entry of recs) entry.rec.values.push(state(entry));
+  // Deux animations qui touchent les mêmes propriétés de la même cible (sortie puis entrée du toast, d29 et d60) se masqueraient : chacune est relevée seule, l'autre étant placée avant sa phase active.
+  const overlaps = (x, y) => x !== y && x.target === y.target && x.pseudo === y.pseudo && x.rec.props.some((p) => y.rec.props.includes(p));
+  const at = (entry, pct) => { entry.a.currentTime = entry.rec.delay + (pct / 100) * entry.rec.duration - (pct === 100 ? 0.01 : 0); };
+  for (const [index, pct] of [0, 25, 50, 75, 100].entries()) {
+    for (const entry of recs) at(entry, pct);
+    for (const entry of recs) if (!recs.some((other) => overlaps(entry, other))) entry.rec.values.push(entry.target.isConnected && !entry.live ? state(entry) : entry.early[index]);
+    for (const entry of recs.filter((e) => recs.some((other) => overlaps(e, other)))) {
+      for (const other of recs) if (overlaps(entry, other)) { other.a.effect.updateTiming({ fill: 'none' }); other.a.currentTime = -1; } // sans remplissage `backwards`, sinon la 1re image clé de l'autre s'applique encore
+      at(entry, pct);
+      entry.rec.values.push(entry.target.isConnected && !entry.live ? state(entry) : entry.early[index]);
+    }
   }
   return { animations: recs.map((e) => e.rec) };
 };
@@ -220,7 +232,7 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
       await page.mouse.up();
     }
   }
-  const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null });
+  const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null, quiet: catalogue ? trigger.quiet : null, live: trigger.live });
   // Survol, glissement, touche : la latence de Playwright n'est pas celle de la démo, l'origine est le premier changement de valeur (2e échantillon : le 1er est la valeur au repos).
   if (result.series && action !== 'click' && result.series.length > 1) { const [origin] = result.series[1]; result.series = result.series.map(([t, v]) => [t - origin, v]); }
   await context.close();
