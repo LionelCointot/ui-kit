@@ -74,7 +74,6 @@ class TabsAnimationDemoComponent {
       this.rows.set(ROWS['all']);
     },
     play: () => {
-      this.settings.set('notifications');
       this.filterBy('mine');
     },
   });
