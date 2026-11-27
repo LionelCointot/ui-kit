@@ -110,15 +110,15 @@ export const Animation: Story = {
       props: {
         lines,
         ...replayable({ reset: () => lines.set(false), play: (_later, root) => root.querySelector<HTMLElement>('[data-trigger]')?.click() }),
-        // Les lignes sont créées une fois la bulle affichée : créées pendant qu'elle est fermée, elles joueraient leur entrée hors de la page.
+        // Les lignes sont créées une fois la bulle remplie (deux images) : créées pendant qu'elle est fermée, elles joueraient leur entrée hors de la page.
         toggled: (trigger: HTMLElement) => {
           lines.set(false);
-          setTimeout(() => lines.set(trigger.getAttribute('aria-expanded') === 'true'), 120);
+          requestAnimationFrame(() => requestAnimationFrame(() => lines.set(trigger.getAttribute('aria-expanded') === 'true')));
         },
       },
       template: `
         <lc-story-motion-notice />
-        <div #root data-demo="d39" style="padding:var(--lc-sys-space-6) var(--lc-sys-space-4)">
+        <div #root data-demo="d39" style="padding:var(--lc-sys-space-6) var(--lc-sys-space-10)">
           <button lcButton fillMode="outline" size="small" (click)="replay(root)">Rejouer</button>
           @for (key of keys(); track key) {
             <div style="margin-block-start:var(--lc-sys-space-4)">

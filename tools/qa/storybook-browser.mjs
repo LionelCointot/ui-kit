@@ -732,7 +732,7 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
     return { page, errors };
   };
-  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-sys-duration-enter'), offset: q.tokenPx('--lc-overlay-offset') }; });
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-sys-duration-enter'), offset: q.tokenPx('--lc-sys-motion-offset-sm') }; });
   const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
   const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('lc-sheet dialog').open); };
   const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));

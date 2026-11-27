@@ -65,8 +65,10 @@ describe('LcThemeToggleComponent', () => {
   });
 
   describe('View Transitions', () => {
+    const nativeAnimate = Element.prototype.animate;
     afterEach(() => {
       vi.unstubAllGlobals();
+      Element.prototype.animate = nativeAnimate;
       delete (document as { startViewTransition?: unknown }).startViewTransition;
     });
 
@@ -118,8 +120,8 @@ describe('LcThemeToggleComponent', () => {
       expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
     });
 
-    function stubApi(transition: () => { ready: Promise<void>; finished: Promise<void> }) {
-      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel: vi.fn() }));
+    function stubApi(transition: () => { ready: Promise<void>; finished: Promise<void> }, cancel = vi.fn()) {
+      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel }));
       vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
       const start = vi.fn((update: () => void) => {
         update();
@@ -131,15 +133,9 @@ describe('LcThemeToggleComponent', () => {
 
     it('second clic pendant la révélation : pas de nouveau startViewTransition, thème appliqué, cercle annulé', async () => {
       const cancel = vi.fn();
-      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel }));
-      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
       let finish!: () => void;
       const finished = new Promise<void>((r) => (finish = r));
-      const start = vi.fn((update: () => void) => {
-        update();
-        return { ready: Promise.resolve(), finished };
-      });
-      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      const start = stubApi(() => ({ ready: Promise.resolve(), finished }), cancel);
       const { fixture, button, service } = await setup();
       service.setChoice('light');
       await fixture.whenStable();

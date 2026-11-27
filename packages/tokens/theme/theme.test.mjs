@@ -221,7 +221,7 @@ describe('surcharges de mouvement (CA-1b)', () => {
   });
 
   test('seuils de geste et mise en page ne sont pas réglables par un thème', () => {
-    for (const path of ['sheet.dismiss-ratio', 'sheet.top-radius', 'sheet.max-height', 'toast.tabbar-gap', 'dialog.sheet-radius']) {
+    for (const path of ['sheet.dismiss-ratio', 'sheet.top-radius', 'sheet.max-height', 'toast.tabbar-gap']) {
       assert.ok(!motionSchema.some((entry) => entry.path === path), path);
     }
     assert.ok(motionSchema.some((entry) => entry.path === 'sheet.spring-duration'));

@@ -24,8 +24,8 @@ const EXCLUDED_ROOTS = new Set(['z', 'duration', 'easing', 'motion']);
 const MOTION_ROOTS = new Set([...EXCLUDED_ROOTS].filter((root) => root !== 'z'));
 /** Tokens de components/motion.tokens.json qu'un thème ne règle pas : seuil de geste (ADR 0011 décision 6) et mise en page. */
 const NOT_THEMEABLE = new Set([
-  'sheet.card-width', 'sheet.card-max-height', 'sheet.top-gap', 'sheet.radius', 'sheet.top-radius', 'sheet.max-height',
-  'dialog.sheet-radius', 'toast.tabbar-gap',
+  'sheet.card-width', 'sheet.card-max-height', 'sheet.radius', 'sheet.top-radius', 'sheet.max-height',
+  'toast.tabbar-gap',
 ]);
 const EDITABLE_TYPES = new Set(['color', 'dimension', 'fontFamily', 'number', 'shadow']);
 const SIMPLE_PATHS = new Set(['color.primary', 'color.secondary', 'color.neutral', 'color.surface', 'color.background', 'radius.md', 'font.family.base']);

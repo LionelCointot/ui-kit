@@ -8,7 +8,6 @@ export const LC_CHART_EASING = {
   standard: 'cubicOut',
   entrance: 'exponentialOut',
   fill: 'quinticOut',
-  soft: 'cubicOut',
   out: 'cubicOut',
   pop: 'backOut',
   'pop-strong': 'backOut',
