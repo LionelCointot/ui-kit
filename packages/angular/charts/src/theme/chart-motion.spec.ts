@@ -119,15 +119,15 @@ describe('graphiques : mouvement depuis les tokens (T11, CA-28)', () => {
     expect(option.animationEasingUpdate).toBe(LC_CHART_EASING['draw']);
   });
 
-  it('CA-28 : barres, courbe, aire et lc-chart passent animationDuration et animationDurationUpdate = token update-duration, courbe draw, décalage = update-stagger × rang', async () => {
+  it('CA-28 : barres, courbe, aire et lc-chart passent animationDuration et animationDurationUpdate = token update-duration, courbe inout, décalage = update-stagger × rang', async () => {
     const options = await mount();
     for (const index of OTHERS) {
       const option = options[index];
       expect(option.animation, `graphique ${index}`).toBe(true);
       expect(option.animationDuration, `graphique ${index}`).toBe(555);
       expect(option.animationDurationUpdate, `graphique ${index}`).toBe(555);
-      expect(option.animationEasing, `graphique ${index}`).toBe(LC_CHART_EASING['draw']);
-      expect(option.animationEasingUpdate, `graphique ${index}`).toBe(LC_CHART_EASING['draw']);
+      expect(option.animationEasing, `graphique ${index}`).toBe(LC_CHART_EASING['inout']);
+      expect(option.animationEasingUpdate, `graphique ${index}`).toBe(LC_CHART_EASING['inout']);
       expect(typeof option.animationDelayUpdate, `graphique ${index}`).toBe('function');
       expect([0, 1, 3].map((rank) => option.animationDelayUpdate(rank))).toEqual([0, 33, 99]);
     }

@@ -18,15 +18,15 @@ export const LC_CHART_EASING = {
   stack: 'quarticOut',
 } as const satisfies Readonly<Record<string, string>>;
 
-/** Animation de mise à jour des graphiques à axes : durée, courbe et décalage par rang plafonné (`--lc-sys-motion-stagger-cap`), lus des tokens du thème. */
+/** Animation de mise à jour des graphiques à axes : durée, courbe `inout` (power3.inOut du site) et décalage par rang plafonné (`--lc-sys-motion-stagger-cap`), lus des tokens du thème. */
 export function updateMotion(theme: LcChartTheme): object {
   const { updateMs, staggerMs, staggerCap } = theme.motion;
   const cap = staggerCap ?? Infinity;
   return {
     animationDuration: updateMs,
     animationDurationUpdate: updateMs,
-    animationEasing: LC_CHART_EASING['draw'],
-    animationEasingUpdate: LC_CHART_EASING['draw'],
+    animationEasing: LC_CHART_EASING['inout'], // power3.inOut du site (re-calcul des barres, d24)
+    animationEasingUpdate: LC_CHART_EASING['inout'],
     animationDelayUpdate: (rank: number): number => Math.min(rank, cap) * staggerMs,
   };
 }
