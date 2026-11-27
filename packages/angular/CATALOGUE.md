@@ -180,7 +180,7 @@ Règle de signe des décalages (`*-offset`) :
 
 Même nom, autre valeur :
 - `--lc-sys-duration-fast` 100 → 150 ms, `-normal` 200 → 250 ms, `-slow` 300 → 350 ms, `-long` 350 → 600 ms ; tout composant qui lit directement ces rôles change avec eux.
-- `--lc-sys-duration-draw` 900 → 1100 ms (tracé `lcDraw`, compteur `lcCountUp`) ; nouveau rôle `--lc-sys-duration-fill` (950 ms) pour `lcFill`, qui lisait `-draw`.
+- `--lc-sys-duration-draw` 900 → 1100 ms (tracé `lcDraw`) ; nouveau rôle `--lc-sys-duration-fill` (950 ms) pour `lcFill`, qui lisait `-draw` ; nouveau jeton `--lc-count-up-duration` (1200 ms) pour `lcCountUp`, qui lisait `-draw`.
 - `--lc-dialog-enter-scale` 0,96 → 0,86 (Talmo) ; `--lc-list-move-duration` 500 → 420 ms (littéral, plus un rôle) ; `--lc-list-move-easing` : `easing-standard` → `easing-draw`.
 - `--lc-button-press-duration` : 100 ms littéral, découplé de `duration-fast` ; `--lc-shell-nav-duration` : 350 ms littéral, découplé de `duration-long`.
 

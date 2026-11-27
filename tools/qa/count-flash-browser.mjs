@@ -7,7 +7,7 @@
 // Contrat pour le développeur (choix où la spec ne tranche pas) :
 //   - `lcFlash` : l'hôte porte la classe `lc-flash` tant que la directive est posée (sélecteur de la liste blanche de CA-5) ; l'animation (CSS ou WAAPI) porte sur l'hôte, `color` seulement,
 //     de `--lc-sys-color-primary` vers la couleur héritée, durée `--lc-flash-duration`, courbe `--lc-flash-easing` ; un nouveau changement pendant un flash le relance (jamais deux animations en même temps).
-//   - `lcCountUp` : durée `--lc-sys-duration-draw` (1100 ms), courbe `--lc-sys-easing-out` ; aucune région `aria-live`, aucun attribut ARIA ajouté.
+//   - `lcCountUp` : durée `--lc-count-up-duration` (1200 ms), courbe `--lc-sys-easing-out` ; aucune région `aria-live`, aucun attribut ARIA ajouté.
 //   - stories Animation : `layout-count-up--animation` (élément `[data-sample]` au repos sur sa valeur finale, bouton « Rejouer » qui recompte) et `layout-flash--animation` (« Rejouer » change la valeur).
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -91,8 +91,8 @@ await section('CA-14', async () => {
   check(monotone(values) && distinct >= 6, 'CA-14 première apparition : échantillons rAF monotones (≥ 6 valeurs distinctes)', `distinctes=${distinct} valeurs=${[...new Set(cu)].slice(0, 12)}`);
   check(cu.at(-1) === exp.number, 'CA-14 fin à la valeur exacte formatée (number : 2 décimales)', `fin=${cu.at(-1)} attendu=${exp.number}`);
   const lastChange = seen.findLast((r, i) => i === 0 || r.texts[0] !== seen[i - 1].texts[0]);
-  const dur = await page.evaluate(() => window.__qa.ms('--lc-sys-duration-draw'));
-  check(lastChange && lastChange.t - seen[0].t >= 0.6 * dur && lastChange.t - seen[0].t <= dur + 400, `CA-14 durée du compte ≈ --lc-sys-duration-draw (${dur} ms)`, `dernier changement à ${lastChange && Math.round(lastChange.t - seen[0].t)} ms`);
+  const dur = await page.evaluate(() => window.__qa.ms('--lc-count-up-duration'));
+  check(lastChange && lastChange.t - seen[0].t >= 0.6 * dur && lastChange.t - seen[0].t <= dur + 400, `CA-14 durée du compte ≈ --lc-count-up-duration (${dur} ms)`, `dernier changement à ${lastChange && Math.round(lastChange.t - seen[0].t)} ms`);
   // Arrondi selon le format, à chaque image.
   const col = (i) => run.map((r) => r.texts[i]).filter((t) => t !== null);
   check(col(1).every((t) => !/[,.]\d/.test(t.replace(/ | /g, ''))) && col(1).at(-1) === exp.integer, 'CA-14 integer : jamais de décimale, fin exacte', `fin=${col(1).at(-1)} attendu=${exp.integer}`);
@@ -149,7 +149,7 @@ for (const width of [1280, 360]) {
     const exp2 = await EXPECTED(page, 1850);
     const texts = new Set(change.map((r) => r.texts[0]));
     check([...texts].every((t) => t === exp.number || t === exp2.number) && change.at(-1).texts[0] === exp2.number, `CA-3 ${width}px réduit : le changement saute à la nouvelle valeur finale`, JSON.stringify([...texts]));
-    await page.evaluate(() => window.__qa.ms('--lc-sys-duration-draw')); // jetons lisibles
+    await page.evaluate(() => window.__qa.ms('--lc-count-up-duration')); // jetons lisibles
     check(await page.evaluate(() => !document.getAnimations().some((a) => a.playState === 'running' || a.pending)), `CA-3 ${width}px réduit : aucune animation en cours`);
     await context.close();
   });

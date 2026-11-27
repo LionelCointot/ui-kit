@@ -91,6 +91,7 @@
 
   { "demo": "d03", "valeur": "2.5deg", "token": "--lc-sys-motion-rotate-tilt" },
   { "demo": "d14", "valeur": "1100ms", "token": "--lc-sys-duration-draw" },
+  { "demo": "d15", "valeur": "1200ms", "token": "--lc-count-up-duration" },
   { "demo": "d16", "valeur": "950ms", "token": "--lc-flash-duration" },
   { "demo": "d16", "valeur": "cubic-bezier(0.22, 1, 0.36, 1)", "token": "--lc-flash-easing" },
 

@@ -82,6 +82,7 @@ const GROUPS = {
   toast: ['500ms', '30px', '0.94', '250ms'],
   switch: ['465ms'],
   steps: ['800ms', '117ms'],
+  'count-up': ['1200ms'],
   flash: ['950ms'],
   title: ['115%', '700ms', E('inout'), '320ms'],
   live: ['2000ms', '0.1', '0.45'],

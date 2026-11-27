@@ -162,6 +162,9 @@
     "dot-scale": { "$value": "0.6", "$type": "number", "$description": "Scale a step bullet pops in from (unitless number)." },
     "dot-delay": { "$value": "{sys.motion.stagger-normal}", "$type": "duration" }
   },
+  "count-up": {
+    "duration": { "$value": "1200ms", "$type": "duration", "$description": "Counter run time of lcCountUp (Talmo: 1.2 s, power3.out = easing-out)." }
+  },
   "flash": {
     "duration": { "$value": "{sys.duration.fill}", "$type": "duration" },
     "easing": { "$value": "{sys.easing.title}", "$type": "cubicBezier" }
