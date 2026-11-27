@@ -76,14 +76,17 @@ class RequestsPageComponent {}
     <lc-page title="Demande n° 42" description="Revenir à la liste fait l'inverse : la page glisse vers la droite.">
       <p><a routerLink="/requests">Retour aux demandes</a></p>
       <p>Le titre de cette page reçoit le focus à chaque changement de page.</p>
+      @for (line of lines; track line) { <p>Ligne {{ line }} : défilez, le titre de la page vient dans l'en-tête.</p> }
     </lc-page>`,
 })
-class RequestPageComponent {}
+class RequestPageComponent {
+  protected readonly lines = Array.from({ length: 30 }, (_, index) => index + 1);
+}
 
+// `title` sur la route parente : c'est lui que porte le bouton retour de l'en-tête mobile (`‹ Mes demandes`).
 const stackRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'requests' },
-  { path: 'requests', component: RequestsPageComponent },
-  { path: 'requests/42', component: RequestPageComponent },
+  { path: 'requests', title: 'Mes demandes', children: [{ path: '', component: RequestsPageComponent }, { path: '42', component: RequestPageComponent }] },
 ];
 
 @Component({
@@ -112,6 +115,19 @@ class AppShellStackDemoComponent {
   }
 }
 
+/** d59 : le titre de la page vient dans l'en-tête mobile au-delà de 80 px de défilement ; « Rejouer » fait défiler la fenêtre vers le bas puis vers le haut. */
+@Component({
+  selector: 'lc-app-shell-title-demo',
+  imports: [LcButtonComponent],
+  host: { 'data-demo': 'd59', style: 'position: fixed; inset-block-end: 16px; inset-inline-end: 16px; z-index: 1' },
+  template: `<button lcButton fillMode="outline" size="small" type="button" (click)="replay()">Rejouer</button>`,
+})
+class AppShellTitleDemoComponent {
+  protected replay(): void {
+    window.scrollTo(0, window.scrollY > 0 ? 0 : document.documentElement.scrollHeight);
+  }
+}
+
 const ANIMATION_CODE = `import { Component } from '@angular/core';
 import { RouterOutlet, type Routes } from '@angular/router';
 import { LcAppShellComponent } from '@lionelcointot/ui-angular/layout';
@@ -123,10 +139,9 @@ export class RequestPage {}
 @Component({ selector: 'app-plain-page', template: \`<h1>Page simple</h1>\` })
 export class PlainPage {}
 
-// Routes avec un titre (lc-page) ; lc-app-shell anime tout seul les changements de page.
+// Le \`title\` de la route parente nomme le bouton retour de l'en-tête mobile ; lc-app-shell anime tout seul les changements de page.
 export const routes: Routes = [
-  { path: 'requests', component: RequestsPage },
-  { path: 'requests/:id', component: RequestPage },
+  { path: 'requests', title: 'Mes demandes', children: [{ path: '', component: RequestsPage }, { path: ':id', component: RequestPage }] },
   { path: 'plain', component: PlainPage, data: { lcPageTransition: false } }, // sans transition
 ];
 
@@ -144,12 +159,14 @@ export class AppComponent {}`;
 /**
  * Real page changes in `lc-app-shell`: below 768 px the new page stacks in from the right over the old one, which recedes by 30 % under a veil; above, a fade and a short slide.
  * "Rejouer" opens the request, then goes back to the list on the next press. Narrow the window to a phone width to see the stacking.
+ * On a phone, a request (level 2) shows a back button `‹ Mes demandes` in the header (the `title` of its parent route; `Retour` without one) and the page title fades in after 80 px of scroll;
+ * dragging from the left edge also goes back, the previous page showing under the finger. Give the parent routes a `title` for the back button.
  */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [
-    moduleMetadata({ imports: [AppShellStackDemoComponent, StoryMotionNoticeComponent] }),
+    moduleMetadata({ imports: [AppShellStackDemoComponent, AppShellTitleDemoComponent, StoryMotionNoticeComponent] }),
     applicationConfig({ providers: [provideLocationMocks()] }),
   ],
-  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo />` }),
+  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo /><lc-app-shell-title-demo />` }),
 };
