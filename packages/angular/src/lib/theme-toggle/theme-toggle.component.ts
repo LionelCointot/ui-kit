@@ -43,6 +43,9 @@ export class LcThemeToggleComponent {
   protected readonly next = computed(() => CYCLE[(CYCLE.indexOf(this.current()) + 1) % CYCLE.length]);
   protected readonly name = computed(() => this.labels.name(this.labels[this.current().label], this.labels[this.next().label]));
 
+  /** Révélation en cours (au plus une). */
+  private run?: { stale: boolean; animation?: Animation };
+
   readonly size = input<LcSize | undefined>(undefined);
   readonly fillMode = input<LcFillMode | undefined>(undefined);
 
@@ -54,8 +57,15 @@ export class LcThemeToggleComponent {
       this.app.tick();
     };
     const doc = this.document;
-    // shortcut: View Transitions est hors Baseline 2024 (ADR 0009), le repli est la bascule directe.
+    // Repli ADR 0009 : View Transitions hors Baseline 2024 ; retirer la garde quand l'API y entre.
     if (lcPrefersReducedMotion() || typeof doc.startViewTransition !== 'function') return apply();
+    // Un second `startViewTransition` pendant la révélation fait planter l'onglet sous Chrome : bascule directe, cercle annulé.
+    const busy = this.run;
+    if (busy) {
+      busy.stale = true;
+      busy.animation?.cancel();
+      return apply();
+    }
 
     const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const x = box.left + box.width / 2;
@@ -65,12 +75,20 @@ export class LcThemeToggleComponent {
     const circle = (r: number) => `circle(${r}px at ${x}px ${y}px)`;
 
     root.setAttribute('data-lc-theme-switch', ''); // motion.css retire les fondus par défaut le temps de la bascule
+    const run: { stale: boolean; animation?: Animation } = { stale: false };
+    this.run = run;
     const transition = doc.startViewTransition(apply);
     // `ready` est rejetée quand la transition est abandonnée : la bascule a eu lieu quand même, rien à animer.
     transition.ready.then(
-      () => lcAnimate(root, [{ clipPath: circle(0) }, { clipPath: circle(radius) }], { duration: '--lc-theme-toggle-duration', easing: '--lc-theme-toggle-easing', pseudoElement: '::view-transition-new(root)' }),
+      () => {
+        if (!run.stale) run.animation = lcAnimate(root, [{ clipPath: circle(0) }, { clipPath: circle(radius) }], { duration: '--lc-theme-toggle-duration', easing: '--lc-theme-toggle-easing', pseudoElement: '::view-transition-new(root)' });
+      },
       () => undefined,
     );
-    transition.finished.finally(() => root.removeAttribute('data-lc-theme-switch'));
+    const clear = () => {
+      this.run = undefined;
+      root.removeAttribute('data-lc-theme-switch');
+    };
+    transition.finished.then(clear, clear);
   }
 }

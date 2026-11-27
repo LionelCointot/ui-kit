@@ -117,5 +117,61 @@ describe('LcThemeToggleComponent', () => {
       await Promise.resolve();
       expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
     });
+
+    function stubApi(transition: () => { ready: Promise<void>; finished: Promise<void> }) {
+      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel: vi.fn() }));
+      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+      const start = vi.fn((update: () => void) => {
+        update();
+        return transition();
+      });
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      return start;
+    }
+
+    it('second clic pendant la révélation : pas de nouveau startViewTransition, thème appliqué, cercle annulé', async () => {
+      const cancel = vi.fn();
+      (Element.prototype as { animate?: unknown }).animate = vi.fn(() => ({ cancel }));
+      vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+      let finish!: () => void;
+      const finished = new Promise<void>((r) => (finish = r));
+      const start = vi.fn((update: () => void) => {
+        update();
+        return { ready: Promise.resolve(), finished };
+      });
+      (document as { startViewTransition?: unknown }).startViewTransition = start;
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+
+      button().click();
+      await Promise.resolve();
+      button().click();
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(service.choice()).toBe('auto');
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(true);
+      finish();
+      await finished;
+      await Promise.resolve();
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
+      button().click();
+      expect(start).toHaveBeenCalledTimes(2);
+    });
+
+    it('transition abandonnée : fondus retirés, aucun rejet non géré', async () => {
+      const rejections: unknown[] = [];
+      const onRejection = (e: PromiseRejectionEvent) => rejections.push(e.reason);
+      window.addEventListener('unhandledrejection', onRejection);
+      stubApi(() => ({ ready: Promise.reject(new Error('skipped')), finished: Promise.reject(new Error('skipped')) }));
+      const { fixture, button, service } = await setup();
+      service.setChoice('light');
+      await fixture.whenStable();
+      button().click();
+      await new Promise((r) => setTimeout(r, 20));
+      window.removeEventListener('unhandledrejection', onRejection);
+      expect(document.documentElement.hasAttribute('data-lc-theme-switch')).toBe(false);
+      expect(rejections).toEqual([]);
+    });
   });
 });

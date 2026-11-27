@@ -34,7 +34,7 @@ export const Animation: Story = {
     template: `
       <lc-story-motion-notice />
       <div #root data-demo="d37">
-        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
+        <button lcButton fillMode="outline" size="small" style="margin-inline-end:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
         <lc-theme-toggle />
       </div>`,
   }),
