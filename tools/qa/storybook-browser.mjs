@@ -1081,8 +1081,8 @@ async function motionList(context, base, reduced, tag, phone, check) {
     const rows = snap?.rows ?? [];
     const first = snap ? snap.t + rows[0]?.delay : NaN;
     // Rangs 0 à 7 : une entrée chacun (délai = rang × 40 ms) ; au-delà (cascade plafonnée, comme les cartes de CA-12) : pas d'entrée obligatoire, mais jamais après le plafond.
-    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !(sameEase(c.easing, r.entrance) || sameEase(c.easing, r.soft)) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
-    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 450 ms, 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
+    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !sameEase(c.easing, r.entrance) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
+    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 450 ms entrance (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
     check(!!snap && first - r.changedAt >= r.refill - 40 && first - r.changedAt <= r.refill + 60, `CA-26 ${tag} ${label} la première ligne entre ${r.refill} ms après le changement (à une image près)`, `écart=${(first - r.changedAt).toFixed(1)} ms`);
     check(!waapiOf(r).some((a) => a.props.includes('transform')), `CA-26 ${tag} ${label} aucune glissade de ligne (la liste est reconstruite)`, `glissades=${waapiOf(r).filter((a) => a.props.includes('transform')).map((a) => a.key)}`);
   };
@@ -1187,9 +1187,12 @@ async function motion(browser, base) {
       // lc-data-table (T6) : téléphone seulement ici ; le menu de filtre est dans la boucle des panneaux.
       if (width === 360 && name !== 'forced') await motionPhone(context, base, reduced, tag, check);
       if (width === 1280 && name === 'normal') {
+        // Spec v2 §5.4.1 (d07 relevé à 1280 px) : cascade à l'ouverture aussi sur ordinateur, 450 ms `soft`, 40 ms par rang, 8 px.
         const { page } = await motionPage(context, base, 'qa-motion-data-table--table');
-        const reveals = await page.locator('tr[lcreveal], tr.lc-reveal').count();
-        check(reveals === 0, `CA-12 ${tag} pas de cascade sur ordinateur`, `tr[lcreveal]=${reveals}`);
+        await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1, undefined, { timeout: 5000 }).catch(() => {});
+        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], soft: window.__qa.easing('--lc-sys-easing-soft'), reveal: window.__qa.tokenMs('--lc-sys-duration-enter') }));
+        const rows8 = open.snap.slice(0, 8);
+        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 450) && near(open.reveal, 450) && sameEase(c.easing, open.soft) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 450 ms soft, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
         await page.close();
       }
 
