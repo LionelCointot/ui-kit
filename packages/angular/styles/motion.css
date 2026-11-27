@@ -23,6 +23,14 @@
   }
 }
 
+/* Barre du haut (`lc-app-shell`) : entrée au chargement, depuis le haut sur `translate` (offset du token positif). */
+@keyframes lc-topbar-enter {
+  from {
+    opacity: 0;
+    translate: 0 calc(-1 * var(--lc-topbar-enter-offset));
+  }
+}
+
 @keyframes lc-leave {
   to {
     opacity: 0;

@@ -214,7 +214,8 @@
   "topbar": {
     "enter-offset": { "$value": "10px", "$type": "dimension" },
     "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
-    "enter-stagger": { "$value": "30ms", "$type": "duration" }
+    "enter-stagger": { "$value": "30ms", "$type": "duration" },
+    "enter-delay": { "$value": "80ms", "$type": "duration", "$description": "Start of the load-time entrance of the top bar (Talmo site)." }
   },
   "disclosure": {
     "enter-duration": { "$value": "300ms", "$type": "duration" },

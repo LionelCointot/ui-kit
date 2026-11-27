@@ -199,7 +199,7 @@ Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton don
 - `lift` : `offset` -4px · `duration` → sys-duration-slow · `easing` → sys-easing-out
 - `calendar` : `duration` → overlay-enter-duration · `easing` → overlay-easing · `slide-offset` 18px · `slide-duration` → sys-duration-enter · `slide-opacity` 0.14 · `row-stagger` 30ms
 - `chart` : `sparkline-duration` 1300ms · `update-duration` → sys-duration-view · `update-stagger` 20ms
-- `topbar` : `enter-offset` 10px · `enter-duration` → sys-duration-move · `enter-stagger` 30ms
+- `topbar` : `enter-offset` 10px · `enter-duration` → sys-duration-move · `enter-stagger` 30ms · `enter-delay` 80ms
 - `disclosure` : `enter-duration` 300ms · `exit-duration` 100ms · `offset` -5px · `chevron-duration` → disclosure-enter-duration
 - `theme-toggle` : `duration` → sys-duration-enter · `easing` cubic-bezier(0.65, 0, 0.35, 1)
 - `spinner` : `duration` 700ms · `pulse-duration` 1500ms

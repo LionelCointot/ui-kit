@@ -318,6 +318,7 @@ export const MOTION_SCHEMA = [
   {"path":"topbar.enter-offset","cssVar":"--lc-topbar-enter-offset","type":"dimension","unit":"length"},
   {"path":"topbar.enter-duration","cssVar":"--lc-topbar-enter-duration","type":"duration"},
   {"path":"topbar.enter-stagger","cssVar":"--lc-topbar-enter-stagger","type":"duration"},
+  {"path":"topbar.enter-delay","cssVar":"--lc-topbar-enter-delay","type":"duration"},
   {"path":"disclosure.enter-duration","cssVar":"--lc-disclosure-enter-duration","type":"duration"},
   {"path":"disclosure.exit-duration","cssVar":"--lc-disclosure-exit-duration","type":"duration"},
   {"path":"disclosure.offset","cssVar":"--lc-disclosure-offset","type":"dimension","unit":"length"},

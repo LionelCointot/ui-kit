@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet, type Routes } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { StoryMotionNoticeComponent, fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcAppShellComponent, LcPageComponent } from '@lionelcointot/ui-angular/layout';
 import { AppShellTabbarDemoComponent } from './app-shell-tabbar-demo.component';
 
@@ -116,6 +116,28 @@ class AppShellStackDemoComponent {
   }
 }
 
+/** d05 : entrée de la barre du haut au premier rendu seulement ; « Rejouer » recrée la coquille, comme un rechargement. */
+@Component({
+  selector: 'lc-app-shell-header-demo',
+  imports: [LcAppShellComponent, LcButtonComponent],
+  host: { 'data-demo': 'd05' },
+  template: `
+    <section #section>
+      <button lcButton fillMode="outline" size="small" type="button" (click)="demo.replay(section)">Rejouer</button>
+      @for (key of demo.keys(); track key) {
+        <lc-app-shell navMode="none">
+          <strong lcShellHeader>Halden &amp; Moor</strong>
+          <span lcShellHeader>Planner</span>
+          <span lcShellHeader>Calendar</span>
+          <span lcShellHeader>Tasks</span>
+        </lc-app-shell>
+      }
+    </section>`,
+})
+class AppShellHeaderDemoComponent {
+  protected readonly demo = replayable();
+}
+
 /** d59 : le titre de la page vient dans l'en-tête mobile au-delà de 80 px de défilement ; « Rejouer » fait défiler la fenêtre vers le bas puis vers le haut. */
 @Component({
   selector: 'lc-app-shell-title-demo',
@@ -162,13 +184,14 @@ export class AppComponent {}`;
  * "Rejouer" opens the request, then goes back to the list on the next press. Narrow the window to a phone width to see the stacking.
  * On a phone, a request (level 2) shows a back button `‹ Mes demandes` in the header (the `title` of its parent route; `Retour` without one) and the page title fades in after 80 px of scroll;
  * dragging from the left edge also goes back, the previous page showing under the finger. Give the parent routes a `title` for the back button.
+ * The header content (brand, links, tools projected in `[lcShellHeader]`) drops in once, when the shell first renders, and never again on navigation; the first "Rejouer" recreates the shell.
  * Below 768 px, a bottom tab bar also appears for the sections marked `primary` (at most 4, plus "Plus" which opens the drawer): it rises in, and its pill stretches toward the tapped tab.
  */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [
-    moduleMetadata({ imports: [AppShellStackDemoComponent, AppShellTitleDemoComponent, AppShellTabbarDemoComponent, StoryMotionNoticeComponent] }),
+    moduleMetadata({ imports: [AppShellHeaderDemoComponent, AppShellStackDemoComponent, AppShellTitleDemoComponent, AppShellTabbarDemoComponent, StoryMotionNoticeComponent] }),
     applicationConfig({ providers: [provideLocationMocks()] }),
   ],
-  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo /><lc-app-shell-title-demo /><lc-app-shell-tabbar-demo />` }),
+  render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-header-demo /><lc-app-shell-stack-demo /><lc-app-shell-title-demo /><lc-app-shell-tabbar-demo />` }),
 };
