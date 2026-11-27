@@ -334,6 +334,8 @@ export const Animation: Story = {
       agenda: AGENDA,
       field: replayable({ play: (_later, root) => root.querySelector<HTMLElement>('button[aria-expanded]')?.click() }),
       list: replayable(),
+      // L'ancienne liste est remplacée d'un coup (comme dans le catalogue) : sans cela chaque ligne rejouerait sa sortie.
+      quiet: (root: HTMLElement) => root.querySelectorAll('li').forEach((item) => (item.style.animation = 'none')),
       // Novembre 2026 couvre six semaines ; le mois suivant (cinq) puis le retour jouent les deux sens, 1,4 s d'écart.
       months: replayable({
         play: (later, root) => {
@@ -351,7 +353,7 @@ export const Animation: Story = {
         }
       </div>
       <section #listRoot data-demo="d41" style="margin-block-start:var(--lc-sys-space-8)">
-        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="list.replay(listRoot)">Rejouer</button>
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="quiet(listRoot); list.replay(listRoot)">Rejouer</button>
         <div style="display:flex;flex-wrap:wrap;gap:var(--lc-sys-space-6);align-items:flex-start">
           <lc-calendar-panel today="2026-11-19" [selection]="{ from: '2026-11-12', to: null }" />
           @for (key of list.keys(); track key) {

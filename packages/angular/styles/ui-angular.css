@@ -421,6 +421,12 @@ lc-form-field [lcSuffix] {
   }
 }
 
+/* Fond transparent du CDK (menu, filtre de tableau) : ses transitions de 1 ms n'existent que pour le CDK, elles ne sont pas du mouvement
+   (elles comptent pourtant comme deux animations de la page à l'ouverture d'un menu). */
+.cdk-overlay-container .cdk-overlay-transparent-backdrop {
+  transition: none;
+}
+
 /* Panneaux CDK (menu, liste du combobox, calendriers). Entrée en animation sur le contenu du conteneur `.cdk-overlay-pane` (le CDK pose
    `panelClass` après un premier calcul de style : `@starting-style` ne jouerait jamais ; et une animation sur le conteneur empêcherait
    la transition de sortie pendant l'entrée). `lc-overlay--above` (position « au-dessus » du CDK, sur le conteneur) inverse le sens par
