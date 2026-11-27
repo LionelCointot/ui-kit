@@ -56,7 +56,9 @@ describe('lc-card : entrée seule, sans attribut côté application', () => {
   it('lc-grid porte la cascade : rang dans l\'ordre du DOM, rythme des cartes', () => {
     const { fixture, ranks } = setup();
     expect(ranks('grid')).toEqual(['0', '1', '2']);
-    expect((fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('#grid')!.style.getPropertyValue('--lc-stagger-pace')).toBe('var(--lc-sys-motion-stagger-cards)');
+    expect((fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('#grid')!.style.getPropertyValue('--lc-reveal-pace')).toBe('var(--lc-sys-motion-stagger-cards)');
+    // `--lc-stagger-pace` primerait sur le rythme propre de la variante `tilt` (70 ms) : la grille ne le pose pas.
+    expect((fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('#grid')!.style.getPropertyValue('--lc-stagger-pace')).toBe('');
   });
 
   it('un lcStagger au-dessus garde son rythme et son compteur (un seul compteur)', () => {

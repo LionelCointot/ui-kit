@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, comp
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { LC_LABELS, LcIconComponent, lcPlaceIndicator, type LcNavEntry } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcIconComponent, type LcNavEntry } from '@lionelcointot/ui-angular';
 import { lcActiveTab } from './tabbar-tabs';
 
 /**
@@ -58,6 +58,7 @@ export class LcAppTabbarComponent {
   private readonly indicator = viewChildren<ElementRef<HTMLElement>>('indicator');
   private readonly moreButton = viewChildren<ElementRef<HTMLButtonElement>>('more');
   private placed = -2;
+  private middle: number | undefined;
 
   constructor() {
     afterRenderEffect(() => this.place(false));
@@ -84,8 +85,7 @@ export class LcAppTabbarComponent {
     const items = this.items();
     const indicator = this.indicator()[0]?.nativeElement;
     const item = items[index]?.nativeElement;
-    const last = items.at(-1)?.nativeElement;
-    if (!indicator || !item || !last) return;
+    if (!indicator || !item) return;
     // Barre masquée (≥ 768 px) : rien à mesurer ; la pastille sera posée sans glisser à la réapparition (ResizeObserver).
     const visible = item.offsetWidth > 0;
     indicator.classList.toggle('lc-tabbar__indicator--hidden', !visible);
@@ -96,7 +96,14 @@ export class LcAppTabbarComponent {
     // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
     indicator.classList.toggle('lc-tabbar__indicator--instant', instant || this.placed === -2 || this.placed === index);
     this.placed = index;
-    lcPlaceIndicator(indicator, 'x', item.offsetLeft, item.offsetLeft + item.offsetWidth, last.offsetLeft + last.offsetWidth);
+    // Deux bords, deux propriétés : la boîte de la pastille est exactement la zone visible (pas de clip-path, que les vérificateurs de contraste ignorent).
+    const bar = indicator.offsetParent;
+    if (!bar) return;
+    const middle = item.offsetLeft + item.offsetWidth / 2;
+    if (this.middle !== undefined && this.middle !== middle) indicator.dataset['direction'] = middle > this.middle ? 'forward' : 'backward';
+    this.middle = middle;
+    indicator.style.left = `${item.offsetLeft}px`;
+    indicator.style.right = `${bar.clientWidth - item.offsetLeft - item.offsetWidth}px`;
     this.ready.set(true);
   }
 }
