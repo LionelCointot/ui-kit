@@ -1284,9 +1284,9 @@ async function motion(browser, base) {
         // Spec v2 §5.4.1 (d07 relevé à 1280 px) : cascade à l'ouverture aussi sur ordinateur, 550 ms `out`, 40 ms par rang, 8 px.
         const { page } = await motionPage(context, base, 'qa-motion-data-table--table');
         await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1, undefined, { timeout: 5000 }).catch(() => {});
-        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], soft: window.__qa.easing('--lc-sys-easing-out'), reveal: window.__qa.tokenMs('--lc-reveal-duration') }));
+        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], out: window.__qa.easing('--lc-sys-easing-out'), reveal: window.__qa.tokenMs('--lc-reveal-duration') }));
         const rows8 = open.snap.slice(0, 8);
-        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 550) && near(open.reveal, 550) && sameEase(c.easing, open.soft) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 550 ms out, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
+        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 550) && near(open.reveal, 550) && sameEase(c.easing, open.out) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 550 ms out, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
         await page.close();
       }
 

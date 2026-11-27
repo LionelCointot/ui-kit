@@ -205,7 +205,7 @@ class DrawerAnimationDemoComponent {
   }
 }
 
-/** The drawer slides in over its whole width in 550 ms and out in 300 ms, the backdrop fades in 300 ms and out in 200 ms, and the lines of its content appear in cascade. Below 768 px it is a bottom sheet. "Rejouer" opens it again. */
+/** The drawer slides in over its whole width in 600 ms and out in 320 ms, the backdrop fades in 300 ms and out in 200 ms, and the lines of its content appear in cascade. Below 768 px it is a bottom sheet. "Rejouer" opens it again. */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [moduleMetadata({ imports: [DrawerAnimationDemoComponent] })],

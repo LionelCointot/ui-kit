@@ -92,7 +92,7 @@ const leave = (page, button, gone) => page.evaluate(async ([button, gone]) => {
 const tokens = (page) => page.evaluate(() => {
   const { ms, num, px, flat } = window.__rv;
   const raw = (n) => flat(getComputedStyle(document.documentElement).getPropertyValue(n));
-  return { enter: ms('--lc-reveal-duration'), tiltDur: ms('--lc-reveal-tilt-duration'), easeOut: raw('--lc-sys-easing-out'), exit: ms('--lc-sys-duration-exit'), easeEntrance: raw('--lc-sys-easing-entrance'), easeExit: raw('--lc-sys-easing-exit'), easePop: raw('--lc-sys-easing-pop'), easeSoft: raw('--lc-sys-easing-soft'),
+  return { enter: ms('--lc-reveal-duration'), tiltDur: ms('--lc-reveal-tilt-duration'), easeOut: raw('--lc-sys-easing-out'), exit: ms('--lc-sys-duration-exit'), easeEntrance: raw('--lc-sys-easing-entrance'), easeExit: raw('--lc-sys-easing-exit'), easePop: raw('--lc-sys-easing-pop'),
     offsets: { sm: px('--lc-sys-motion-offset-sm'), md: px('--lc-sys-motion-offset-md'), lg: px('--lc-sys-motion-offset-lg'), xl: px('--lc-sys-motion-offset-xl') },
     scaleEnter: num('--lc-sys-motion-scale-enter'), scalePop: num('--lc-sys-motion-scale-pop'), tilt: num('--lc-sys-motion-rotate-tilt'),
     pace: { fine: ms('--lc-sys-motion-stagger-fine'), normal: ms('--lc-sys-motion-stagger-normal'), cards: ms('--lc-sys-motion-stagger-cards') }, cap: num('--lc-sys-motion-stagger-cap') };

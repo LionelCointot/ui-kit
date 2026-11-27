@@ -95,7 +95,7 @@ import { LcToggletipComponent, LcToggletipDirective } from '@lionelcointot/ui-an
 })
 export class ExampleComponent {}`;
 
-/* Valeurs du catalogue (d39) pour les lignes de démonstration : 10 px, 450 ms (durée d'entrée par défaut de `lcReveal`), sans décalage. */
+/* Valeurs du catalogue (d39) pour les lignes de démonstration : 10 px, 550 ms (durée d'entrée par défaut de `lcReveal`), sans décalage. */
 const NOTIFICATION = 'style="display:block;--lc-reveal-y:10px;padding-block:var(--lc-sys-space-1)"';
 
 /**

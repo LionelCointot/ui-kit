@@ -155,7 +155,7 @@ class DialogAnimationDemoComponent {
   }
 }
 
-/** The dialog grows from the button that opened it (scale 0.91 to 1 in 500 ms) and leaves in 150 ms; below 768 px it is presented as a bottom sheet. "Rejouer" opens it again. */
+/** The dialog grows from the button that opened it (scale 0.86 to 1 in 500 ms) and leaves in 200 ms; below 768 px it is presented as a bottom sheet. "Rejouer" opens it again. */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [moduleMetadata({ imports: [DialogAnimationDemoComponent] })],
