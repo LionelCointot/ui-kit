@@ -228,7 +228,7 @@ describe('LcDrawerService', () => {
         ref.close('ok');
         await settle();
         expect(slide).toHaveBeenCalledWith([{ translate: '0 0' }, { translate: '100% 0' }], expect.objectContaining({ duration: 300, easing: 'ease-in', fill: 'forwards' }));
-        expect(fade).toHaveBeenCalledWith([{ opacity: 1 }, { opacity: 0 }], expect.objectContaining({ duration: 200, fill: 'both' }));
+        expect(fade).toHaveBeenCalledWith([{ opacity: 1 }, { opacity: 0 }], expect.objectContaining({ duration: 200, fill: 'forwards' }));
         expect(closed).toBe(false);
         finish();
         await expect(ref.closed).resolves.toBe('ok');

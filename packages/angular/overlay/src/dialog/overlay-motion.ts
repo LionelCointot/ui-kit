@@ -20,9 +20,10 @@ const slide = (panel: Element, side: 'start' | 'end'): string => `${(side === 'e
 function fadeBackdrop(overlayRef: OverlayRef, kind: Kind, entering: boolean): Animation | undefined {
   const backdrop = overlayRef.backdropElement;
   if (!backdrop) return undefined;
+  // Le CDK ne pose `cdk-overlay-backdrop-showing` (opacité 1) qu'à l'image suivante : posée dès l'entrée, la fin de l'animation retombe sur l'état visible.
+  if (entering) backdrop.classList.add('cdk-overlay-backdrop-showing');
   return lcAnimate(backdrop, entering ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], {
-    // Garde son état final : la classe `cdk-overlay-backdrop-showing` (opacité 1) n'arrive qu'à l'image suivante, et la sortie le couvre jusqu'au retrait.
-    duration: BACKDROP[kind][entering ? 'enter' : 'exit'], easing: 'out', fill: 'both',
+    duration: BACKDROP[kind][entering ? 'enter' : 'exit'], easing: 'out', fill: entering ? 'backwards' : 'forwards',
   });
 }
 
