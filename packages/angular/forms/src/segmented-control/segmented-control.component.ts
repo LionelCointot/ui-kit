@@ -38,7 +38,7 @@ interface SegmentView<T> {
   selector: 'lc-segmented-control',
   imports: [LcIconComponent],
   template: `
-    <span #indicator class="lc-segmented-control__indicator" aria-hidden="true"></span>
+    <span class="lc-segmented-control__pill" aria-hidden="true"><span #indicator class="lc-segmented-control__indicator"></span></span>
     @for (segment of segments(); track $index) {
       <button #segment type="button" role="radio" class="lc-segmented-control__option"
         [attr.aria-checked]="segment.selected" [tabIndex]="segment.tabIndex" [disabled]="segment.disabled"

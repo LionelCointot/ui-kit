@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, contentChild, effect, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterRenderEffect, computed, contentChild, effect, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
 import { LC_LABELS, LcIconComponent, lcAnimate, lcCssMs, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcStepActionDirective } from './step-action.directive';
 
@@ -179,6 +179,7 @@ interface StepMove {
 export class LcStepperComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private running: readonly Animation[] = [];
 
   readonly steps = input.required<readonly LcStep[]>();
   /** Nom accessible du `nav`. */
@@ -260,6 +261,8 @@ export class LcStepperComponent {
   });
 
   constructor() {
+    // `lcAnimate` n'annule pas à la destruction : on annule les révélations en cours.
+    inject(DestroyRef).onDestroy(() => this.running.forEach((animation) => animation.cancel()));
     effect(() => {
       const move = this.move();
       if (move) untracked(() => this.directionChange.emit(move.direction));
@@ -298,6 +301,7 @@ export class LcStepperComponent {
   private settle(animations: readonly Animation[]): void {
     const move = this.move();
     if (!move) return;
+    this.running = animations;
     void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => untracked(() => this.move() === move && this.move.set(null)));
   }
 

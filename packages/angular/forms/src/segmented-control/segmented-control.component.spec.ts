@@ -224,7 +224,7 @@ describe('LcSegmentedControlComponent indicatorProgress', () => {
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
     const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
-    expect(indicator.getAttribute('aria-hidden')).toBe('true');
+    expect(indicator.parentElement!.getAttribute('aria-hidden')).toBe('true');
     expect([indicator.style.left, indicator.style.width, /inset\(\S+ (\S+) /.exec(indicator.style.clipPath)?.[1]]).toEqual(['50px', '110px', '30px']);
     expect(element.querySelector('lc-segmented-control')!.classList).toContain('lc-segmented-control--tracked');
     fixture.componentInstance.progress.set(null);
@@ -278,6 +278,6 @@ describe('LcSegmentedControlComponent fillMode solid', () => {
     expect(element.querySelector('lc-segmented-control')!.classList).not.toContain('lc-segmented-control--solid');
     const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
     expect(indicator.hidden).toBe(false);
-    expect(indicator.getAttribute('aria-hidden')).toBe('true');
+    expect(indicator.parentElement!.getAttribute('aria-hidden')).toBe('true');
   });
 });

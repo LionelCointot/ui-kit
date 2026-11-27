@@ -117,6 +117,7 @@ export class LcTabsComponent {
     afterRenderEffect(() => {
       const id = this.current();
       if (id === null || this.swipeOn() || this.opened.has(id)) return;
+      // shortcut: pas de cascade en swipe (tous les panneaux existent d'emblée), à lever si le swipe doit révéler à la première vue
       const initial = this.opened.size === 0;
       this.opened.add(id);
       if (!initial) this.revealPanel(id);

@@ -109,9 +109,15 @@
 /*
  * Pastille à deux bords, sous les segments (le segment choisi n'a plus son propre fond) : la boîte va du bord de départ de la pastille au bord droit du dernier
  * segment (`left` et `width` posés par le composant), le bord de fin est rogné par `clip-path`. Le bord avant (vers les coordonnées croissantes) prend la durée
- * « avant », l'autre la durée « arrière » décalée ; `data-direction` dit le sens, `forward` par défaut. Le rognage coupe aussi l'anneau et l'ombre portée :
- * l'anneau de la variante `outline` reste donc sur le segment choisi.
+ * « avant », l'autre la durée « arrière » décalée ; `data-direction` dit le sens, `forward` par défaut. Le rognage coupe l'anneau : celui de la variante `outline`
+ * reste donc sur le segment choisi. L'ombre de la pastille `solid` est portée par l'enveloppe non rognée (`filter: drop-shadow` s'applique après le rognage de l'enfant).
  */
+.lc-segmented-control__pill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .lc-segmented-control__indicator {
   --_front: var(--lc-segmented-control-indicator-front-duration) var(--lc-segmented-control-indicator-front-easing);
   --_back: var(--lc-segmented-control-indicator-back-duration) var(--lc-segmented-control-indicator-back-easing) var(--lc-segmented-control-indicator-back-delay);
@@ -190,7 +196,11 @@
 
   inset-block: var(--_inset);
   background: var(--lc-segmented-control-pill-bg, var(--lc-sys-color-surface-raised));
-  box-shadow: var(--lc-segmented-control-pill-shadow, none);
+}
+
+/* `--lc-segmented-control-pill-shadow` est une valeur de `drop-shadow` (une seule ombre, sans étalement ni `inset`). */
+:host(.lc-segmented-control--solid) .lc-segmented-control__pill {
+  filter: drop-shadow(var(--lc-segmented-control-pill-shadow, 0 1px 2px rgb(0 0 0 / 0.1)));
 }
 
 /* Mouvement réduit : la pastille saute (aucune transition, donc aucun objet animation, pas même de 0,01 ms). */
