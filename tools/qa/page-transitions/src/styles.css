@@ -1,7 +1,3 @@
-body { margin: 0; font: 16px/1.4 system-ui, sans-serif; background: #f4f4f6; }
-.hdr { position: sticky; top: 0; z-index: 10; height: 48px; display: flex; align-items: center; padding: 0 16px; background: #fff; border-bottom: 1px solid #ddd; }
-.body { display: flex; }
-.side { position: sticky; top: 48px; align-self: flex-start; width: 200px; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #fff; min-height: calc(100vh - 48px); z-index: 5; }
-main { flex: 1; min-width: 0; }
-.qa-page { display: block; padding: 16px 24px; background: #f4f4f6; min-height: calc(100vh - 48px); box-sizing: border-box; }
-@media (max-width: 767px) { .side { display: none; } .qa-page { padding: 12px; } }
+body { margin: 0; font: 16px/1.4 system-ui, sans-serif; }
+.qa-page { display: block; padding: 16px 24px; min-height: calc(100vh - 48px); box-sizing: border-box; }
+@media (max-width: 767px) { .qa-page { padding: 12px; } }
