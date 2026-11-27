@@ -8,7 +8,7 @@ import { LC_DATE_PICKER } from '../date-input/date-picker-mode';
 import { LcDateRangeInputComponent } from '../date-input/date-range-input.component';
 import type { LcDateInterval } from '../date-input/date-interval';
 
-// Fixtures de la spec 2026-11-mouvement (CA-6 à CA-9, CA-13) : pilotées par `node tools/qa/storybook-browser.mjs motion`, sans `play`.
+// Fixtures de la spec 2026-11-mouvement (CA-6 à CA-8, CA-13 ; l'ancien CA-9 lcReveal est repris par `QA/Motion/Reveal acceptance`, T3 de 2026-12-mouvement-v2) : pilotées par `node tools/qa/storybook-browser.mjs motion`, sans `play`.
 
 const CITIES = ['Amsterdam', 'Berlin', 'Bruxelles', 'Paris', 'Rome'];
 
@@ -56,27 +56,11 @@ class MotionPanelComponent {
 })
 class MotionButtonsComponent {}
 
-@Component({
-  selector: 'lc-motion-reveal',
-  template: `<button id="toggle" type="button" (click)="shown.set(!shown())">Basculer</button>
-    @if (shown()) {
-      <ul>
-        @for (index of indexes; track index) {
-          <li lcReveal [style.--lc-reveal-index]="index" [attr.data-index]="index">Ligne {{ index }}</li>
-        }
-      </ul>
-    }`,
-})
-class MotionRevealComponent {
-  protected readonly shown = signal(false);
-  protected readonly indexes = [0, 3, 7];
-}
-
 const meta: Meta = {
   title: 'QA/Motion/Acceptance',
   tags: ['!autodocs'],
   decorators: [
-    moduleMetadata({ imports: [MotionPanelComponent, MotionButtonsComponent, MotionRevealComponent] }),
+    moduleMetadata({ imports: [MotionPanelComponent, MotionButtonsComponent] }),
     applicationConfig({ providers: [{ provide: LC_DATE_PICKER, useValue: 'calendar' }] }),
   ],
   args: { control: 'menu', place: 'top' },
@@ -86,4 +70,3 @@ type Story = StoryObj;
 
 export const Panel: Story = { render: (args) => ({ props: args, template: `<lc-motion-panel [control]="control" [place]="place" />` }) };
 export const Buttons: Story = { render: () => ({ template: `<lc-motion-buttons />` }) };
-export const Reveal: Story = { render: () => ({ template: `<lc-motion-reveal />` }) };
