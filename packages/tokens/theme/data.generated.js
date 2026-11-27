@@ -220,6 +220,8 @@ export const MOTION_SCHEMA = [
   {"path":"tabbar.indicator-back-duration","cssVar":"--lc-tabbar-indicator-back-duration","type":"duration"},
   {"path":"tabbar.indicator-back-easing","cssVar":"--lc-tabbar-indicator-back-easing","type":"cubicBezier"},
   {"path":"tabbar.indicator-back-delay","cssVar":"--lc-tabbar-indicator-back-delay","type":"duration"},
+  {"path":"tabbar.indicator-label-switch-front","cssVar":"--lc-tabbar-indicator-label-switch-front","type":"number"},
+  {"path":"tabbar.indicator-label-switch-back","cssVar":"--lc-tabbar-indicator-label-switch-back","type":"number"},
   {"path":"overlay.enter-duration","cssVar":"--lc-overlay-enter-duration","type":"duration"},
   {"path":"overlay.exit-duration","cssVar":"--lc-overlay-exit-duration","type":"duration"},
   {"path":"overlay.easing","cssVar":"--lc-overlay-easing","type":"cubicBezier"},
