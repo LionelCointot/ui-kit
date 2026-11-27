@@ -47,7 +47,7 @@ describe('overlay-motion', () => {
   it('voile du dialogue : 0 → 1 en --lc-overlay-enter-duration', () => {
     const { ref, backdrop, animate } = setup();
     lcDialogEnter(ref, null);
-    expect(animate).toHaveBeenCalledWith([{ opacity: 0 }, { opacity: 1 }], expect.objectContaining({ duration: 250 }));
+    expect(animate).toHaveBeenCalledWith([{ opacity: 0 }, { opacity: 1 }], expect.objectContaining({ duration: 250, fill: 'both' }));
     expect(backdrop.isConnected).toBe(true);
   });
 

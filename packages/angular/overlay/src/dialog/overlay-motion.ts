@@ -21,7 +21,8 @@ function fadeBackdrop(overlayRef: OverlayRef, kind: Kind, entering: boolean): An
   const backdrop = overlayRef.backdropElement;
   if (!backdrop) return undefined;
   return lcAnimate(backdrop, entering ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], {
-    duration: BACKDROP[kind][entering ? 'enter' : 'exit'], easing: 'out', fill: entering ? 'backwards' : 'forwards',
+    // Garde son état final : la classe `cdk-overlay-backdrop-showing` (opacité 1) n'arrive qu'à l'image suivante, et la sortie le couvre jusqu'au retrait.
+    duration: BACKDROP[kind][entering ? 'enter' : 'exit'], easing: 'out', fill: 'both',
   });
 }
 
