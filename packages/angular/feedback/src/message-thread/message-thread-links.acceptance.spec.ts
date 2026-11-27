@@ -92,9 +92,14 @@ describe('CA-T15 longueur : motifs adverses découpés en moins de 50 ms', () =>
     'texte puis adresse': `${'a '.repeat(100_000)}https://x`,
   };
   it.each(Object.keys(ADVERSE))('%s', (k) => {
-    const t = performance.now();
-    const parts = splitLinks(ADVERSE[k]);
-    const dt = performance.now() - t;
+    // Meilleur de 3 essais : la préemption CPU ne fait que rallonger une durée, une complexité non linéaire dépasserait la borne à chaque essai.
+    let dt = Infinity;
+    let parts = splitLinks('');
+    for (let i = 0; i < 3; i++) {
+      const t = performance.now();
+      parts = splitLinks(ADVERSE[k]);
+      dt = Math.min(dt, performance.now() - t);
+    }
     expect(dt).toBeLessThan(50);
     expect(parts.map((p) => p.text).join('')).toBe(ADVERSE[k]);
   });
