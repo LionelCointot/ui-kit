@@ -81,10 +81,80 @@
   animation: lc-leave var(--lc-sys-duration-exit) var(--lc-sys-easing-exit) forwards;
 }
 
+/*
+ * Remplissage et tracé : [lcFill] et [lcDraw] ne posent que --lc-progress (0 à 1) ; la transition anime d'une valeur à l'autre,
+ * et @starting-style la fait partir de zéro à l'apparition. Rendu serveur : la valeur finale seule, sans animation.
+ * Le remplissage anime `scale` (jamais width ni height), à deux valeurs pour que l'autre axe reste à 1.
+ */
+.lc-fill {
+  scale: var(--lc-progress) 1;
+  transform-origin: left;
+  transition: scale var(--lc-sys-duration-draw) var(--lc-sys-easing-fill);
+}
+
+.lc-fill--y {
+  scale: 1 var(--lc-progress);
+  transform-origin: bottom;
+}
+
+.lc-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc((1 - var(--lc-progress)) * 1px);
+  transition: stroke-dashoffset var(--lc-sys-duration-draw) var(--lc-sys-easing-draw);
+}
+
+@starting-style {
+  .lc-fill {
+    scale: 0 1;
+  }
+
+  .lc-fill--y {
+    scale: 1 0;
+  }
+
+  .lc-draw {
+    stroke-dashoffset: 1px;
+  }
+}
+
+/* Point « live » : décoratif, jamais seul porteur d'information. Arrêté sous mouvement réduit (opacité haute fixe). */
+@keyframes lc-pulse {
+  50% {
+    opacity: var(--lc-live-opacity-to);
+  }
+}
+
+.lc-pulse {
+  opacity: var(--lc-live-opacity-from);
+  animation: lc-pulse var(--lc-live-duration) var(--lc-sys-easing-inout) infinite;
+}
+
+/* Soulèvement au survol : `transform` est la propriété du survol (ADR 0011), le survol exige un pointeur fin. */
+.lc-lift {
+  transition: transform var(--lc-lift-duration) var(--lc-lift-easing);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lc-lift:hover {
+    transform: translateY(var(--lc-lift-offset));
+  }
+}
+
 /* Sans animation, Angular retire l'élément aussitôt et l'entrée n'est jamais jouée. */
 @media (prefers-reduced-motion: reduce) {
   .lc-reveal,
-  .lc-leave {
+  .lc-leave,
+  .lc-pulse {
     animation: none;
+  }
+
+  .lc-fill,
+  .lc-draw,
+  .lc-lift {
+    transition: none;
+  }
+
+  .lc-pulse {
+    opacity: var(--lc-live-opacity-to);
   }
 }

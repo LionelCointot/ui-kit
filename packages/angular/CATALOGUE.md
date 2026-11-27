@@ -7,6 +7,8 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
+| `[lcDraw]` | LcDrawDirective | directive | lcDraw (requis) | – |
+| `[lcFill]` | LcFillDirective | directive | lcFill (requis), lcFillAxis | – |
 | `[lcReveal]` | LcRevealDirective | directive | lcReveal, lcRevealIndex | – |
 | `[lcStagger]` | LcStaggerDirective | directive | lcStagger | – |
 | `[lcTruncate]` | LcTruncateDirective | directive | – | – |
