@@ -672,7 +672,7 @@ const MOTION_INIT = () => {
       cascades: q.cardSnaps.length - r.cardSnapsBefore,
       snaps: q.cardSnaps.slice(r.cardSnapsBefore).map((s) => ({ t: s.t, rows: s.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) })),
       frames: r.frames, changedAt: r.changedAt, leavingSeen: r.leavingSeen,
-      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-reveal-duration'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
+      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-reveal-duration'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), out: q.easing('--lc-sys-easing-out'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
     };
   };
 };
@@ -1153,8 +1153,8 @@ async function motionList(context, base, reduced, tag, phone, check) {
     const rows = snap?.rows ?? [];
     const first = snap ? snap.t + rows[0]?.delay : NaN;
     // Rangs 0 à 7 : une entrée chacun (délai = rang × 40 ms) ; au-delà (cascade plafonnée, comme les cartes de CA-12) : pas d'entrée obligatoire, mais jamais après le plafond.
-    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !sameEase(c.easing, r.entrance) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
-    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 550 ms entrance (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
+    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !sameEase(c.easing, r.out) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
+    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 550 ms out (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
     check(!!snap && first - r.changedAt >= r.refill - 40 && first - r.changedAt <= r.refill + 60, `CA-26 ${tag} ${label} la première ligne entre ${r.refill} ms après le changement (à une image près)`, `écart=${(first - r.changedAt).toFixed(1)} ms`);
     check(!waapiOf(r).some((a) => a.props.includes('transform')), `CA-26 ${tag} ${label} aucune glissade de ligne (la liste est reconstruite)`, `glissades=${waapiOf(r).filter((a) => a.props.includes('transform')).map((a) => a.key)}`);
   };

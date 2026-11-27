@@ -4,7 +4,7 @@ import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storyb
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcSwitchComponent } from '@lionelcointot/ui-angular/forms';
 
-/** Demo of the `Animation` story (d46): the knob of each switch slides with a small overshoot while the track changes colour. */
+/** Demo of the `Animation` story (d46): the knob of the first switch slides with a small overshoot while the track changes colour. */
 @Component({
   selector: 'lc-switch-animation-demo',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +32,6 @@ class SwitchAnimationDemoComponent {
     },
     play: () => {
       this.mentions.set(false);
-      this.reminders.set(true);
     },
   });
 }

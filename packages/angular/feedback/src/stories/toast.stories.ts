@@ -66,14 +66,20 @@ class ToastDemoComponent implements OnDestroy {
 })
 class ToastAnimationDemoComponent implements OnDestroy {
   private readonly service = inject(LcToastService);
+  // A toast is already on screen when the story opens: "Rejouer" plays its exit (250 ms), then the next one enters.
+  private readonly shown = this.show();
   protected readonly demo = replayable({
     reset: () => this.service.dismissAll(),
-    wait: 0,
+    wait: 300,
     play: (later) => {
-      this.service.show({ kind: 'success', message: 'Le document a été enregistré.', durationMs: 60_000 });
+      this.show();
       later(2500, () => this.service.dismissAll());
     },
   });
+
+  private show(): void {
+    this.service.show({ kind: 'success', message: 'Le document a été enregistré.', durationMs: 60_000 });
+  }
 
   ngOnDestroy(): void {
     this.service.dismissAll();

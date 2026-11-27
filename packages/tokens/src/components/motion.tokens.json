@@ -132,7 +132,11 @@
     "exit-duration": { "$value": "320ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
     "backdrop-enter-duration": { "$value": "300ms", "$type": "duration" },
-    "backdrop-exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" }
+    "backdrop-exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" },
+    "content-offset": { "$value": "14px", "$type": "dimension", "$description": "Rise of the content lines of the drawer (Talmo: y 14 px)." },
+    "content-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Entry of each content line (Talmo: 500 ms, power3.out)." },
+    "content-delay": { "$value": "120ms", "$type": "duration", "$description": "Start of the content cascade, after the panel begins to slide." },
+    "content-stagger": { "$value": "{sys.motion.stagger-normal}", "$type": "duration", "$description": "Gap between two content lines (Talmo: 40 ms)." }
   },
   "popover": {
     "enter-duration": { "$value": "{sys.duration.enter}", "$type": "duration" },

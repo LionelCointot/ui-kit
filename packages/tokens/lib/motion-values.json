@@ -108,6 +108,10 @@
   { "demo": "d25", "valeur": "cubic-bezier(0.42, 0, 1, 1)", "token": "--lc-drawer-exit-easing" },
   { "demo": "d25", "valeur": "300ms", "token": "--lc-drawer-backdrop-enter-duration" },
   { "demo": "d25", "valeur": "200ms", "token": "--lc-drawer-backdrop-exit-duration" },
+  { "demo": "d25", "valeur": "14px", "token": "--lc-drawer-content-offset" },
+  { "demo": "d25", "valeur": "500ms", "token": "--lc-drawer-content-duration" },
+  { "demo": "d25", "valeur": "120ms", "token": "--lc-drawer-content-delay" },
+  { "demo": "d25", "valeur": "40ms", "token": "--lc-drawer-content-stagger" },
 
   { "demo": "d28", "valeur": "0.92", "token": "--lc-menu-enter-scale" },
   { "demo": "d28", "valeur": "cubic-bezier(0.34, 1.7, 0.64, 1)", "token": "--lc-menu-enter-easing" },
