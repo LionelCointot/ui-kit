@@ -11,7 +11,7 @@ const theme: LcChartTheme = {
   status: { good: '', warning: '', serious: '', critical: '' },
   surface: '#fcfcfb', gridline: '#e1e0d9', axis: '#c3c2b7',
   ink: { primary: '#0b0b0b', secondary: '#52514e', muted: '#898781' }, markerColor: '#777777',
-  fontFamily: 'sans-serif', fontSize: 14, reducedMotion: false, patterns: false,
+  fontFamily: 'sans-serif', fontSize: 14, reducedMotion: false, motion: { sparklineMs: 300, updateMs: 300, staggerMs: 0 }, patterns: false,
 };
 
 type AnyOption = Record<string, any>;

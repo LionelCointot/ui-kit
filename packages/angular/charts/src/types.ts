@@ -129,6 +129,8 @@ export interface LcChartTheme {
   readonly fontFamily: string;
   readonly fontSize: number;
   readonly reducedMotion: boolean;
+  /** Durées des tokens `--lc-chart-sparkline-duration`, `--lc-chart-update-duration` et `--lc-chart-update-stagger` (ms ; 0 si la feuille n'est pas chargée). */
+  readonly motion: { readonly sparklineMs: number; readonly updateMs: number; readonly staggerMs: number };
   readonly patterns: boolean;
 }
 

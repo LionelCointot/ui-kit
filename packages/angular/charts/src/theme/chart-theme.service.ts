@@ -17,6 +17,10 @@ export interface ChartThemeFlags {
 export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValue'>, flags: ChartThemeFlags): LcChartTheme {
   const read = (name: string, fallback = MISSING_TOKEN_COLOR): string => style.getPropertyValue(name).trim() || fallback;
   const token = (name: string): string => read(`--lc-sys-chart-${name}`);
+  const ms = (name: string): number => {
+    const raw = read(name, '0ms');
+    return parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000) || 0;
+  };
   const fontSize = toPixels(read('--lc-sys-font-size-sm', `${DEFAULT_FONT_SIZE}px`));
   return {
     categorical: [1, 2, 3, 4, 5, 6, 7, 8].map((index) => token(`categorical-${index}`)),
@@ -33,6 +37,7 @@ export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValu
     fontFamily: read('--lc-sys-font-family-base', 'sans-serif'),
     fontSize,
     reducedMotion: flags.reducedMotion,
+    motion: { sparklineMs: ms('--lc-chart-sparkline-duration'), updateMs: ms('--lc-chart-update-duration'), staggerMs: ms('--lc-chart-update-stagger') },
     patterns: flags.patterns,
   };
 }
