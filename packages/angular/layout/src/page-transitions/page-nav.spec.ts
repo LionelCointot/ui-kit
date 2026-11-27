@@ -4,7 +4,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, type Routes } from '@angular/router';
 import { LcNavRegistry } from '@lionelcointot/ui-angular';
-import { lcNavStep, lcPathLevel } from '../public-api';
+import { lcNavStep, lcPathLevel } from './page-nav.direction';
 import { LcPageNav } from './page-nav.service';
 
 @Component({ template: '' })

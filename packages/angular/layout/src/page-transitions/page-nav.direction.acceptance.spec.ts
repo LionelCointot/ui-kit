@@ -1,7 +1,7 @@
-import * as layout from '../public-api';
+import * as layout from './page-nav.direction';
 
 // Acceptation de docs/specs/2026-12-mouvement-v2.md, T13a, CA-32 (partie « fonction pure du sens », §5.4.3). Un cas par ligne de §5.4.3.
-// CONTRAT fixé par qa-engineer (la spec ne nomme pas la fonction), à exporter de `layout/src/public-api.ts` (`@internal`) :
+// CONTRAT fixé par qa-engineer (la spec ne nomme pas la fonction), exportés de `./page-nav.direction.ts` (`@internal`, hors de l'API publique) :
 //   lcPathLevel(url: string): number                 niveau = nombre de segments non vides du chemin (sans ?query ni #fragment), au moins 1
 //   lcNavStep(history, step, order): { direction, history }
 //     history: { urls: readonly string[]; index: number }   pile d'historique (chemins seuls) ; départ : { urls: [], index: -1 }

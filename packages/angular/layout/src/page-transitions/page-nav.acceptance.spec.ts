@@ -3,7 +3,7 @@ import { provideLocationMocks, SpyLocation } from '@angular/common/testing';
 import { Component, signal, type Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { provideRouter, Router, type Routes } from '@angular/router';
+import { provideRouter, Router, type NavigationExtras, type Routes } from '@angular/router';
 import * as main from '@lionelcointot/ui-angular';
 import * as layout from '../public-api';
 
@@ -60,11 +60,14 @@ function setup(order: string[] = []) {
 }
 /** Démarre la navigation (le service doit être créé avant), puis rend le harnais. */
 const start = async (url: string) => {
+  // provideLocationMocks : sans écouteur, `location.back()` n'atteint pas le routeur.
+  TestBed.inject(Router).setUpLocationChangeListener();
   const harness = await RouterTestingHarness.create();
   await harness.navigateByUrl(url);
   return harness;
 };
 const settle = async (harness: RouterTestingHarness) => {
+  await new Promise((resolve) => setTimeout(resolve)); // le routeur traite un popstate dans un setTimeout
   await harness.fixture.whenStable();
   harness.detectChanges();
 };
@@ -130,12 +133,25 @@ describe('CA-32 : LcPageNav avec un routeur de test', () => {
     const { nav, location } = setup();
     const h = await start('/aide');
     await h.navigateByUrl('/credit');
-    await h.navigateByUrl('/credit/detail', { replaceUrl: true } as never);
+    await TestBed.inject(Router).navigateByUrl('/credit/detail', { replaceUrl: true });
     expect(nav.direction()).toBe('forward');
     location.back(); // vers /aide : l'entrée /credit a été remplacée
     await settle(h);
     expect(nav.change()?.to).toBe('/aide');
     expect(nav.direction()).toBe('back');
+  });
+
+  it('replaceUrl au milieu de la pile : l’entrée suivante reste connue (avance du navigateur = forward)', async () => {
+    const { nav, location } = setup();
+    const h = await start('/aide');
+    await h.navigateByUrl('/credit');
+    await h.navigateByUrl('/budget');
+    location.back(); // vers /credit
+    await settle(h);
+    await TestBed.inject(Router).navigateByUrl('/credit/detail', { replaceUrl: true }); // remplace /credit, /budget reste en avant
+    location.forward(); // vers /budget : connu de la pile, donc forward (inconnu : niveau 2 -> 1 = back)
+    await settle(h);
+    expect(nav.change()).toMatchObject({ direction: 'forward', from: '/credit/detail', to: '/budget' });
   });
 
   it('redirectTo : sens calculé sur l’URL finale', async () => {
@@ -184,7 +200,7 @@ describe('CA-32 : LcPageNav avec un routeur de test', () => {
   });
 
   describe('ne déclenchent rien', () => {
-    it.each([
+    it.each<[string, string, NavigationExtras]>([
       ['?query', '/aide?x=1', {}],
       ['fragment', '/aide#haut', {}],
       ['skipLocationChange', '/budget', { skipLocationChange: true }],
@@ -193,8 +209,9 @@ describe('CA-32 : LcPageNav avec un routeur de test', () => {
       const h = await start('/aide');
       await h.navigateByUrl('/credit/detail'); // direction connue : forward
       const before = nav.change();
-      await h.navigateByUrl('/credit/detail' + url.replace(/^\/[^?#]*/, ''), extras as never);
-      if (_nom === 'skipLocationChange') await h.navigateByUrl('/credit/detail?z=1', extras as never);
+      // ?query et fragment s'ajoutent à /credit/detail ; skipLocationChange change de page sans toucher au navigateur.
+      const target = _nom === 'skipLocationChange' ? url : '/credit/detail' + url.replace(/^\/[^?#]*/, '');
+      await TestBed.inject(Router).navigateByUrl(target, extras);
       expect(nav.change()).toBe(before);
       expect(nav.direction()).toBe('forward');
     });
@@ -205,11 +222,12 @@ describe('CA-32 : LcPageNav avec un routeur de test', () => {
       await h.navigateByUrl('/credit');
       const before = nav.change();
       await h.navigateByUrl('/muet');
-      expect(nav.change()).toBe(before);
-      location.back(); // vers /credit : la pile connaît /muet
-      await settle(h);
+      expect(nav.change()).toBe(before); // pas de nouveau changement, et /muet n'est jamais annoncée
       expect(nav.change()?.to).toBe('/credit');
-      expect(nav.direction()).toBe('same');
+      location.back(); // vers /credit : seule une pile qui a enregistré /muet y voit un retour ('same' sinon : entrée inconnue)
+      await settle(h);
+      expect(nav.change()).not.toBe(before);
+      expect(nav.change()).toMatchObject({ direction: 'back', from: '/muet', to: '/credit' });
     });
   });
 
