@@ -222,7 +222,6 @@ export const MOTION_SCHEMA = [
   {"path":"overlay.enter-duration","cssVar":"--lc-overlay-enter-duration","type":"duration"},
   {"path":"overlay.exit-duration","cssVar":"--lc-overlay-exit-duration","type":"duration"},
   {"path":"overlay.easing","cssVar":"--lc-overlay-easing","type":"cubicBezier"},
-  {"path":"collapse.duration","cssVar":"--lc-collapse-duration","type":"duration"},
   {"path":"chip.enter-duration","cssVar":"--lc-chip-enter-duration","type":"duration"},
   {"path":"list.move-duration","cssVar":"--lc-list-move-duration","type":"duration"},
   {"path":"list.move-easing","cssVar":"--lc-list-move-easing","type":"cubicBezier"},
