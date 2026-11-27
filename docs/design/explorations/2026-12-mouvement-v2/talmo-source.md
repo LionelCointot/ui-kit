@@ -7,11 +7,11 @@ Source : paramètres GSAP relevés par l'orchestrateur dans le code du site de r
 | Geste | Site Talmo | Kit avant | Kit après (jeton) |
 |---|---|---|---|
 | lcReveal, variantes de base (rise, drop, fade, scale, left, right) | 550 ms, power3.out, 8 à 12 px | 450 ms, `soft` (`duration-enter`) | 550 ms, `out` : `--lc-reveal-duration`, `--lc-reveal-easing` ; distance inchangée (8 px) ; `pop` garde sa courbe |
-| lcReveal `tilt` (KPI) | 850 ms, back.out(1,4), y 40, ±2,5°, échelle 0,95 | 450 ms, `soft` | 850 ms, `pop` : `--lc-reveal-tilt-duration` (= `duration-title`) |
+| lcReveal `tilt` (KPI) | 850 ms, back.out(1,4), y 40, ±2,5°, échelle 0,95 | 450 ms, `soft` | 850 ms, `pop` : `--lc-reveal-tilt-duration` (= `duration-title`), rythme `--lc-reveal-tilt-pace` 70 ms (stagger .07 du site, cartes : 60 ms) |
 | Trait sous le titre de lc-page | 700 ms, power3.inOut, départ 320 ms | 550 ms, 390 ms | `--lc-title-line-duration` 700 ms (= `duration-view`), `--lc-title-line-delay` 320 ms |
 | lcDraw (tracé) | 1100 ms, power2.inOut | 900 ms (`duration-draw`) | `--lc-sys-duration-draw` 1100 ms (le compteur ne le lit plus) |
 | lcCountUp (compteur) | 1,2 s, power3.out (0,9 s sur la page Rapports) | 900 ms (`duration-draw`) | `--lc-count-up-duration` 1200 ms, courbe `out` |
-| lcFill (remplissage) | 950 ms, expo.out | 900 ms (`duration-draw`) | nouveau rôle `--lc-sys-duration-fill` 950 ms (`--lc-flash-duration` s'y replie) |
+| lcFill (remplissage) | 950 ms, expo.out | 900 ms (`duration-draw`) | nouveau rôle `--lc-sys-duration-fill` 950 ms (`--lc-flash-duration` s'y replie), courbe `--lc-sys-easing-fill` = `cubic-bezier(0.16, 1, 0.3, 1)` (expo.out, comme `entrance`) |
 | Sparkline de lc-chart | 1300 ms | 1000 ms | `--lc-chart-sparkline-duration` 1300 ms |
 | Mise à jour des données de lc-chart | 700 ms, power3.inOut, décalage 20 ms | 480 ms | `--lc-chart-update-duration` 700 ms (= `duration-view`) ; décalage inchangé |
 | lc-drawer | entrée 600 ms expo.out, sortie 320 ms | 550 ms, 300 ms | `--lc-drawer-enter-duration` 600 ms (= `duration-long`), `--lc-drawer-exit-duration` 320 ms |

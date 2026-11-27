@@ -5,6 +5,7 @@ import { LcToast, LcToastService } from './toast.service';
 
 /**
  * Zone d'affichage des toasts de `LcToastService`, à placer une fois à la racine de l'application.
+ * Les annonces aux lecteurs d'écran passent par le seul `LiveAnnouncer` de `LcToastService` (conteneur permanent) : aucun rôle `status` ni `alert` ici, qui doublerait l'annonce.
  * Variable CSS `--lc-toast-offset-block-end` : décalage de la pile vers le haut (ex. au-dessus d'une barre d'actions fixe).
  */
 @Component({

@@ -150,12 +150,9 @@
 
   /*
    * Barre d'onglets du bas : « Plus » remplace le bouton de menu, et le contenu garde sa place au-dessus de la barre.
-   * `--lc-shell-tabbar-space` : espace pris en bas par la barre (hauteur, marge, zone sûre), lu par le contenu et par un toast qui doit la dégager.
+   * `--lc-shell-tabbar-space` (espace pris en bas par la barre : hauteur, marge, zone sûre) est définie sur `:root` par `styles/ui-angular.css`,
+   * tant que la barre est présente (classe `lc-has-tabbar` posée par le shell) : le toast, qui vit hors de ce composant, la lit aussi.
    */
-  :host(.lc-app-shell--tabbar) {
-    --lc-shell-tabbar-space: calc(var(--lc-tabbar-height) + var(--lc-sys-space-3) + env(safe-area-inset-bottom));
-  }
-
   :host(.lc-app-shell--tabbar) .lc-shell__menu {
     display: none;
   }

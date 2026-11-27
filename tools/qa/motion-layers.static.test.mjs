@@ -51,6 +51,14 @@ describe('variante card (CA-40)', () => {
   });
 });
 
+describe('variante tilt : rythme propre', () => {
+  test('--lc-reveal-pace lit reveal.tilt-pace (70 ms), pas le rythme des cartes ; lcStagger garde la priorité', () => {
+    assert.match(css.match(/\.lc-reveal--tilt\s*\{([^}]*)\}/)[1], /--lc-reveal-pace: var\(--lc-reveal-tilt-pace\)/);
+    assert.equal(tokens.reveal['tilt-pace'].$value, '70ms');
+    assert.match(css, /var\(--lc-stagger-pace, var\(--lc-reveal-pace,/);
+  });
+});
+
 describe('lc-page et lcPageTransitions sur le même élément (CA-40)', () => {
   test('la fenêtre d\'entrée n\'anime qu\'une variable : aucune propriété CSS visible en conflit', () => {
     const rule = css.match(/@keyframes lc-page-entering\s*\{([^}]*\{[^}]*\})\s*\}/)[1];

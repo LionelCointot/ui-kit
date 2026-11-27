@@ -2,6 +2,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
+import { LcToastOutletComponent, LcToastService } from '@lionelcointot/ui-angular/feedback';
 import { LcAppShellComponent } from '../public-api';
 import { StoryNavDirective, TABBAR_DEMO_ROUTES } from './app-shell-tabbar-demo.component';
 
@@ -11,7 +12,7 @@ import { StoryNavDirective, TABBAR_DEMO_ROUTES } from './app-shell-tabbar-demo.c
  */
 @Component({
   selector: 'lc-qa-tabbar',
-  imports: [LcAppShellComponent, RouterLink, RouterOutlet, StoryNavDirective],
+  imports: [LcAppShellComponent, LcToastOutletComponent, RouterLink, RouterOutlet, StoryNavDirective],
   template: `
     <lc-app-shell data-qa="shell">
       <strong lcShellHeader>QA</strong>
@@ -22,10 +23,13 @@ import { StoryNavDirective, TABBAR_DEMO_ROUTES } from './app-shell-tabbar-demo.c
         <li><a lcStoryNav routerLink="/projects" icon="layout-dashboard" [primary]="primary">Projects</a></li>
         <li><a lcStoryNav routerLink="/settings" icon="settings">Settings</a></li>
       </ul>
+      <button id="qa-toast" type="button" (click)="toasts.show({ kind: 'success', message: 'Enregistré' })">Toast</button>
       <router-outlet />
-    </lc-app-shell>`,
+    </lc-app-shell>
+    <lc-toast-outlet />`,
 })
 class QaTabbarComponent {
+  protected readonly toasts = inject(LcToastService);
   protected readonly primary = !new URLSearchParams(location.search).has('noprimary');
 
   constructor() {

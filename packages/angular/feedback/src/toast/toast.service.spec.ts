@@ -25,6 +25,12 @@ describe('LcToastService', () => {
     expect(announce).toHaveBeenCalledWith('Échec de l\'enregistrement', 'assertive');
   });
 
+  it('une seule annonce par toast', () => {
+    service.show({ kind: 'warning', message: 'Attention' });
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith('Attention', 'polite');
+  });
+
   it("n'oblige pas un effect qui l'appelle à se relancer à chaque toast ajouté", () => {
     let runs = 0;
     TestBed.runInInjectionContext(() =>

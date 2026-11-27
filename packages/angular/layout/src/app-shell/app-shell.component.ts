@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, input, isDevMode, model, signal, viewChild } from '@angular/core';
@@ -16,7 +17,7 @@ const HEADER_TITLE_SCROLL_PX = 80;
 /**
  * Coquille d'application : lien d'évitement, en-tête, navigation et contenu principal.
  * Navigation latérale (réductible aux icônes) ≥ 1024 px, tiroir en dessous (focus piégé, Échap ferme
- * et rend le focus au bouton de menu). Les changements de page de l'application sont animés (`lcPageTransitions`, sans effet sans routeur). Emplacements : `[lcShellHeader]`, `[lcShellNav]`, contenu.
+ * et rend le focus au bouton de menu). Un seul `lc-app-shell` par document (la barre d'onglets pose la classe `lc-has-tabbar` sur `:root`). Les changements de page de l'application sont animés (`lcPageTransitions`, sans effet sans routeur). Emplacements : `[lcShellHeader]`, `[lcShellNav]`, contenu.
  */
 @Component({
   selector: 'lc-app-shell',
@@ -119,6 +120,10 @@ export class LcAppShellComponent {
       destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
       onScroll();
     });
+    // Le toast vit dans une surcouche hors du shell : la classe sur `:root` lui apporte `--lc-shell-tabbar-space` (feuille globale).
+    const root = inject(DOCUMENT).documentElement;
+    effect(() => root.classList.toggle('lc-has-tabbar', this.hasTabbar()));
+    destroyRef.onDestroy(() => root.classList.remove('lc-has-tabbar'));
     effect(() => {
       if (isDevMode() && lcPrimaryEntries(this.registry.items()).length > LC_TABBAR_MAX_TABS) {
         console.warn(`lc-app-shell : la barre d'onglets affiche les ${LC_TABBAR_MAX_TABS} premières rubriques « primary » ; les suivantes ne sont que dans le tiroir.`);

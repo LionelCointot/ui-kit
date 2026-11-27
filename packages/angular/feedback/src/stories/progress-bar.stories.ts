@@ -24,9 +24,9 @@ const upload = (progress: number): LcFileUploadItem => ({ id: 'up', name: 'rappo
       <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="demo.replay(root)">Rejouer</button>
       @for (key of demo.keys(); track key) {
         <div data-demo="d09" style="display:grid;gap:var(--lc-sys-space-3);margin-bottom:var(--lc-sys-space-6)">
-          <lc-progress-bar [value]="value()" [rank]="0" label="Import des écritures" />
-          <lc-progress-bar [value]="value() - 25" [rank]="1" label="Rapprochement" />
-          <lc-progress-bar [value]="value() - 45" [rank]="2" label="Export" />
+          <lc-progress-bar [value]="value()" label="Import des écritures" />
+          <lc-progress-bar [value]="value() - 25" label="Rapprochement" />
+          <lc-progress-bar [value]="value() - 45" label="Export" />
         </div>
         <div data-demo="d21" style="display:grid;gap:var(--lc-sys-space-4)">
           <lc-timeline-bar [segments]="phases" description="Trois phases de 60, 24 et 36 mois." />
@@ -107,8 +107,8 @@ import { LcProgressBarComponent } from '@lionelcointot/ui-angular/feedback';
   selector: 'app-example',
   imports: [LcProgressBarComponent],
   template: \`
-    <lc-progress-bar [value]="80" [rank]="0" label="Import" />
-    <lc-progress-bar [value]="55" [rank]="1" label="Rapprochement" />\`,
+    <lc-progress-bar [value]="80" label="Import" />
+    <lc-progress-bar [value]="55" label="Rapprochement" />\`,
 })
 export class ExampleComponent {}`;
 

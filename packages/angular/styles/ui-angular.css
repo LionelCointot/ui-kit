@@ -269,6 +269,12 @@ lc-form-field [lcSuffix] {
   .lc-drawer-panel {
     inline-size: 100vw;
   }
+
+  /* Barre d'onglets du bas de lc-app-shell (classe posée par le shell sur `:root`) : espace qu'elle prend, et pile de toasts à 16 px au-dessus. */
+  :root.lc-has-tabbar {
+    --lc-shell-tabbar-space: calc(var(--lc-tabbar-height) + var(--lc-sys-space-3) + env(safe-area-inset-bottom));
+    --lc-toast-above-tabbar: calc(var(--lc-shell-tabbar-space) + var(--lc-sys-space-4));
+  }
 }
 
 /* lc-combobox : le panneau (rôle listbox) vit dans la surcouche CDK, hors du composant. */
