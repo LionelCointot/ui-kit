@@ -11,6 +11,7 @@ import { LcStaggerDirective } from './stagger.directive';
     <div id="mixed" lcStagger>
       <i lcReveal></i><b class="g" [lcFill]="0.5"></b><i lcReveal></i><b class="g" [lcFill]="0.5"></b><b class="g" [lcFill]="0.5" [lcFillIndex]="7"></b>
     </div>
+    <div id="containers"><ng-container><b class="g" [lcFill]="0.5"></b><b class="g" [lcFill]="0.5"></b></ng-container><ng-container><b class="g" [lcFill]="0.5"></b></ng-container></div>
     <div id="alone"><b class="g" [lcFill]="0.5"></b></div>
   `,
 })
@@ -29,5 +30,12 @@ describe('lcFill : décalage automatique entre jauges sœurs', () => {
     expect([...root.querySelectorAll('#mixed .g')].map((el) => css(el, '--lc-fill-rank'))).toEqual(['0', '1', '7']);
     expect([...root.querySelectorAll('#mixed i')].map((el) => css(el, '--lc-reveal-rank'))).toEqual(['0', '1']);
     expect(css(root.querySelector('#alone .g')!, '--lc-fill-rank')).toBe('0');
+  });
+
+  it('dans un ng-container, une cascade par conteneur (le parent du gabarit est le commentaire du conteneur)', () => {
+    Object.defineProperty(Element.prototype, 'getAnimations', { configurable: true, value: () => [{}] });
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    expect([...fixture.nativeElement.querySelectorAll('#containers .g')].map((el) => css(el, '--lc-fill-rank'))).toEqual(['0', '1', '0']);
   });
 });

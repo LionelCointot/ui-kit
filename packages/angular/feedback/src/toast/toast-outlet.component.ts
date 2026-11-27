@@ -5,16 +5,17 @@ import { LcToast, LcToastService } from './toast.service';
 
 /**
  * Zone d'affichage des toasts de `LcToastService`, à placer une fois à la racine de l'application.
- * La région d'annonce (`role="status"`) est toujours dans le DOM : un lecteur d'écran n'annonce pas le premier toast d'une région qui apparaît avec lui. Un toast d'erreur porte `role="alert"`.
+ * Les annonces aux lecteurs d'écran passent par le seul `LiveAnnouncer` de `LcToastService` (conteneur permanent) : aucun rôle `status` ni `alert` ici, qui doublerait l'annonce.
  * Variable CSS `--lc-toast-offset-block-end` : décalage de la pile vers le haut (ex. au-dessus d'une barre d'actions fixe).
  */
 @Component({
   selector: 'lc-toast-outlet',
   imports: [LcIconComponent],
   template: `
-    <section class="lc-toast-outlet__region" role="status" [attr.aria-label]="labels.notifications">
+    @if (toasts().length > 0) {
+      <section class="lc-toast-outlet__region" [attr.aria-label]="labels.notifications">
         @for (toast of toasts(); track toast.id) {
-          <div class="lc-toast" [class]="'lc-toast--' + toast.kind" [attr.role]="toast.kind === 'error' ? 'alert' : null" animate.enter="lc-toast-enter" animate.leave="lc-toast-leave"
+          <div class="lc-toast" [class]="'lc-toast--' + toast.kind" animate.enter="lc-toast-enter" animate.leave="lc-toast-leave"
             (mouseenter)="service.pause(toast.id)" (mouseleave)="service.resume(toast.id)"
             (focusin)="service.pause(toast.id)" (focusout)="service.resume(toast.id)">
             <lc-icon class="lc-toast__icon" [name]="icons[toast.kind]" />
@@ -27,7 +28,8 @@ import { LcToast, LcToastService } from './toast.service';
             </button>
           </div>
         }
-    </section>
+      </section>
+    }
   `,
   styleUrl: './toast-outlet.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -19,6 +19,7 @@ const GAUGE_BATCHES = new WeakMap<Element, LcStaggerBatch>();
 
 /**
  * Rang d'arrivée d'une jauge parmi ses sœurs, c'est-à-dire parmi les jauges créées dans le même rendu sous `parent` ; 0 sans parent.
+ * La clé « parent » est le nœud parent du gabarit, l'élément même sans directive ; dans un `ng-container`, c'est le commentaire du conteneur : une cascade par conteneur.
  *
  * @internal Réservé aux points d'entrée du kit.
  */

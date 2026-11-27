@@ -17,7 +17,7 @@ const HEADER_TITLE_SCROLL_PX = 80;
 /**
  * Coquille d'application : lien d'évitement, en-tête, navigation et contenu principal.
  * Navigation latérale (réductible aux icônes) ≥ 1024 px, tiroir en dessous (focus piégé, Échap ferme
- * et rend le focus au bouton de menu). Les changements de page de l'application sont animés (`lcPageTransitions`, sans effet sans routeur). Emplacements : `[lcShellHeader]`, `[lcShellNav]`, contenu.
+ * et rend le focus au bouton de menu). Un seul `lc-app-shell` par document (la barre d'onglets pose la classe `lc-has-tabbar` sur `:root`). Les changements de page de l'application sont animés (`lcPageTransitions`, sans effet sans routeur). Emplacements : `[lcShellHeader]`, `[lcShellNav]`, contenu.
  */
 @Component({
   selector: 'lc-app-shell',
