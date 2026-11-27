@@ -866,12 +866,12 @@ describe('LcDataTableComponent', () => {
       vi.unstubAllGlobals();
     });
 
-    it('filtre : seules les 8 premières lignes de la nouvelle liste portent une entrée', async () => {
+    it('filtre : toutes les lignes portent une entrée (aucune visible avant table.refill-delay), le plafond de cascade est en CSS', async () => {
       await setup();
       host.query.set(q({ city: ['Annecy', 'Brest', 'Caen', 'Dijon', 'Évry', 'Fréjus', 'Gap', 'Hyères', 'Istres'] }));
       await stable();
       expect(rowNodes()).toHaveLength(9);
-      expect(ranks().filter((rank) => rank !== '')).toHaveLength(8);
+      expect(ranks().filter((rank) => rank !== '')).toHaveLength(9);
     });
 
     describe('animations (lcFlip, lcAnimate)', () => {

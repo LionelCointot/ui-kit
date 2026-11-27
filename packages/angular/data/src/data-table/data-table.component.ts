@@ -251,11 +251,15 @@ export class LcDataTableComponent<T> {
         // Le corps est masqué le temps du rendu : les lignes retirées n'ont aucune sortie à jouer (`lcReveal`), la liste est vide d'un coup.
         // shortcut: sortie évitée par un ancêtre [hidden] (voir lcReveal) ; à remplacer si lcReveal gagne une option d'interruption.
         const body = this.body()?.nativeElement;
+        // Le corps vide fait retomber le défilement du conteneur : on le rétablit une fois les lignes recréées (au plafond naturel près).
+        const scroller = body?.closest<HTMLElement>('.lc-data-table__scroll');
+        const top = scroller?.scrollTop ?? 0;
         if (body) body.hidden = true;
         this.holding.set(true);
         afterNextRender(() => {
           if (body) body.hidden = false;
           this.holding.set(false);
+          afterNextRender(() => { if (scroller) scroller.scrollTop = top; }, { injector: this.injector });
         }, { injector: this.injector });
       });
     });
@@ -274,7 +278,8 @@ export class LcDataTableComponent<T> {
 
   /** Rang de cascade d'une ligne (les 8 premières, à l'ouverture et après un changement de filtre), sinon `null` : pas d'entrée. */
   protected cascadeIndex(index: number): number | null {
-    return this.cascading() && index < REVEAL_ROWS ? index : null;
+    // Après un filtre, toutes les lignes attendent `table.refill-delay` (plafond de cascade appliqué en CSS) ; à l'ouverture, seules les premières apparaissent.
+    return this.cascading() && (this.refill() || index < REVEAL_ROWS) ? index : null;
   }
 
   /** Fondu de sortie d'une pastille (`animate.leave`) : elle sort du flux à sa place, la rangée se resserre aussitôt et sa hauteur finale est connue. */
