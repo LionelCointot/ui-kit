@@ -292,11 +292,12 @@ async function collapse() {
       const page = await open(c, k.story); await k.pre?.(page);
       const found = await page.evaluate(async ([ts, bs]) => { const t = [...document.querySelectorAll(ts)].find((x) => x.closest(bs)?.nextElementSibling); if (!t) return false; t.setAttribute('data-qa-t', ''); t.closest(bs).setAttribute('data-qa-c', ''); if (t.getAttribute('aria-expanded') === 'true') { t.click(); await Q.settle(); } return true; }, [k.toggle, k.box]);
       if (!found) { check(`CA-H ${name} : élément dépliable avec voisin`, false, 'introuvable'); return; }
+      // `gap` : écart au voisin et non sa position, car dans une feuille ancrée en bas l'ouverture fait monter le haut de la feuille et le voisin du bas ne bouge pas (case `section`).
       const run = (open) => page.evaluate(async ([isOpen, deg]) => {
-        const t = document.querySelector('[data-qa-t]'); const box = document.querySelector('[data-qa-c]'); const region = document.getElementById(t.getAttribute('aria-controls')); const next = box.nextElementSibling;
+        const t = document.querySelector('[data-qa-t]'); const box = document.querySelector('[data-qa-c]'); const region = document.getElementById(t.getAttribute('aria-controls')); const next = box.nextElementSibling; const gap = () => next.getBoundingClientRect().top - box.getBoundingClientRect().top; // écart au voisin, pas sa position : dans une feuille ancrée en bas, l'ouverture fait monter le haut de la feuille et le voisin du bas ne bouge pas
         const dur = Q.ms(isOpen ? '--lc-disclosure-enter-duration' : '--lc-disclosure-exit-duration'); const out = { icons: t.querySelectorAll('lc-icon').length, svg0: t.innerHTML, chevDur: Q.ms('--lc-disclosure-chevron-duration'), offset: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-disclosure-offset')) };
         const body = region.firstElementChild?.firstElementChild; const bodyY = () => { const v = getComputedStyle(body).translate; return v === 'none' ? 0 : parseFloat(v.split(' ')[1] ?? '0'); };
-        const top0 = next.getBoundingClientRect().top, h0 = region.getBoundingClientRect().height;
+        const top0 = gap(), h0 = region.getBoundingClientRect().height;
         t.click(); await Q.until(() => (t.getAttribute('aria-expanded') === 'true') === isOpen); await Q.raf();
         out.expanded = t.getAttribute('aria-expanded'); out.inert = region.inert; out.vis = getComputedStyle(region).visibility;
         const all = Q.anims(box);
@@ -305,10 +306,10 @@ async function collapse() {
         out.chev = all.filter((x) => x.prop === 'transform' && t.contains(x.el)).map((x) => x.t.duration); out.dur = dur;
         out.body = all.filter((x) => (x.prop === 'opacity' || x.prop === 'translate') && x.el === body).map((x) => ({ p: x.prop, d: x.t.duration, e: x.ease }));
         const tops = [], hs = []; const step = dur / 24; // pas relatif : le repli ne dure que 100 ms
-        for (let ms = 0; ms <= dur; ms += step) { Q.at(box, ms); tops.push(next.getBoundingClientRect().top); hs.push(region.getBoundingClientRect().height); if (ms === 0) { out.body0 = { o: Number(getComputedStyle(body).opacity), y: bodyY() }; } }
-        Q.at(box, dur); tops.push(next.getBoundingClientRect().top); hs.push(region.getBoundingClientRect().height); out.bodyEnd = { o: Number(getComputedStyle(body).opacity), y: bodyY() };
+        for (let ms = 0; ms <= dur; ms += step) { Q.at(box, ms); tops.push(gap()); hs.push(region.getBoundingClientRect().height); if (ms === 0) { out.body0 = { o: Number(getComputedStyle(body).opacity), y: bodyY() }; } }
+        Q.at(box, dur); tops.push(gap()); hs.push(region.getBoundingClientRect().height); out.bodyEnd = { o: Number(getComputedStyle(body).opacity), y: bodyY() };
         box.getAnimations({ subtree: true }).forEach((a) => a.finish()); await Q.raf();
-        const topEnd = next.getBoundingClientRect().top, hEnd = region.getBoundingClientRect().height;
+        const topEnd = gap(), hEnd = region.getBoundingClientRect().height;
         out.hStart = hs[0]; out.hEnd = hEnd; out.top0 = top0; out.topEnd = topEnd; out.h0 = h0; out.tops = tops;
         out.visEnd = getComputedStyle(region).visibility; out.bodyOpacity = Number(getComputedStyle(body).opacity); out.regionText = region.innerText.trim().slice(0, 20);
         const m = new DOMMatrix(getComputedStyle(t.querySelector('lc-icon, svg')).transform); out.angle = Math.round(Math.abs(Math.atan2(m.b, m.a) * 180 / Math.PI));
