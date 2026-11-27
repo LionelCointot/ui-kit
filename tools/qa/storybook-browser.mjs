@@ -1498,7 +1498,7 @@ async function animationStoryIds() {
  *  CA-3 (mouvement réduit : durées et délais ≤ 0,01 ms, rien en cours), CA-5 (propriétés animées), CA-31 (aucun défilement horizontal à 360 px à 0, 50 et 100 %). */
 const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate', 'strokeDashoffset']);
 const CA5_INDICATORS = '.lc-tabs__indicator, .lc-nav-list__indicator, .lc-segmented-control__indicator, .lc-switch__thumb';
-const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, .lc-switch__track, .lc-switch__thumb'; // lc-switch : contrôle de formulaire, piste et bouton changent de couleur à la bascule (d46, retour d'état);
+const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, .lc-switch__track'; // lc-switch : la piste change de couleur à la bascule (d46, retour d'état) ; le bouton ne fait que se déplacer (`translate`)
 /** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même), 'transition' : transitions seulement]. Tout le reste est un écart. */
 const CA5_ALLOW = [
   [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
@@ -1506,6 +1506,8 @@ const CA5_ALLOW = [
   [['gridTemplateRows'], '.lc-disclosure__region, .lc-nav-group__items'],
   [['visibility'], '.lc-disclosure__region', undefined, 'transition'], // propriété discrète : ne passe à hidden qu'à la fin du repli (décision de l'orchestrateur), sans effet visible
   [['inlineSize'], '.lc-shell__nav'], // barre latérale de lc-app-shell
+  [['left', 'right'], '.lc-tabbar__indicator', undefined, 'transition'], // pastille de la barre du bas : deux bords, `left` et `right` (lcPlaceIndicator, mode edges), sans clip-path
+  [['color'], '.lc-tabbar__tab', undefined, 'transition'], // le texte de l'onglet bascule d'un bloc (durée 0, délai) quand le bord de la pastille le recouvre
   [['clipPath'], CA5_INDICATORS], // pastilles à deux bords
   [['clipPath'], ':root', '::view-transition'],
   [['width', 'height', 'left', 'top', 'insetInlineStart', 'insetBlockStart'], CA5_INDICATORS],

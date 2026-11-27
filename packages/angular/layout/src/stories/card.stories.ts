@@ -89,6 +89,18 @@ export const WithActions: Story = {
   }),
 };
 
+/** Card inside a dialog whose title is an `h2`: `headingLevel="3"` keeps the outline in order (`2 | 3 | 4`, default `2`). */
+export const InDialog: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `
+      <lc-card style="max-width:28rem">
+        <lc-card-header title="Équipe design" subtitle="5 membres" headingLevel="3" />
+        <p>Prochaine réunion : jeudi à 10 h.</p>
+      </lc-card>`,
+  }),
+};
+
 /** Collapsible card: the header toggles the content and the footer. */
 export const Collapsible: Story = {
   parameters: fixedExample,

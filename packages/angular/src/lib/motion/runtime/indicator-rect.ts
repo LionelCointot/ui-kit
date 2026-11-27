@@ -27,14 +27,21 @@ const lastMiddle = new WeakMap<HTMLElement, number>();
  * boîte (`left` et `width`, ou `top` et `height`, dont le bord opposé reste à `bound`), le bord avant est rogné par `clip-path` : deux propriétés, donc
  * deux durées. Le bord avant est celui qui va vers les coordonnées croissantes : `data-direction` (`forward` ou `backward`) dit lequel des deux anime en avant,
  * le CSS du composant choisit les durées. `bound` est le bord de fin fixe de la boîte (au moins `end`) ; le rayon vient de `--_indicator-radius`.
+ * Mode `edges` (axe `x` seulement) : la boîte est exactement la zone visible, `left` et `right` (`bound` est alors la largeur du parent) sont les deux bords,
+ * sans `clip-path` (que les vérificateurs de contraste ignorent).
  *
  * @internal Réservé aux points d'entrée du kit.
  */
-export function lcPlaceIndicator(indicator: HTMLElement, axis: 'x' | 'y', start: number, end: number, bound: number): void {
+export function lcPlaceIndicator(indicator: HTMLElement, axis: 'x' | 'y', start: number, end: number, bound: number, mode: 'clip' | 'edges' = 'clip'): void {
   const middle = (start + end) / 2;
   const previous = lastMiddle.get(indicator);
   lastMiddle.set(indicator, middle);
   if (previous !== undefined && previous !== middle) indicator.dataset['direction'] = middle > previous ? 'forward' : 'backward';
+  if (mode === 'edges' && axis === 'x') {
+    indicator.style.setProperty('left', `${start}px`);
+    indicator.style.setProperty('right', `${Math.max(bound - end, 0)}px`);
+    return;
+  }
   const [position, size] = axis === 'x' ? ['left', 'width'] : ['top', 'height'];
   indicator.style.setProperty(position, `${start}px`);
   indicator.style.setProperty(size, `${Math.max(bound - start, 0)}px`);
