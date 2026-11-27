@@ -37,7 +37,7 @@ async function openStory(browser, base, id, theme) {
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
   // `attached` : une story dont le seul enfant est en `position:fixed` (overlays-tooltip--near-edges) a un hôte sans boîte, jamais « visible ».
   await page.waitForSelector('#storybook-root > *, #storybook-docs', { state: 'attached', timeout: 20000 });
-  await settled(page);
+  await settled(page).catch(() => errors.push('animations finies encore en cours après 15 s')); // un KO écrit, pas un plantage
   return { page, context, errors };
 }
 
@@ -49,8 +49,15 @@ async function axeRun(browser, base, entries) {
     await page.addScriptTag({ content: axeSource });
     for (const theme of ['default', 'dark']) {
       if (theme === 'dark') { // même page : le sélecteur de thème de Storybook ne fait que poser ces deux attributs (.storybook/preview.ts)
+        // Graphiques : ChartThemeService relit les tokens sur mutation de `data-theme` puis ECharts redessine ; état observable = le tracé (canvas ou svg) a changé puis ne bouge plus 5 images (5 s au plus : un graphique sans texte ni couleur de thème ne change pas).
+        const sig = () => [...document.querySelectorAll('lc-chart canvas, lc-chart svg')].map((e) => (e.tagName === 'CANVAS' ? e.toDataURL() : e.outerHTML)).join('|');
+        const hadChart = await page.evaluate(`(() => { window.__sigBefore = (${sig.toString()})(); return window.__sigBefore !== ''; })()`);
         await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); document.documentElement.style.colorScheme = 'dark'; });
-        await settled(page);
+        if (hadChart) {
+          await page.waitForFunction(`(${sig.toString()})() !== window.__sigBefore`, null, { timeout: 5000 }).catch(() => undefined);
+          await page.evaluate(`(async () => { const sig = ${sig.toString()}; let last = sig(), same = 0; while (same < 5) { await new Promise((r) => requestAnimationFrame(r)); const now = sig(); same = now === last ? same + 1 : 0; last = now; } })()`);
+        }
+        await settled(page).catch(() => errors.push('animations finies encore en cours après 15 s'));
       }
       const result = await page.evaluate(async () => {
         // L'addon a11y de Storybook peut avoir son propre axe.run en cours (sous charge) : attendre qu'il finisse.
@@ -1235,6 +1242,7 @@ async function motion(browser, base, fragments = []) {
   const contexts = [['normal', {}], ['reduced', { reducedMotion: 'reduce' }], ['forced', { forcedColors: 'active' }]];
   const sizes = [[1280, 720], [360, 640]];
   const animationIds = await animationStoryIds(fragments);
+  if (fragments.length > 0 && animationIds.length === 0) check(false, `aucune story d'animation ne correspond à ${fragments.join(' ')}`);
   if (fragments.length > 0) { // relance ciblée : seulement la boucle générale (CA-3, CA-5, CA-31, CA-16) des stories dont l'id contient un fragment
     console.log(`${animationIds.length} story(ies) d'animation`);
     for (const [name, options] of contexts.slice(0, 2)) {
@@ -1526,6 +1534,8 @@ const NO_FINITE_ANIMATION = () => !document.getAnimations().some((a) => Number.i
 const finiteIdle = (page, label, check, timeout = 15000) => page.waitForFunction(NO_FINITE_ANIMATION, null, { timeout }).then(() => true, () => { check(false, `${label} animations finies encore en cours après ${timeout} ms`); return false; });
 /** CA-16c : le bandeau accompagne la page Motion et les stories `Animation` (spec 5.4) ; ni Elevation ni le Playground de Reveal n'en ont. */
 const NOTICE = 'Les animations sont réduites par votre système : rien ne bouge dans cette démo.';
+const chains = new Set(); // stories où une animation démarre après la première image suivant le clic (relevé en mouvement normal, relu en réduit)
+let freshPageCa31 = false; // `--ca31-page-neuve` : ancien mode de CA-31 (page neuve pour chaque « Rejouer »), pour comparer
 async function motionAnimations(context, base, ids, reduced, width, check) {
   const tag = `${reduced ? 'reduced' : 'normal'} ${width}px`;
   for (const id of ids) {
@@ -1539,36 +1549,43 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
     await page.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 }).catch((error) => errors.push(`rendu : ${error.message.split('\n')[0]}`));
     const buttons = page.getByRole('button', { name: 'Rejouer' });
     const count = await buttons.count();
-    if (id.includes('--animation')) check(count >= 1, `CA-16b ${tag} ${id} au moins un « Rejouer »`); // la fusion avec l'ancien mode stories-motion
+    if (id.includes('--animation')) { // contrat de docs/storybook/CONVENTIONS.md : un « Rejouer » par démo (couvre aussi lcReveal + lcStagger de layout-reveal--animation)
+      const demos = await page.locator('[data-demo]').count();
+      check(count >= Math.max(1, demos, id === 'layout-reveal--animation' ? 2 : 0), `CA-16b CA-38 ${tag} ${id} au moins un « Rejouer » par démo (deux pour layout-reveal : lcReveal et lcStagger)`, `${count} bouton(s) pour ${demos} démo(s)`);
+    }
     for (let n = 0; n < count; n += 1) {
       const label = `${tag} ${id} « Rejouer » n°${n + 1}/${count}`;
       await finiteIdle(page, label, check);
       // Dans le même `evaluate` que le clic : les animations sont relevées à leur première apparition (certains « Rejouer » démarrent après un rendu Angular).
-      // Fenêtre de relevé : `min` ms au moins (900 ; 250 en réduit : on ne mesure que des durées nulles), prolongée tant qu'une nouvelle animation apparaît (`quiet` ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s).
+      // Fenêtre de relevé : `min` ms au moins (900 ; 400 en réduit sauf chaîne), prolongée tant qu'une nouvelle animation apparaît (`quiet` ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s) ;
+      // `waitFirst` : tant qu'aucune animation nouvelle n'est apparue, on attend jusqu'à 8 s (démarrage tardif) ; seules comptent les animations absentes de l'instantané pris juste avant le clic.
       // `scrub` (CA-31) : chaque animation est mise en pause à sa première vue, puis amenée à 0, 50 et 100 % ; sinon on ne touche à rien.
-      // `late` : animations apparues plus de 150 ms après le clic = chaîne (une animation qui démarre à la fin d'une autre) : la mise en pause la casserait, CA-31 repasse alors sur une page neuve.
-      const scrubRun = async (button, { scrub, allow, min, quiet }) => {
+      // `late` : animations apparues après la première image suivant le clic = chaîne (une animation qui démarre à la fin d'une autre) : la mise en pause la casserait, CA-31 repasse alors sur une page neuve.
+      const scrubRun = async (button, { scrub, allow, min, quiet, waitFirst }) => {
         const MAX_MS = 4000;
         const kind = (a) => (a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'animation' : 'waapi');
         const skip = new Set(['offset', 'computedOffset', 'easing', 'composite']);
         const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+        const before = new Set(document.getAnimations());
         const seen = new Map();
-        const t0 = performance.now();
         const row = (a) => {
           const timing = a.effect.getComputedTiming();
           const target = a.effect.target;
           const pseudo = a.effect.pseudoElement ?? '';
           const props = [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !skip.has(k)))];
           const listed = props.filter((p) => allow.some(([names, selector, pseudoPrefix, only]) => names.includes(p) && target.matches(selector) && (pseudoPrefix === undefined ? !pseudo : pseudo.startsWith(pseudoPrefix)) && (only === undefined || only === kind(a))));
-          return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, at: Math.round(performance.now() - t0), target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
+          return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
         let lastNew = performance.now();
-        const collect = () => document.getAnimations().forEach((a) => { if (!seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
+        const collect = () => document.getAnimations().forEach((a) => { if (!before.has(a) && !seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
         button.click();
+        const t0 = performance.now();
         await frame();
+        collect();
+        const early = seen.size;
         await frame();
         const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).map(row); // une image après l'action
-        for (let now = t0; now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet); now = performance.now()) { collect(); await frame(); }
+        for (let now = t0; now - t0 < (waitFirst ? 8000 : MAX_MS) && ((waitFirst && seen.size === 0) || (now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet))); now = performance.now()) { collect(); await frame(); }
         collect();
         const overflow = [];
         if (scrub) {
@@ -1580,14 +1597,15 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           finite.forEach((a) => a.finish());
         }
         const rows = [...seen.values()];
-        return { rows, running, overflow, late: rows.filter((r) => r.at > 150).length };
+        return { rows, running, overflow, late: rows.length - early };
       };
-      const win = reduced ? { min: 250, quiet: 250 } : { min: 900, quiet: 600 };
+      const win = reduced ? { min: chains.has(id) ? 900 : 400, quiet: 250 } : { min: 900, quiet: 600, waitFirst: true };
       const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW, ...win });
       if (reduced) {
         const bad = got.rows.filter((r) => r.duration > 0.01 || r.delay > 0.01);
         check(bad.length === 0 && got.running.length === 0, `CA-3 ${label} aucune animation en cours après une image, durées et délais ≤ 0,01 ms`, JSON.stringify([...got.running, ...bad].slice(0, 3)));
       } else {
+        if (got.late > 0) chains.add(id);
         check(got.rows.length > 0, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre bien une animation
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
@@ -1596,8 +1614,8 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
       if (width === 360 && !reduced) {
         // Même page que CA-5 (seconde lecture) ; page neuve seulement pour une chaîne d'animations (`late`), que la mise en pause casserait.
         let target = page, fresh = null;
-        if (got.late > 0) {
-          console.log(`INFO ${label} chaîne d'animations (${got.late} tardive(s)) : CA-31 sur page neuve`);
+        if (got.late > 0 || freshPageCa31) {
+          if (got.late > 0) console.log(`INFO ${label} chaîne d'animations (${got.late} tardive(s)) : CA-31 sur page neuve`);
           fresh = await context.newPage();
           await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
           await fresh.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
@@ -1889,13 +1907,16 @@ const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 try {
-  const [mode, ...fragments] = process.argv.slice(2);
+  const [mode, ...rest] = process.argv.slice(2);
+  freshPageCa31 = rest.includes('--ca31-page-neuve');
+  const fragments = rest.filter((a) => a !== '--ca31-page-neuve');
   if (mode === 'axe') {
     const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
     const wanted = fragments.length === 0 ? MOTION_AXE_FRAGMENTS : fragments[0] === '--hors-mouvement' ? NEW_STORY_FRAGMENTS : fragments;
     const entries = Object.entries(index.entries).filter(([id, entry]) => entry.type === 'story' && wanted.some((fragment) => id.includes(fragment))).map(([id, entry]) => [id, entry.title]);
     console.log(`${entries.length} stories × 2 thèmes`);
-    failures = await axeRun(browser, base, entries);
+    if (entries.length === 0) { console.log(`KO aucune story ne correspond à ${wanted.join(' ')}`); failures = 1; }
+    failures += await axeRun(browser, base, entries);
   } else if (mode === 'dom') {
     failures = await dom(browser, base);
   } else if (mode === 'filter-date') {
