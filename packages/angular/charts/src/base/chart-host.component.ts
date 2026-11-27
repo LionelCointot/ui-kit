@@ -46,6 +46,7 @@ export class LcChartHostComponent {
   private observer?: ResizeObserver;
   private lastTheme: unknown;
   private mounted = signal(false);
+  private size = '';
   private activeIndex = -1;
 
   constructor() {
@@ -76,13 +77,23 @@ export class LcChartHostComponent {
   }
 
   private onResize(): void {
-    if (!this.mounted() && this.canvas().nativeElement.clientWidth > 0) this.mounted.set(true);
-    else this.chart?.resize();
+    const element = this.canvas().nativeElement;
+    if (!this.mounted() && element.clientWidth > 0) {
+      this.mounted.set(true);
+      return;
+    }
+    // `resize()` termine les animations en cours : pas d'appel si la taille n'a pas changé (rappel initial du ResizeObserver après le premier rendu).
+    const size = `${element.clientWidth}x${element.clientHeight}`;
+    if (size === this.size) return;
+    this.size = size;
+    this.chart?.resize();
   }
 
   private ensureChart(): void {
     if (this.chart) return;
-    this.chart = this.engine.init(this.canvas().nativeElement, undefined, { renderer: this.options.renderer });
+    const element = this.canvas().nativeElement;
+    this.size = `${element.clientWidth}x${element.clientHeight}`;
+    this.chart =this.engine.init(this.canvas().nativeElement, undefined, { renderer: this.options.renderer });
     this.chart.on('click', (params: unknown) => {
       const { seriesId, dataIndex, value } = params as { seriesId?: string; dataIndex: number; value: unknown };
       if (seriesId !== undefined) {

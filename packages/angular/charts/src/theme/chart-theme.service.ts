@@ -1,4 +1,4 @@
-import { DOCUMENT, DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { DOCUMENT, DestroyRef, Injectable, Signal, computed, inject, isDevMode, signal } from '@angular/core';
 import { LcThemeService } from '@lionelcointot/ui-angular';
 import { LC_CHARTS_OPTIONS } from '../provide-lc-charts';
 import type { LcChartRole, LcChartTheme } from '../types';
@@ -17,10 +17,18 @@ export interface ChartThemeFlags {
 export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValue'>, flags: ChartThemeFlags): LcChartTheme {
   const read = (name: string, fallback = MISSING_TOKEN_COLOR): string => style.getPropertyValue(name).trim() || fallback;
   const token = (name: string): string => read(`--lc-sys-chart-${name}`);
+  const missing: string[] = [];
+  const motionToken = (name: string): string => {
+    const raw = style.getPropertyValue(name).trim();
+    if (!raw) missing.push(name);
+    return raw;
+  };
   const ms = (name: string): number => {
-    const raw = read(name, '0ms');
+    const raw = motionToken(name) || '0ms';
     return parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000) || 0;
   };
+  const motion = { sparklineMs: ms('--lc-chart-sparkline-duration'), updateMs: ms('--lc-chart-update-duration'), staggerMs: ms('--lc-chart-update-stagger'), staggerCap: parseFloat(motionToken('--lc-sys-motion-stagger-cap')) || undefined };
+  if (isDevMode() && missing.length) console.warn(`[ui-kit] Token de mouvement des graphiques absent : ${missing.join(', ')} (durée 0, cascade sans plafond) ; feuille du kit non chargée ?`);
   const fontSize = toPixels(read('--lc-sys-font-size-sm', `${DEFAULT_FONT_SIZE}px`));
   return {
     categorical: [1, 2, 3, 4, 5, 6, 7, 8].map((index) => token(`categorical-${index}`)),
@@ -37,7 +45,7 @@ export function readChartTheme(style: Pick<CSSStyleDeclaration, 'getPropertyValu
     fontFamily: read('--lc-sys-font-family-base', 'sans-serif'),
     fontSize,
     reducedMotion: flags.reducedMotion,
-    motion: { sparklineMs: ms('--lc-chart-sparkline-duration'), updateMs: ms('--lc-chart-update-duration'), staggerMs: ms('--lc-chart-update-stagger') },
+    motion,
     patterns: flags.patterns,
   };
 }
