@@ -23,7 +23,9 @@
   flex-shrink: 0;
   min-inline-size: var(--lc-sys-border-width-thick);
   border-radius: var(--lc-sys-radius-sm);
-  transition: flex-grow var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+  transition:
+    flex-grow var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
+    var(--lc-fill-transition);
 }
 
 /* Couleur de rôle : emplacements de couleur des graphiques ; `neutral` = bord fort. */

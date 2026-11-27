@@ -151,7 +151,10 @@
 .lc-fill {
   scale: var(--lc-progress) 1;
   transform-origin: left;
-  transition: scale var(--lc-sys-duration-fill) var(--lc-sys-easing-fill);
+  /* Réutilisable par un composant qui a d'autres transitions : `transition: …, var(--lc-fill-transition)`. Décalage = rang d'entrée (lcFillIndex). */
+  --lc-fill-transition: scale var(--lc-sys-duration-fill) var(--lc-sys-easing-fill)
+    calc(min(var(--lc-fill-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-sys-motion-stagger-normal));
+  transition: var(--lc-fill-transition);
 }
 
 .lc-fill--y {
@@ -177,6 +180,31 @@
   .lc-draw {
     stroke-dashoffset: 1px;
   }
+}
+
+/* Toast : entrée et sortie depuis `toast.*` (Talmo : monte de 30 px en grossissant, repart de 16 px en 250 ms). Posées par `animate.enter` / `animate.leave` de lc-toast-outlet. */
+@keyframes lc-toast-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--lc-toast-enter-offset);
+    scale: var(--lc-toast-enter-scale);
+  }
+}
+
+@keyframes lc-toast-out {
+  to {
+    opacity: 0;
+    translate: 0 var(--lc-toast-exit-offset);
+  }
+}
+
+.lc-toast-enter {
+  animation: lc-toast-in var(--lc-toast-enter-duration) var(--lc-toast-enter-easing) backwards;
+}
+
+.lc-toast-leave {
+  animation: lc-toast-out var(--lc-toast-exit-duration) var(--lc-toast-exit-easing) forwards;
+  pointer-events: none;
 }
 
 /* Point « live » : décoratif, jamais seul porteur d'information. Arrêté sous mouvement réduit (opacité haute fixe). */
@@ -206,6 +234,8 @@
 @media (prefers-reduced-motion: reduce) {
   .lc-reveal,
   .lc-leave,
+  .lc-toast-enter,
+  .lc-toast-leave,
   .lc-split-char,
   .lc-pulse {
     animation: none;

@@ -102,18 +102,78 @@
   outline: none;
 }
 
-/* Barre d'onglets du bas (téléphone) : « Plus » remplace le bouton de menu, et le contenu garde sa place au-dessus de la barre. */
+/* En-tête mobile (< 768 px) : bouton retour `‹ titre parent`, titre de la page qui apparaît au défilement, bande du geste de retour. */
+.lc-shell__back,
+.lc-shell__title,
+.lc-shell__edge {
+  display: none;
+}
+
 @media (max-width: 767.98px) {
+  .lc-shell__back {
+    display: inline-flex;
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    max-inline-size: 50%;
+  }
+
+  .lc-shell__back-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lc-shell__title {
+    display: block;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--lc-sys-font-weight-semibold);
+    opacity: 0;
+    transition: opacity var(--lc-sys-duration-exit) var(--lc-sys-easing-standard);
+  }
+
+  .lc-shell__title--shown {
+    opacity: 1;
+  }
+
+  .lc-shell__edge {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: var(--lc-sys-z-sticky);
+    display: block;
+    inline-size: var(--lc-sys-space-5);
+    touch-action: pan-y;
+  }
+
+  /*
+   * Barre d'onglets du bas : « Plus » remplace le bouton de menu, et le contenu garde sa place au-dessus de la barre.
+   * `--lc-shell-tabbar-space` : espace pris en bas par la barre (hauteur, marge, zone sûre), lu par le contenu et par un toast qui doit la dégager.
+   */
+  :host(.lc-app-shell--tabbar) {
+    --lc-shell-tabbar-space: calc(var(--lc-tabbar-height) + var(--lc-sys-space-3) + env(safe-area-inset-bottom));
+  }
+
   :host(.lc-app-shell--tabbar) .lc-shell__menu {
     display: none;
   }
 
   :host(.lc-app-shell--tabbar) .lc-shell__main {
-    padding-block-end: calc(var(--lc-tabbar-height, var(--lc-sys-space-16)) + var(--lc-sys-space-6) + env(safe-area-inset-bottom));
+    padding-block-end: calc(var(--lc-shell-tabbar-space) + var(--lc-sys-space-3));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .lc-shell__title {
+    transition: none;
+  }
+
+  .lc-shell__edge {
+    display: none;
+  }
+
   .lc-shell__nav,
   .lc-shell__nav--drawer,
   .lc-shell__nav--drawer.lc-shell__nav--open {

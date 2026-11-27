@@ -22,7 +22,8 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
   test('ui-angular.css ne contient plus de règle [lcReveal] ni de jeton --lc-reveal-*', () => {
     const css = strip(read(sheet));
     assert.doesNotMatch(css, /\[lcReveal\]/i, 'le sélecteur [lcReveal] existe encore dans ui-angular.css');
-    assert.doesNotMatch(css, /--lc-reveal-/, 'un jeton --lc-reveal-* est encore lu par ui-angular.css');
+    // `--lc-reveal-curve` est la variable locale de motion.css (§13 T3) : le tiroir la surcharge (cascade en courbe soft) ; tout autre --lc-reveal-* reste interdit.
+    assert.doesNotMatch(css, /--lc-reveal-(?!curve\b)/, 'un jeton --lc-reveal-* (hors --lc-reveal-curve) est encore lu par ui-angular.css');
   });
 
   test('ui-angular.css importe motion.css', () => {
@@ -59,7 +60,7 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
     'src/lib/spinner/spinner.component.css': ['lc-spinner-spin', 'lc-spinner-pulse'], // boucle de chargement
     'src/lib/button/button.component.css': ['lc-button-spin'], // bouton en chargement
     'feedback/src/progress-bar/progress-bar.component.css': ['lc-progress-slide'], // bande indéterminée, gardée
-    'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // composant existant, migré en T4
+    'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // bande indéterminée, rotation d'envoi et secousse de refus, gardées (la barre de progression passe par lcFill)
     'forms/src/file-upload/file-upload.component.css': ['lc-file-upload-slide'], // bande indéterminée, gardée
     'data/src/data-table/column-filter.component.css': ['lc-column-filter-spin'], // indicateur de chargement
     'styles/ui-angular.css': ['lc-truncate-scroll'], // truncate : T12 (dialogue et tiroir migrés par T9a ; pops d'ancrage et calendrier migrés par T9c)
@@ -260,5 +261,39 @@ describe('T4 : .lc-pulse, .lc-lift, lcFill, lcDraw dans motion.css (CA-12, CA-13
     assert.match(index, /directives\/fill\.directive/);
     assert.match(index, /directives\/draw\.directive/);
     assert.match(read(join(angular, 'src/lib/motion/directives/fill.directive.ts')), /export type LcFillAxis\s*=\s*'x'\s*\|\s*'y'/);
+  });
+});
+
+describe('T10a : barres en lcFill, toast, disclosure lisent leurs tokens (CA-25, §5.4.1)', () => {
+  const css = (f) => strip(read(join(angular, f)));
+  const ts = (f) => strip(read(join(angular, f)));
+
+  test('les barres ne transitionnent plus width et passent par [lcFill] ; la bande indéterminée reste', () => {
+    for (const [c, t, band] of [
+      ['feedback/src/progress-bar/progress-bar.component.css', 'feedback/src/progress-bar/progress-bar.component.ts', 'lc-progress-slide'],
+      ['forms/src/file-upload/file-upload.component.css', 'forms/src/file-upload/file-upload.component.ts', 'lc-file-upload-slide'],
+      ['forms/src/message-composer/message-composer.component.css', 'forms/src/message-composer/message-composer.component.ts', 'lc-message-composer-slide'],
+    ]) {
+      assert.doesNotMatch(css(c), /transition:\s*width/, `${c} : transition sur width`);
+      assert.match(css(c), new RegExp(`@keyframes\\s+${band}`), `${c} : bande indéterminée retirée`);
+      assert.match(ts(t), /\[lcFill\]/, `${t} : [lcFill] absent`);
+      assert.doesNotMatch(ts(t), /\[style\.width\.%\]/, `${t} : width inline`);
+    }
+    assert.match(ts('data/src/timeline-bar/timeline-bar.component.ts'), /\[lcFill\]/);
+    assert.match(css('data/src/timeline-bar/timeline-bar.component.css'), /var\(--lc-fill-transition\)/);
+  });
+
+  test('toast : animate.enter / animate.leave, keyframes dans motion.css sur les tokens toast.*', () => {
+    const outlet = ts('feedback/src/toast/toast-outlet.component.ts');
+    assert.match(outlet, /animate\.enter="lc-toast-enter"/);
+    assert.match(outlet, /animate\.leave="lc-toast-leave"/);
+    const motion = css('styles/motion.css');
+    for (const t of ['enter-offset', 'enter-scale', 'enter-duration', 'enter-easing', 'exit-offset', 'exit-duration', 'exit-easing']) assert.match(motion, new RegExp(`--lc-toast-${t}`), `--lc-toast-${t} non lu`);
+  });
+
+  test('disclosure : durées d\'ouverture et de repli, décalage et chevron depuis disclosure.*', () => {
+    const c = css('layout/src/disclosure/disclosure.component.css');
+    for (const t of ['enter-duration', 'exit-duration', 'offset', 'chevron-duration']) assert.match(c, new RegExp(`--lc-disclosure-${t}`), `--lc-disclosure-${t} non lu`);
+    assert.doesNotMatch(c, /--lc-collapse-duration/);
   });
 });
