@@ -146,11 +146,21 @@ export const WithDescriptionList: Story = {
   }),
 };
 
-const ANIMATION_CODE = `<lc-grid [columns]="3">
-  <lc-kpi-card label="Commandes" [value]="1248" />
-  <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" />
-  <lc-kpi-card label="Conversion" [value]="3.2" format="percent" />
-</lc-grid>`;
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcGridComponent } from '@lionelcointot/ui-angular/layout';
+import { LcKpiCardComponent } from '@lionelcointot/ui-angular/data';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcGridComponent, LcKpiCardComponent],
+  template: \`
+    <lc-grid [columns]="3">
+      <lc-kpi-card label="Commandes" [value]="1248" />
+      <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" />
+      <lc-kpi-card label="Conversion" [value]="3.2" format="percent" />
+    </lc-grid>\`,
+})
+export class ExampleComponent {}`;
 
 /** The cards tilt in from 40 px (850 ms) one after the other and each figure counts up to its value in 1.2 s; a new value counts on from the old one and flashes. "Rejouer" shows them again. */
 export const Animation: Story = {

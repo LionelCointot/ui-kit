@@ -106,11 +106,22 @@ export const EdgeCases: Story = {
   }),
 };
 
-const ANIMATION_CODE = `<ol lcActivityFeed>
-  @for (event of events; track event.id) {
-    <li lcActivityItem [heading]="event.title" [date]="event.date"></li>
-  }
-</ol>`;
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot/ui-angular/data';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcActivityFeedComponent, LcActivityItemComponent],
+  template: \`
+    <ol lcActivityFeed>
+      @for (event of events; track event.id) {
+        <li lcActivityItem [heading]="event.title" [date]="event.date"></li>
+      }
+    </ol>\`,
+})
+export class ExampleComponent {
+  protected readonly events = [{ id: 1, title: 'Étape 1', date: '12 mars' }];
+}`;
 
 /** The events appear one after the other (8 px, 550 ms, 40 ms apart); an event added later arrives alone, without delay. "Rejouer" shows them again. */
 export const Animation: Story = {

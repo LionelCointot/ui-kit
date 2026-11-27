@@ -60,9 +60,19 @@ export const InAPanel: Story = {
   }),
 };
 
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcSpinnerComponent } from '@lionelcointot/ui-angular';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcSpinnerComponent],
+  template: \`<lc-spinner label="Chargement des projets" />\`,
+})
+export class ExampleComponent {}`;
+
 /** The ring turns at a constant speed in a loop (token-driven); it stops under reduced motion. "Rejouer" inserts it again. */
 export const Animation: Story = {
-  parameters: { ...fixedExample, docs: { source: { code: '<lc-spinner label="Chargement des projets" />' } } },
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   render: () => ({ template: '<lc-spinner-animation-demo />' }),
 };
 

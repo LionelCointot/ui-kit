@@ -107,7 +107,15 @@ export const LongLabel: Story = {
   }),
 };
 
-const ANIMATION_CODE = `<lc-status-badge kind="success">Opérationnel</lc-status-badge>`;
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcStatusBadgeComponent } from '@lionelcointot/ui-angular/feedback';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcStatusBadgeComponent],
+  template: \`<lc-status-badge kind="success">Opérationnel</lc-status-badge>\`,
+})
+export class ExampleComponent {}`;
 
 /** A status badge does not move on purpose: it appears at once and a new status replaces the old one without any transition. "Rejouer" shows it again, then changes its status. */
 export const Animation: Story = {

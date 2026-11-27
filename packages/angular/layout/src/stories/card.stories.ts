@@ -124,19 +124,30 @@ export const CardGrid: Story = {
   }),
 };
 
-const ANIMATION_CODE = `<!-- Nothing to write: a card enters by itself, one after the other. -->
-<lc-grid [columns]="3">
-  @for (project of projects; track project.id) {
-    <lc-card><lc-card-header [title]="project.name" /></lc-card>
-  }
-</lc-grid>
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcCardComponent, LcCardHeaderComponent, LcGridComponent } from '@lionelcointot/ui-angular/layout';
 
-<!-- Same in your own grid: the rank follows the position among siblings. -->
-<div class="my-grid">
-  @for (project of projects; track project.id) {
-    <lc-card><lc-card-header [title]="project.name" /></lc-card>
-  }
-</div>`;
+@Component({
+  selector: 'app-example',
+  imports: [LcCardComponent, LcCardHeaderComponent, LcGridComponent],
+  template: \`
+    <!-- Nothing to write: a card enters by itself, one after the other. -->
+    <lc-grid [columns]="3">
+      @for (project of projects; track project.id) {
+        <lc-card><lc-card-header [title]="project.name" /></lc-card>
+      }
+    </lc-grid>
+
+    <!-- Same in your own grid: the rank follows the position among siblings. -->
+    <div class="my-grid">
+      @for (project of projects; track project.id) {
+        <lc-card><lc-card-header [title]="project.name" /></lc-card>
+      }
+    </div>\`,
+})
+export class ExampleComponent {
+  protected readonly projects = [{ id: 1, name: 'Atlas' }, { id: 2, name: 'Boréal' }];
+}`;
 
 /** Each card rises 26 px with a slight scale in 800 ms, one every 60 ms, with no attribute to write: in an `lc-grid` and in a plain `div`. "Rejouer" shows them again. */
 export const Animation: Story = {
