@@ -1,5 +1,5 @@
 // Vérifications dans un vrai navigateur (Chromium via Playwright) sur le Storybook statique (`npm run build-storybook`) :
-//   node tools/qa/storybook-browser.mjs axe [fragment-d-id ...]   axe-core sur chaque story, thèmes clair et sombre
+//   node tools/qa/storybook-browser.mjs axe [fragment-d-id ... | --hors-mouvement]   axe-core sur chaque story, thèmes clair et sombre (même page) ; sans argument : stories de mouvement (`--animation`, `qa-motion`) ; `--hors-mouvement` : status-badge, tree-table, slider, theme-builder…
 //   node tools/qa/storybook-browser.mjs perf                      temps de rendu des 2 000 lignes de lc-tree-table (CA-K3.5)
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
@@ -37,7 +37,15 @@ function serve() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
+/** `axe` sans argument : les stories de mouvement (ce qu'étaient `axe --animation` et `axe qa-motion`). `axe --hors-mouvement` : les stories des autres lots. */
+const MOTION_AXE_FRAGMENTS = ['--animation', 'qa-motion'];
 const NEW_STORY_FRAGMENTS = ['feedback-status-badge', 'data-tree-table', 'navigation-nav-group', 'bar-chart--by-role', 'area-chart--by-role', 'buttons-button--variants', 'forms-slider', 'theme-builder'];
+
+/** Rendu fini : police chargée, deux images, plus aucune animation finie en cours (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées), sinon axe mesure le contraste d'un texte à mi-fondu. */
+async function settled(page) {
+  await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
+  await page.waitForFunction(() => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending)), null, { timeout: 15000 });
+}
 
 async function openStory(browser, base, id, theme) {
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
@@ -47,17 +55,21 @@ async function openStory(browser, base, id, theme) {
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
   // `attached` : une story dont le seul enfant est en `position:fixed` (overlays-tooltip--near-edges) a un hôte sans boîte, jamais « visible ».
   await page.waitForSelector('#storybook-root > *, #storybook-docs', { state: 'attached', timeout: 20000 });
-  await page.waitForTimeout(400);
-  if (id.includes('--animation') || id.startsWith('qa-motion')) await page.waitForFunction(() => document.getAnimations().every((a) => !Number.isFinite(a.effect.getComputedTiming().endTime)), null, { timeout: 15000 }); // fin de la cascade (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées) : sinon axe mesure le contraste d'un texte à mi-fondu
+  await settled(page);
   return { page, context, errors };
 }
 
 async function axeRun(browser, base, entries) {
   let failures = 0;
   for (const [id, title] of entries) {
+    const t0 = Date.now();
+    const { page, context, errors } = await openStory(browser, base, id, 'default');
+    await page.addScriptTag({ content: axeSource });
     for (const theme of ['default', 'dark']) {
-      const { page, context, errors } = await openStory(browser, base, id, theme);
-      await page.addScriptTag({ content: axeSource });
+      if (theme === 'dark') { // même page : le sélecteur de thème de Storybook ne fait que poser ces deux attributs (.storybook/preview.ts)
+        await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); document.documentElement.style.colorScheme = 'dark'; });
+        await settled(page);
+      }
       const result = await page.evaluate(async () => {
         // L'addon a11y de Storybook peut avoir son propre axe.run en cours (sous charge) : attendre qu'il finisse.
         let run;
@@ -74,8 +86,9 @@ async function axeRun(browser, base, entries) {
       const ok = result.length === 0 && errors.length === 0;
       if (!ok) failures += 1;
       console.log(`${ok ? 'OK ' : 'KO '} ${theme.padEnd(7)} ${id}${ok ? '' : `\n     ${JSON.stringify(result)}${errors.length ? ` erreurs page: ${errors.join(' ; ')}` : ''}`}`);
-      await context.close();
     }
+    await context.close();
+    console.log(`TEMPS axe ${id} ${Date.now() - t0} ms`);
   }
   return failures;
 }
@@ -1895,7 +1908,7 @@ try {
   const [mode, ...fragments] = process.argv.slice(2);
   if (mode === 'axe') {
     const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-    const wanted = fragments.length > 0 ? fragments : NEW_STORY_FRAGMENTS;
+    const wanted = fragments.length === 0 ? MOTION_AXE_FRAGMENTS : fragments[0] === '--hors-mouvement' ? NEW_STORY_FRAGMENTS : fragments;
     const entries = Object.entries(index.entries).filter(([id, entry]) => entry.type === 'story' && wanted.some((fragment) => id.includes(fragment))).map(([id, entry]) => [id, entry.title]);
     console.log(`${entries.length} stories × 2 thèmes`);
     failures = await axeRun(browser, base, entries);
@@ -1912,7 +1925,7 @@ try {
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | swipe | dom | treegrid | filter-date');
+    console.error('Usage : storybook-browser.mjs axe [fragments|--hors-mouvement] | perf | motion | swipe | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {
