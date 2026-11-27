@@ -121,6 +121,8 @@ class AppShellStackDemoComponent {
   selector: 'lc-app-shell-header-demo',
   imports: [LcAppShellComponent, LcButtonComponent],
   host: { 'data-demo': 'd05' },
+  // Les coquilles de la page écoutent toutes le défilement de la fenêtre (une seule par application) : le titre d'en-tête se démontre dans d53 / d59, pas ici.
+  styles: `:host ::ng-deep lc-app-shell .lc-shell__title { transition: none; }`,
   template: `
     <section #section>
       <button lcButton fillMode="outline" size="small" type="button" (click)="demo.replay(section)">Rejouer</button>
