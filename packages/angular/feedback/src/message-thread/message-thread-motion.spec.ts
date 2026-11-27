@@ -1,4 +1,4 @@
-import { ArrivalTracker, normalizePageSize, staggerDelay } from './message-thread-motion';
+import { ArrivalTracker, normalizePageSize } from './message-thread-motion';
 
 describe('ArrivalTracker', () => {
   it('premier rendu non vide : tout est vu, aucune arrivée', () => {
@@ -33,18 +33,5 @@ describe('ArrivalTracker', () => {
 describe('normalizePageSize', () => {
   it.each([[10, 10], [1, 1], [0, 30], [-5, 30], [2.5, 30], [NaN, 30], [Infinity, 30], ['12', 30], [undefined, 30]])('%s -> %s', (input, expected) => {
     expect(normalizePageSize(input)).toBe(expected);
-  });
-});
-
-describe('staggerDelay', () => {
-  it('pas du jeton tant que le lot tient en 300 ms', () => {
-    expect([0, 1, 2, 3].map((i) => staggerDelay(i, 4, 80))).toEqual([0, 80, 160, 240]);
-  });
-  it('lot de 5 à 80 ms : pas réduit à 75 ms, dernier à 300 ms', () => {
-    expect([0, 1, 2, 3, 4].map((i) => staggerDelay(i, 5, 80))).toEqual([0, 75, 150, 225, 300]);
-  });
-  it('lot de 12 : jamais plus de 300 ms ; une seule arrivée : 0', () => {
-    expect(staggerDelay(11, 12, 80)).toBeCloseTo(300);
-    expect(staggerDelay(0, 1, 80)).toBe(0);
   });
 });

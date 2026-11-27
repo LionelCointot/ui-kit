@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcAnimate, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars, staggerDelay } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
 import { LC_STATUS_ICONS } from '../status-icons';
 import { LcStatusBadgeComponent } from '../status-badge/status-badge.component';
-import { ArrivalTracker, normalizePageSize, staggerDelay } from './message-thread-motion';
+import { ArrivalTracker, normalizePageSize } from './message-thread-motion';
 import type { LcStatusBadgeKind } from '../status-icons';
 import type { LcThreadAttachment, LcThreadMessage } from './message-thread.model';
 
@@ -269,31 +269,25 @@ export class LcMessageThreadComponent {
         break;
       }
     }
-    if (arrived.length) this.animate(log, before.bottoms, new Set(arrived));
+    if (arrived.length) this.playArrivals(log, before.bottoms, new Set(arrived));
   }
 
-  private animate(log: HTMLElement, before: ReadonlyMap<Element, number>, arrived: ReadonlySet<string>): void {
-    if (typeof this.host.animate !== 'function') return;
-    const style = getComputedStyle(this.host);
-    const reduced = lcPrefersReducedMotion();
-    const move = lcCssMs(style, '--lc-list-move-duration');
-    if (!reduced && move > 0) {
-      const easing = style.getPropertyValue('--lc-list-move-easing').trim() || undefined;
-      for (const [el, bottom] of before) {
-        const delta = bottom - (el.isConnected ? el.getBoundingClientRect().bottom : bottom);
-        if (Math.abs(delta) >= MOVE_THRESHOLD_PX) this.glides.set(el, el.animate({ translate: [`0px ${delta}px`, '0px 0px'] }, { duration: move, easing }));
+  /** Glissement des messages déjà affichés et entrée des arrivées ; sous « mouvement réduit », rien ne joue (fondu compris) : le fil est déjà à sa place. */
+  private playArrivals(log: HTMLElement, before: ReadonlyMap<Element, number>, arrived: ReadonlySet<string>): void {
+    if (lcPrefersReducedMotion()) return;
+    for (const [el, bottom] of before) {
+      const delta = bottom - (el.isConnected ? el.getBoundingClientRect().bottom : bottom);
+      if (Math.abs(delta) >= MOVE_THRESHOLD_PX) {
+        this.glides.set(el, lcAnimate(el, [{ translate: `0px ${delta}px` }, { translate: '0px 0px' }], { duration: '--lc-list-move-duration', easing: '--lc-list-move-easing' }));
       }
     }
-    const fade = lcCssMs(style, '--lc-message-thread-enter-fade-duration');
-    const grow = lcCssMs(style, '--lc-message-thread-enter-duration');
-    const stagger = lcCssMs(style, '--lc-message-thread-enter-stagger') || 0;
+    const stagger = lcCssMs(getComputedStyle(this.host), '--lc-message-thread-enter-stagger') || 0;
     const entering = Array.from(log.querySelectorAll<HTMLElement>(ENTERING)).filter((el) => arrived.has(el.dataset['messageId'] ?? el.dataset['key'] ?? ''));
     entering.forEach((el, i) => {
-      const timing = { delay: staggerDelay(i, entering.length, stagger), fill: 'backwards' } as const;
-      if (fade > 0) el.animate({ opacity: [0, 1] }, { ...timing, duration: fade });
-      const own = getComputedStyle(el);
-      const scale = parseFloat(own.getPropertyValue('--_enter-scale'));
-      if (!reduced && grow > 0 && scale >= 0) el.animate({ scale: [scale, 1] }, { ...timing, duration: grow, easing: own.getPropertyValue('--_enter-easing').trim() });
+      const delay = staggerDelay(i, entering.length, stagger);
+      lcAnimate(el, [{ opacity: 0 }, { opacity: 1 }], { duration: '--lc-message-thread-enter-fade-duration', easing: 'standard', delay });
+      const scale = parseFloat(getComputedStyle(el).getPropertyValue('--_enter-scale'));
+      if (scale >= 0) lcAnimate(el, [{ scale }, { scale: 1 }], { duration: '--lc-message-thread-enter-duration', easing: '--lc-message-thread-enter-easing', delay });
     });
   }
 }
