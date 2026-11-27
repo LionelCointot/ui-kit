@@ -63,7 +63,7 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
     'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // composant existant, migré en T4
     'forms/src/file-upload/file-upload.component.css': ['lc-file-upload-slide'], // bande indéterminée, gardée
     'data/src/data-table/column-filter.component.css': ['lc-column-filter-spin'], // indicateur de chargement
-    'styles/ui-angular.css': ['lc-dialog-enter', 'lc-drawer-in-end', 'lc-drawer-in-start', 'lc-overlay-enter', 'lc-calendar-fade', 'lc-truncate-scroll'], // panneaux et truncate : migrés par T9, T12
+    'styles/ui-angular.css': ['lc-overlay-enter', 'lc-calendar-fade', 'lc-truncate-scroll'], // pops d'ancrage et calendrier : migrés par T9c ; truncate : T12 (dialogue et tiroir : migrés par T9a)
   };
   const WAAPI = {
     'feedback/src/message-thread/message-thread.component.ts': 'FLIP du fil, repris par T7',
