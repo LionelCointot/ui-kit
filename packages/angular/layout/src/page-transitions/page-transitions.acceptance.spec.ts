@@ -5,13 +5,13 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router, RouterOutlet, type Routes } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import * as layout from '../public-api';
+import { LcPageTransitionsDirective } from './page-transitions.directive';
 import { LcAppShellComponent } from '../app-shell/app-shell.component';
 
 // Acceptation de docs/specs/2026-12-mouvement-v2.md, T13b (§5.4.3, §6), sous jsdom : ni `Element.animate` ni mise en page, donc seul ce qui ne dépend pas du mouvement s'y prouve
 // (pose par `lc-app-shell`, déclenchement, focus, application sans navigation) ; les copies, les durées et le sens à l'écran sont dans tools/qa/page-transitions-browser.mjs.
-// CONTRAT : `LcPageTransitionsDirective` (sélecteur `[lcPageTransitions]`, `@internal`) est exportée de `layout/src/public-api.ts` ; `lc-app-shell` la pose sur `main.lc-shell__main`.
-const Directive = (layout as unknown as Record<string, unknown>)['LcPageTransitionsDirective'] as (new () => unknown) | undefined;
+// CONTRAT : `LcPageTransitionsDirective` (sélecteur `[lcPageTransitions]`, `@internal`) est dans `./page-transitions.directive` ; `lc-app-shell` la pose sur `main.lc-shell__main`.
+const Directive: (new () => unknown) | undefined = LcPageTransitionsDirective;
 
 @Component({ template: '<h1 tabindex="-1">Page A</h1><button id="a">A</button>' })
 class PageA {}
@@ -45,7 +45,7 @@ async function setup() {
 
 describe('T13b : lcPageTransitions sous jsdom', () => {
   it('CA-33 : la directive est exportée (@internal) et lc-app-shell la pose sur main.lc-shell__main', async () => {
-    expect(Directive, 'LcPageTransitionsDirective absente de layout/src/public-api.ts').toBeTypeOf('function');
+    expect(Directive, 'LcPageTransitionsDirective absente de page-transitions.directive.ts').toBeTypeOf('function');
     const { fixture } = await setup();
     const host = fixture.debugElement.query(By.directive(Directive as new () => unknown));
     expect(host?.nativeElement.matches('main.lc-shell__main')).toBe(true);

@@ -167,11 +167,11 @@ const scenarios = {
   // CA-35 : accessibilité pendant et après la transition, copie figée, rafale de navigations.
   async copie() {
     const { context, page } = await open();
+    await page.evaluate(() => document.getElementById('play').click()); // pas de page.click : il ferait défiler jusqu'au bouton
+    await page.waitForFunction(() => !document.querySelector('main #aud').paused);
     await page.evaluate(() => scrollTo(0, 400));
     await page.waitForTimeout(100);
     const before = await page.evaluate(() => Math.round(document.querySelector('.qa-page').getBoundingClientRect().top));
-    await page.click('#play');
-    await page.waitForFunction(() => !document.querySelector('main #aud').paused);
     const samples = [];
     const run = capture(page, async () => {
       await page.evaluate(() => document.getElementById('l-42').click());

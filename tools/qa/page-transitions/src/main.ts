@@ -78,7 +78,7 @@ const routes: Routes = [
 
 @Component({
   selector: 'qa-root',
-  imports: [RouterOutlet, LcAppShellComponent, LcNavListComponent, LcNavItemComponent],
+  imports: [RouterOutlet, RouterLink, LcAppShellComponent, LcNavListComponent, LcNavItemComponent],
   template: `
     <lc-app-shell navLabel="Rubriques">
       <strong lcShellHeader id="hdr-title">Harnais</strong>

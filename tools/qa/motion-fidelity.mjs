@@ -244,8 +244,21 @@ function compareValue(expected, got, tag, problems) {
   });
 }
 
+/**
+ * d53 : le catalogue anime une variable `--lc-ios-p` (0 à 1) ; la story joue la vraie transition, dont la progression est celle du glissement de la page entrante
+ * (de `100% 0` à `0 0`, p = 1 - x / x0). On compare donc durée, courbe et progression échantillonnée de cette animation, pas la présence de la variable.
+ * Les autres animations de la transition (copie sortante, voile) ne sont pas comparées : le catalogue ne les relève pas.
+ */
+function iosProgress(expected, got) {
+  if (expected.length !== 1 || expected[0].props.join() !== '--lc-ios-p') return got;
+  const entering = got.filter((a) => a.props.includes('translate') && a.keyframes[0].translate?.startsWith('100%'));
+  return entering.map((a) => ({ ...a, props: ['--lc-ios-p'], values: a.values.map((v) => ({ '--lc-ios-p': String(r6(1 - v.m[4] / a.values[0].m[4])) })) }));
+}
+const r6 = (n) => Math.round(n * 1e6) / 1e6;
+
 function compareAnimations(expected, got) {
   const problems = [];
+  got = iosProgress(expected, got);
   const order = (list) => list.map((a, i) => [a, i]).sort((x, y) => x[0].delay - y[0].delay || x[1] - y[1]).map(([a]) => a);
   if (expected.length !== got.length) problems.push(`${got.length} animation(s) au lieu de ${expected.length}`);
   const [e, g] = [order(expected), order(got)];
