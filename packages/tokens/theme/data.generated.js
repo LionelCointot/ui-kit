@@ -185,6 +185,8 @@ export const MOTION_SCHEMA = [
   {"path":"message-thread.enter-duration","cssVar":"--lc-message-thread-enter-duration","type":"duration"},
   {"path":"message-thread.enter-fade-duration","cssVar":"--lc-message-thread-enter-fade-duration","type":"duration"},
   {"path":"message-thread.enter-stagger","cssVar":"--lc-message-thread-enter-stagger","type":"duration"},
+  {"path":"message-thread.enter-easing","cssVar":"--lc-message-thread-enter-easing","type":"other"},
+  {"path":"message-thread.enter-scale","cssVar":"--lc-message-thread-enter-scale","type":"number"},
   {"path":"tabs.indicator-front-duration","cssVar":"--lc-tabs-indicator-front-duration","type":"duration"},
   {"path":"tabs.indicator-front-easing","cssVar":"--lc-tabs-indicator-front-easing","type":"cubicBezier"},
   {"path":"tabs.indicator-back-duration","cssVar":"--lc-tabs-indicator-back-duration","type":"duration"},
@@ -307,6 +309,7 @@ export const MOTION_SCHEMA = [
   {"path":"message-composer.shake-duration","cssVar":"--lc-message-composer-shake-duration","type":"duration"},
   {"path":"message-composer.indeterminate-duration","cssVar":"--lc-message-composer-indeterminate-duration","type":"duration"},
   {"path":"table.filter-spinner-duration","cssVar":"--lc-table-filter-spinner-duration","type":"duration"},
+  {"path":"table.refill-delay","cssVar":"--lc-table-refill-delay","type":"duration"},
   {"path":"skeleton.duration","cssVar":"--lc-skeleton-duration","type":"duration"},
   {"path":"shell.nav-duration","cssVar":"--lc-shell-nav-duration","type":"duration"}
 ];

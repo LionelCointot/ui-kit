@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { LcStaggerBatch } from '../runtime/stagger';
 
 /** Départ de l'entrée : `rise` monte, `drop` descend, `fade` sur place, `scale` et `pop` grossissent, `left` et `right` glissent, `tilt` (cartes) monte en s'inclinant. */
@@ -9,6 +9,7 @@ export type LcRevealVariant = 'rise' | 'drop' | 'fade' | 'scale' | 'pop' | 'left
  * La classe d'entrée est retirée à `animationend` : un élément déplacé par un `@for` ne rejoue rien. Un `@for` sans `track` stable recrée ses éléments (nouvelles arrivées).
  * Un élément qui déclare lui-même `animate.leave` ne porte pas `lcReveal` (une seule animation de sortie).
  * `lcReveal` vide = `rise` ; `null` désactive l'entrée de cet élément (la sortie reste déclarée).
+ * Un élément retiré sous un ancêtre `[hidden]` n'a rien à sortir : il quitte aussitôt (liste vidée d'un coup, sans qu'aucune sortie ne soit visible).
  */
 @Directive({
   selector: '[lcReveal]',
@@ -38,6 +39,10 @@ export class LcRevealDirective {
   });
 
   constructor() {
+    // Avant que la sortie d'Angular ne pose sa classe : le nœud est déjà détaché quand elle le fait, et son retrait ensuite est sans effet.
+    inject(DestroyRef).onDestroy(() => {
+      if (this.element.closest('[hidden]')) this.element.remove();
+    });
     // Rendu serveur, animation déjà finie ou coupée (mouvement réduit) : aucune animation ne tourne, la classe n'a plus de raison de rester.
     // Retirée à la microtâche, hors du passage de rendu : l'insertion reste observable (MutationObserver) avec sa classe, et le rendu ne repasse pas aussitôt.
     afterNextRender(() => {

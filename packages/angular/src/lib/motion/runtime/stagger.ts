@@ -13,3 +13,13 @@ export class LcStaggerBatch {
     return Math.min(this.count++, cap);
   }
 }
+
+/** Décalage total maximal d'un lot d'arrivées. */
+const MAX_STAGGER_MS = 300;
+
+/**
+ * Début (ms) de l'entrée de la `index`-ième arrivée d'un lot de `count` : pas `staggerMs`, réduit pour que le lot tienne en 300 ms.
+ *
+ * @internal Réservé aux points d'entrée du kit.
+ */
+export const staggerDelay = (index: number, count: number, staggerMs: number): number => index * Math.min(staggerMs, count > 1 ? MAX_STAGGER_MS / (count - 1) : staggerMs);
