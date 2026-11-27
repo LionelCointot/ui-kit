@@ -6,12 +6,15 @@
 // Contrat des stories (à respecter par les stories Animation) : la démo dNN est dans `[data-demo="dNN"]`, son bouton « Rejouer » est dans cet élément,
 // et, pour les démos pilotées en JavaScript, l'élément dont on échantillonne la valeur porte `data-sample`.
 // Tolérances de CA-20 : durée et délai ±0,5 ms, courbe à 1e-3 près (CA-1), valeurs à 0/25/50/75/100 % à ±1 % de l'amplitude ou ±0,5 px, ordre et décalage des cascades ±0,5 ms
-// (démos en rAF : temps à progression égale ±16,7 ms). Le relevé met chaque animation en pause à sa première apparition (currentTime fixé), puis lit l'état calculé.
-import { createServer } from 'node:http';
+// (démos en rAF : temps à progression égale ±16,7 ms ; origine des temps : le clic, posé dans le même `evaluate` que lui ; pour survol, glissement et touche, le premier changement de valeur).
+// Le relevé met chaque animation en pause à sa première apparition (currentTime fixé), puis lit l'état calculé.
+// Choix assumés : d12 est exclu volontairement (le kit garde un indicateur qui glisse alors que Talmo ne fait pas glisser le trait, §5.4.1) ;
+// les cascades sont comparées par délai trié, sans l'identité des cibles (l'ordre du DOM et le nom des éléments diffèrent entre le catalogue et les stories).
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -79,13 +82,13 @@ const TABLE = Object.fromEntries(Object.entries(DEMOS).map(([id, [story, label, 
 
 // ---------- Code exécuté dans la page ----------
 
-/** Avant le déclencheur : mémorise les animations déjà présentes (boucles infinies comprises) et l'instant zéro. */
-const startScan = () => { window.__fid = { before: new Set(document.getAnimations()), t0: performance.now() }; };
+/** Avant le déclencheur : mémorise les animations déjà présentes (boucles infinies comprises) et l'instant zéro. Avec `el` (clic), le clic part dans le même appel : l'origine des temps est exacte. */
+const startScan = (el) => { window.__fid = { before: new Set(document.getAnimations()), t0: performance.now() }; el?.click(); };
 
 /** Après le déclencheur : relève chaque nouvelle animation à sa première apparition (puis la met en pause à 0), ou échantillonne `sampler` en rAF. */
 const finishScan = async ({ mode, sampler, scope }) => {
   const { before, t0 } = window.__fid;
-  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve)); // résout avec l'horodatage de l'image
   const r3 = (n) => Math.round(n * 1000) / 1000;
   const SKIP = new Set(['offset', 'computedOffset', 'easing', 'composite']);
   const FAMILY = new Set(['transform', 'translate', 'scale', 'rotate', 'opacity']);
@@ -96,15 +99,15 @@ const finishScan = async ({ mode, sampler, scope }) => {
     const num = (s) => parseFloat(String(s).replace(/[\s  ]/g, '').replace(',', '.'));
     const series = [];
     let previous;
-    while (performance.now() - t0 < MAX_MS) {
+    // Temps pris sur l'horodatage de l'image (multiples exacts de la période d'affichage), pas sur `performance.now()` : la gigue d'une image fausserait la tolérance de 16,7 ms.
+    for (let now = await frame(); now - t0 < MAX_MS; now = await frame()) {
       const el = document.querySelector(sampler.sel);
       if (el) {
         const raw = sampler.read === 'text' ? el.textContent : sampler.read.startsWith('attr:') ? el.getAttribute(sampler.read.slice(5)) : getComputedStyle(el).getPropertyValue(sampler.read.slice(4));
         const value = num(raw);
-        if (value !== previous) { series.push([r3(performance.now() - t0), r3(value)]); previous = value; lastNew = performance.now(); }
+        if (value !== previous) { series.push([r3(now - t0), r3(value)]); previous = value; lastNew = now; }
       }
-      if (performance.now() - t0 > MIN_MS && performance.now() - lastNew > QUIET_MS) break;
-      await frame();
+      if (now - t0 > MIN_MS && now - lastNew > QUIET_MS) break;
     }
     return { series };
   }
@@ -159,6 +162,21 @@ const finishScan = async ({ mode, sampler, scope }) => {
   return { animations: recs.map((e) => e.rec) };
 };
 
+/** Attend une image, puis 250 ms sans animation finie en cours (la lecture automatique du catalogue part 150 ms après l'apparition de la démo ; une boucle infinie ne se termine pas, une animation `fill: forwards` terminée reste dans `getAnimations()` : ni l'une ni l'autre n'est attendue). */
+const settle = async () => {
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const running = () => document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending));
+  await frame();
+  const end = performance.now() + 15000;
+  let calmSince = performance.now();
+  while (performance.now() < end) {
+    if (running()) calmSince = performance.now();
+    else if (performance.now() - calmSince >= 250) return true;
+    await frame();
+  }
+  return false;
+};
+
 // ---------- Relevé et comparaison ----------
 
 async function measure(browser, url, viewport, entry, trigger, { scope, catalogue }) {
@@ -170,26 +188,28 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
   const rootSel = catalogue ? entry.catalogue : entry.storySelector;
   await page.waitForSelector(rootSel, { state: 'attached', timeout: 20000 });
   await page.locator(rootSel).first().scrollIntoViewIfNeeded().catch(() => {});
-  await page.waitForTimeout(900); // lecture automatique à l'apparition (catalogue : 150 ms après l'entrée dans la fenêtre)
-  await page.waitForFunction(() => document.getAnimations().filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime)).length === 0, null, { timeout: 15000 }).catch(() => {});
-  await page.waitForTimeout(300);
+  if (!(await page.evaluate(settle))) throw new Error('animations finies encore en cours après 15 s, avant le déclencheur');
   const selector = catalogue ? trigger.cat : trigger.story;
   const sampler = trigger.sampler ? { sel: catalogue ? trigger.sampler.cat : trigger.sampler.story, read: trigger.sampler.read } : null;
   const target = page.locator(selector).first();
   const action = trigger.action ?? 'click';
   if (action.key) await target.focus();
-  await page.evaluate(startScan);
-  if (action === 'click') await target.evaluate((el) => el.click());
-  else if (action === 'hover') await target.hover();
-  else if (action.key) await page.keyboard.press(action.key);
+  if (action === 'click') await target.evaluate(startScan);
   else {
-    const box = await target.boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + action.drag, box.y + box.height / 2, { steps: 8 });
-    await page.mouse.up();
+    await page.evaluate(startScan);
+    if (action === 'hover') await target.hover();
+    else if (action.key) await page.keyboard.press(action.key);
+    else {
+      const box = await target.boundingBox();
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 + action.drag, box.y + box.height / 2, { steps: 8 });
+      await page.mouse.up();
+    }
   }
   const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null });
+  // Survol, glissement, touche : la latence de Playwright n'est pas celle de la démo, l'origine est le premier changement de valeur (2e échantillon : le 1er est la valeur au repos).
+  if (result.series && action !== 'click' && result.series.length > 1) { const [origin] = result.series[1]; result.series = result.series.map(([t, v]) => [t - origin, v]); }
   await context.close();
   return { ...result, errors };
 }
@@ -199,22 +219,29 @@ const BEZIER = { linear: [0, 0, 1, 1], ease: [0.25, 0.1, 0.25, 1], 'ease-in': [0
 const bezier = (easing) => BEZIER[easing] ?? (/^cubic-bezier\(/.test(easing) ? easing.match(/-?[\d.]+/g).map(Number) : null);
 const numbers = (s) => String(s).match(/-?\d*\.?\d+(?:e-?\d+)?/g)?.map(Number) ?? [];
 
+const PCT = [0, 25, 50, 75, 100];
+const spread = (xs) => { const ok = xs.filter(Number.isFinite); return ok.length ? Math.max(...ok) - Math.min(...ok) : 0; };
+/** CA-20 : ±1 % de l'amplitude (relevée sur les 5 valeurs attendues) ou ±`floor`, le plus grand des deux. */
+const tolerance = (xs, floor) => Math.max(0.01 * spread(xs), floor);
+
 function compareValue(expected, got, tag, problems) {
   const list = (v) => [...(v.m ?? []).map((x, i) => [`m${i}`, x, i < 4 ? 0.005 : 0.5]), ...(v.opacity === undefined ? [] : [['opacity', v.opacity, 0.005]])];
-  for (const [i] of expected.entries()) {
-    const e = expected[i], g = got[i];
-    if (!g) { problems.push(`${tag} valeur ${i} absente`); continue; }
-    const amp = (key) => { const xs = expected.map((v) => Object.fromEntries(list(v).map(([k, x]) => [k, x]))[key]).filter((x) => x !== undefined); return Math.max(...xs) - Math.min(...xs); };
+  const family = expected.map((v) => Object.fromEntries(list(v)));
+  expected.forEach((e, i) => {
+    const g = got[i];
+    if (!g) { problems.push(`${tag} valeur ${i} absente`); return; }
+    const gotFamily = Object.fromEntries(list(g));
     for (const [key, x, floor] of list(e)) {
-      const y = Object.fromEntries(list(g))[key];
-      if (y === undefined || !near(x, y, Math.max(0.01 * amp(key), floor))) problems.push(`${tag} ${[0, 25, 50, 75, 100][i]} % ${key} = ${y} attendu ${x}`);
+      const y = gotFamily[key];
+      if (y === undefined || !near(x, y, tolerance(family.map((f) => f[key]), floor))) problems.push(`${tag} ${PCT[i]} % ${key} = ${y} attendu ${x}`);
     }
     for (const key of Object.keys(e).filter((k) => !['m', 'opacity'].includes(k))) {
       const a = numbers(e[key]), b = numbers(g[key] ?? '');
-      const ok = a.length === 0 ? e[key] === g[key] : a.length === b.length && a.every((x, j) => near(x, b[j], /px/.test(e[key]) ? 0.5 : 0.005));
-      if (!ok) problems.push(`${tag} ${[0, 25, 50, 75, 100][i]} % ${key} = "${g[key]}" attendu "${e[key]}"`);
+      const floor = /px/.test(e[key]) ? 0.5 : 0.005;
+      const ok = a.length === 0 ? e[key] === g[key] : a.length === b.length && a.every((x, j) => near(x, b[j], tolerance(expected.map((v) => numbers(v[key])[j]), floor)));
+      if (!ok) problems.push(`${tag} ${PCT[i]} % ${key} = "${g[key]}" attendu "${e[key]}"`);
     }
-  }
+  });
 }
 
 function compareAnimations(expected, got) {
@@ -226,6 +253,9 @@ function compareAnimations(expected, got) {
     const tag = `#${i + 1} ${e[i].target}`;
     if (!near(e[i].duration, g[i].duration, 0.5)) problems.push(`${tag} durée ${g[i].duration} attendu ${e[i].duration}`);
     if (!near(e[i].delay, g[i].delay, 0.5)) problems.push(`${tag} délai ${g[i].delay} attendu ${e[i].delay}`);
+    const times = (a) => a.iterations ?? Infinity; // JSON écrit Infinity en null
+    if (times(e[i]) !== times(g[i])) problems.push(`${tag} itérations ${times(g[i])} attendu ${times(e[i])}`);
+    if (e[i].direction !== g[i].direction) problems.push(`${tag} direction ${g[i].direction} attendu ${e[i].direction}`);
     const [be, bg] = [bezier(e[i].easing), bezier(g[i].easing)];
     if (!(be && bg ? be.every((x, j) => near(x, bg[j], 1e-3)) : e[i].easing === g[i].easing)) problems.push(`${tag} courbe ${g[i].easing} attendu ${e[i].easing}`);
     compareValue(e[i].values, g[i].values, tag, problems);
@@ -293,25 +323,11 @@ async function record(browser, ids) {
 
 // ---------- Comparaison ----------
 
-function serve() {
-  const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-  const server = createServer(async (request, response) => {
-    const file = path.join(storybookDir, path.normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname)).replace(/^(\.\.[/\\])+/, ''));
-    try {
-      const body = await readFile(file);
-      response.writeHead(200, { 'content-type': types[path.extname(file)] ?? 'application/octet-stream' }).end(body);
-    } catch {
-      response.writeHead(404).end();
-    }
-  });
-  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
-}
-
 async function compare(browser, ids, self) {
   const data = JSON.parse(await readFile(fidelityFile, 'utf8'));
   const index = self ? null : JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-  const server = self ? null : await serve();
-  const base = self ? null : `http://127.0.0.1:${server.address().port}`;
+  const server = self ? null : await staticServer(storybookDir);
+  const base = server?.base;
   let failures = 0;
   const report = (ok, label, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
   for (const id of ids.length ? ids : Object.keys(TABLE)) {
