@@ -5,7 +5,7 @@ import { lcPrefersReducedMotion } from '../runtime/reduced-motion';
 
 /**
  * Affiche le texte lettre par lettre : les lettres montent depuis un masque, l'une après l'autre (le CSS vit dans `motion.css`).
- * La directive possède le contenu de l'hôte. L'hôte porte `aria-label` = texte complet et les lettres sont `aria-hidden`.
+ * La directive possède le contenu de l'hôte. Le texte complet reste dans l'arbre d'accessibilité par une copie `lc-visually-hidden` (pas d'`aria-label`, interdit sur un élément sans rôle) et les lettres sont `aria-hidden`.
  * Au rendu serveur et sous mouvement réduit, le texte reste brut (aucun `span`).
  */
 @Directive({ selector: '[lcSplitText]' })
@@ -22,11 +22,13 @@ export class LcSplitTextDirective {
       const split = this.browser && !lcPrefersReducedMotion() && typeof Intl.Segmenter === 'function';
       if (!split) {
         this.host.textContent = text;
-        this.host.removeAttribute('aria-label');
         return;
       }
-      this.host.setAttribute('aria-label', text);
-      this.host.replaceChildren(...this.build(text));
+      // `aria-label` est interdit sur un `<p>` ou un `<span>` : le texte complet reste lu par une copie masquée visuellement.
+      const full = this.host.ownerDocument.createElement('span');
+      full.className = 'lc-visually-hidden';
+      full.textContent = text;
+      this.host.replaceChildren(full, ...this.build(text));
     });
   }
 

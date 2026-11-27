@@ -19,9 +19,10 @@ const letters = (h1: HTMLElement) => [...h1.querySelectorAll('span.lc-split-char
 describe('LcSplitTextDirective', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('découpe : un mot masque par mot, lettres aria-hidden numérotées, aria-label = texte complet', () => {
+  it('découpe : un mot masque par mot, lettres aria-hidden numérotées, copie masquée = texte complet, pas d\'aria-label', () => {
     const { h1 } = render();
-    expect(h1.getAttribute('aria-label')).toBe('Un titre');
+    expect(h1.hasAttribute('aria-label')).toBe(false);
+    expect(h1.querySelector(':scope > .lc-visually-hidden')?.textContent).toBe('Un titre');
     expect(h1.querySelectorAll('.lc-split-word')).toHaveLength(2);
     expect(letters(h1)).toEqual([...'Untitre']);
     expect([...h1.querySelectorAll('.lc-split-char')].every((l) => l.getAttribute('aria-hidden') === 'true')).toBe(true);
@@ -33,7 +34,8 @@ describe('LcSplitTextDirective', () => {
     fixture.componentInstance.text.set('Rapports');
     fixture.detectChanges();
     expect(letters(h1)).toEqual([...'Rapports']);
-    expect(h1.getAttribute('aria-label')).toBe('Rapports');
+    expect(h1.querySelectorAll('.lc-visually-hidden')).toHaveLength(1);
+    expect(h1.querySelector('.lc-visually-hidden')?.textContent).toBe('Rapports');
   });
 
   it('rendu serveur simulé : texte brut, aucun span, aucun aria-label', () => {
