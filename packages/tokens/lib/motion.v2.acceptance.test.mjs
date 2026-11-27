@@ -79,7 +79,7 @@ const GROUPS = {
   sheet: ['550ms', '300ms', '500ms', '24px', '92dvh'],
   popover: ['450ms', '0.95', '-3.7px', '150ms'],
   menu: ['400ms', '0.92', '150ms', '-6px'],
-  toast: ['500ms', '30px', '0.94', '250ms'],
+  toast: ['500ms', '30px', '0.94', '250ms', '16px', 'cubic-bezier(0.55, 0.085, 0.68, 0.53)'],
   switch: ['465ms'],
   steps: ['800ms', '117ms'],
   'count-up': ['1200ms'],

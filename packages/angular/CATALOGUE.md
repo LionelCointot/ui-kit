@@ -9,7 +9,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 |---|---|---|---|---|
 | `[lcCountUp]` | LcCountUpDirective | directive | lcCountUp (requis), lcCountUpFormat | – |
 | `[lcDraw]` | LcDrawDirective | directive | lcDraw (requis) | – |
-| `[lcFill]` | LcFillDirective | directive | lcFill (requis), lcFillAxis | – |
+| `[lcFill]` | LcFillDirective | directive | lcFill (requis), lcFillAxis, lcFillIndex | – |
 | `[lcFlash]` | LcFlashDirective | directive | lcFlash | – |
 | `[lcFlip]` | LcFlipDirective | directive | lcFlip | – |
 | `[lcReveal]` | LcRevealDirective | directive | lcReveal, lcRevealIndex | – |
@@ -64,7 +64,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-empty-state` | LcEmptyStateComponent | composant | icon, title (requis), description | – |
 | `lc-error-state` | LcErrorStateComponent | composant | title (requis), description, retryLabel | retry |
 | `lc-message-thread` | LcMessageThreadComponent | composant | messages (requis), showAvatars, pageSize, ariaLabel | attachmentOpen, systemAction |
-| `lc-progress-bar` | LcProgressBarComponent | composant | value, label | – |
+| `lc-progress-bar` | LcProgressBarComponent | composant | value, label, rank | – |
 | `lc-status-badge` | LcStatusBadgeComponent | composant | kind, icon, size | – |
 | `lc-toast-outlet` | LcToastOutletComponent | composant | – | – |
 

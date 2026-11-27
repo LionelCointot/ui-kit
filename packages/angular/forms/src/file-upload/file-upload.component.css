@@ -240,14 +240,15 @@
 
 .lc-file-upload__bar-fill {
   display: block;
+  inline-size: 100%;
   block-size: 100%;
   border-radius: inherit;
   background: var(--lc-file-upload-bar-color, var(--lc-sys-color-primary));
-  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 .lc-file-upload__bar--indeterminate .lc-file-upload__bar-fill {
   width: 40%;
+  transition: none;
   animation: lc-file-upload-slide var(--lc-file-upload-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 

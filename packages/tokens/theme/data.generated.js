@@ -268,6 +268,8 @@ export const MOTION_SCHEMA = [
   {"path":"toast.enter-offset","cssVar":"--lc-toast-enter-offset","type":"dimension","unit":"length"},
   {"path":"toast.enter-scale","cssVar":"--lc-toast-enter-scale","type":"number"},
   {"path":"toast.exit-duration","cssVar":"--lc-toast-exit-duration","type":"duration"},
+  {"path":"toast.exit-offset","cssVar":"--lc-toast-exit-offset","type":"dimension","unit":"length"},
+  {"path":"toast.exit-easing","cssVar":"--lc-toast-exit-easing","type":"cubicBezier"},
   {"path":"switch.duration","cssVar":"--lc-switch-duration","type":"duration"},
   {"path":"switch.easing","cssVar":"--lc-switch-easing","type":"cubicBezier"},
   {"path":"switch.track-duration","cssVar":"--lc-switch-track-duration","type":"duration"},

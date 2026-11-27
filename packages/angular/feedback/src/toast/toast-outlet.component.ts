@@ -14,7 +14,7 @@ import { LcToast, LcToastService } from './toast.service';
     @if (toasts().length > 0) {
       <section class="lc-toast-outlet__region" [attr.aria-label]="labels.notifications">
         @for (toast of toasts(); track toast.id) {
-          <div class="lc-toast" [class]="'lc-toast--' + toast.kind"
+          <div class="lc-toast" [class]="'lc-toast--' + toast.kind" animate.enter="lc-toast-enter" animate.leave="lc-toast-leave"
             (mouseenter)="service.pause(toast.id)" (mouseleave)="service.resume(toast.id)"
             (focusin)="service.pause(toast.id)" (focusout)="service.resume(toast.id)">
             <lc-icon class="lc-toast__icon" [name]="icons[toast.kind]" />

@@ -23,7 +23,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, isSafePreviewUrl, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcButtonComponent, LcFillDirective, LcFormatService, LcIconComponent, isSafePreviewUrl, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
 import type { LcFileUploadItem } from '../file-upload/file-upload.component';
 import { acceptedFilesText, announcedName, cleanFileName, fileSizeText } from '../shared/file-display';
@@ -82,7 +82,7 @@ const COUNTER_THRESHOLD = 0.9;
  */
 @Component({
   selector: 'lc-message-composer',
-  imports: [LcButtonComponent, LcIconComponent],
+  imports: [LcButtonComponent, LcFillDirective, LcIconComponent],
   template: `
     <div class="lc-message-composer__header"><ng-content select="[lcComposerHeader]" /></div>
     <div #box class="lc-message-composer__box" [class.lc-message-composer__box--invalid]="showInvalid()"
@@ -106,7 +106,7 @@ const COUNTER_THRESHOLD = 0.9;
                 <div class="lc-message-composer__progress" [class.lc-message-composer__progress--indeterminate]="thumb.progress === null"
                   role="progressbar" aria-valuemin="0" aria-valuemax="100"
                   [attr.aria-valuenow]="thumb.progress" [attr.aria-label]="thumb.progressLabel">
-                  <span class="lc-message-composer__progress-fill" [style.width.%]="thumb.progress"></span>
+                  <span class="lc-message-composer__progress-fill" [lcFill]="(thumb.progress ?? 100) / 100"></span>
                 </div>
               }
               <button #removeButton lcButton type="button" iconOnly fillMode="flat" themeColor="neutral" class="lc-message-composer__remove"

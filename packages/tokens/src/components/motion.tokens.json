@@ -147,6 +147,8 @@
     "enter-offset": { "$value": "30px", "$type": "dimension" },
     "enter-scale": { "$value": "0.94", "$type": "number" },
     "exit-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
+    "exit-offset": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Vertical travel of the exit (Talmo: y 16 px)." },
+    "exit-easing": { "$value": "cubic-bezier(0.55, 0.085, 0.68, 0.53)", "$type": "cubicBezier", "$description": "power2.in (Talmo)." },
     "tabbar-gap": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Space left between a toast and the bottom tab bar on phones." }
   },
   "switch": {

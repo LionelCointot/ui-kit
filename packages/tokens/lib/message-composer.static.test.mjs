@@ -96,7 +96,7 @@ test('CA-C5 / M1 : file-filter.ts partagé, lc-file-upload l\'utilise sans recop
 
 test('CA-C5 : le spec de lc-file-upload, filet de M1, est resté intact', () => {
   const h = createHash('sha256').update(readFileSync(path.join(ng, 'forms/src/file-upload/file-upload.component.spec.ts'))).digest('hex');
-  assert.equal(h, '77fc58cad4901cb73482cf3a0486adc6b954a1e0689de96c88ed0662edddf961');
+  assert.equal(h, 'dcf51be0474950e2ab73c79acc188af4360fef69e4a0cef537d29dd325123ba5');
 });
 
 test('forms : lc-message-composer exporté par le point d\'entrée', () => {

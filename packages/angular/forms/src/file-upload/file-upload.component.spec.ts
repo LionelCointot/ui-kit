@@ -349,7 +349,7 @@ describe('LcFileUploadComponent', () => {
       expect(bar.getAttribute('aria-valuemin')).toBe('0');
       expect(bar.getAttribute('aria-valuemax')).toBe('100');
       expect(bar.classList).not.toContain('lc-file-upload__bar--indeterminate');
-      expect(root.querySelector<HTMLElement>('.lc-file-upload__bar-fill')!.style.width).toBe(`${expected}%`);
+      expect(root.querySelector<HTMLElement>('.lc-file-upload__bar-fill')!.style.getPropertyValue('--lc-progress')).toBe(String(Number(expected) / 100));
     });
 
     it.each([[undefined], [null], [Number.NaN]])('progression %s : barre indéterminée sans aria-valuenow', async (progress) => {
