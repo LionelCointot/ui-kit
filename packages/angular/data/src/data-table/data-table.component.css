@@ -510,14 +510,17 @@ lc-data-table {
   border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }
 
-/* Ligne en fondu de sortie (`animate.leave`) : plus cliquable, elle disparaît avant que les suivantes ne comblent la place. */
-.lc-data-table__table tbody tr[data-leaving] {
-  pointer-events: none;
+/* Cascade des lignes (`lcReveal`) : à l'ouverture, courbe `soft` ; après un changement de filtre, courbe `entrance` et départ après `table.refill-delay` (invisibles pendant leur délai). */
+.lc-data-table__table tbody tr.lc-reveal {
+  --lc-reveal-curve: var(--lc-sys-easing-soft);
 }
 
-/* shortcut: la ligne a sa propre sortie (fadeOut) en plus de celle de lcReveal ; la sortie de la classe doit finir après fadeOut. Levé par T7 (suppression de ligne par lc-leave seule). */
-.lc-data-table__table tbody tr.lc-leave {
-  animation-duration: calc(2 * var(--lc-sys-duration-exit));
+.lc-data-table__body--refill {
+  --lc-reveal-offset: var(--lc-table-refill-delay);
+}
+
+.lc-data-table__table .lc-data-table__body--refill tr.lc-reveal {
+  --lc-reveal-curve: var(--lc-sys-easing-entrance);
 }
 
 /* ---------- Panneau des filtres (téléphone) : contenu de `lc-sheet` ---------- */

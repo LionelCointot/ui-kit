@@ -1,8 +1,8 @@
-import { signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, signal, viewChild } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { Observable, delay, of, throwError } from 'rxjs';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
-import { LcButtonComponent, LcIconComponent, localDateToIso } from '@lionelcointot/ui-angular';
+import { LcButtonComponent, LcIconComponent, LcRevealDirective, LcStaggerDirective, lcAnimate, lcPrefersReducedMotion, localDateToIso } from '@lionelcointot/ui-angular';
 import { LcStatusBadgeComponent, type LcStatusBadgeKind } from '@lionelcointot/ui-angular/feedback';
 import { LcCellDirective, LcDataTableComponent, LcDataColumn, LcDataSource, LcTableQuery, lcLocalSource } from '@lionelcointot/ui-angular/data';
 
@@ -132,6 +132,266 @@ const props = (source: LcDataSource<Ticket> | readonly Ticket[], initial: LcTabl
   urgency: URGENCY, states: STATES, ago, day: (days: number) => shortDate.format(daysAgo(days)),
 });
 
+/* ---------- Demos of the `Animation` story ---------- */
+
+const BOARD = [
+  { title: 'À faire', cards: ['Maquette du tableau de bord', 'Rédiger le rapport hebdo'] },
+  { title: 'En cours', cards: ['Intégration du module facturation', 'Tests de régression'] },
+  { title: 'Fini', cards: ['Onboarding des nouveaux comptes'] },
+];
+
+/** Columns then cards entering in cascade (`lcReveal` under `lcStagger`): the headers take the first ranks, the cards follow column by column. */
+@Component({
+  selector: 'lc-board-cascade-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcRevealDirective, LcStaggerDirective],
+  styles: `
+    .lc-demo__board { display: flex; flex-wrap: wrap; gap: var(--lc-sys-space-4); }
+    .lc-demo__column { display: grid; gap: var(--lc-sys-space-2); align-content: start; min-inline-size: 12rem; flex: 1; }
+    .lc-demo__head { padding: var(--lc-sys-space-2) var(--lc-sys-space-3); font-weight: 600; --lc-reveal-y: var(--lc-sys-motion-offset-lg); --lc-reveal-curve: var(--lc-sys-easing-soft); animation-duration: var(--lc-sys-duration-long); }
+    .lc-demo__card { padding: var(--lc-sys-space-3); border-radius: var(--lc-sys-radius-md); background: var(--lc-sys-color-surface-sunken); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border); --lc-reveal-y: calc(var(--lc-sys-motion-offset-sm) * 1.5); --lc-reveal-curve: var(--lc-sys-easing-soft); }
+  `,
+  template: `
+    <div class="lc-demo__board" lcStagger>
+      @for (column of board; track column.title; let c = $index) {
+        <div class="lc-demo__column">
+          <header class="lc-demo__head" lcReveal [lcRevealIndex]="c">{{ column.title }} <b>{{ column.cards.length }}</b></header>
+          @for (card of column.cards; track card; let r = $index) {
+            <div class="lc-demo__card" lcReveal [lcRevealIndex]="rank(c, r)">{{ card }}</div>
+          }
+        </div>
+      }
+    </div>`,
+})
+class BoardCascadeDemoComponent {
+  protected readonly board = BOARD;
+  /** Rank of a card: after all the headers, then column by column. */
+  protected rank(column: number, row: number): number {
+    return BOARD.length + BOARD.slice(0, column).reduce((count, previous) => count + previous.cards.length, 0) + row;
+  }
+}
+
+interface Contract { id: number; label: string; status: string }
+const CONTRACTS: readonly Contract[] = [
+  { id: 1, label: 'Contrat n° 4821 — Halden & Moor', status: 'actif' },
+  { id: 2, label: 'Entretien annuel — bureau 3C', status: 'pause' },
+  { id: 3, label: 'Rénovation cuisine — lot 2', status: 'actif' },
+  { id: 4, label: 'Garde d\'appartement — décembre', status: 'actif' },
+  { id: 5, label: 'Audit énergétique', status: 'pause' },
+];
+const CONTRACT_COLUMNS: readonly LcDataColumn<Contract>[] = [
+  { key: 'label', label: 'Contrat', value: (contract) => contract.label },
+  { key: 'status', label: 'Statut', value: (contract) => contract.status, filter: { type: 'multi' } },
+];
+
+/** d08: a filter change empties the table at once, then the rows enter in cascade after `--lc-table-refill-delay`. "Rejouer" applies a filter (all statuses) then removes it. */
+@Component({
+  selector: 'lc-refill-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcDataTableComponent],
+  template: `<lc-data-table caption="Contrats" [captionHidden]="true" chips="never" [source]="contracts" [columns]="columns" [trackBy]="trackBy" [(query)]="query" />`,
+})
+class RefillDemoComponent {
+  protected readonly contracts = CONTRACTS;
+  protected readonly columns = CONTRACT_COLUMNS;
+  protected readonly trackBy = (contract: Contract) => contract.id;
+  protected readonly query = signal<LcTableQuery>({ filters: {}, sort: null });
+  /** Changes the filters without changing the rows (a key that no column uses): the table is rebuilt, the headers stay as they are. */
+  replay(): void {
+    this.query.update((current) => query(Object.keys(current.filters).length ? {} : { replay: ['1'] }));
+  }
+}
+
+/* A day from 9 h to 17 h on 560 px: 15 minutes = 17.5 px. */
+const DAY = 480;
+const WIDTH = 560;
+const px = (minutes: number) => (minutes / DAY) * WIDTH;
+const clock = (minutes: number) => `${9 + Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
+/** Drop spring: the bar squashes then recovers its shape (36 frames over 450 ms, damping 0.42). */
+const springFrames = (): Keyframe[] =>
+  Array.from({ length: 36 }, (_, i) => {
+    const t = i / 35;
+    const u = 0.016 + 0.45 * t;
+    const wd = 23 * Math.sqrt(1 - 0.42 ** 2);
+    const x = 1 - Math.exp(-0.42 * 23 * u) * (Math.cos(wd * u) + ((0.42 * 23) / wd) * Math.sin(wd * u));
+    const scaleY = 0.78 + 0.22 * x;
+    return { transform: `scaleX(${(1 - 0.113 * (scaleY - 1)).toFixed(4)}) scaleY(${scaleY.toFixed(4)})`, offset: t };
+  });
+const BAR_STYLES = `
+  :host { display: block; }
+  .lc-demo__scroll { overflow-x: auto; padding-block: var(--lc-sys-space-4); }
+  .lc-demo__timeline { inline-size: 560px; display: grid; gap: var(--lc-sys-space-4); }
+  .lc-demo__row { position: relative; block-size: 44px; border-radius: var(--lc-sys-radius-sm); background-image: linear-gradient(to right, var(--lc-sys-color-border) 1px, transparent 1px); background-size: calc(100% / 8) 100%; }
+  .lc-demo__bar { position: absolute; inset-block: 4px; display: flex; align-items: center; padding-inline: var(--lc-sys-space-3); box-sizing: border-box; white-space: nowrap; font-variant-numeric: tabular-nums;
+    border-radius: var(--lc-sys-radius-sm); background: var(--lc-sys-color-primary-container); color: var(--lc-sys-color-on-primary-container); border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-primary); touch-action: none; }
+  .lc-demo__bar[data-trigger] { cursor: grab; }
+`;
+
+/** Puts a bar at `start` minutes (position, width, label). */
+function place(bar: HTMLElement, start: number, duration = 120): void {
+  bar.style.left = `${px(start)}px`;
+  bar.style.width = `${px(duration)}px`;
+  bar.textContent = `${clock(start)} – ${clock(start + duration)}`;
+}
+
+/** d33: dragging the first bar shifts it (drop spring); the bar that depends on it slides to its new place a little later. */
+@Component({
+  selector: 'lc-follower-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcButtonComponent],
+  host: { 'data-demo': 'd33' },
+  styles: BAR_STYLES,
+  template: `
+    <button lcButton fillMode="outline" size="small" (click)="replay()">Rejouer</button>
+    <div class="lc-demo__scroll">
+      <div class="lc-demo__timeline">
+        <div class="lc-demo__row"><div #first class="lc-demo__bar" data-trigger (pointerdown)="grab($event)"></div></div>
+        <div class="lc-demo__row"><div #second class="lc-demo__bar"></div></div>
+      </div>
+    </div>`,
+})
+class FollowerDemoComponent {
+  private readonly first = viewChild.required<ElementRef<HTMLElement>>('first');
+  private readonly second = viewChild.required<ElementRef<HTMLElement>>('second');
+  private start = 60;
+
+  constructor() {
+    afterNextRender(() => this.reset());
+  }
+
+  private reset(): void {
+    this.start = 60;
+    place(this.first().nativeElement, 60);
+    place(this.second().nativeElement, 210);
+  }
+
+  protected replay(): void {
+    this.reset();
+    setTimeout(() => this.drop(165), 250);
+  }
+
+  /** Pointer drag, in steps of 15 minutes. */
+  protected grab(event: PointerEvent): void {
+    if (event.button !== 0 || !matchMedia('(pointer: fine)').matches) return;
+    event.preventDefault();
+    const bar = this.first().nativeElement;
+    bar.setPointerCapture(event.pointerId);
+    const from = this.start;
+    let moved = from;
+    let active = false;
+    const move = (next: PointerEvent) => {
+      const dx = next.clientX - event.clientX;
+      active ||= Math.abs(dx) > 2;
+      moved = Math.max(0, Math.min(DAY - 120, from + Math.round(dx / px(15)) * 15));
+      bar.style.transform = `translateX(${px(moved - from)}px)`;
+    };
+    const up = () => {
+      bar.removeEventListener('pointermove', move);
+      bar.removeEventListener('pointerup', up);
+      bar.removeEventListener('pointercancel', up);
+      bar.style.transform = '';
+      if (active && moved !== from) this.drop(moved);
+    };
+    bar.addEventListener('pointermove', move);
+    bar.addEventListener('pointerup', up);
+    bar.addEventListener('pointercancel', up);
+  }
+
+  private drop(start: number): void {
+    const bar = this.first().nativeElement;
+    this.start = start;
+    place(bar, start);
+    // shortcut: ressort de 450 ms rendu image par image (easing linear), aucun token de durée ne vaut 450 ms ; à passer à lcAnimate si un token de ressort apparaît.
+    if (!lcPrefersReducedMotion()) bar.animate(springFrames(), { duration: 450, easing: 'linear' });
+    const follower = this.second().nativeElement;
+    const before = follower.getBoundingClientRect().left;
+    place(follower, Math.min(DAY - 120, start + 120 + 30));
+    lcAnimate(follower, [{ transform: `translateX(${before - follower.getBoundingClientRect().left}px)` }, { transform: 'none' }], { duration: '--lc-list-move-duration', easing: '--lc-list-move-easing', delay: 150 });
+  }
+}
+
+/** d36: a bar moved with the arrow keys (15 minutes, 60 with Shift) slides from its old place to the new one. */
+@Component({
+  selector: 'lc-keyboard-bar-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcButtonComponent],
+  host: { 'data-demo': 'd36' },
+  styles: BAR_STYLES,
+  template: `
+    <button lcButton fillMode="outline" size="small" (click)="replay()">Rejouer</button>
+    <div class="lc-demo__scroll">
+      <div class="lc-demo__timeline">
+        <div class="lc-demo__row">
+          <div #bar class="lc-demo__bar" data-trigger tabindex="0" role="slider" aria-label="Horaire de la session" aria-valuemin="540" aria-valuemax="900" (keydown)="key($event)"></div>
+        </div>
+      </div>
+    </div>`,
+})
+class KeyboardBarDemoComponent {
+  private readonly bar = viewChild.required<ElementRef<HTMLElement>>('bar');
+  private start = 75;
+
+  constructor() {
+    afterNextRender(() => this.show(this.start));
+  }
+
+  private show(start: number): void {
+    const bar = this.bar().nativeElement;
+    place(bar, start);
+    bar.setAttribute('aria-valuenow', String(540 + start));
+  }
+
+  protected replay(): void {
+    this.start = 75;
+    this.show(75);
+    this.bar().nativeElement.focus({ preventScroll: true });
+    setTimeout(() => this.move(15), 250);
+  }
+
+  protected key(event: KeyboardEvent): void {
+    const step = event.key === 'ArrowRight' ? 15 : event.key === 'ArrowLeft' ? -15 : 0;
+    if (!step) return;
+    event.preventDefault();
+    this.move(event.shiftKey ? step * 4 : step);
+  }
+
+  private move(step: number): void {
+    const bar = this.bar().nativeElement;
+    const next = Math.max(0, Math.min(DAY - 120, this.start + step));
+    if (next === this.start) return;
+    const before = bar.getBoundingClientRect().left;
+    this.start = next;
+    this.show(next);
+    lcAnimate(bar, [{ transform: `translateX(${before - bar.getBoundingClientRect().left}px)` }, { transform: 'none' }], { duration: '--lc-list-move-duration', easing: '--lc-list-move-easing' });
+  }
+}
+
+/** Demo of the `Animation` story: the four motions of a list, each with its "Rejouer". */
+@Component({
+  selector: 'lc-table-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcButtonComponent, StoryMotionNoticeComponent, BoardCascadeDemoComponent, RefillDemoComponent, FollowerDemoComponent, KeyboardBarDemoComponent],
+  styles: `
+    section { padding-block-end: var(--lc-sys-space-6); }
+    h3 { margin-block: var(--lc-sys-space-4); font-size: var(--lc-sys-font-size-md); }
+  `,
+  template: `
+    <lc-story-motion-notice />
+    <section data-demo="d07" #opening>
+      <h3>Ouverture : colonnes puis cartes en cascade <button lcButton fillMode="outline" size="small" (click)="board.replay(opening)">Rejouer</button></h3>
+      @for (key of board.keys(); track key) { <lc-board-cascade-demo /> }
+    </section>
+    <section data-demo="d08">
+      <h3>Changement de filtre : liste vidée puis cascade <button lcButton fillMode="outline" size="small" (click)="refill.replay()">Rejouer</button></h3>
+      <lc-refill-demo #refill />
+    </section>
+    <section><h3>Suppression : les suivantes glissent</h3><lc-follower-demo /></section>
+    <section><h3>Tri au clavier : la ligne glisse</h3><lc-keyboard-bar-demo /></section>`,
+})
+class TableAnimationDemoComponent {
+  protected readonly board = replayable();
+}
+
 /**
  * Filterable data table for a request queue: a funnel button per column opens a filter menu (multi-choice, free text, single choice or date range),
  * active filters show as a summary line or chips, and below 768 px the rows become cards with a filter panel.
@@ -143,7 +403,7 @@ const props = (source: LcDataSource<Ticket> | readonly Ticket[], initial: LcTabl
 const meta: Meta<LcDataTableComponent<Ticket>> = {
   title: 'Data/Data table',
   component: LcDataTableComponent,
-  decorators: [moduleMetadata({ imports: [LcDataTableComponent, LcCellDirective, LcStatusBadgeComponent, LcButtonComponent, LcIconComponent, StoryMotionNoticeComponent] })],
+  decorators: [moduleMetadata({ imports: [LcDataTableComponent, LcCellDirective, LcStatusBadgeComponent, LcButtonComponent, LcIconComponent, StoryMotionNoticeComponent, TableAnimationDemoComponent] })],
   args: { caption: 'File des demandes', captionHidden: true, chips: 'auto', emptyMessage: 'Aucune demande ne correspond aux filtres.' },
   argTypes: {
     chips: { control: 'inline-radio', options: ['auto', 'always', 'never'] },
@@ -224,42 +484,12 @@ export class ExampleComponent {
   readonly query = signal<LcTableQuery>({ filters: {}, sort: null });
 }`;
 
-/** Props of the `Animation` stories: "Rejouer" shows the table again unfiltered (cascade), then applies a filter and removes it (the list difference moves). */
-const animationProps = () => {
-  const current = signal<LcTableQuery>(query({}));
-  return {
-    ...props(TICKETS),
-    query: current,
-    ...replayable({
-      reset: () => current.set(query({})),
-      play: (later) => {
-        later(1500, () => current.set(query({ state: ['encours', 'qualifie'] })));
-        later(3500, () => current.set(query({})));
-      },
-    }),
-  };
-};
-
-const animationTemplate = () => `
-  <lc-story-motion-notice />
-  <div #root>
-    <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="replay(root)">Rejouer</button>
-    @for (key of keys(); track key) { ${template(fixedBindings())} }
-  </div>`;
-
-/** At 360 px (phone viewport, Canvas tab): the cards cascade, then a filter is applied and removed so the list difference moves; "Rejouer" starts again. */
+/**
+ * Four motions of a list: columns and cards entering in cascade, a table rebuilt by a filter change, a follower sliding after a drop, a bar moved with the keyboard.
+ * Rows enter in cascade (`lcReveal` under `lcStagger`); a filter change empties the table at once and the new rows enter after `--lc-table-refill-delay`;
+ * a sort or a deletion slides the rows that stay (`lcFlip`, `--lc-list-move-*`). "Rejouer" plays each demo again.
+ */
 export const Animation: Story = {
-  parameters: {
-    ...fixedExample,
-    docs: { source: { code: ANIMATION_CODE } },
-    viewport: { options: { phone360: { name: 'Phone 360', styles: { width: '360px', height: '740px' } } } },
-  },
-  globals: { viewport: { value: 'phone360', isRotated: false } },
-  render: () => ({ props: animationProps(), template: animationTemplate() }),
-};
-
-/** On a wide screen: rows slide, appear and disappear when the filter changes; no cascade replays. "Rejouer" starts again. */
-export const AnimationDesktop: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
-  render: () => ({ props: animationProps(), template: animationTemplate() }),
+  render: () => ({ template: '<lc-table-animation-demo />' }),
 };

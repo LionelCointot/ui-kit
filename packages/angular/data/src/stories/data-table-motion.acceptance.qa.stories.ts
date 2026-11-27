@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcDataTableComponent, type LcDataColumn, type LcTableQuery } from '@lionelcointot/ui-angular/data';
 
@@ -11,17 +11,20 @@ const COLUMNS: readonly LcDataColumn<Row>[] = [
   { key: 'date', label: 'Reçue le', value: (row) => row.date, filter: { type: 'dateRange' } },
 ];
 
-/** Preuve Chromium du mouvement (spec 2026-11-mouvement, T6) : 12 lignes (cascade 1 à 8, puis rien) ; `place: bottom` pousse le tableau en bas de l'écran (menu au-dessus). Émissions dans `window.__emitted`. */
+/** Preuve Chromium du mouvement (specs 2026-11-mouvement T6 et 2026-12-mouvement-v2 T7) : 14 lignes ; `place: bottom` pousse le tableau en bas de l'écran (menu au-dessus). Émissions dans `window.__emitted`.
+ *  `#qa-remove` (T7, CA-26) retire « Demande 5 » de la source (nouveau tableau, liste immuable) ; le bouton est hors flux pour ne pas déplacer le tableau. */
 @Component({
   selector: 'lc-qa-motion-table',
   imports: [LcDataTableComponent],
   template: `
+    <button id="qa-remove" type="button" style="position: fixed; inset-block-start: 0; inset-inline-end: 0" (click)="remove()">Retirer la demande 5</button>
     @if (place() === 'bottom') { <div style="block-size: 75vh"></div> }
-    <lc-data-table caption="Demandes" [source]="rows" [columns]="columns" [trackBy]="trackBy" (queryChange)="emit($event)" />`,
+    <lc-data-table caption="Demandes" [source]="rows()" [columns]="columns" [trackBy]="trackBy" (queryChange)="emit($event)" />`,
 })
 class MotionTableComponent {
   readonly place = input<'top' | 'bottom'>('top');
-  protected readonly rows = ROWS;
+  protected readonly rows = signal<readonly Row[]>(ROWS);
+  protected remove(): void { this.rows.set(this.rows().filter((row) => row.id !== 5)); }
   protected readonly columns = COLUMNS;
   protected readonly trackBy = (row: Row) => row.id;
   protected emit(query: LcTableQuery): void {

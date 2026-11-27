@@ -9,8 +9,8 @@ import {
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
-  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, isoToLocalDate,
-  lcDetachAnimated, lcPrefersReducedMotion, lcUniqueId,
+  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFlipDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, isoToLocalDate,
+  lcAnimate, lcDetachAnimated, lcFlipPlay, lcFlipRead, lcPrefersReducedMotion, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
 import { LcSheetComponent, LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
@@ -23,14 +23,11 @@ import {
   cleanFilterValue, isDateRangeInverted, isFilterActive, lcLocalSource, withFilter,
 } from './data-table-model';
 
-/** Cartes du téléphone qui entrent en cascade au premier affichage ; les suivantes apparaissent sans animation. */
-const REVEAL_CARDS = 8;
+/** Lignes qui entrent en cascade à l'ouverture et après un changement de filtre ; les suivantes apparaissent sans animation. */
+const REVEAL_ROWS = 8;
 
 /** Sous cette largeur (768 px), le tableau passe en cartes : mêmes ruptures que le CSS. */
 const NARROW = '(max-width: 47.99em)';
-
-/** Écart minimal (px) à partir duquel une ligne est considérée déplacée. */
-const MOVE_THRESHOLD_PX = 0.5;
 
 /** Menu : sous l'entonnoir, calé à droite puis à gauche ; au-dessus s'il manque de place. */
 const MENU_POSITIONS: ConnectedPosition[] = [
@@ -73,7 +70,7 @@ interface ChipView<T> {
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
     LcEmptyStateComponent, LcSheetComponent, LcTooltipDirective, LcColumnFilterComponent,
-    LcNativeDatePickerDirective, LcRevealDirective,
+    LcNativeDatePickerDirective, LcRevealDirective, LcFlipDirective,
   ],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
@@ -228,28 +225,38 @@ export class LcDataTableComponent<T> {
 
   /** Début de l'annonce faite quand la page demandée arrive (« Filtre État appliqué. ») ; le nombre de lignes la complète. */
   private pendingAnnouncement: string | null = null;
-  /** Vrai dès qu'une page a été affichée : la cascade du premier affichage est finie, les changements suivants animent la différence. */
-  private readonly settled = signal(false);
-  private listShown = false;
-  /** Positions des lignes avant le dernier changement : le glissement (un seul par changement) part de là. */
-  private diff: ReadonlyMap<Element, number> | undefined;
-  /** Lignes retirées encore en fondu de sortie : le glissement attend leur retrait, les lignes conservées restent à leur place d'avant. */
-  private leaving = 0;
-  /** Lignes ajoutées masquées pendant le fondu des sortantes : elles gardent leur masquage jusqu'au glissement, qui les fait apparaître. */
-  private readonly hidden = new WeakSet<Element>();
+  private readonly body = viewChild<ElementRef<HTMLElement>>('body');
+  /** Filtres des lignes affichées (`null` : rien encore affiché) : un changement de filtre reconstruit la liste, un tri ou une suppression la fait glisser (`lcFlip`). */
+  private shownFilters: string | null = null;
+  /** Les lignes qui apparaissent le font en cascade : à l'ouverture et après un changement de filtre, pas après un tri ou une suppression. */
+  private readonly cascading = signal(true);
+  /** La cascade qui suit un changement de filtre part après `table.refill-delay`, courbe `entrance` (classe du corps). */
+  protected readonly refill = signal(false);
+  /** Le temps d'un rendu après un changement de filtre : la liste est vide, puis toutes les lignes sont recréées (aucune n'est conservée ni ne glisse). */
+  protected readonly holding = signal(false);
 
   constructor() {
-    // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : positions actuelles, puis glissement après le rendu.
+    // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : un changement de filtre vide la liste d'un coup.
     effect(() => {
       if (!this.loaded()) return;
       this.rows();
       untracked(() => {
-        const before = this.listShown ? this.rowTops() : null;
-        this.listShown = true;
-        if (!before) return;
-        this.settled.set(true);
-        this.diff = before;
-        afterNextRender(() => (this.leaving ? this.freeze(before) : this.glide()), { injector: this.injector });
+        const filters = JSON.stringify(this.query().filters);
+        const first = this.shownFilters === null;
+        const changed = !first && filters !== this.shownFilters;
+        this.shownFilters = filters;
+        this.cascading.set(first || changed);
+        this.refill.set(changed);
+        if (!changed || lcPrefersReducedMotion()) return; // réduction de mouvement : les lignes se remplacent à la volée, sans animation
+        // Le corps est masqué le temps du rendu : les lignes retirées n'ont aucune sortie à jouer (`lcReveal`), la liste est vide d'un coup.
+        // shortcut: sortie évitée par un ancêtre [hidden] (voir lcReveal) ; à remplacer si lcReveal gagne une option d'interruption.
+        const body = this.body()?.nativeElement;
+        if (body) body.hidden = true;
+        this.holding.set(true);
+        afterNextRender(() => {
+          if (body) body.hidden = false;
+          this.holding.set(false);
+        }, { injector: this.injector });
       });
     });
     effect(() => {
@@ -265,104 +272,27 @@ export class LcDataTableComponent<T> {
     });
   }
 
-  /** Rang de cascade d'une carte du téléphone (8 premières, premier affichage), sinon `null`. */
+  /** Rang de cascade d'une ligne (les 8 premières, à l'ouverture et après un changement de filtre), sinon `null` : pas d'entrée. */
   protected cascadeIndex(index: number): number | null {
-    return this.narrow() && !this.settled() && index < REVEAL_CARDS ? index : null;
-  }
-
-  /** Fondu de sortie d'une ligne (`animate.leave`) ; quand la dernière a disparu, les lignes conservées glissent d'un trait. Sans animation (réduction de mouvement…) : retrait immédiat. */
-  protected fadeOut({ target, animationComplete }: AnimationCallbackEvent): void {
-    const timing = this.timing('--lc-overlay-exit-duration', '--lc-overlay-easing');
-    if (!timing) return animationComplete();
-    target.setAttribute('data-leaving', '');
-    this.leaving++;
-    target.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(() => {
-      animationComplete();
-      requestAnimationFrame(() => {
-        if (--this.leaving === 0) this.glide();
-      });
-    });
+    return this.cascading() && index < REVEAL_ROWS ? index : null;
   }
 
   /** Fondu de sortie d'une pastille (`animate.leave`) : elle sort du flux à sa place, la rangée se resserre aussitôt et sa hauteur finale est connue. */
   protected fadeOutChip({ target, animationComplete }: AnimationCallbackEvent): void {
-    const timing = this.timing('--lc-sys-duration-fast', '--lc-overlay-easing');
-    if (!timing) return animationComplete();
+    if (lcPrefersReducedMotion()) return animationComplete();
     const chip = target as HTMLElement;
     const { offsetLeft, offsetTop, offsetWidth } = chip;
     chip.setAttribute('data-leaving', '');
     Object.assign(chip.style, { left: `${offsetLeft}px`, top: `${offsetTop}px`, width: `${offsetWidth}px` });
-    chip.animate({ opacity: [1, 0] }, { ...timing, fill: 'forwards' }).finished.catch(() => undefined).then(animationComplete);
+    lcAnimate(chip, [{ opacity: 1 }, { opacity: 0 }], { duration: 'fast', easing: '--lc-overlay-easing', fill: 'forwards' }).finished.catch(() => undefined).then(animationComplete);
   }
 
   /** Applique un changement qui déplace le bloc de la liste (rangée de pastilles qui se resserre) : le bloc entier glisse d'un trait de sa place d'avant à sa place d'après. */
   private slideList(change: () => void): void {
     const scroll = this.host.querySelector<HTMLElement>('.lc-data-table__scroll');
-    const from = scroll?.getBoundingClientRect().top;
+    const before = lcFlipRead(scroll ? [scroll] : []);
     change();
-    if (!scroll || from === undefined) return;
-    afterNextRender(() => {
-      const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
-      const delta = from - scroll.getBoundingClientRect().top;
-      if (move && Math.abs(delta) >= MOVE_THRESHOLD_PX) scroll.animate({ transform: [`translateY(${delta}px)`, 'none'] }, move);
-    }, { injector: this.injector });
-  }
-
-  /** Durée et courbe d'une animation de liste lues en CSS calculé ; `null` sans Web Animations API ou en réduction de mouvement (la règle globale ne la couvre pas). */
-  private timing(duration: string, easing: string): KeyframeAnimationOptions | null {
-    if (typeof this.host.animate !== 'function' || lcPrefersReducedMotion()) return null;
-    const style = getComputedStyle(this.host);
-    const raw = style.getPropertyValue(duration).trim();
-    const ms = parseFloat(raw) * (raw.endsWith('ms') ? 1 : 1000);
-    if (!(ms > 0)) return null;
-    return { duration: ms, easing: style.getPropertyValue(easing).trim() || undefined };
-  }
-
-  /** Position verticale de chaque ligne (hors lignes en fondu de sortie), glissement du bloc de la liste (`slideList`) compris : il part déjà de l'ancienne place, le départ de la ligne s'en déduit donc tel quel. `layout` annule d'abord animations et décalages posés des lignes, pour lire la mise en page. */
-  private rowTops(layout = false): Map<Element, number> {
-    const rows = [...this.host.querySelectorAll<HTMLElement>('tbody tr:not(.lc-data-table__state):not([data-leaving])')];
-    if (layout) {
-      rows.forEach((row) => {
-        row.getAnimations?.().forEach((animation) => animation.cancel());
-        row.style.transform = '';
-        if (!this.hidden.has(row)) row.style.opacity = '';
-      });
-    }
-    return new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
-  }
-
-  /** Des lignes sortent encore : les conservées restent à leur place d'avant (transform inverse) et les ajoutées sont masquées, jusqu'au glissement. */
-  private freeze(before: ReadonlyMap<Element, number>): void {
-    for (const [row, top] of this.rowTops(true)) {
-      const from = before.get(row);
-      const style = (row as HTMLElement).style;
-      if (from === undefined || this.hidden.has(row)) {
-        this.hidden.add(row);
-        style.opacity = '0';
-      } else if (Math.abs(from - top) >= MOVE_THRESHOLD_PX) style.transform = `translateY(${from - top}px)`;
-    }
-  }
-
-  private glide(): void {
-    const before = this.diff;
-    this.diff = undefined;
-    if (before) this.animateDiff(before);
-  }
-
-  /** FLIP : lignes conservées glissent de leur ancienne place à la nouvelle ; lignes ajoutées apparaissent en fondu. */
-  private animateDiff(before: ReadonlyMap<Element, number>): void {
-    const move = this.timing('--lc-list-move-duration', '--lc-list-move-easing');
-    const enter = this.timing('--lc-overlay-enter-duration', '--lc-overlay-easing');
-    for (const [row, top] of this.rowTops(true)) {
-      const from = before.get(row);
-      if (from === undefined || this.hidden.has(row)) {
-        if (enter) row.animate({ opacity: [0, 1] }, enter);
-        this.hidden.delete(row);
-        (row as HTMLElement).style.opacity = '';
-      } else if (move && Math.abs(from - top) >= MOVE_THRESHOLD_PX) {
-        row.animate({ transform: [`translateY(${from - top}px)`, 'none'] }, move);
-      }
-    }
+    if (scroll) afterNextRender(() => lcFlipPlay(before, lcFlipRead([scroll])), { injector: this.injector });
   }
 
   protected cellText(column: LcDataColumn<T>, row: T): string {

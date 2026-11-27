@@ -11,6 +11,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `[lcDraw]` | LcDrawDirective | directive | lcDraw (requis) | – |
 | `[lcFill]` | LcFillDirective | directive | lcFill (requis), lcFillAxis | – |
 | `[lcFlash]` | LcFlashDirective | directive | lcFlash | – |
+| `[lcFlip]` | LcFlipDirective | directive | lcFlip | – |
 | `[lcReveal]` | LcRevealDirective | directive | lcReveal, lcRevealIndex | – |
 | `[lcSplitText]` | LcSplitTextDirective | directive | lcSplitText (requis) | – |
 | `[lcStagger]` | LcStaggerDirective | directive | lcStagger | – |

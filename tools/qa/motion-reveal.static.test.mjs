@@ -1,6 +1,6 @@
 // Acceptation de docs/specs/2026-12-mouvement-v2.md, tâche T3 : CA-7 (partie statique), contrat public de lcReveal / lcStagger (§5.1, §5.3), migration de data-table.
 // Lancer : node --test tools/qa/motion-reveal.static.test.mjs
-// Reporté à T7 : « `staggerDelay` et `lcCssMs` n'existent qu'une fois » (CA-7, partie runtime) : constaté ici en information, jamais bloquant pour T3.
+// T7 (CA-7, CA-17, CA-26) : `staggerDelay` et `lcCssMs` n'existent qu'une fois (runtime), contrat de `flip.ts` / `lcFlip`, data-table sans `fadeOut` ni contournement `tr.lc-leave`, plus aucune entrée de liste blanche pour data-table et message-thread.
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -64,10 +64,7 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
     'data/src/data-table/column-filter.component.css': ['lc-column-filter-spin'], // indicateur de chargement
     'styles/ui-angular.css': ['lc-truncate-scroll'], // truncate : T12 (dialogue et tiroir migrés par T9a ; pops d'ancrage et calendrier migrés par T9c)
   };
-  const WAAPI = {
-    'feedback/src/message-thread/message-thread.component.ts': 'FLIP du fil, repris par T7',
-    'data/src/data-table/data-table.component.ts': 'FLIP du tableau, repris par T7',
-  };
+  const WAAPI = {}; // data-table et message-thread (migrés par T7) n'y figurent plus : leurs animations passent par lib/motion/
 
   test('aucun @keyframes hors lib/motion/, motion.css et la liste blanche', () => {
     const offenders = [];
@@ -146,10 +143,55 @@ describe('migration de data-table et des stories (§11, T3)', () => {
   });
 });
 
-describe('information : doublons de runtime (reporté à T7)', () => {
-  test('staggerDelay et lcCssMs : nombre de définitions (information)', () => {
-    const count = (name) => sources(angular, ['.ts']).filter((f) => new RegExp(`(function|const)\\s+${name}\\b`).test(strip(read(f)))).length;
-    console.log(`INFO CA-7 (T7) : staggerDelay défini ${count('staggerDelay')} fois, lcCssMs défini ${count('lcCssMs')} fois (attendu 1 chacun à la fin de T7)`);
+describe('T7 : un seul staggerDelay et un seul lcCssMs, dans le runtime (CA-7)', () => {
+  for (const name of ['staggerDelay', 'lcCssMs']) {
+    test(`${name} est défini une fois, sous src/lib/motion/runtime/`, () => {
+      const found = sources(angular, ['.ts']).filter((f) => new RegExp(`(function|const)\\s+${name}\\b`).test(strip(read(f)))).map((f) => relative(angular, f));
+      assert.equal(found.length, 1, `${name} défini dans : ${found.join(', ') || 'aucun fichier'}`);
+      assert.match(found[0], /^src\/lib\/motion\/runtime\//);
+    });
+  }
+});
+
+describe('T7 : flip.ts et lcFlip (§5.1, §5.3), data-table sans contournement (§11)', () => {
+  const motion = join(angular, 'src/lib/motion');
+  const flip = join(motion, 'runtime/flip.ts');
+  const directive = join(motion, 'directives/flip.directive.ts');
+
+  test('flip.ts : lectures groupées, seuil de 0,5 px, tokens list-move, aucune durée ni courbe en dur', () => {
+    assert.ok(existsSync(flip), 'lib/motion/runtime/flip.ts absent');
+    const code = strip(read(flip));
+    assert.match(code, /--lc-list-move-duration/);
+    assert.match(code, /--lc-list-move-easing/);
+    assert.match(code, /\b0\.5\b/, 'seuil de 0,5 px absent');
+    assert.doesNotMatch(code, /cubic-bezier\(|duration\s*:\s*\d/, 'durée ou courbe en dur');
+  });
+
+  test('flip.directive.ts : [lcFlip], entrée lcFlip, LcFlipDirective exportée par index.ts', () => {
+    assert.ok(existsSync(directive), 'lib/motion/directives/flip.directive.ts absent');
+    const code = strip(read(directive));
+    assert.match(code, /selector:\s*['"]\[lcFlip\]['"]/);
+    assert.match(code, /export\s+class\s+LcFlipDirective\b/);
+    assert.match(code, /lcFlip\s*=\s*input/);
+    assert.match(strip(read(join(motion, 'index.ts'))), /directives\/flip\.directive/);
+  });
+
+  test('lcFlip ne pose pas de transform dans une feuille : WAAPI seulement (motion.css sans règle FLIP)', () => {
+    assert.doesNotMatch(strip(read(join(angular, 'styles/motion.css'))), /lc-flip/i);
+  });
+
+  const table = join(angular, 'data/src/data-table');
+  test('data-table : la sortie d\'une ligne est celle de lcReveal : ni fadeOut, ni animate.leave sur un <tr>, ni tr.lc-leave', () => {
+    const bad = (file, re) => re.test(strip(read(join(table, file))));
+    assert.ok(!bad('data-table.component.ts', /\bfadeOut\b/), 'data-table.component.ts : fadeOut');
+    assert.ok(!bad('data-table.component.html', /\bfadeOut\b/), 'data-table.component.html : fadeOut');
+    assert.ok(!bad('data-table.component.html', /<tr\b[^>]*animate\.leave/), 'data-table.component.html : animate.leave sur un <tr>');
+    assert.ok(!bad('data-table.component.css', /tr\.lc-leave/), 'data-table.component.css : contournement tr.lc-leave de T3');
+  });
+
+  test('data-table : le glissement des lignes passe par lcFlip (gabarit) et plus par un FLIP maison', () => {
+    assert.ok(/\[lcFlip\]/.test(strip(read(join(table, 'data-table.component.html')))), 'aucun [lcFlip] dans le gabarit');
+    assert.ok(/LcFlipDirective/.test(strip(read(join(table, 'data-table.component.ts')))), 'LcFlipDirective non importée');
   });
 });
 
@@ -177,7 +219,6 @@ describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
         if (/LcRevealDirective/.test(code.slice(m.index, end))) offenders.push(`${relative(angular, file)} : hostDirectives`);
       }
     }
-    // Dette consignée, levée en T7 : les <tr> de lc-data-table (gabarit, pas hôte) portent lcReveal + (animate.leave).
     assert.deepEqual(offenders, []);
   });
 });

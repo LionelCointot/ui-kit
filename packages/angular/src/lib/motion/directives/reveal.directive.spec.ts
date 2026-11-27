@@ -11,6 +11,7 @@ import { LcStaggerDirective } from './stagger.directive';
     <p id="variant" [lcReveal]="variant()">variant</p>
     <p id="off" [lcReveal]="null">off</p>
     <p id="indexed" lcReveal [lcRevealIndex]="index()">indexed</p>
+    @if (hid()) { <div hidden><b id="hid" lcReveal></b></div> }
     <div lcStagger>
       @for (item of items(); track item) {
         <i lcReveal [attr.data-i]="item"></i>
@@ -22,6 +23,7 @@ class HostComponent {
   readonly variant = signal<LcRevealVariant | ''>('drop');
   readonly index = signal<number | undefined>(undefined);
   readonly items = signal([0, 1, 2]);
+  readonly hid = signal(true);
 }
 
 /** jsdom n'a pas `getAnimations` : `running` simule une animation CSS en cours sur les éléments. */
@@ -73,6 +75,15 @@ describe('LcRevealDirective', () => {
     await Promise.resolve();
     fixture.detectChanges();
     expect(el('#plain').className).toBe('');
+  });
+
+  it('sous un ancêtre [hidden], le nœud est détaché aussitôt à la destruction, sans lc-leave', () => {
+    const { fixture, el } = setup(true);
+    const node = el('#hid');
+    fixture.componentInstance.hid.set(false);
+    fixture.detectChanges();
+    expect(node.isConnected).toBe(false);
+    expect(node.classList.contains('lc-leave')).toBe(false);
   });
 
   it('null désactive l\'entrée : ni classe ni rang', () => {

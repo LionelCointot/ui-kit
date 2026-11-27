@@ -44,7 +44,7 @@
   }
 }
 
-/* Classe posée par [lcReveal] jusqu'à animationend. Délai = min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */
+/* Classe posée par [lcReveal] jusqu'à animationend. Délai = départ (--lc-reveal-offset, hérité, 0 par défaut) + min(rang, plafond) × décalage ; le rythme vient de [lcStagger] (--lc-stagger-pace), `normal` sinon. */
 .lc-reveal {
   --lc-reveal-x: 0px;
   --lc-reveal-y: var(--lc-sys-motion-offset-sm);
@@ -54,7 +54,7 @@
 
   animation: lc-reveal-in var(--lc-sys-duration-enter) var(--lc-reveal-curve) backwards;
   animation-delay: calc(
-    min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
+    var(--lc-reveal-offset, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal))
   );
 }
 
@@ -99,9 +99,10 @@
   --lc-reveal-rotate: var(--lc-sys-motion-rotate-tilt);
 }
 
-/* Sortie (animate.leave) : après .lc-reveal, pour l'emporter si l'élément part avant la fin de son entrée. */
+/* Sortie (animate.leave) : après .lc-reveal, pour l'emporter si l'élément part avant la fin de son entrée ; un élément qui sort n'est plus cliquable. */
 .lc-leave {
   animation: lc-leave var(--lc-sys-duration-exit) var(--lc-sys-easing-exit) forwards;
+  pointer-events: none;
 }
 
 /* Titre lettre par lettre ([lcSplitText]) : le mot masque, la lettre monte (translate en % de sa propre hauteur) en se redressant, sans fondu. */
