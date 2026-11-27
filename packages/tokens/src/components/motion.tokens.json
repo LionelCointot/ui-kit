@@ -46,6 +46,8 @@
     "enter-delay": { "$value": "200ms", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier", "$description": "expo.out of the Talmo site." },
     "enter-offset": { "$value": "90px", "$type": "dimension" },
+    "height": { "$value": "66px", "$type": "dimension", "$description": "Bottom tab bar height (Talmo site)." },
+    "indicator-radius": { "$value": "16px", "$type": "dimension", "$description": "Corner radius of the active pill (Talmo site)." },
     "indicator-front-duration": { "$value": "{segmented-control.indicator-front-duration}", "$type": "duration" },
     "indicator-front-easing": { "$value": "{segmented-control.indicator-front-easing}", "$type": "cubicBezier" },
     "indicator-back-duration": { "$value": "{segmented-control.indicator-back-duration}", "$type": "duration" },
@@ -148,6 +150,8 @@
     "enter-offset": { "$value": "30px", "$type": "dimension" },
     "enter-scale": { "$value": "0.94", "$type": "number" },
     "exit-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
+    "exit-offset": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Vertical travel of the exit (Talmo: y 16 px)." },
+    "exit-easing": { "$value": "cubic-bezier(0.55, 0.085, 0.68, 0.53)", "$type": "cubicBezier", "$description": "power2.in (Talmo)." },
     "tabbar-gap": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Space left between a toast and the bottom tab bar on phones." }
   },
   "switch": {

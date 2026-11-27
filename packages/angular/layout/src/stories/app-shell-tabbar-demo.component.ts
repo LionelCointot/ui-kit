@@ -6,11 +6,20 @@ import { LcAppShellComponent, LcPageComponent } from '../public-api';
 @Component({ imports: [LcPageComponent], template: `<lc-page title="Page"><p>Le contenu de la rubrique.</p></lc-page>` })
 class TabPageComponent {}
 
-/** Rubriques de la démo d57 (routes nommées pour ne pas heurter celles des autres démos de la story). */
+/*
+ * Partage du routeur : la story Animation héberge plusieurs démos (d53, d59, d57) et n'a qu'un `Router`. Chaque démo y pose ses routes ; d53 les remplace toutes par
+ * `resetConfig(stackRoutes)`, donc cette démo (rendue après d53) AJOUTE les siennes, sous le préfixe `tab-` (un seul segment : un chemin à deux segments ferait de la page un niveau 2, avec bouton retour), à la configuration trouvée. L'ordre de rendu des démos
+ * compte : rendue avant d53, elle perdrait ses routes. Elle ne navigue pas d'elle-même (elle volerait l'URL de d53) : « Plus » est actif tant qu'aucun onglet n'est ouvert.
+ * Les deux `router-outlet` affichent la même URL : sur `/tab-…`, la coquille de d53 montre aussi la page.
+ */
+const PREFIX = 'tab-';
+
+/** Rubriques de la démo d57. */
 export const TABBAR_DEMO_ROUTES: Routes = ['studio', 'planner', 'tasks', 'projects', 'settings'].map((path) => ({
-  path,
+  path: PREFIX + path,
   component: TabPageComponent,
   title: path.charAt(0).toUpperCase() + path.slice(1),
+  data: { lcPageTransition: false },
 }));
 
 /**
@@ -43,11 +52,11 @@ export class StoryNavDirective {
       <lc-app-shell>
         <strong lcShellHeader>Studio</strong>
         <ul lcShellNav style="margin:0;padding:0;list-style:none">
-          <li><a lcStoryNav routerLink="/studio" icon="house" [primary]="true">Studio</a></li>
-          <li><a lcStoryNav routerLink="/planner" icon="calendar" [primary]="true">Planner</a></li>
-          <li><a lcStoryNav routerLink="/tasks" icon="list-checks" [primary]="true">Tasks</a></li>
-          <li><a lcStoryNav routerLink="/projects" icon="layout-dashboard" [primary]="true">Projects</a></li>
-          <li><a lcStoryNav routerLink="/settings" icon="settings">Settings</a></li>
+          <li><a lcStoryNav routerLink="/tab-studio" icon="house" [primary]="true">Studio</a></li>
+          <li><a lcStoryNav routerLink="/tab-planner" icon="calendar" [primary]="true">Planner</a></li>
+          <li><a lcStoryNav routerLink="/tab-tasks" icon="list-checks" [primary]="true">Tasks</a></li>
+          <li><a lcStoryNav routerLink="/tab-projects" icon="layout-dashboard" [primary]="true">Projects</a></li>
+          <li><a lcStoryNav routerLink="/tab-settings" icon="settings">Settings</a></li>
         </ul>
         <router-outlet />
       </lc-app-shell>
@@ -62,7 +71,6 @@ export class AppShellTabbarDemoComponent {
     // S'ajoute aux routes déjà posées par les autres démos de la story.
     const known = new Set(this.router.config.map((route) => route.path));
     this.router.resetConfig([...this.router.config, ...TABBAR_DEMO_ROUTES.filter((route) => !known.has(route.path))]);
-    if (!TABBAR_DEMO_ROUTES.some((route) => this.router.url.startsWith('/' + route.path))) void this.router.navigateByUrl('/studio');
   }
 
   protected replay(): void {

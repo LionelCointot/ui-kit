@@ -6,17 +6,18 @@
 .lc-tabbar {
   --_front: var(--lc-tabbar-indicator-front-duration) var(--lc-tabbar-indicator-front-easing);
   --_back: var(--lc-tabbar-indicator-back-duration) var(--lc-tabbar-indicator-back-easing) var(--lc-tabbar-indicator-back-delay);
-  --_indicator-radius: var(--lc-tabbar-pill-radius, var(--lc-sys-radius-md));
+  --_indicator-radius: var(--lc-tabbar-indicator-radius);
 
   position: fixed;
   inset-inline: var(--lc-sys-space-3);
   inset-block-end: calc(var(--lc-sys-space-3) + env(safe-area-inset-bottom));
-  z-index: var(--lc-sys-z-sticky);
+  /* Au-dessus de la bande du geste de retour (`.lc-shell__edge`, même couche) : un appui sur la barre n'est jamais pris pour un geste. */
+  z-index: calc(var(--lc-sys-z-sticky) + 1);
   display: none;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   box-sizing: border-box;
-  block-size: var(--lc-tabbar-height, var(--lc-sys-space-16));
+  block-size: var(--lc-tabbar-height);
   padding: var(--lc-sys-space-1);
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
   border-radius: var(--lc-tabbar-radius, var(--lc-sys-radius-lg));

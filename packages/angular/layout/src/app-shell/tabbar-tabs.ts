@@ -16,7 +16,8 @@ export const lcTabbarTabs = (items: readonly LcNavEntry[]): LcNavEntry[] => lcPr
 /**
  * Index de l'onglet de la page `current` : le plus spécifique dont le chemin est celui de la page ou l'un de ses parents (`/credit` pour `/credit/nouveau`) ;
  * la racine `/` ne correspond qu'à elle-même. -1 si aucun : « Plus » est alors l'onglet actif. Requête et fragment ignorés.
- * shortcut: `exact` et `[active]` de `a[lcNavItem]` ne sont pas lus (le registre ne les porte pas) ; à lever si une application en dépend.
+ * shortcut: `exact` et `[active]` de `a[lcNavItem]` ne sont pas lus (le registre ne les porte pas) ; si un consommateur a besoin d'un `exact`,
+ * ajouter `exact?: boolean` à `LcNavEntry` (navigation-registry.ts), le renseigner dans `a[lcNavItem]` et le lire ici.
  * @internal
  */
 export function lcActiveTab(tabs: readonly LcNavEntry[], current: string): number {
