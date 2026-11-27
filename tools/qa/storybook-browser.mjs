@@ -1320,7 +1320,7 @@ const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, text
 /** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même), 'transition' : transitions seulement]. Tout le reste est un écart. */
 const CA5_ALLOW = [
   [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
-  [['color'], '[lcflash]'], // lcFlash : sélecteur à confirmer quand T5 aura écrit la directive
+  [['color'], '.lc-flash'], // lcFlash : l'hôte porte `lc-flash` (contrat fixé par la QA de T5, tools/qa/count-flash-browser.mjs)
   [['gridTemplateRows'], '.lc-disclosure__region, .lc-nav-group__items'],
   [['inlineSize'], '.lc-shell__nav'], // barre latérale de lc-app-shell
   [['clipPath'], CA5_INDICATORS], // pastilles à deux bords
