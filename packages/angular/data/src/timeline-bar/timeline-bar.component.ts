@@ -12,7 +12,7 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { LC_LABELS, LcSkeletonComponent } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcFillDirective, LcSkeletonComponent } from '@lionelcointot/ui-angular';
 
 export type LcTimelineColorSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 'neutral';
 export type LcTimelineMarker = 'circle' | 'square' | 'diamond';
@@ -106,7 +106,7 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
  */
 @Component({
   selector: 'lc-timeline-bar',
-  imports: [LcSkeletonComponent],
+  imports: [LcFillDirective, LcSkeletonComponent],
   template: `
     @if (loading()) {
       <lc-skeleton shape="rect" height="var(--lc-sys-space-8)" />
@@ -115,7 +115,7 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
     } @else {
       @if (lanes().length > 0) {
         <div class="lc-timeline-bar__lanes" role="img" [attr.aria-label]="description()">
-          @for (item of drawnLanes(); track item.lane.id) {
+          @for (item of drawnLanes(); track item.lane.id; let lane = $index) {
             <div class="lc-timeline-bar__lane">
               <div class="lc-timeline-bar__lane-head">
                 <span class="lc-timeline-bar__marker" [class]="'lc-timeline-bar__marker lc-timeline-bar__marker--' + (item.lane.marker ?? 'circle') + ' ' + item.swatchClass" aria-hidden="true"></span>
@@ -128,7 +128,7 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
               </div>
               <div class="lc-timeline-bar__lane-track">
                 @for (span of item.spans; track $index) {
-                  <span class="lc-timeline-bar__span" [class]="'lc-timeline-bar__span ' + item.swatchClass" [style.inset-inline-start.%]="span.start * 100" [style.inline-size.%]="span.size * 100"></span>
+                  <span class="lc-timeline-bar__span" [class]="'lc-timeline-bar__span ' + item.swatchClass" [style.inset-inline-start.%]="span.start * 100" [style.inline-size.%]="span.size * 100" [lcFill]="1" [lcFillIndex]="lane"></span>
                 }
                 @if (referenceMark(); as mark) {
                   <span class="lc-timeline-bar__reference-line" [style.inset-inline-start.%]="mark.position * 100"></span>
@@ -146,8 +146,8 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
         </div>
       } @else {
         <div class="lc-timeline-bar__track" role="img" [attr.aria-label]="description()">
-          @for (item of drawn(); track item.segment.id) {
-            <span class="lc-timeline-bar__segment" [class]="'lc-timeline-bar__segment ' + item.swatchClass" [style.flex-grow]="item.segment.weight"></span>
+          @for (item of drawn(); track item.segment.id; let rank = $index) {
+            <span class="lc-timeline-bar__segment" [class]="'lc-timeline-bar__segment ' + item.swatchClass" [style.flex-grow]="item.segment.weight" [lcFill]="1" [lcFillIndex]="rank"></span>
           }
         </div>
       }

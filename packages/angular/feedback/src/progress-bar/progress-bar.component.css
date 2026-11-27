@@ -10,14 +10,15 @@
 
 .lc-progress-bar__fill {
   display: block;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   background: var(--lc-progress-bar-color, var(--lc-sys-color-primary));
-  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 :host(.lc-progress-bar--indeterminate) .lc-progress-bar__fill {
   width: 40%;
+  transition: none;
   animation: lc-progress-slide var(--lc-progress-bar-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 

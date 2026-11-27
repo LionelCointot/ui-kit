@@ -226,14 +226,15 @@
 
 .lc-message-composer__progress-fill {
   display: block;
+  inline-size: 100%;
   block-size: 100%;
   border-radius: inherit;
   background: var(--lc-sys-color-primary);
-  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 .lc-message-composer__progress--indeterminate .lc-message-composer__progress-fill {
   inline-size: 40%;
+  transition: none;
   animation: lc-message-composer-slide var(--lc-message-composer-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 
