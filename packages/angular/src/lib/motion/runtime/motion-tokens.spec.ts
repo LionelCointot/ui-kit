@@ -31,9 +31,21 @@ describe('lcReadMotion', () => {
     expect(lcReadMotion(document.createElement('div'), '--lc-page-exit-duration', '--lc-sheet-spring-easing')).toEqual({ duration: 190, easing: 'cubic-bezier(0.34, 1.7, 0.64, 1)' });
   });
 
-  it('jeton absent : durée 0 et courbe linear', () => {
+  it('jeton absent : durée 0 et courbe linear, avec un avertissement en développement nommant le jeton', () => {
     stub({});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(lcReadMotion(document.createElement('div'), 'draw', 'pop')).toEqual({ duration: 0, easing: 'linear' });
+    expect(warn.mock.calls[0][0]).toContain('--lc-sys-duration-draw, --lc-sys-easing-pop');
     expect(lcReadMotion(document.createElement('div'), '--lc-x-duration', '--lc-x-easing')).toEqual({ duration: 0, easing: 'linear' });
+    expect(warn.mock.calls[1][0]).toContain('--lc-x-duration, --lc-x-easing');
+    warn.mockRestore();
+  });
+
+  it('jetons présents : aucun avertissement', () => {
+    stub({ '--lc-sys-duration-enter': '450ms', '--lc-sys-easing-entrance': 'ease' });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    lcReadMotion(document.createElement('div'), 'enter', 'entrance');
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

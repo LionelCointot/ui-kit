@@ -105,8 +105,8 @@
         }
       } @else {
         @for (row of rows(); track trackBy()(row)) {
-          <!-- Cascade des 8 premières cartes au premier affichage seulement (attribut lu par la feuille globale, comme `lcReveal`) ; ensuite : différence animée. -->
-          <tr [attr.lcReveal]="cascadeIndex($index) === null ? null : ''" [style.--lc-reveal-index]="cascadeIndex($index)" (animate.leave)="fadeOut($event)">
+          <!-- Cascade des 8 premières cartes au premier affichage seulement (`lcReveal` désactivé sinon) ; ensuite : différence animée. -->
+          <tr [lcReveal]="cascadeIndex($index) === null ? null : 'drop'" [lcRevealIndex]="cascadeIndex($index) ?? undefined" (animate.leave)="fadeOut($event)">
             <ng-container [ngTemplateOutlet]="rowCells" [ngTemplateOutletContext]="{ $implicit: row }" />
           </tr>
         } @empty {

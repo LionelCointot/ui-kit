@@ -77,6 +77,22 @@ test('collectEntryPoint : suit les exports, filtre les noms, échoue sur fichier
   }
 });
 
+test('collectEntryPoint : suit les réexportations d\'un index de dossier, filtre à travers lui, sans boucler', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'catalogue-'));
+  try {
+    mkdirSync(path.join(dir, 'motion'));
+    writeFileSync(path.join(dir, 'motion', 'a.ts'), SRC);
+    writeFileSync(path.join(dir, 'motion', 'index.ts'), `export * from './a';\nexport * from './index';`);
+    const api = path.join(dir, 'public-api.ts');
+    writeFileSync(api, `export * from './motion';`);
+    assert.equal(collectEntryPoint(api).length, 4);
+    writeFileSync(api, `export { LcDemoPipe } from './motion';`);
+    assert.deepEqual(collectEntryPoint(api).map((d) => d.className), ['LcDemoPipe']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('renderCatalogue : reproductible, version écrite, pas de date', () => {
   const decls = extractDeclarations(SRC);
   const a = renderCatalogue('1.2.3', [{ name: '@x/y', decls }]);

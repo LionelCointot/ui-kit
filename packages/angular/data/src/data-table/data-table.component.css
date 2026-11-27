@@ -515,6 +515,11 @@ lc-data-table {
   pointer-events: none;
 }
 
+/* shortcut: la ligne a sa propre sortie (fadeOut) en plus de celle de lcReveal ; la sortie de la classe doit finir après fadeOut. Levé par T7 (suppression de ligne par lc-leave seule). */
+.lc-data-table__table tbody tr.lc-leave {
+  animation-duration: calc(2 * var(--lc-sys-duration-exit));
+}
+
 /* ---------- Panneau des filtres (téléphone) : contenu de `lc-sheet` ---------- */
 .lc-data-table__panel-body {
   padding: 0 var(--lc-sys-space-4);

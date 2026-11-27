@@ -103,14 +103,17 @@ function resolveSource(dir, from) {
 
 /** Déclarations publiques d'un point d'entrée, triées par sélecteur. */
 export function collectEntryPoint(publicApiPath, bases = buildClassIndex(path.dirname(publicApiPath))) {
-  const dir = path.dirname(publicApiPath);
   const byClass = new Map();
-  for (const { from, names } of parseExports(readFileSync(publicApiPath, 'utf8'))) {
-    const file = resolveSource(dir, from);
-    for (const d of extractDeclarations(readFileSync(file, 'utf8'), bases)) {
-      if (!names || names.includes(d.className)) byClass.set(d.className, d);
-    }
-  }
+  const seen = new Set();
+  /** Lit un fichier et les fichiers qu'il réexporte (un `index.ts` de dossier qui réexporte des directives) ; `names` : filtre de l'export nommé qui y mène. */
+  const visit = (file, names) => {
+    const src = readFileSync(file, 'utf8');
+    for (const d of extractDeclarations(src, bases)) if (!names || names.includes(d.className)) byClass.set(d.className, d);
+    if (seen.has(file)) return;
+    seen.add(file);
+    for (const next of parseExports(src)) visit(resolveSource(path.dirname(file), next.from), next.names ?? names);
+  };
+  for (const { from, names } of parseExports(readFileSync(publicApiPath, 'utf8'))) visit(resolveSource(path.dirname(publicApiPath), from), names);
   return [...byClass.values()].sort((a, b) => a.selector.localeCompare(b.selector));
 }
 

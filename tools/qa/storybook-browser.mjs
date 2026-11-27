@@ -186,7 +186,7 @@ async function dom(browser, base) {
   {
     const context = await browser.newContext({ forcedColors: 'active', viewport: { width: 1100, height: 800 } });
     const page = await context.newPage();
-    await page.goto(`${base}/iframe.html?id=retours-d-état-indicateur-d-état--par-role&viewMode=story`);
+    await page.goto(`${base}/iframe.html?id=feedback-status-badge--by-kind&viewMode=story`);
     await page.waitForSelector('lc-status-badge');
     const borders = await page.locator('lc-status-badge').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).borderTopColor));
     check('CA-K1.3 forced-colors : bordure du badge visible (non transparente)', borders.length === 6 && borders.every((color) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'), borders.join(' | '));
@@ -482,20 +482,22 @@ const MOTION_INIT = () => {
   };
 
   // --- lc-data-table (T6) ---
-  // Cartes : à chaque insertion de `tr[lcreveal]`, instantané des lignes (transitions suspendues à 0, puis terminées).
+  // Cartes : à chaque insertion d'une ligne `lcReveal` (classe `lc-reveal` ou attribut), instantané des lignes (animations `lc-reveal-in` suspendues à 0, puis terminées).
   q.cardSnaps = [];
+  const revealAnims = (tr) => tr.getAnimations().filter((a) => a instanceof CSSAnimation && a.animationName === 'lc-reveal-in');
+  const isReveal = (n) => n.nodeType === 1 && n.matches('tr.lc-reveal, tr[lcreveal]');
   const snapCards = () => {
-    const all = [...document.querySelectorAll('lc-data-table tbody tr:not(.lc-data-table__state)')].map((tr) => ({ tr, list: transitions(tr) }));
+    const all = [...document.querySelectorAll('lc-data-table tbody tr:not(.lc-data-table__state)')].map((tr) => ({ tr, list: revealAnims(tr) }));
     all.forEach(({ list }) => list.forEach((a) => a.pause()));
     all.forEach(({ list }) => list.forEach((a) => { a.currentTime = 0; }));
     q.cardSnaps.push(all.map(({ tr, list }, i) => {
       const cs = getComputedStyle(tr);
-      return { n: i + 1, reveal: tr.hasAttribute('lcreveal'), props: list.map((a) => a.transitionProperty), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), startOpacity: cs.opacity, cssDelay: cs.transitionDelay, cssDuration: cs.transitionDuration };
+      return { n: i + 1, reveal: tr.classList.contains('lc-reveal') || tr.hasAttribute('lcreveal') || list.length > 0, props: list.map((a) => a.animationName), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), startOpacity: cs.opacity, cssDelay: cs.animationDelay, cssDuration: cs.animationDuration };
     }));
     all.forEach(({ list }) => list.forEach((a) => a.finish()));
   };
   new MutationObserver((records) => {
-    if (records.some((r) => [...r.addedNodes].some((n) => n.nodeType === 1 && n.matches('tr[lcreveal]')))) snapCards();
+    if (records.some((r) => [...r.addedNodes].some(isReveal))) snapCards();
   }).observe(document, { subtree: true, childList: true });
 
   // Dialogue du téléphone : entrée (à l'attribut `open`) et sortie (à `data-closing`, fondu suspendu pour ne pas dépendre de l'horloge).
@@ -658,7 +660,7 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
     return { page, errors };
   };
-  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-reveal-stagger'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-overlay-offset') }; });
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-sys-duration-enter'), offset: q.tokenPx('--lc-overlay-offset') }; });
   const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
   const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('lc-sheet dialog').open); };
   const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -673,10 +675,10 @@ async function motionPhone(context, base, reduced, tag, check) {
     const t = await tokens(page);
     if (reduced) { check(snap.slice(0, 8).every((c) => quick(c.cssDelay) && quick(c.cssDuration)), `CA-12/13 ${tag} ${label}`, `délai=${snap[0].cssDelay} durée=${snap[0].cssDuration}`); return; }
     const first = snap.slice(0, 8);
-    const ok1 = first.length === Math.min(8, rows) && first.every((c, i) => c.reveal && [...c.props].sort().join('+') === 'opacity+transform' && c.delays.every((d) => near(d, i * t.stagger)) && c.durations.every((d) => near(d, t.reveal)) && c.startOpacity === '0');
+    const ok1 = first.length === Math.min(8, rows) && first.every((c, i) => c.reveal && c.props.join() === 'lc-reveal-in' && c.delays.every((d) => near(d, i * t.stagger)) && c.durations.every((d) => near(d, t.reveal)) && c.startOpacity === '0');
     check(ok1, `CA-12 ${tag} ${label} cartes 1 à ${first.length}`, `délais=${first.map((c) => c.delays[0])} attendu ${first.map((c, i) => i * t.stagger)}, durées=${first[0].durations} attendu ${t.reveal}, opacité de départ=${first.map((c) => c.startOpacity)}`);
     const rest = snap.slice(8);
-    if (rest.length) check(rest.every((c) => !c.reveal && c.props.length === 0 && msList(c.cssDelay).every((ms) => ms === 0)), `CA-12 ${tag} ${label} cartes 9 et suivantes (${rest.length})`, `transitions=${rest.map((c) => c.props.length)} délais=${rest.map((c) => c.cssDelay)} reveal=${rest.map((c) => c.reveal)}`);
+    if (rest.length) check(rest.every((c) => !c.reveal && c.props.length === 0 && msList(c.cssDelay).every((ms) => ms === 0)), `CA-12 ${tag} ${label} cartes 9 et suivantes (${rest.length})`, `animations=${rest.map((c) => c.props.length)} délais=${rest.map((c) => c.cssDelay)} reveal=${rest.map((c) => c.reveal)}`);
   };
 
   // CA-6 : appui sur « Filtres (N) ».
@@ -1105,7 +1107,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   const sorted = await report();
   check(sorted.order.join() !== order0, `CA-20 ${tag} tri : l'ordre a changé`, `avant=${order0.slice(0, 40)}… après=${sorted.order.join().slice(0, 40)}…`);
   analyse(sorted, 'tri', { expectKept: 14, expectRemoved: 0, expectAdded: 0, strict: true });
-  if (!phone) check(await page.evaluate(() => document.querySelectorAll('tr[lcreveal]').length) === 0, `CA-12 ${tag} pas de cascade sur ordinateur`);
+  if (!phone) check(await page.evaluate(() => document.querySelectorAll('tr[lcreveal], tr.lc-reveal').length) === 0, `CA-12 ${tag} pas de cascade sur ordinateur`);
   check(errors.length === 0, `erreurs page ${tag} liste`, errors.join(' ; '));
   await page.close();
 }
@@ -1156,7 +1158,7 @@ async function motion(browser, base) {
       if (width === 360 && name !== 'forced') await motionPhone(context, base, reduced, tag, check);
       if (width === 1280 && name === 'normal') {
         const { page } = await motionPage(context, base, 'qa-motion-data-table--table');
-        const reveals = await page.locator('tr[lcreveal]').count();
+        const reveals = await page.locator('tr[lcreveal], tr.lc-reveal').count();
         check(reveals === 0, `CA-12 ${tag} pas de cascade sur ordinateur`, `tr[lcreveal]=${reveals}`);
         await page.close();
       }
@@ -1165,43 +1167,26 @@ async function motion(browser, base) {
       await motionIndicators(context, base, name, tag, width, check);
       if (name !== 'forced') await motionList(context, base, reduced, tag, width === 360, check);
 
-      // CA-9 : attribut lcReveal (règle globale ; plus de directive).
+      // lcReveal / lcStagger (spec 2026-12-mouvement-v2, T3) : CA-11 (rangs aux tokens) et CA-3 (mouvement réduit) dans chaque contexte ; le détail (8 variantes, sortie, 500 éléments) est dans `reveal-browser.mjs`.
       {
-        const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--reveal');
-        await page.evaluate(() => {
+        const { page, errors } = await motionPage(context, base, 'qa-motion-reveal-acceptance--stagger');
+        await page.click('#show');
+        await page.waitForFunction(() => document.querySelector('#s-normal [data-i]'));
+        const got = await page.evaluate(() => {
           const q = window.__qa;
-          new MutationObserver(() => {
-            if (q.reveal || !document.querySelector('li[lcreveal]')) return;
-            q.reveal = 'pending';
-            requestAnimationFrame(() => {
-              const items = [...document.querySelectorAll('li[lcreveal]')];
-              const all = items.map((li) => ({ li, list: q.transitions(li) }));
-              all.forEach(({ list }) => list.forEach((a) => a.pause()));
-              all.forEach(({ list }) => list.forEach((a) => { a.currentTime = 0; }));
-              q.reveal = all.map(({ li, list }) => {
-                const cs = getComputedStyle(li);
-                return { index: li.dataset.index, props: list.map((a) => a.transitionProperty), delays: list.map((a) => a.effect.getComputedTiming().delay), durations: list.map((a) => a.effect.getComputedTiming().duration), startOpacity: cs.opacity, startTransform: cs.transform, cssDelay: cs.transitionDelay, cssDuration: cs.transitionDuration };
-              });
-              all.forEach(({ list }) => list.forEach((a) => a.finish()));
-            });
-          }).observe(document.body, { subtree: true, childList: true });
+          const rows = [...document.querySelectorAll('#s-normal [data-i]')].map((el) => {
+            const a = el.getAnimations().find((x) => x instanceof CSSAnimation && x.animationName === 'lc-reveal-in');
+            const timing = a?.effect.getComputedTiming();
+            return { i: Number(el.dataset.i), delay: timing?.delay ?? null, duration: timing?.duration ?? null, cssDelay: getComputedStyle(el).animationDelay, cssDuration: getComputedStyle(el).animationDuration };
+          });
+          return { rows, stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), enter: q.tokenMs('--lc-sys-duration-enter'), cap: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-sys-motion-stagger-cap')) };
         });
-        await page.click('#toggle');
-        await page.waitForFunction(() => Array.isArray(window.__qa.reveal));
-        const rows = await page.evaluate(() => window.__qa.reveal);
-        const staggerMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-stagger'));
-        const durationMs = await page.evaluate(() => window.__qa.tokenMs('--lc-reveal-duration'));
-        const offset = await page.evaluate(() => window.__qa.tokenPx('--lc-sys-motion-offset-sm'));
-        const expected = { 0: 0, 3: 3, 7: 7 };
-        for (const row of rows) {
-          const rank = expected[row.index];
-          if (reduced) {
-            check(msList(row.cssDelay).every((ms) => ms <= 0.01) && msList(row.cssDuration).every((ms) => ms <= 0.01), `CA-9/13 ${tag} index ${row.index}`, `délai=${row.cssDelay} durée=${row.cssDuration}`);
-            continue;
-          }
-          const props = [...row.props].sort().join('+');
-          const ok = props === 'opacity+transform' && row.delays.every((d) => near(d, rank * staggerMs)) && row.durations.every((d) => near(d, durationMs)) && row.startOpacity === '0' && near(m42(row.startTransform), -offset);
-          check(ok, `CA-9 ${tag} index ${row.index}`, `props=${props} délais=${row.delays} attendu ${rank * staggerMs} (${rank}×${staggerMs}), durées=${row.durations} attendu ${durationMs}, départ opacité=${row.startOpacity} transform=${row.startTransform}`);
+        if (reduced) {
+          await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+          const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' || a.pending).length);
+          check(running === 0 && got.rows.every((r) => msList(r.cssDelay).every((ms) => ms <= 0.01) && msList(r.cssDuration).every((ms) => ms <= 0.01)), `CA-3 ${tag} lcReveal : aucune animation en cours, délais et durées ≤ 0,01 ms`, `en cours=${running} délais=${got.rows.map((r) => r.cssDelay)} durées=${got.rows.map((r) => r.cssDuration)}`);
+        } else {
+          check(got.rows.length === 12 && got.rows.every((r) => r.delay !== null && near(r.delay, Math.min(r.i, got.cap) * got.stagger) && near(r.duration, got.enter)), `CA-11 ${tag} lcStagger : délai = min(rang, ${got.cap}) × ${got.stagger} ms, durée = ${got.enter} ms`, `délais=${got.rows.map((r) => r.delay)} durées=${got.rows.map((r) => r.duration)}`);
         }
         check(errors.length === 0, `erreurs page ${tag} reveal`, errors.join(' ; '));
         await page.close();

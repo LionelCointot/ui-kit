@@ -9,7 +9,7 @@ import {
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
-  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcSkeletonComponent, isoToLocalDate,
+  LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, isoToLocalDate,
   lcDetachAnimated, lcPrefersReducedMotion, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
@@ -73,7 +73,7 @@ interface ChipView<T> {
   imports: [
     NgTemplateOutlet, CdkConnectedOverlay, CdkTrapFocus, LcIconComponent, LcButtonComponent, LcSkeletonComponent, LcAlertComponent,
     LcEmptyStateComponent, LcSheetComponent, LcTooltipDirective, LcColumnFilterComponent,
-    LcNativeDatePickerDirective,
+    LcNativeDatePickerDirective, LcRevealDirective,
   ],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
