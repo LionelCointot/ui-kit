@@ -71,6 +71,20 @@ describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
     warn.mockRestore();
   });
 
+  const hasRootClass = () => document.documentElement.classList.contains('lc-has-tabbar');
+
+  it('pose la classe lc-has-tabbar sur :root tant que la barre est là (variable lue par le toast), la retire à la destruction', async () => {
+    const { fixture } = await setup(four);
+    expect(hasRootClass()).toBe(true);
+    fixture.destroy();
+    expect(hasRootClass()).toBe(false);
+  });
+
+  it('sans barre : pas de classe lc-has-tabbar sur :root', async () => {
+    await setup([entry('/a', 'A', false)]);
+    expect(hasRootClass()).toBe(false);
+  });
+
   it('sans rubrique primary : pas de barre, tiroir actuel', async () => {
     const { bar, root } = await setup([entry('/a', 'A', false)]);
     expect(bar()).toBeNull();

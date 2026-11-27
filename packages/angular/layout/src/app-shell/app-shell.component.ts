@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, input, isDevMode, model, signal, viewChild } from '@angular/core';
@@ -119,6 +120,10 @@ export class LcAppShellComponent {
       destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
       onScroll();
     });
+    // Le toast vit dans une surcouche hors du shell : la classe sur `:root` lui apporte `--lc-shell-tabbar-space` (feuille globale).
+    const root = inject(DOCUMENT).documentElement;
+    effect(() => root.classList.toggle('lc-has-tabbar', this.hasTabbar()));
+    destroyRef.onDestroy(() => root.classList.remove('lc-has-tabbar'));
     effect(() => {
       if (isDevMode() && lcPrimaryEntries(this.registry.items()).length > LC_TABBAR_MAX_TABS) {
         console.warn(`lc-app-shell : la barre d'onglets affiche les ${LC_TABBAR_MAX_TABS} premières rubriques « primary » ; les suivantes ne sont que dans le tiroir.`);

@@ -1,8 +1,9 @@
 .lc-toast-outlet__region {
   position: fixed;
   z-index: var(--lc-sys-z-toast);
+  /* `--lc-toast-above-tabbar` (posée par lc-app-shell sur téléphone, avec sa barre d'onglets) : la pile passe à 16 px au-dessus de la barre et prime sur le décalage suivant. */
   /* `--lc-toast-offset-block-end` : à renseigner (ex. hauteur d'une barre d'actions fixe) pour que la pile ne la recouvre pas. */
-  inset-block-end: calc(var(--lc-toast-offset-block-end, 0px) + max(var(--lc-sys-space-4), env(safe-area-inset-bottom)));
+  inset-block-end: var(--lc-toast-above-tabbar, calc(var(--lc-toast-offset-block-end, 0px) + max(var(--lc-sys-space-4), env(safe-area-inset-bottom))));
   inset-inline-end: max(var(--lc-sys-space-4), env(safe-area-inset-right));
   display: flex;
   flex-direction: column;
@@ -15,7 +16,7 @@
 @media (max-width: 479.98px) {
   .lc-toast-outlet__region {
     inset-inline: max(var(--lc-sys-space-2), env(safe-area-inset-left)) max(var(--lc-sys-space-2), env(safe-area-inset-right));
-    inset-block-end: calc(var(--lc-toast-offset-block-end, 0px) + max(var(--lc-sys-space-2), env(safe-area-inset-bottom)));
+    inset-block-end: var(--lc-toast-above-tabbar, calc(var(--lc-toast-offset-block-end, 0px) + max(var(--lc-sys-space-2), env(safe-area-inset-bottom))));
     width: auto;
   }
 }
