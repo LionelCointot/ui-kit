@@ -115,7 +115,13 @@ const worstJump = async (reveal) => {
     const cy = () => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
     const samples = [cy()];
     document.getElementById('prepend').click(); // le deuxième ajout pousse l'élément pendant son entrée
-    for (let i = 0; i < 70; i += 1) { await new Promise((resolve) => requestAnimationFrame(resolve)); samples.push(cy()); }
+    await new Promise((resolve) => requestAnimationFrame(resolve)); // les animations du deuxième ajout sont créées
+    // Pas de 1/60 s sur les horloges des animations (en pause) : le maximum ne dépend plus de la fluidité des images du navigateur (le test comparait deux passages de durées d'image différentes : instable).
+    const anims = document.getElementById('list').getAnimations({ subtree: true }).filter((a) => Number.isFinite(a.effect.getComputedTiming().endTime));
+    const base = anims.map((a) => { a.pause(); return a.currentTime; });
+    samples.length = 0;
+    for (let i = 0; i < 80; i += 1) { anims.forEach((a, j) => { a.currentTime = base[j] + i * (1000 / 60); }); samples.push(cy()); }
+    anims.forEach((a) => a.finish());
     return Math.max(...samples.slice(1).map((v, i) => Math.abs(v - samples[i])));
   });
   await context.close();
