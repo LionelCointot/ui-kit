@@ -62,9 +62,6 @@
     "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" },
     "easing": { "$value": "{sys.easing.standard}", "$type": "cubicBezier" }
   },
-  "collapse": {
-    "duration": { "$value": "{sys.duration.move}", "$type": "duration" }
-  },
   "chip": {
     "enter-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
   },

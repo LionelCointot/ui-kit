@@ -5,6 +5,7 @@ Supprimés (aucun alias : les consommateurs passent aux nouveaux noms) :
 - `--lc-sys-motion-stagger` (80 ms) : remplacé par `--lc-sys-motion-stagger-{fine|normal|cards|chars}` (12 / 40 / 60 / 22 ms) et `--lc-sys-motion-stagger-cap` (8 rangs).
 - `--lc-ref-motion-stagger` : remplacé par `--lc-ref-motion-stagger-*` et `--lc-ref-motion-offset-*`, mêmes suffixes que les rôles.
 - `--lc-reveal-offset`, `--lc-reveal-stagger` (groupe `reveal` des jetons composant) : plus lus par personne, `lcReveal` lit `--lc-sys-motion-offset-sm` et `--lc-sys-motion-stagger-normal` ; `--lc-reveal-offset` n'est plus un jeton mais le délai de départ posé par l'hôte (0 par défaut). `--lc-reveal-duration`, `--lc-reveal-easing` (550 ms, `--lc-sys-easing-out`, variantes de base) et `--lc-reveal-tilt-duration` (850 ms, courbe `pop`, variante `tilt`) sont les jetons propres de `lcReveal`, séparés de `--lc-sys-duration-enter` (popover, calendrier, bascule de thème).
+- `--lc-collapse-duration` : la section dépliable de `lc-data-table` suit `lc-disclosure` (`--lc-disclosure-enter-duration`, `--lc-disclosure-exit-duration`, `--lc-disclosure-chevron-duration`, `--lc-disclosure-offset`).
 - `--lc-sys-easing-soft` (et `--lc-ref-easing-soft`) : plus lu depuis l'alignement des cascades sur le site (`out`).
 - `--lc-overlay-offset` (le décalage d'ouverture est joué par les keyframes de chaque composant), `--lc-sheet-top-gap` (feuille à la hauteur de son contenu) et `--lc-dialog-sheet-radius` (la feuille porte son propre rayon, `--lc-sheet-top-radius`) : sans lecteur.
 
