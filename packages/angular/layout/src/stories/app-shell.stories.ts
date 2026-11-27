@@ -1,9 +1,9 @@
 import { provideLocationMocks } from '@angular/common/testing';
-import { Component, Injector, afterNextRender, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet, type Routes } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
-import { StoryMotionNoticeComponent, fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcAppShellComponent, LcPageComponent } from '@lionelcointot/ui-angular/layout';
 import { AppShellTabbarDemoComponent } from './app-shell-tabbar-demo.component';
 
@@ -122,24 +122,20 @@ class AppShellStackDemoComponent {
   imports: [LcAppShellComponent, LcButtonComponent],
   host: { 'data-demo': 'd05' },
   template: `
-    <button lcButton fillMode="outline" size="small" type="button" (click)="replay()">Rejouer</button>
-    @if (shown()) {
-      <lc-app-shell navMode="none">
-        <strong lcShellHeader>Halden &amp; Moor</strong>
-        <span lcShellHeader>Planner</span>
-        <span lcShellHeader>Calendar</span>
-        <span lcShellHeader>Tasks</span>
-      </lc-app-shell>
-    }`,
+    <section #section>
+      <button lcButton fillMode="outline" size="small" type="button" (click)="demo.replay(section)">Rejouer</button>
+      @for (key of demo.keys(); track key) {
+        <lc-app-shell navMode="none">
+          <strong lcShellHeader>Halden &amp; Moor</strong>
+          <span lcShellHeader>Planner</span>
+          <span lcShellHeader>Calendar</span>
+          <span lcShellHeader>Tasks</span>
+        </lc-app-shell>
+      }
+    </section>`,
 })
 class AppShellHeaderDemoComponent {
-  private readonly injector = inject(Injector);
-  protected readonly shown = signal(true);
-
-  protected replay(): void {
-    this.shown.set(false);
-    afterNextRender(() => this.shown.set(true), { injector: this.injector });
-  }
+  protected readonly demo = replayable();
 }
 
 /** d59 : le titre de la page vient dans l'en-tête mobile au-delà de 80 px de défilement ; « Rejouer » fait défiler la fenêtre vers le bas puis vers le haut. */

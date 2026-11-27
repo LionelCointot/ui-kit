@@ -24,7 +24,7 @@ const HEADER_TITLE_SCROLL_PX = 80;
   imports: [A11yModule, LcAppTabbarComponent, LcButtonComponent, LcIconComponent, LcPageTransitionsDirective],
   template: `
     <a class="lc-shell__skip" href="#lc-main" (click)="focusMain($event)">{{ labels.skipToContent }}</a>
-    <header class="lc-shell__header" [class.lc-shell__header--entering]="entering()" (animationend)="endEntering($event)" [attr.inert]="modalNav() ? '' : null">
+    <header class="lc-shell__header" [class.lc-shell__header--entering]="entering()" (animationend)="endEntering($event)" (animationcancel)="endEntering($event)" [attr.inert]="modalNav() ? '' : null">
       @if (nav.level() > 1) {
         <button lcButton type="button" fillMode="flat" themeColor="neutral" class="lc-shell__back" [attr.aria-label]="backLabel()" (click)="nav.back()">
           <lc-icon name="chevron-left" /><span class="lc-shell__back-text">{{ backText() }}</span>
@@ -135,7 +135,7 @@ export class LcAppShellComponent {
   protected readonly entering = signal(true);
 
   protected endEntering(event: AnimationEvent): void {
-    if (event.target === event.currentTarget) this.entering.set(false);
+    if (event.target === event.currentTarget && event.animationName === 'lc-page-entering') this.entering.set(false);
   }
 
   protected closeDrawer(): void {

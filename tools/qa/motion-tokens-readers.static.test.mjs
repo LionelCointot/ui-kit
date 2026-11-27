@@ -16,9 +16,6 @@ const strip = (code) => code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.
 /** Exceptions : token sans lecteur aujourd'hui, avec la raison. Une entrée qui a un lecteur fait échouer le test : on la retire alors de la liste. */
 export const WITHOUT_READER = {
   '--lc-sys-easing-emphasized': 'rôle public historique (CA-1 : valeur inchangée), réservé aux thèmes des applications ; aucun composant du kit ne le lit',
-  '--lc-topbar-enter-offset': 'd05 (entrée de la barre du haut de lc-app-shell au chargement, §5.4.1) : lecteur pas encore livré',
-  '--lc-topbar-enter-duration': 'd05 : lecteur pas encore livré',
-  '--lc-topbar-enter-stagger': 'd05 : lecteur pas encore livré',
   '--lc-toast-tabbar-gap': 'toast au-dessus de la barre d\'onglets (d60) : lecteur attendu de la tâche d\'intégration',
 };
 

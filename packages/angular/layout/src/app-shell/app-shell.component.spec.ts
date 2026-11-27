@@ -239,25 +239,29 @@ describe('LcAppShellComponent : navMode (D7 : coque sans navigation)', () => {
 
   describe('entrée de l\'en-tête (d05)', () => {
     const header = (root: HTMLElement) => root.querySelector<HTMLElement>('header.lc-shell__header')!;
+    const animationEvent = (type: string, animationName: string) => Object.assign(new Event(type), { animationName });
 
     it('la classe d\'entrée est posée au premier rendu', async () => {
       const { root } = await setup('auto', true);
       expect(header(root).classList).toContain('lc-shell__header--entering');
     });
 
-    it('elle est retirée à la fin de l\'animation de l\'en-tête, pas à celle d\'un enfant', async () => {
+    it('elle est retirée à la fin de l\'animation témoin de l\'en-tête, pas à celle d\'un enfant ni d\'une autre animation', async () => {
       const { fixture, root } = await setup('auto', true);
       header(root).querySelector('.header-payload')!.dispatchEvent(new Event('animationend', { bubbles: true }));
       await fixture.whenStable();
       expect(header(root).classList).toContain('lc-shell__header--entering');
-      header(root).dispatchEvent(new Event('animationend'));
+      header(root).dispatchEvent(animationEvent('animationend', 'autre'));
+      await fixture.whenStable();
+      expect(header(root).classList).toContain('lc-shell__header--entering');
+      header(root).dispatchEvent(animationEvent('animationend', 'lc-page-entering'));
       await fixture.whenStable();
       expect(header(root).classList).not.toContain('lc-shell__header--entering');
     });
 
     it('elle ne revient pas quand le mode de navigation change', async () => {
       const { fixture, host, root } = await setup('auto', true);
-      header(root).dispatchEvent(new Event('animationend'));
+      header(root).dispatchEvent(animationEvent('animationend', 'lc-page-entering'));
       host.mode.set('none');
       await fixture.whenStable();
       host.mode.set('auto');
