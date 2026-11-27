@@ -14,6 +14,7 @@ import { LcCardComponent } from './card.component';
     <div id="second">@for (n of count; track n) { <lc-card>{{ n }}</lc-card> }</div>
     <div id="nested"><lc-card><lc-card>inner</lc-card><p lcReveal>loose</p></lc-card><lc-card>after</lc-card></div>
     <div id="opt"><lc-card [lcReveal]="null">off</lc-card><lc-card lcReveal="fade">fade</lc-card></div>
+    <div id="containers"><ng-container>@for (n of count; track n) { <lc-card>{{ n }}</lc-card> }</ng-container><ng-container>@for (n of count; track n) { <lc-card>{{ n }}</lc-card> }</ng-container></div>
     <div id="later">@if (more()) { <lc-card>later</lc-card> }</div>
   `,
 })
@@ -84,5 +85,9 @@ describe('lc-card : entrée seule, sans attribut côté application', () => {
     const [off, fade] = cards('opt');
     expect(off.className).not.toContain('lc-reveal');
     expect(fade.className).toContain('lc-reveal lc-reveal--fade');
+  });
+
+  it('dans un ng-container, la clé est le commentaire du conteneur : une cascade par conteneur (comportement actuel figé)', () => {
+    expect(setup().ranks('containers')).toEqual(['0', '1', '2', '0', '1', '2']);
   });
 });

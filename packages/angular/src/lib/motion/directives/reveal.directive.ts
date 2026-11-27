@@ -15,6 +15,8 @@ const SIBLING_BATCHES = new WeakMap<Element, LcStaggerBatch>();
  * Providers d'un composant dont l'hôte porte `LcRevealDirective` en `hostDirectives` : variante par défaut, rang d'après le `lcStagger` le plus proche
  * (sinon d'après ses frères : une cascade par conteneur, dans l'ordre du DOM), et lot propre pour son contenu, qui ne décale donc pas les cartes voisines.
  * Une carte ajoutée seule plus tard repart du rang 0.
+ * Cas limites : un lot au-dessus (`lcStagger`, `lc-grid` ou carte) est repris tel quel, donc deux grilles faites main dans la même carte partagent une cascade.
+ * La clé « parent » est le nœud parent du gabarit, l'élément même sans directive ; dans un `ng-container`, c'est le commentaire du conteneur : une cascade par conteneur.
  *
  * @internal Réservé aux points d'entrée du kit.
  */

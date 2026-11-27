@@ -1498,3 +1498,20 @@ async function endAnimation(): Promise<void> {
   pending.splice(0).forEach((resolve) => resolve());
   await new Promise((resolve) => setTimeout(resolve));
 }
+
+describe('LcStepperComponent : couche « points » de l\'entrée de page (T10b)', () => {
+  const firstDotDelay = async () => {
+    await setup();
+    return animated.find((call) => call.target.classList.contains('lc-stepper__badge'))!.options.delay;
+  };
+  afterEach(() => document.documentElement.style.removeProperty('--lc-layer-dots'));
+
+  it('la première pastille part après `--lc-layer-dots` quand la page entre', async () => {
+    document.documentElement.style.setProperty('--lc-layer-dots', '800ms');
+    expect(await firstDotDelay()).toBe(800);
+  });
+
+  it('sans la variable (hors entrée de page), aucun délai de couche', async () => {
+    expect(await firstDotDelay()).toBe(0);
+  });
+});
