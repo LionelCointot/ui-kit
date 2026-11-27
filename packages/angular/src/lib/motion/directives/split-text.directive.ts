@@ -18,6 +18,7 @@ export class LcSplitTextDirective {
   constructor() {
     effect(() => {
       const text = this.lcSplitText();
+      // shortcut: préférence de mouvement réduit lue à chaque changement de texte, pas en continu (le CSS coupe déjà l'animation) ; à lever si un cas réel l'exige.
       const split = this.browser && !lcPrefersReducedMotion() && typeof Intl.Segmenter === 'function';
       if (!split) {
         this.host.textContent = text;

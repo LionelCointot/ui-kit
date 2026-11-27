@@ -1,6 +1,6 @@
 import { Component, PLATFORM_ID, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LcSplitTextDirective } from './split-text.directive';
 
 @Component({ imports: [LcSplitTextDirective], template: `<h1 [lcSplitText]="text()">x</h1>` })
@@ -17,6 +17,8 @@ const render = (platform: 'browser' | 'server' = 'browser') => {
 const letters = (h1: HTMLElement) => [...h1.querySelectorAll('span.lc-split-char')].map((s) => s.textContent);
 
 describe('LcSplitTextDirective', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it('découpe : un mot masque par mot, lettres aria-hidden numérotées, aria-label = texte complet', () => {
     const { h1 } = render();
     expect(h1.getAttribute('aria-label')).toBe('Un titre');
@@ -36,6 +38,14 @@ describe('LcSplitTextDirective', () => {
 
   it('rendu serveur simulé : texte brut, aucun span, aucun aria-label', () => {
     const { h1 } = render('server');
+    expect(h1.querySelectorAll('span')).toHaveLength(0);
+    expect(h1.textContent).toBe('Un titre');
+    expect(h1.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('mouvement réduit : texte brut, aucun span, aucun aria-label', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    const { h1 } = render();
     expect(h1.querySelectorAll('span')).toHaveLength(0);
     expect(h1.textContent).toBe('Un titre');
     expect(h1.hasAttribute('aria-label')).toBe(false);
