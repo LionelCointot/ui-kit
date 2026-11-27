@@ -19,6 +19,7 @@
     "duration": { "$value": "550ms", "$type": "duration", "$description": "Entry of the base variants of lcReveal (Talmo: 550 ms)." },
     "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" },
     "tilt-duration": { "$value": "{sys.duration.title}", "$type": "duration", "$description": "Entry of the tilt variant (Talmo KPI: 850 ms), with the overshoot curve of the pop variant." },
+    "tilt-pace": { "$value": "70ms", "$type": "duration", "$description": "Gap between two tilt entries in a row (Talmo KPI: stagger .07)." },
     "card-duration": { "$value": "800ms", "$type": "duration", "$description": "Entry of the card variant of lcReveal (Talmo cards: 800 ms, expo.out); the card cascade runs at the cards pace." },
     "card-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
     "card-scale": { "$value": "0.985", "$type": "number", "$description": "Scale the card variant starts from (unitless number)." }
