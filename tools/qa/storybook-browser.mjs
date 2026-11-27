@@ -992,6 +992,9 @@ async function motionIndicators(context, base, name, tag, width, check) {
     {
       const { page } = await start(NAV, '', '#/out');
       await page.waitForSelector('#item-out.lc-nav-item--active', { state: 'attached' });
+      // La couleur de fond est lue une fois les transitions finies (sinon elle est lue à mi-chemin, ou avant leur création : test instable) ; attente bornée.
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      await page.waitForFunction(() => document.getAnimations().length === 0, null, { timeout: 3000 }).catch(() => {});
       const r = await page.evaluate(() => ({ out: getComputedStyle(document.querySelector('#item-out')).backgroundColor, indicated: document.querySelector('#item-out').classList.contains('lc-nav-item--indicated'), inactive: getComputedStyle(document.querySelector('#item-a')).backgroundColor, primary: (() => { const p = document.createElement('div'); p.style.background = 'var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container))'; document.body.append(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return c; })() }));
       check(!r.indicated && r.out === r.primary && r.out !== 'rgba(0, 0, 0, 0)' && r.out !== r.inactive, `CA-5d ${tag} hors liste : fond actif porté par l'élément`, `fond=${r.out} attendu ${r.primary}, inactif=${r.inactive}, indicated=${r.indicated}`);
       await page.close();
