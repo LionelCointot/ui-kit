@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent, LcRevealDirective } from '@lionelcointot/ui-angular';
@@ -165,6 +165,9 @@ export class ExampleComponent {
 @Component({
   selector: 'lc-drawer-animation-content',
   imports: [LcDrawerComponent, LcRevealDirective],
+  // Demo only: 20 rem wide, like the catalogue demo d25 (the panel lives outside the component, hence the global rule).
+  encapsulation: ViewEncapsulation.None,
+  styles: '.lc-drawer-panel:has(lc-drawer-animation-content) { inline-size: calc(var(--lc-sys-space-16) * 5); }',
   template: `
     <lc-drawer title="Détail de la tâche">
       @for (line of lines; track line) {

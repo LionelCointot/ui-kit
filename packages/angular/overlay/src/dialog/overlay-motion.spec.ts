@@ -6,9 +6,11 @@ const TOKENS = { '--lc-dialog-enter-scale': '0.91', '--lc-dialog-enter-duration'
 
 function setup(direction = 'ltr') {
   const container = document.createElement('div');
+  container.className = 'cdk-dialog-container';
   const pane = document.createElement('div');
   const backdrop = document.createElement('div');
-  pane.append(container);
+  // Ancres du piège à focus du CDK, voisines du conteneur : elles ne doivent pas être animées.
+  pane.append(document.createElement('div'), container, document.createElement('div'));
   document.body.append(pane, backdrop);
   document.documentElement.style.direction = direction;
   const animate = vi.fn(() => ({ finished: Promise.resolve() }) as unknown as Animation);

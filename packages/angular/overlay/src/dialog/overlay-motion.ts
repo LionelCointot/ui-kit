@@ -9,8 +9,8 @@ const BACKDROP = {
   drawer: { enter: '--lc-drawer-backdrop-enter-duration', exit: '--lc-drawer-backdrop-exit-duration' },
 } as const;
 
-/** Le panneau animé est le conteneur CDK, seul enfant du `panelClass` ; le `panelClass` lui-même ne bouge pas (taille et position du CDK). */
-const panelOf = (overlayRef: OverlayRef): HTMLElement | null => overlayRef.overlayElement.firstElementChild as HTMLElement | null;
+/** Le panneau animé est le conteneur CDK (ses voisins sont les ancres du piège à focus) ; le `panelClass` lui-même ne bouge pas (taille et position du CDK). */
+const panelOf = (overlayRef: OverlayRef): HTMLElement | null => overlayRef.overlayElement.querySelector(':scope > .cdk-dialog-container');
 
 const numberToken = (element: Element, name: string): number => parseFloat(getComputedStyle(element).getPropertyValue(name));
 

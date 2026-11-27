@@ -218,7 +218,7 @@ describe('LcDrawerService', () => {
         const ref = await open();
         let finish!: () => void;
         const slow = { finished: new Promise<void>((resolve) => (finish = resolve)) };
-        const container = pane().firstElementChild as HTMLElement;
+        const container = pane().querySelector('.cdk-dialog-container') as HTMLElement;
         const slide = vi.fn(() => slow as unknown as Animation);
         const fade = vi.fn(() => ({ finished: Promise.resolve() }) as unknown as Animation);
         container.animate = slide as never;
