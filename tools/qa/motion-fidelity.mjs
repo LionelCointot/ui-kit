@@ -190,6 +190,8 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
   await page.locator(rootSel).first().scrollIntoViewIfNeeded().catch(() => {});
   if (!(await page.evaluate(settle))) throw new Error('animations finies encore en cours après 15 s, avant le déclencheur');
   const selector = catalogue ? trigger.cat : trigger.story;
+  // d37 : la position du cercle se compare au centre du bouton, pas en px absolus (la mise en page de la story n'est pas celle du catalogue).
+  const toggle = catalogue ? null : await page.locator(`${rootSel} lc-theme-toggle button`).first().boundingBox().catch(() => null);
   const sampler = trigger.sampler ? { sel: catalogue ? trigger.sampler.cat : trigger.sampler.story, read: trigger.sampler.read } : null;
   const target = page.locator(selector).first();
   const action = trigger.action ?? 'click';
@@ -211,7 +213,7 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
   // Survol, glissement, touche : la latence de Playwright n'est pas celle de la démo, l'origine est le premier changement de valeur (2e échantillon : le 1er est la valeur au repos).
   if (result.series && action !== 'click' && result.series.length > 1) { const [origin] = result.series[1]; result.series = result.series.map(([t, v]) => [t - origin, v]); }
   await context.close();
-  return { ...result, errors };
+  return { ...result, errors, toggle: toggle && { x: toggle.x + toggle.width / 2, y: toggle.y + toggle.height / 2, width: viewport, height: 900 } };
 }
 
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
@@ -323,6 +325,19 @@ async function record(browser, ids) {
 
 // ---------- Comparaison ----------
 
+/** d37 (décision T12) : seul le cercle `::view-transition-new(root)` est comparé (le fondu par défaut du groupe est neutralisé en CSS, hors CA-5). Durée, délai et courbe sont comparés tels quels ; centre = centre du bouton, rayon = coin le plus éloigné : les valeurs attendues sont les rapports r/R de l'empreinte du catalogue appliqués au rayon de la story. */
+function circleProblems(expected, got, toggle) {
+  const only = (list) => list.filter((a) => /view-transition-new\(root\)/.test(a.target));
+  const [e] = only(expected), [g] = only(got);
+  if (!toggle) return ['d37 : bouton de bascule introuvable dans la story'];
+  if (!e || !g) return [`d37 : animation du cercle absente (${only(got).length} côté story, ${only(expected).length} attendue)`];
+  const radius = Math.hypot(Math.max(toggle.x, toggle.width - toggle.x), Math.max(toggle.y, toggle.height - toggle.y));
+  const end = Number(numbers(e.values[4].clipPath)[0]);
+  const wanted = e.values.map((v) => ({ clipPath: `circle(${(Number(numbers(v.clipPath)[0]) / end) * radius}px at ${toggle.x}px ${toggle.y}px)` }));
+  const problems = compareAnimations([{ ...e, values: wanted }], [g]);
+  return got.length === 1 ? problems : [...problems, `${got.length} animations au lieu de 1 (hors cercle : ${got.filter((a) => a !== g).map((a) => a.target).join(', ')})`];
+}
+
 async function compare(browser, ids, self) {
   const data = JSON.parse(await readFile(fidelityFile, 'utf8'));
   const index = self ? null : JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
@@ -342,7 +357,7 @@ async function compare(browser, ids, self) {
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
         const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = expected.animations ? compareAnimations(expected.animations, got.animations ?? []) : compareSeries(expected.series, got.series ?? []);
+        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(expected.animations, got.animations ?? []) : compareSeries(expected.series, got.series ?? []);
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {
