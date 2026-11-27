@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <header class="lc-page__header">
       <div class="lc-page__heading">
-        <h1 class="lc-page__title">{{ title() }}</h1>
+        <h1 class="lc-page__title" tabindex="-1">{{ title() }}</h1>
         @if (description()) {
           <p class="lc-page__description">{{ description() }}</p>
         }

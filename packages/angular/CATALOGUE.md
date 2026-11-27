@@ -105,6 +105,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
 | `[lcDisclosureGroup]` | LcDisclosureGroupDirective | directive | exclusive | – |
+| `[lcPageTransitions]` | LcPageTransitionsDirective | directive | – | – |
 | `lc-app-shell` | LcAppShellComponent | composant | navMode, navOpen (model), navCollapsed (model), navLabel | – |
 | `lc-card` | LcCardComponent | composant | elevation, padding, collapsible, expanded (model) | – |
 | `lc-card-header` | LcCardHeaderComponent | composant | title (requis), subtitle | – |

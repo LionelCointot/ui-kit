@@ -23,6 +23,11 @@
   line-height: var(--lc-sys-font-line-height-tight);
 }
 
+/* Reçoit le focus après un changement de page (lcPageTransitions) : repère pour les lecteurs d'écran, pas un contrôle. */
+.lc-page__title:focus {
+  outline: none;
+}
+
 .lc-page__description {
   max-width: 70ch;
   margin: var(--lc-sys-space-1) 0 0;
