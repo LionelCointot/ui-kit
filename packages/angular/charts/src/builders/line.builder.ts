@@ -1,6 +1,7 @@
 import type { EChartsCoreOption } from 'echarts/core';
 import { LcFormatService, LcValueFormat } from '@lionelcointot/ui-angular';
 import type { LcChartTheme, LcResolvedSeries, LcValueAxis } from '../types';
+import { LC_CHART_EASING } from '../theme/chart-motion';
 import type { ResolvedOverlays } from './annotations';
 import {
   GRID_BOTTOM, GRID_LEFT, SERIES_STROKE, baseOption, categoryAxis, formatFull, markBorder, minMax, padValues,
@@ -101,6 +102,8 @@ function lineSeries(item: LcResolvedSeries, args: LineBuildArgs, showPoints: boo
     id: item.id,
     name: item.label,
     type: 'line',
+    animationEasing: LC_CHART_EASING['draw'], // le défaut `linear` de la série l'emporte sur l'option globale
+    animationEasingUpdate: LC_CHART_EASING['draw'],
     data: padValues(item.values, categories.length),
     smooth: false,
     connectNulls: false,

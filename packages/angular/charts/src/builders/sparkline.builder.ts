@@ -27,6 +27,7 @@ export function buildSparklineOption(args: SparklineBuildArgs): EChartsCoreOptio
     yAxis: { type: 'value', show: false, scale: true },
     series: [{
       type: 'line',
+      animationEasing: LC_CHART_EASING['draw'], // le défaut `linear` de la série l'emporte sur l'option globale
       data: [...values],
       showSymbol: args.showEndPoint,
       symbol: args.showEndPoint ? (_value: unknown, params: { dataIndex: number }) => (params.dataIndex === lastIndex ? 'circle' : 'none') : 'none',
