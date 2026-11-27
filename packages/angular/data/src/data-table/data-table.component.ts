@@ -3,14 +3,14 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  AnimationCallbackEvent, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, ViewEncapsulation, afterNextRender, booleanAttribute, computed, contentChildren,
+  AnimationCallbackEvent, ChangeDetectionStrategy, Component, ElementRef, Injector, ViewEncapsulation, afterNextRender, booleanAttribute, computed, contentChildren,
   effect, inject, input, linkedSignal, model, signal, untracked, viewChild,
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import {
   LC_LABELS, LC_LOCALE, LC_OVERLAY_CLOSING_CLASS, LcButtonComponent, LcFlipDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, isoToLocalDate,
-  lcAnimate, lcCssMs, lcDetachAnimated, lcFlipPlay, lcFlipRead, lcPrefersReducedMotion, lcUniqueId,
+  lcAnimate, lcDetachAnimated, lcFlipPlay, lcFlipRead, lcPrefersReducedMotion, lcUniqueId,
 } from '@lionelcointot/ui-angular';
 import { LcAlertComponent, LcEmptyStateComponent } from '@lionelcointot/ui-angular/feedback';
 import { LcSheetComponent, LcTooltipDirective } from '@lionelcointot/ui-angular/overlay';
@@ -230,14 +230,12 @@ export class LcDataTableComponent<T> {
   private shownFilters: string | null = null;
   /** Les lignes qui apparaissent le font en cascade : à l'ouverture et après un changement de filtre, pas après un tri ou une suppression. */
   private readonly cascading = signal(true);
-  /** La cascade qui suit un changement de filtre a sa courbe (`entrance`). */
+  /** La cascade qui suit un changement de filtre part après `table.refill-delay`, courbe `entrance` (classe du corps). */
   protected readonly refill = signal(false);
-  /** Liste vide pendant `table.refill-delay` après un changement de filtre ; les lignes sont ensuite recréées, aucune n'est conservée. */
+  /** Le temps d'un rendu après un changement de filtre : la liste est vide, puis toutes les lignes sont recréées (aucune n'est conservée ni ne glisse). */
   protected readonly holding = signal(false);
-  private holdTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.holdTimer));
     // Avant le rendu des lignes (les effets de composant précèdent son gabarit) : un changement de filtre vide la liste d'un coup.
     effect(() => {
       if (!this.loaded()) return;
@@ -249,17 +247,15 @@ export class LcDataTableComponent<T> {
         this.shownFilters = filters;
         this.cascading.set(first || changed);
         this.refill.set(changed);
-        const delay = changed && !lcPrefersReducedMotion() ? lcCssMs(getComputedStyle(this.host), '--lc-table-refill-delay') : 0;
-        if (!(delay > 0)) return; // sans délai (réduction de mouvement…) : les lignes se remplacent à la volée
+        if (!changed || lcPrefersReducedMotion()) return; // réduction de mouvement : les lignes se remplacent à la volée, sans animation
         // Le corps est masqué le temps du rendu : les lignes retirées n'ont aucune sortie à jouer (`lcReveal`), la liste est vide d'un coup.
         const body = this.body()?.nativeElement;
-        if (body) {
-          body.hidden = true;
-          afterNextRender(() => (body.hidden = false), { injector: this.injector });
-        }
+        if (body) body.hidden = true;
         this.holding.set(true);
-        clearTimeout(this.holdTimer);
-        this.holdTimer = setTimeout(() => this.holding.set(false), delay);
+        afterNextRender(() => {
+          if (body) body.hidden = false;
+          this.holding.set(false);
+        }, { injector: this.injector });
       });
     });
     effect(() => {

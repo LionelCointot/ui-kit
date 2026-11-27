@@ -104,7 +104,7 @@
           </tr>
         }
       } @else {
-        <!-- Un filtre différent vide la liste le temps de `table.refill-delay`, puis recrée toutes les lignes ; un tri ou une suppression garde celles qui restent, `lcFlip` les fait glisser. -->
+        <!-- Un filtre différent vide la liste le temps d'un rendu, puis recrée toutes les lignes (cascade après `table.refill-delay`) ; un tri ou une suppression garde celles qui restent, `lcFlip` les fait glisser. -->
         @if (!holding()) {
           @for (row of rows(); track trackBy()(row)) {
             <tr [lcReveal]="cascadeIndex($index) === null ? null : ''" [lcRevealIndex]="cascadeIndex($index) ?? undefined">
