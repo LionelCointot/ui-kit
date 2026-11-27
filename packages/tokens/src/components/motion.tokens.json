@@ -150,6 +150,7 @@
     "bar-stagger": { "$value": "117ms", "$type": "duration" },
     "dot-duration": { "$value": "{sys.duration.long}", "$type": "duration" },
     "dot-easing": { "$value": "{sys.easing.pop-strong}", "$type": "cubicBezier" },
+    "dot-scale": { "$value": "0.6", "$type": "number", "$description": "Scale a step bullet pops in from (unitless number)." },
     "dot-delay": { "$value": "{sys.motion.stagger-normal}", "$type": "duration" }
   },
   "flash": {

@@ -19,6 +19,12 @@ class BlankComponent {}
 })
 class NavHostComponent {}
 
+/** Zone visible de l'indicateur : sa boîte (`top`, `height`) rognée en bas par `clip-path` (bord fixe de la boîte : bas de la liste). */
+const visibleZone = (indicator: HTMLElement) => ({
+  top: parseFloat(indicator.style.top),
+  height: parseFloat(indicator.style.height) - parseFloat(/inset\(\S+ \S+ (\S+) /.exec(indicator.style.clipPath)![1]),
+});
+
 describe('LcNavItemComponent', () => {
   it('place aria-current="page" sur le lien actif', async () => {
     TestBed.configureTestingModule({
@@ -72,7 +78,7 @@ describe('LcNavItemComponent : indicateur de la liste', () => {
     await TestBed.inject(Router).navigateByUrl('/credit');
     await fixture.whenStable();
     expect(indicator.classList).not.toContain('lc-nav-list__indicator--hidden');
-    expect((indicator as HTMLElement).style.height).toBe('40px');
+    expect(visibleZone(indicator as HTMLElement).height).toBe(40);
     await TestBed.inject(Router).navigateByUrl('/parametres');
     await fixture.whenStable();
     expect(indicator.classList).toContain('lc-nav-list__indicator--hidden');
@@ -148,10 +154,10 @@ describe('LcNavListComponent : placement de l\'indicateur', () => {
     const { root, indicator, go } = await setup();
     root.querySelector('lc-nav-list')!.scrollTop = 5;
     await go('/parametres');
-    expect(indicator.style.transform).toBe('translateY(35px)');
-    expect(indicator.style.height).toBe('30px');
+    expect(visibleZone(indicator).top).toBe(35);
+    expect(visibleZone(indicator).height).toBe(30);
     await go('/credit');
-    expect(indicator.style.transform).toBe('translateY(75px)');
+    expect(visibleZone(indicator).top).toBe(75);
     expect(indicator.classList).not.toContain('lc-nav-list__indicator--instant');
   });
 
@@ -275,7 +281,7 @@ describe('LcNavItemComponent : entrée active', () => {
     expect(links[0].hasAttribute('aria-current')).toBe(false);
     expect(links[1].classList).toContain('lc-nav-item--active');
     expect(links[1].getAttribute('aria-current')).toBe('page');
-    expect(indicator.style.height).toBe('30px');
+    expect(visibleZone(indicator).height).toBe(30);
     expect(indicator.classList).not.toContain('lc-nav-list__indicator--hidden');
     expect(fixture.nativeElement.querySelectorAll('[aria-current]').length).toBe(1);
     fixture.componentInstance.second.set(false);
@@ -283,7 +289,7 @@ describe('LcNavItemComponent : entrée active', () => {
     await settle();
     expect(links[0].getAttribute('aria-current')).toBe('page');
     expect(links[1].hasAttribute('aria-current')).toBe(false);
-    expect(indicator.style.height).toBe('40px');
+    expect(visibleZone(indicator).height).toBe(40);
     fixture.componentInstance.first.set(false);
     await settle();
     expect(indicator.classList).toContain('lc-nav-list__indicator--hidden');
@@ -369,12 +375,12 @@ describe('LcNavItemComponent : entrée active', () => {
     const { fixture, links, indicator, settle } = await setup();
     fixture.componentInstance.first.set(true);
     await settle();
-    expect(indicator.style.height).toBe('40px');
+    expect(visibleZone(indicator).height).toBe(40);
     fixture.componentInstance.first.set(false);
     fixture.componentInstance.second.set(true);
     await settle();
     expect(indicator.classList).not.toContain('lc-nav-list__indicator--hidden');
-    expect(indicator.style.height).toBe('30px');
+    expect(visibleZone(indicator).height).toBe(30);
     expect(links[1].getAttribute('aria-current')).toBe('page');
   });
 

@@ -214,7 +214,7 @@ class TrackedHostComponent {
 }
 
 describe('LcSegmentedControlComponent indicatorProgress', () => {
-  it('place le fond entre les segments voisins, et le retire quand la progression est nulle', async () => {
+  it('place le fond entre les segments voisins, et le pose sous le segment choisi quand la progression est nulle', async () => {
     vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 100 : 0; });
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent?.includes('B') ? 60 : 100; });
     const fixture = TestBed.createComponent(TrackedHostComponent);
@@ -222,12 +222,12 @@ describe('LcSegmentedControlComponent indicatorProgress', () => {
     const element = fixture.nativeElement as HTMLElement;
     const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
     expect(indicator.getAttribute('aria-hidden')).toBe('true');
-    expect(indicator.style.transform).toBe('translateX(50px)');
-    expect(indicator.style.width).toBe('80px');
+    expect([indicator.style.left, indicator.style.width, /inset\(\S+ (\S+) /.exec(indicator.style.clipPath)?.[1]]).toEqual(['50px', '110px', '30px']);
     expect(element.querySelector('lc-segmented-control')!.classList).toContain('lc-segmented-control--tracked');
     fixture.componentInstance.progress.set(null);
     await fixture.whenStable();
-    expect(element.querySelector('.lc-segmented-control__indicator')).toBeNull();
+    expect(element.querySelector('lc-segmented-control')!.classList).not.toContain('lc-segmented-control--tracked');
+    expect(indicator.style.left).toBe('0px');
     vi.restoreAllMocks();
   });
 });
@@ -252,23 +252,26 @@ describe('LcSegmentedControlComponent fillMode solid', () => {
     const element = fixture.nativeElement as HTMLElement;
     const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
     expect(element.querySelector('lc-segmented-control')!.classList).toContain('lc-segmented-control--solid');
-    expect(indicator.style.transform).toBe('translateX(0px)');
+    expect([indicator.style.left, indicator.style.width]).toEqual(['0px', '160px']);
     expect(indicator.classList).toContain('lc-segmented-control__indicator--instant');
     const icons = () => fixture.debugElement.queryAll(By.directive(LcIconComponent)).map((debug) => debug.componentInstance.name());
     expect(icons()).toEqual(['info', 'check']);
     element.querySelectorAll<HTMLElement>('[role=radio]')[1].click();
     await fixture.whenStable();
-    expect(indicator.style.transform).toBe('translateX(100px)');
-    expect(indicator.style.width).toBe('60px');
+    expect([indicator.style.left, indicator.style.width, indicator.dataset['direction']]).toEqual(['100px', '60px', 'forward']);
     expect(indicator.classList).not.toContain('lc-segmented-control__indicator--instant');
     fixture.componentInstance.value.set(null);
     await fixture.whenStable();
     expect(indicator.hidden).toBe(true);
   });
 
-  it('sans fillMode solid ni suivi, aucune pastille', async () => {
+  it('D-20 : la pastille existe aussi en `outline` (défaut), sous le segment choisi', async () => {
     const fixture = TestBed.createComponent(SegmentedHostComponent);
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.lc-segmented-control__indicator')).toBeNull();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('lc-segmented-control')!.classList).not.toContain('lc-segmented-control--solid');
+    const indicator = element.querySelector<HTMLElement>('.lc-segmented-control__indicator')!;
+    expect(indicator.hidden).toBe(false);
+    expect(indicator.getAttribute('aria-hidden')).toBe('true');
   });
 });

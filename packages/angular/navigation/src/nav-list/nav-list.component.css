@@ -8,31 +8,56 @@
   position: relative;
 }
 
-/* Fond actif glissant : position (`translateY`) et hauteur posées par le composant ; rayon de l'élément. */
+/*
+ * Fond actif à deux bords : la boîte va du bord haut du fond au bas de la liste (`top` et `height` posés par le composant), le bord bas est rogné par
+ * `clip-path`. Le bord avant (vers le bas) prend la durée « avant », l'autre la durée « arrière » décalée ; `data-direction` dit le sens, `forward` par défaut.
+ * Une ombre portée (`--lc-nav-item-indicator-shadow`) est rognée avec la boîte : seule une ombre intérieure reste visible.
+ */
 .lc-nav-list__indicator {
+  --_front: var(--lc-nav-item-indicator-front-duration) var(--lc-nav-item-indicator-front-easing);
+  --_back: var(--lc-nav-item-indicator-back-duration) var(--lc-nav-item-indicator-back-easing) var(--lc-nav-item-indicator-back-delay);
+  --_indicator-radius: var(--lc-nav-item-radius, var(--lc-sys-radius-md));
+
   position: absolute;
   inset-block-start: 0;
   inset-inline: 0;
-  border-radius: var(--lc-nav-item-radius, var(--lc-sys-radius-md));
+  border-radius: var(--_indicator-radius);
   background: var(--lc-nav-item-active-background, var(--lc-sys-color-primary-container));
   box-shadow: var(--lc-nav-item-indicator-shadow);
   pointer-events: none;
 }
 
+/* Masqué (aucun élément actif visible) : sans fondu, ni au premier affichage ni à la réapparition. */
 .lc-nav-list__indicator--hidden {
   opacity: 0;
 }
 
 :host(.lc-nav-list--ready) .lc-nav-list__indicator {
   transition:
-    transform var(--lc-nav-item-indicator-front-duration) var(--lc-nav-item-indicator-front-easing),
-    height var(--lc-nav-item-indicator-front-duration) var(--lc-nav-item-indicator-front-easing),
-    opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-front-easing);
+    top var(--_back),
+    height var(--_back),
+    clip-path var(--_front);
 }
 
-/* Remesure non liée à une sélection, ou réapparition : fondu seul, sans glissement. */
-:host(.lc-nav-list--ready) .lc-nav-list__indicator--instant {
-  transition: opacity var(--lc-sys-duration-fast) var(--lc-nav-item-indicator-front-easing);
+:host(.lc-nav-list--ready) .lc-nav-list__indicator[data-direction='backward'] {
+  transition:
+    top var(--_front),
+    height var(--_front),
+    clip-path var(--_back);
+}
+
+/* Remesure non liée à une sélection, ou réapparition : le fond se pose sans glisser. */
+:host(.lc-nav-list--ready) .lc-nav-list__indicator--instant,
+:host(.lc-nav-list--ready) .lc-nav-list__indicator--instant[data-direction='backward'] {
+  transition: none;
+}
+
+/* Mouvement réduit : le fond saute (aucune transition, donc aucun objet animation, pas même de 0,01 ms). */
+@media (prefers-reduced-motion: reduce) {
+  :host(.lc-nav-list--ready) .lc-nav-list__indicator,
+  :host(.lc-nav-list--ready) .lc-nav-list__indicator[data-direction='backward'] {
+    transition: none;
+  }
 }
 
 @media (forced-colors: active) {

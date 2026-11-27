@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, booleanAttribute, inject, input, signal, untracked, viewChild } from '@angular/core';
+import { lcPlaceIndicator } from '@lionelcointot/ui-angular';
 
 /**
  * Liste de navigation : conteneur d'éléments `a[lcNavItem]`. À placer dans un `<nav>` (par exemple
@@ -58,9 +59,9 @@ export class LcNavListComponent {
       const host = this.host.nativeElement;
       // shortcut: écriture directe dans le DOM, car l'ordre classe `--instant` / position doit être synchrone dans ce rappel ; à lever si l'on passe aux liaisons de signaux.
       indicator.classList.toggle('lc-nav-list__indicator--instant', instant || wasHidden || item === this.placedItem);
-      // `scrollTop` : la position est relative au contenu de la liste, qui peut défiler.
-      indicator.style.transform = `translateY(${box.top - host.getBoundingClientRect().top + host.scrollTop}px)`;
-      indicator.style.height = `${box.height}px`;
+      // `scrollTop` : la position est relative au contenu de la liste, qui peut défiler. Bord fixe de la boîte : bas de la liste (`scrollHeight` compterait l'indicateur lui-même).
+      const start = box.top - host.getBoundingClientRect().top + host.scrollTop;
+      lcPlaceIndicator(indicator, 'y', start, start + box.height, Math.max(start + box.height, host.clientHeight + host.scrollTop));
     }
     this.placedItem = visible ? item : null;
     this.ready.set(true);

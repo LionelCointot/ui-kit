@@ -25,21 +25,27 @@
   border: var(--lc-sys-border-width-thin) solid var(--lc-switch-border, var(--lc-sys-color-border-strong));
   border-radius: var(--lc-sys-radius-full);
   background: var(--lc-switch-track, var(--lc-sys-color-surface-sunken));
-  transition: background-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+  transition:
+    background-color var(--lc-switch-track-duration) var(--lc-sys-easing-standard),
+    border-color var(--lc-switch-track-duration) var(--lc-sys-easing-standard);
 }
 
+/* Le bouton glisse par `translate` (jamais par sa position) : d'un bord de la piste à l'autre, avec le dépassement de la courbe « pop ». */
 .lc-switch__thumb {
+  --_travel: calc(var(--_track-width) - var(--_thumb-size) - 2 * var(--lc-sys-space-1));
+
   position: absolute;
-  inset-block-start: 50%;
+  inset-block: 0;
   inset-inline-start: var(--lc-sys-space-1);
   width: var(--_thumb-size);
   height: var(--_thumb-size);
+  margin-block: auto;
   border-radius: var(--lc-sys-radius-full);
   background: var(--lc-sys-color-on-surface-muted);
-  transform: translateY(-50%);
+  translate: 0;
   transition:
-    inset-inline-start var(--lc-sys-duration-normal) var(--lc-sys-easing-standard),
-    background-color var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+    translate var(--lc-switch-duration) var(--lc-switch-easing),
+    background-color var(--lc-switch-track-duration) var(--lc-sys-easing-standard);
 }
 
 /* Coché : le pouce change de position (information portée par la forme, pas seulement par la couleur). */
@@ -49,8 +55,20 @@
 }
 
 :host(.lc-switch--checked) .lc-switch__thumb {
-  inset-inline-start: calc(100% - var(--_thumb-size) - var(--lc-sys-space-1));
+  translate: var(--_travel);
   background: var(--lc-sys-color-on-primary);
+}
+
+:host(.lc-switch--checked:dir(rtl)) .lc-switch__thumb {
+  translate: calc(-1 * var(--_travel));
+}
+
+/* Mouvement réduit : tout saute (aucune transition, donc aucun objet animation, pas même de 0,01 ms). */
+@media (prefers-reduced-motion: reduce) {
+  .lc-switch__track,
+  .lc-switch__thumb {
+    transition: none;
+  }
 }
 
 :host(:focus-visible) {
