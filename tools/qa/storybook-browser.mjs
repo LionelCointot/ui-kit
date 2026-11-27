@@ -1322,8 +1322,10 @@ async function animationStoryIds() {
  *  CA-3 (mouvement réduit : durées et délais ≤ 0,01 ms, rien en cours), CA-5 (propriétés animées), CA-31 (aucun défilement horizontal à 360 px à 0, 50 et 100 %). */
 const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate', 'strokeDashoffset']);
 const CA5_INDICATORS = '.lc-tabs__indicator, .lc-nav-list__indicator, .lc-segmented-control__indicator, .lc-switch__thumb';
-/** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même)]. Tout le reste est un écart. */
+const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, lc-date-input *, lc-date-range-input *';
+/** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même), 'transition' : transitions seulement]. Tout le reste est un écart. */
 const CA5_ALLOW = [
+  [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
   [['color'], '[lcflash]'], // lcFlash : sélecteur à confirmer quand T5 aura écrit la directive
   [['gridTemplateRows'], '.lc-disclosure__region, .lc-nav-group__items'],
   [['inlineSize'], '.lc-shell__nav'], // barre latérale de lc-app-shell
@@ -1363,7 +1365,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           const target = a.effect.target;
           const pseudo = a.effect.pseudoElement ?? '';
           const props = [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !skip.has(k)))];
-          const listed = props.filter((p) => allow.some(([names, selector, pseudoPrefix]) => names.includes(p) && target.matches(selector) && (pseudoPrefix === undefined ? !pseudo : pseudo.startsWith(pseudoPrefix))));
+          const listed = props.filter((p) => allow.some(([names, selector, pseudoPrefix, only]) => names.includes(p) && target.matches(selector) && (pseudoPrefix === undefined ? !pseudo : pseudo.startsWith(pseudoPrefix)) && (only === undefined || only === kind(a))));
           return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
         let lastNew = performance.now();
