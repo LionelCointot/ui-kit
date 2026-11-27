@@ -54,7 +54,7 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
 
 describe('@keyframes, .animate( et getAnimations hors des emplacements autorisés (CA-7, CA-5 d\'architecture)', () => {
   const ALLOWED_DIRS = ['src/lib/motion/', 'styles/motion.css'];
-  /** Liste blanche écrite : composants existants avant T3, avec la raison et la tâche qui les migre (une entrée en trop ne fait jamais échouer le test). Toute autre occurrence est un échec. */
+  /** Liste blanche écrite, réduite aux exceptions justifiées (boucles de chargement, bandes indéterminées, défilement du texte tronqué : pas des entrées ni des sorties). Stricte : une entrée sans occurrence fait échouer le test. */
   const KEYFRAMES = {
     'src/lib/skeleton/skeleton.component.css': ['lc-skeleton-pulse'], // boucle de chargement, hors périmètre des primitives
     'src/lib/spinner/spinner.component.css': ['lc-spinner-spin', 'lc-spinner-pulse'], // boucle de chargement
@@ -63,9 +63,9 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
     'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // bande indéterminée, rotation d'envoi et secousse de refus, gardées (la barre de progression passe par lcFill)
     'forms/src/file-upload/file-upload.component.css': ['lc-file-upload-slide'], // bande indéterminée, gardée
     'data/src/data-table/column-filter.component.css': ['lc-column-filter-spin'], // indicateur de chargement
-    'styles/ui-angular.css': ['lc-truncate-scroll'], // truncate : T12 (dialogue et tiroir migrés par T9a ; pops d'ancrage et calendrier migrés par T9c)
+    'styles/ui-angular.css': ['lc-truncate-scroll'], // défilement du texte tronqué au survol (T12)
   };
-  const WAAPI = {}; // data-table et message-thread (migrés par T7) n'y figurent plus : leurs animations passent par lib/motion/
+  const WAAPI = {}; // aucune exception : toute animation WAAPI passe par lib/motion/ (lcAnimate)
 
   test('aucun @keyframes hors lib/motion/, motion.css et la liste blanche', () => {
     const offenders = [];
@@ -77,6 +77,17 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
       }
     }
     assert.deepEqual(offenders, []);
+  });
+
+  test('liste blanche stricte : chaque @keyframes listé existe encore dans son fichier', () => {
+    const stale = [];
+    for (const [where, names] of Object.entries(KEYFRAMES)) {
+      const file = join(angular, where);
+      const css = existsSync(file) ? strip(read(file)) : '';
+      for (const name of names) if (!new RegExp(`@keyframes\\s+${name}\\b`).test(css)) stale.push(`${where} : ${name}`);
+    }
+    assert.deepEqual(stale, [], 'entrée sans occurrence : la retirer de la liste blanche');
+    assert.deepEqual(Object.keys(WAAPI).filter((where) => !existsSync(join(angular, where)) || !/\.animate\(|getAnimations/.test(strip(read(join(angular, where))))), []);
   });
 
   test('aucun .animate( ni getAnimations hors lib/motion/ et la liste blanche', () => {
