@@ -14,6 +14,19 @@ export class LcStaggerBatch {
   }
 }
 
+/** Lots des jauges : un par élément parent, distinct de celui des cartes (une jauge ne consomme jamais un rang de carte). */
+const GAUGE_BATCHES = new WeakMap<Element, LcStaggerBatch>();
+
+/**
+ * Rang d'arrivée d'une jauge parmi ses sœurs, c'est-à-dire parmi les jauges créées dans le même rendu sous `parent` ; 0 sans parent.
+ *
+ * @internal Réservé aux points d'entrée du kit.
+ */
+export function lcGaugeArrival(parent: Element | null | undefined): number {
+  if (!parent) return 0;
+  return (GAUGE_BATCHES.get(parent) ?? GAUGE_BATCHES.set(parent, new LcStaggerBatch()).get(parent)!).next(Infinity);
+}
+
 /** Décalage total maximal d'un lot d'arrivées. */
 const MAX_STAGGER_MS = 300;
 

@@ -21,7 +21,7 @@ describe('lcFillIndex : décalage d\'entrée', () => {
     fixture.detectChanges();
     const a = fixture.nativeElement.querySelector('#a') as HTMLElement;
     expect(rank(a)).toBe('3');
-    expect(rank(fixture.nativeElement.querySelector('#b'))).toBe('');
+    expect(rank(fixture.nativeElement.querySelector('#b'))).toBe('1');
     a.dispatchEvent(new TransitionEvent('transitionend', { propertyName: 'opacity' }));
     fixture.detectChanges();
     expect(rank(a)).toBe('3');

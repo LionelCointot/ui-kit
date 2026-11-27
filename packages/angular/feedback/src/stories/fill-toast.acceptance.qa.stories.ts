@@ -15,9 +15,9 @@ import { LcProgressBarComponent, LcToastOutletComponent, LcToastService } from '
   imports: [LcProgressBarComponent, LcTimelineBarComponent, LcFileUploadComponent, LcMessageComposerComponent, LcButtonComponent, LcToastOutletComponent],
   template: `
     <div style="display:grid;gap:var(--lc-sys-space-3)">
-      <lc-progress-bar id="qa-bar-0" [value]="80" [rank]="0" label="Barre 0" />
-      <lc-progress-bar id="qa-bar-1" [value]="50" [rank]="1" label="Barre 1" />
-      <lc-progress-bar id="qa-bar-2" [value]="20" [rank]="2" label="Barre 2" />
+      <lc-progress-bar id="qa-bar-0" [value]="80" label="Barre 0" />
+      <lc-progress-bar id="qa-bar-1" [value]="50" label="Barre 1" />
+      <lc-progress-bar id="qa-bar-2" [value]="20" label="Barre 2" />
       <lc-progress-bar id="qa-bar-indeterminate" [value]="null" label="Indéterminée" />
       <lc-timeline-bar id="qa-timeline" [segments]="segments" description="Deux phases." />
       <lc-file-upload id="qa-upload" [items]="items" ariaLabel="Pièces jointes" />

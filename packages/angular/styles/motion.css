@@ -55,9 +55,8 @@
 /*
  * Couches de l'entrée d'une page : tant que `lc-page` porte `.lc-page--entering` (le temps de `page.layer-window`), chaque type de composant part après le délai de sa couche.
  * La classe disparaît ensuite : une ligne ajoutée, un filtre ou une mise à jour n'ont plus aucun délai. Sous mouvement réduit les variables restent indéfinies (délai nul).
- * Un composant déclare sa couche par `--lc-layer: var(--lc-layer-<couche>)` sur l'élément qui porte `lcReveal` ; les jauges (`lcFill`, `lcDraw`) lisent `--lc-layer-gauges` dans leur `transition-delay` :
- * `calc(var(--lc-layer-gauges, 0ms) + min(var(--lc-reveal-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-stagger-pace, var(--lc-sys-motion-stagger-normal)))`,
- * à condition que la directive pose elle-même `--lc-reveal-rank` sur l'élément (comme `lcReveal`, rang pris auprès de `LcStaggerBatch`), faute de quoi le rang d'une carte parente serait hérité.
+ * Un composant déclare sa couche par `--lc-layer: var(--lc-layer-<couche>)` sur l'élément qui porte `lcReveal` ; les jauges (`lcFill`, `lcDraw`) lisent `--lc-layer-gauges` dans leur `transition-delay`,
+ * `lcFill` y ajoute `min(--lc-fill-rank, plafond) × stagger-normal` : rang posé par la directive elle-même (lot de jauges par élément parent, jamais un rang de carte).
  */
 @property --lc-layer {
   syntax: '<time>';
@@ -141,7 +140,7 @@
 
 /* Cartes d'indicateurs : l'inclinaison alterne entre frères voisins. */
 .lc-reveal--tilt {
-  --lc-reveal-pace: var(--lc-sys-motion-stagger-cards);
+  --lc-reveal-pace: var(--lc-reveal-tilt-pace);
   --lc-layer: var(--lc-layer-kpi);
   --lc-reveal-time: var(--lc-reveal-tilt-duration);
   --lc-reveal-curve: var(--lc-sys-easing-pop);
@@ -198,7 +197,7 @@
   transform-origin: left;
   /* Réutilisable par un composant qui a d'autres transitions : `transition: …, var(--lc-fill-transition)`. Décalage = rang d'entrée (lcFillIndex). */
   --lc-fill-transition: scale var(--lc-sys-duration-fill) var(--lc-sys-easing-fill)
-    calc(min(var(--lc-fill-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-sys-motion-stagger-normal));
+    calc(var(--lc-layer-gauges, 0ms) + min(var(--lc-fill-rank, 0), var(--lc-sys-motion-stagger-cap)) * var(--lc-sys-motion-stagger-normal));
   transition: var(--lc-fill-transition);
 }
 
@@ -210,7 +209,7 @@
 .lc-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: calc((1 - var(--lc-progress)) * 1px);
-  transition: stroke-dashoffset var(--lc-sys-duration-draw) var(--lc-sys-easing-draw);
+  transition: stroke-dashoffset var(--lc-sys-duration-draw) var(--lc-sys-easing-draw) var(--lc-layer-gauges, 0ms);
 }
 
 @starting-style {
