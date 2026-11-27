@@ -151,6 +151,8 @@
   }
 
   .lc-shell__title--shown {
+    /* Visible, le titre garde de quoi montrer quelques caractères et l'ellipse, même devant un contenu projeté large. */
+    min-inline-size: var(--lc-sys-space-12);
     opacity: 1;
   }
 
