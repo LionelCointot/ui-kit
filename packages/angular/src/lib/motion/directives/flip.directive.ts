@@ -2,9 +2,9 @@ import { DestroyRef, Directive, ElementRef, OnChanges, afterNextRender, afterRen
 import { lcFlipPlay, lcFlipRead } from '../runtime/flip';
 
 /**
- * Fait glisser les enfants directs d'un conteneur quand la liste qu'il affiche change (tri, filtre, suppression) : chaque élément conservé va de son ancienne place à la nouvelle
+ * Fait glisser les enfants directs d'un conteneur (listes verticales : lignes, éléments empilés ; pas de grille) quand la liste qu'il affiche change (tri, filtre, suppression) : chaque élément conservé va de son ancienne place à la nouvelle
  * (`transform`, tokens `--lc-list-move-*`) ; les ajoutés entrent par `lcReveal`, les retirés sortent par leur propre sortie. Les enfants `[data-leaving]` ou `.lc-leave` sont ignorés ;
- * quand un élément sortant est enfin retiré, les suivants glissent à leur tour.
+ * quand un sortant est enfin retiré (retrait différé, vu par un `MutationObserver`), les suivants glissent.
  *
  * Passer à `lcFlip` la liste **immuable** que parcourt le `@for` (une nouvelle référence à chaque changement : une liste modifiée en place n'est pas détectée), et un `track` stable.
  * Rien ne bouge sous « mouvement réduit ».
@@ -20,6 +20,7 @@ export class LcFlipDirective implements OnChanges {
   private settled = new Map<Element, number>();
   private playing: Animation[] = [];
   private observer: MutationObserver | undefined;
+  private destroyed = false;
 
   constructor() {
     afterRenderEffect(() => {
@@ -32,13 +33,17 @@ export class LcFlipDirective implements OnChanges {
         if (!records.some((record) => record.removedNodes.length)) return;
         // shortcut: un retrait pendant un glissement attend la fin de celui-ci (une seule lecture par lot) ; les suivants sautent puis glissent de leur place d'avant.
         void Promise.allSettled(this.playing.map((animation) => animation.finished)).then(() => {
+          if (this.destroyed) return;
           this.before ??= this.settled;
           this.flip();
         });
       });
       this.observer.observe(this.host, { childList: true });
     });
-    inject(DestroyRef).onDestroy(() => this.observer?.disconnect());
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+      this.observer?.disconnect();
+    });
   }
 
   ngOnChanges(): void {

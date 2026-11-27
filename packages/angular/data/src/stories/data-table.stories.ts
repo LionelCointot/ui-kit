@@ -301,6 +301,7 @@ class FollowerDemoComponent {
     const bar = this.first().nativeElement;
     this.start = start;
     place(bar, start);
+    // shortcut: ressort de 450 ms rendu image par image (easing linear), aucun token de durée ne vaut 450 ms ; à passer à lcAnimate si un token de ressort apparaît.
     if (!lcPrefersReducedMotion()) bar.animate(springFrames(), { duration: 450, easing: 'linear' });
     const follower = this.second().nativeElement;
     const before = follower.getBoundingClientRect().left;

@@ -1,8 +1,10 @@
 import { lcAnimate } from './animate';
 import { lcPrefersReducedMotion } from './reduced-motion';
 
-/** Écart minimal (px) à partir duquel un élément est considéré déplacé. */
-const THRESHOLD_PX = 0.5;
+/** Écart minimal (px) à partir duquel un élément est considéré déplacé.
+ *
+ * @internal Réservé aux points d'entrée du kit. */
+export const FLIP_THRESHOLD_PX = 0.5;
 
 /**
  * Position verticale (haut) de chaque élément, toutes lues d'un lot (aucune écriture entre deux lectures).
@@ -27,7 +29,7 @@ export function lcFlipPlay(before: ReadonlyMap<Element, number>, after: Readonly
   const played: Animation[] = [];
   for (const [element, top] of after) {
     const from = before.get(element);
-    if (from === undefined || Math.abs(from - top) < THRESHOLD_PX) continue;
+    if (from === undefined || Math.abs(from - top) < FLIP_THRESHOLD_PX) continue;
     played.push(lcAnimate(element, [{ transform: `translateY(${from - top}px)` }, { transform: 'none' }], { duration: '--lc-list-move-duration', easing: '--lc-list-move-easing' }));
   }
   return played;

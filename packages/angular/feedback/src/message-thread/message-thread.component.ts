@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import { LC_LABELS, LC_LOCALE, LcAvatarComponent, LcIconComponent, isSafePreviewUrl, lcAnimate, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars, staggerDelay } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_LOCALE, LcAvatarComponent, FLIP_THRESHOLD_PX, LcIconComponent, isSafePreviewUrl, lcAnimate, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars, staggerDelay } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
 import { LC_STATUS_ICONS } from '../status-icons';
@@ -61,7 +61,6 @@ function toView(item: LcThreadItem): ThreadView {
   };
 }
 
-const MOVE_THRESHOLD_PX = 0.5;
 /** Éléments qui glissent quand un message arrive. */
 const MOVING = '.lc-message-thread__message, .lc-message-thread__header, .lc-message-thread__avatar, .lc-message-thread__day, .lc-message-thread__system';
 const ENTERING = '[data-message-id], .lc-message-thread__system';
@@ -263,7 +262,7 @@ export class LcMessageThreadComponent {
       for (const [el, bottom] of before.bottoms) {
         if (!el.isConnected || bottom < top || !el.matches('.lc-message-thread__message')) continue;
         const shift = el.getBoundingClientRect().bottom - bottom;
-        if (Math.abs(shift) < MOVE_THRESHOLD_PX) break;
+        if (Math.abs(shift) < FLIP_THRESHOLD_PX) break;
         if (scrolls) log.scrollTop += shift;
         else window.scrollBy(0, shift);
         break;
@@ -277,8 +276,8 @@ export class LcMessageThreadComponent {
     if (lcPrefersReducedMotion()) return;
     for (const [el, bottom] of before) {
       const delta = bottom - (el.isConnected ? el.getBoundingClientRect().bottom : bottom);
-      if (Math.abs(delta) >= MOVE_THRESHOLD_PX) {
-        this.glides.set(el, lcAnimate(el, [{ translate: `0px ${delta}px` }, { translate: '0px 0px' }], { duration: '--lc-list-move-duration', easing: '--lc-list-move-easing' }));
+      if (Math.abs(delta) >= FLIP_THRESHOLD_PX) {
+        this.glides.set(el, lcAnimate(el, [{ transform: `translateY(${delta}px)` }, { transform: 'none' }], { duration: '--lc-list-move-duration', easing: '--lc-list-move-easing' }));
       }
     }
     const stagger = lcCssMs(getComputedStyle(this.host), '--lc-message-thread-enter-stagger') || 0;

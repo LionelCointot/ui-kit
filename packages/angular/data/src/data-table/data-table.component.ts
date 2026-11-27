@@ -249,6 +249,7 @@ export class LcDataTableComponent<T> {
         this.refill.set(changed);
         if (!changed || lcPrefersReducedMotion()) return; // réduction de mouvement : les lignes se remplacent à la volée, sans animation
         // Le corps est masqué le temps du rendu : les lignes retirées n'ont aucune sortie à jouer (`lcReveal`), la liste est vide d'un coup.
+        // shortcut: sortie évitée par un ancêtre [hidden] (voir lcReveal) ; à remplacer si lcReveal gagne une option d'interruption.
         const body = this.body()?.nativeElement;
         if (body) body.hidden = true;
         this.holding.set(true);
