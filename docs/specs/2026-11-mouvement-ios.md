@@ -1,5 +1,7 @@
 # Spec : ressenti iOS (feuille de filtres du téléphone, hauteurs et sorties animées)
 
+> **Remplacée par [2026-12-mouvement-v2](2026-12-mouvement-v2.md)** (refonte du mouvement du kit sur le modèle de Talmo). Ce document garde l'historique de la première version ; en cas d'écart, la v2 fait foi (valeurs, tokens, composants).
+
 - **Statut** : Implémentée (2026-11-21)
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-21
