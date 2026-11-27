@@ -29,10 +29,15 @@ describe('LcSheetComponent', () => {
     await fixture.whenStable();
     await fixture.whenStable();
   };
-  /** Simule une animation finie en cours sur le dialogue ; `finish()` la termine. */
+  /** Animation simulée : le glissement ne se termine que par `finish()` ; chaque appel d'`animate` du dialogue est consigné dans `slides`. */
+  let slides: { keyframes: Keyframe[]; options: KeyframeAnimationOptions; cancel: ReturnType<typeof vi.fn> }[];
   const animate = () => {
     const finished = new Promise<void>((resolve) => (finish = resolve));
-    dialog.getAnimations = (() => [{ finished }]) as unknown as typeof dialog.getAnimations;
+    dialog.animate = vi.fn((keyframes: Keyframe[], options: KeyframeAnimationOptions) => {
+      const cancel = vi.fn();
+      slides.push({ keyframes, options, cancel });
+      return { finished, cancel };
+    }) as unknown as typeof dialog.animate;
   };
 
   beforeEach(async () => {
@@ -41,6 +46,9 @@ describe('LcSheetComponent', () => {
     dialog = fixture.nativeElement.querySelector('dialog');
     dialog.showModal = vi.fn(() => dialog.setAttribute('open', ''));
     dialog.close = vi.fn(() => dialog.removeAttribute('open'));
+    Object.defineProperty(dialog, 'offsetHeight', { value: 800, configurable: true });
+    slides = [];
+    animate();
     await stable();
   });
 
@@ -60,6 +68,15 @@ describe('LcSheetComponent', () => {
     expect(dialog.querySelector('.lc-sheet__close')!.getAttribute('aria-label')).toBe('Fermer sans appliquer');
     expect(dialog.querySelector('.lc-sheet__footer #footer')).not.toBeNull();
     expect(dialog.querySelector('.lc-sheet__handle')!.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('ouverture : la feuille monte de toute sa hauteur sur le dialogue lui-même, puis le voile apparaît en fondu', async () => {
+    await openSheet();
+    expect(slides).toHaveLength(2);
+    expect(slides[0].keyframes).toEqual([{ translate: '0 800px' }, { translate: '0 0' }]);
+    expect(slides[0].options.pseudoElement).toBeUndefined();
+    expect(slides[1].keyframes).toEqual([{ opacity: 0 }, { opacity: 1 }]);
+    expect(slides[1].options.pseudoElement).toBe('::backdrop');
   });
 
   it('closeText : bouton texte en tête de l\'en-tête, avant le titre, nommé par son texte, autofocus, ferme ; sans closeText la croix reste', async () => {
@@ -83,6 +100,7 @@ describe('LcSheetComponent', () => {
     dialog.querySelector<HTMLButtonElement>('.lc-sheet__close')!.click();
     await stable();
     expect(host.open()).toBe(false);
+    expect(slides.at(-1)!.keyframes.at(-1)).toEqual({ translate: '0 800px' });
     expect(dialog.hasAttribute('data-closing')).toBe(true);
     expect(dialog.close).not.toHaveBeenCalled();
     expect(host.closed).not.toHaveBeenCalled();
@@ -121,6 +139,7 @@ describe('LcSheetComponent', () => {
     host.open.set(true);
     await stable();
     expect(dialog.hasAttribute('data-closing')).toBe(false);
+    expect(slides.at(-2)!.cancel).toHaveBeenCalled(); // la sortie est annulée, l'ouverture repart de la position courante
     finish();
     await stable();
     expect(dialog.close).not.toHaveBeenCalled();
@@ -263,35 +282,51 @@ describe('LcSheetComponent', () => {
 
     beforeEach(async () => {
       await openSheet();
-      Object.defineProperty(dialog, 'offsetHeight', { value: 800 });
       zone().setPointerCapture = vi.fn();
       vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callback(0); return 0; });
       vi.stubGlobal('cancelAnimationFrame', vi.fn());
     });
 
-    it('suit le doigt sans élastique vers le haut, puis ferme au-delà du quart de la hauteur sans rien émettre d\'autre', async () => {
+    it('suit le doigt (quasi rigide vers le haut), voile = 1 − distance / hauteur, puis ferme au-delà du tiers de la hauteur', async () => {
       zone().dispatchEvent(pointer('pointerdown', 100, 0));
       expect(dialog.hasAttribute('data-dragging')).toBe(true);
-      zone().dispatchEvent(pointer('pointermove', 60, 10));
-      expect(dialog.style.transform).toBe('translateY(0px)');
-      zone().dispatchEvent(pointer('pointermove', 350, 400));
-      expect(dialog.style.transform).toBe('translateY(250px)');
+      zone().dispatchEvent(pointer('pointermove', -60, 10)); // 160 px vers le haut
+      expect(Math.abs(parseFloat(dialog.style.translate.split(' ')[1]))).toBeLessThan(1);
+      expect(dialog.style.getPropertyValue('--lc-sheet-progress')).toBe('0');
+      zone().dispatchEvent(pointer('pointermove', 300, 400)); // 200 px vers le bas : 25 %
+      expect(dialog.style.translate).toBe('0 200px');
+      expect(parseFloat(dialog.style.getPropertyValue('--lc-sheet-progress'))).toBeCloseTo(0.25);
+      zone().dispatchEvent(pointer('pointermove', 400, 600)); // 300 px : 37,5 %
       animate();
-      zone().dispatchEvent(pointer('pointerup', 350, 800));
+      zone().dispatchEvent(pointer('pointerup', 400, 1200));
       await stable();
       expect(dialog.hasAttribute('data-dragging')).toBe(false);
       expect(dialog.hasAttribute('data-closing')).toBe(true);
-      expect(dialog.style.transform).toBe('');
       expect(host.open()).toBe(false);
+      expect(slides.at(-1)!.keyframes[0]).toEqual({ translate: '0 300px' }); // la sortie part de la position du doigt
+      expect(dialog.style.translate).toBe('');
     });
 
-    it('relâché sous le seuil et lentement : retour à sa place, reste ouverte', async () => {
+    it('relâché sous le tiers et lentement : retour en ressort depuis la position tirée, reste ouverte', async () => {
       zone().dispatchEvent(pointer('pointerdown', 100, 0));
-      zone().dispatchEvent(pointer('pointermove', 150, 500));
-      zone().dispatchEvent(pointer('pointerup', 150, 1000));
+      zone().dispatchEvent(pointer('pointermove', 340, 500)); // 240 px : 30 %
+      animate();
+      zone().dispatchEvent(pointer('pointerup', 340, 1000));
       await stable();
-      expect(dialog.style.transform).toBe('');
-      expect(dialog.hasAttribute('data-returning')).toBe(true);
+      expect(dialog.style.translate).toBe('');
+      expect(slides.at(-1)!.keyframes).toEqual([{ translate: '0 240px' }, { translate: '0 0' }]);
+      expect(host.open()).toBe(true);
+    });
+
+    it('retour sous mouvement réduit : immédiat, aucune animation', async () => {
+      vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(prefers-reduced-motion: reduce)' }));
+      zone().dispatchEvent(pointer('pointerdown', 100, 0));
+      zone().dispatchEvent(pointer('pointermove', 340, 500));
+      animate();
+      zone().dispatchEvent(pointer('pointerup', 340, 1000));
+      await stable();
+      expect(dialog.style.translate).toBe('');
+      expect(dialog.animate).not.toHaveBeenCalled();
       expect(host.open()).toBe(true);
     });
 
@@ -307,7 +342,7 @@ describe('LcSheetComponent', () => {
       zone().dispatchEvent(pointer('pointermove', 500, 50));
       zone().dispatchEvent(new Event('pointercancel', { bubbles: true }));
       await stable();
-      expect(dialog.style.transform).toBe('');
+      expect(dialog.style.translate).toBe('');
       expect(dialog.hasAttribute('data-dragging')).toBe(false);
       expect(host.open()).toBe(true);
       expect(host.closed).not.toHaveBeenCalled();

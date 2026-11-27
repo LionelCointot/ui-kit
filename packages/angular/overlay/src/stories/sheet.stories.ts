@@ -81,7 +81,7 @@ export const Playground: Story = {
     template: `
       <button lcButton type="button" (click)="shown.set(true)">Ouvrir la feuille</button>
       <lc-sheet [(open)]="shown" [title]="title" [closeLabel]="closeLabel" [closeText]="closeText || undefined">
-        @for (line of lines; track line) {
+        @for (line of lines; track $index) {
           <p style="margin:var(--lc-sys-space-3) var(--lc-sys-space-4)">{{ line }}</p>
         }
         <button lcSheetFooter lcButton type="button" fillMode="outline" themeColor="neutral" (click)="shown.set(false)">Annuler</button>
@@ -109,13 +109,20 @@ export class ExampleComponent {
   protected readonly shown = signal(false);
 }`;
 
-/** On a phone the sheet rises in 500 ms and goes down in 200 ms, and follows a finger pulling its handle; on a wide screen it is a card that rises and fades. "Rejouer" reopens it. */
+/** On a phone the sheet rises in 600 ms and goes down in 300 ms, follows a finger pulling its handle (the backdrop follows too) and springs back if released early; on a wide screen it is a card that rises and fades. "Rejouer" reopens it. Two more sheets: one as tall as its content (d54), one with long content capped at its maximum height (d55). */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   render: () => {
     const shown = signal(false);
+    const auto = signal(false);
+    const long = signal(false);
     return {
-      props: { shown, ...replayable({ reset: () => shown.set(false), play: () => shown.set(true) }) },
+      props: {
+        shown, auto, long, ...replayable({ reset: () => shown.set(false), play: () => shown.set(true) }),
+        d54: replayable({ reset: () => auto.set(false), play: () => auto.set(true) }),
+        d55: replayable({ reset: () => long.set(false), play: () => long.set(true) }),
+        lines: [...LINES, ...LINES],
+      },
       template: `
         <lc-story-motion-notice />
         <div #root>
@@ -127,7 +134,25 @@ export const Animation: Story = {
             </lc-sheet>
           }
         </div>
-        <lc-sheet-confirm-demo />`,
+        <lc-sheet-confirm-demo />
+        <div #root54 data-demo="d54">
+          <button lcButton fillMode="outline" size="small" (click)="d54.replay(root54)">Rejouer</button>
+          @for (key of d54.keys(); track key) {
+            <lc-sheet [(open)]="auto" title="Filtres de la journée">
+              <div style="block-size:222px;padding:var(--lc-sys-space-3) var(--lc-sys-space-4)">Feuille à la hauteur de son contenu (300 px) : tirez la poignée vers le bas, de moins d'un tiers pour la voir revenir en ressort.</div>
+            </lc-sheet>
+          }
+        </div>
+        <div #root55 data-demo="d55" style="--lc-sheet-max-height:662.4px">
+          <button lcButton fillMode="outline" size="small" (click)="d55.replay(root55)">Rejouer</button>
+          @for (key of d55.keys(); track key) {
+            <lc-sheet [(open)]="long" title="Détail de la séance">
+              @for (line of lines; track $index) {
+                <p style="margin:var(--lc-sys-space-3) var(--lc-sys-space-4)">{{ line }}</p>
+              }
+            </lc-sheet>
+          }
+        </div>`,
     };
   },
 };

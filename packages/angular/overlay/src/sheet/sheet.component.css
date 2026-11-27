@@ -2,19 +2,20 @@ lc-sheet {
   display: contents;
 }
 
+/* Feuille du bas : ancrée en bas, de la hauteur de son contenu jusqu'à `--lc-sheet-max-height`. Le glissement (ouverture, fermeture, retour) est joué par le composant (Web Animations). */
 .lc-sheet__dialog {
   box-sizing: border-box;
   inline-size: 100%;
   max-inline-size: none;
-  block-size: calc(100dvh - var(--lc-sheet-top-gap, var(--lc-sys-space-10)) - env(safe-area-inset-top));
-  max-block-size: none;
+  block-size: fit-content; /* `auto` s'étire : un dialogue modal a inset-block: 0 */
+  max-block-size: var(--lc-sheet-max-height);
   margin: auto 0 0;
   padding: 0;
   overflow: hidden;
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
   border-block-end: 0;
-  border-start-start-radius: var(--lc-sheet-radius, var(--lc-sys-radius-lg));
-  border-start-end-radius: var(--lc-sheet-radius, var(--lc-sys-radius-lg));
+  border-start-start-radius: var(--lc-sheet-top-radius);
+  border-start-end-radius: var(--lc-sheet-top-radius);
   background: var(--lc-sys-color-background);
   color: var(--lc-sys-color-on-surface);
   font-family: var(--lc-sys-font-family-base);
@@ -27,46 +28,18 @@ lc-sheet {
 .lc-sheet__dialog[open] {
   display: flex;
   flex-direction: column;
-  transition: transform var(--lc-slide-enter-duration, var(--lc-sys-duration-move)) var(--lc-overlay-easing);
 }
 
-/* Entrée : la feuille monte du bas (@starting-style joue à l'ouverture du dialogue). */
-@starting-style {
-  .lc-sheet__dialog[open] {
-    transform: translateY(100%);
-  }
-}
-
-/* Sortie : `data-closing` (posé avant `close()`) la fait descendre ; retour d'un tirage trop court : même durée. */
-.lc-sheet__dialog[open][data-closing] {
-  transform: translateY(100%);
-  transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
-}
-
-.lc-sheet__dialog[open][data-returning] {
-  transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
-}
-
-/* Pendant le tirage, la feuille suit le doigt (transform écrit en ligne) sans transition. */
-.lc-sheet__dialog[open][data-dragging] {
-  transition: none;
-}
-
+/* Voile : il suit le geste (`--lc-sheet-progress` écrit en ligne, hérité par le fond) ; fondu d'ouverture joué par le composant, transition au retour et à la fermeture. */
 .lc-sheet__dialog::backdrop {
   background: var(--lc-sys-color-backdrop);
   opacity: calc(1 - var(--lc-sheet-progress, 0));
   transition: opacity var(--lc-overlay-enter-duration) var(--lc-overlay-easing);
 }
 
-@starting-style {
-  .lc-sheet__dialog[open]::backdrop {
-    opacity: 0;
-  }
-}
-
 .lc-sheet__dialog[data-closing]::backdrop {
   opacity: 0;
-  transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
+  transition-duration: var(--lc-sheet-exit-duration);
 }
 
 .lc-sheet__dialog[data-dragging]::backdrop {
@@ -151,7 +124,7 @@ lc-sheet {
   display: none;
 }
 
-/* Grand écran : carte centrée (fiche d'iPad), sans poignée ni geste ; entrée et sortie en translation et fondu. */
+/* Grand écran : carte centrée (fiche d'iPad), sans poignée ni geste ; entrée et sortie en translation et fondu (jouées par le composant). */
 @media (min-width: 48em) {
   .lc-sheet__dialog {
     inline-size: min(var(--lc-sheet-card-width), 100% - 2 * var(--lc-sys-space-6));
@@ -163,20 +136,8 @@ lc-sheet {
     box-shadow: var(--lc-sys-shadow-3);
   }
 
-  .lc-sheet__dialog[open] {
-    transition-property: transform, opacity;
-  }
-
-  @starting-style {
-    .lc-sheet__dialog[open] {
-      transform: translateY(50dvh);
-      opacity: 0;
-    }
-  }
-
-  .lc-sheet__dialog[open][data-closing] {
-    transform: translateY(50dvh);
-    opacity: 0;
+  .lc-sheet__dialog[data-closing]::backdrop {
+    transition-duration: var(--lc-slide-exit-duration, var(--lc-sys-duration-normal));
   }
 
   .lc-sheet__grip {
@@ -189,9 +150,6 @@ lc-sheet {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lc-sheet__dialog[open],
-  .lc-sheet__dialog[open][data-closing],
-  .lc-sheet__dialog[open][data-returning],
   .lc-sheet__dialog::backdrop,
   .lc-sheet__dialog[data-closing]::backdrop {
     transition: none;

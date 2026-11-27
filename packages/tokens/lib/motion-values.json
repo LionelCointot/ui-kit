@@ -162,7 +162,7 @@
   { "demo": "d54", "valeur": "92dvh", "token": "--lc-sheet-max-height" },
   { "demo": "d54", "valeur": "24px", "token": "--lc-sheet-top-radius" },
   { "demo": "d55", "valeur": "500ms", "token": "--lc-sheet-spring-duration" },
-  { "demo": "d55", "valeur": "cubic-bezier(0.34, 1.7, 0.64, 1)", "token": "--lc-sheet-spring-easing" },
+  { "demo": "d55", "valeur": "cubic-bezier(0.34, 1.56, 0.64, 1)", "token": "--lc-sheet-spring-easing" },
 
   { "demo": "d57", "valeur": "750ms", "token": "--lc-tabbar-enter-duration" },
   { "demo": "d57", "valeur": "265ms", "token": "--lc-tabbar-enter-delay" },

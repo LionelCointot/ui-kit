@@ -124,7 +124,6 @@ const WHITELIST = [
   { file: 'forms/src/slider/slider.component.css', motif: 'transform numérique', contient: 'scale(1.1)', raison: 'échelle du pouce du slider, à recaler sur un token (§5.4.1 : « valeurs recalées sur les tokens »)', tache: 'T8' },
   { file: 'src/lib/skeleton/skeleton.component.css', motif: 'mot-clé ease', contient: 'ease-in-out', raison: 'courbe de la pulsation, à porter par un token (§5.2 skeleton.*)', tache: 'T8' },
   { file: 'src/lib/spinner/spinner.component.css', motif: 'mot-clé ease', contient: 'ease-in-out', raison: 'courbe de la pulsation, à porter par un token (§5.2 spinner.*)', tache: 'T8' },
-  { file: 'overlay/src/sheet/sheet.component.css', motif: 'transform numérique', contient: 'translateY(50dvh)', raison: 'départ de la feuille (distance de mouvement), à lire dans les tokens sheet.*', tache: 'T9b' },
   { file: 'navigation/src/stepper/stepper.component.css', motif: 'durée', contient: 'animation-duration: 1ms', raison: 'coupure locale sous prefers-reduced-motion (pas un mouvement)', tache: 'permanent' },
   { file: 'charts/src/builders/shared.ts', motif: 'durée en TypeScript', contient: 'animationDuration', raison: 'durée ECharts, à lire dans les tokens chart.*', tache: 'T11' },
   { file: 'charts/src/builders/sparkline.builder.ts', motif: 'durée en TypeScript', contient: 'animationDuration', raison: 'durée ECharts, à lire dans les tokens chart.*', tache: 'T11' },
