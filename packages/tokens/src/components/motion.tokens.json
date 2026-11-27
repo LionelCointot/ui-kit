@@ -18,7 +18,10 @@
   "reveal": {
     "duration": { "$value": "550ms", "$type": "duration", "$description": "Entry of the base variants of lcReveal (Talmo: 550 ms)." },
     "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" },
-    "tilt-duration": { "$value": "{sys.duration.title}", "$type": "duration", "$description": "Entry of the tilt variant (Talmo KPI: 850 ms), with the overshoot curve of the pop variant." }
+    "tilt-duration": { "$value": "{sys.duration.title}", "$type": "duration", "$description": "Entry of the tilt variant (Talmo KPI: 850 ms), with the overshoot curve of the pop variant." },
+    "card-duration": { "$value": "800ms", "$type": "duration", "$description": "Entry of the card variant of lcReveal (Talmo cards: 800 ms, expo.out); the card cascade runs at the cards pace." },
+    "card-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
+    "card-scale": { "$value": "0.985", "$type": "number", "$description": "Scale the card variant starts from (unitless number)." }
   },
   "tabs": {
     "indicator-front-duration": { "$value": "380ms", "$type": "duration" },
@@ -80,6 +83,12 @@
     "stack-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
     "stack-easing": { "$value": "{sys.easing.stack}", "$type": "cubicBezier" },
     "stack-recede": { "$value": "30%", "$type": "dimension", "$description": "Share of its width the previous page recedes by while the new one stacks on top." },
+    "layer-kpi": { "$value": "100ms", "$type": "duration", "$description": "Delay of the KPI cards while a page enters (median of the Talmo pages)." },
+    "layer-cards": { "$value": "120ms", "$type": "duration" },
+    "layer-rows": { "$value": "400ms", "$type": "duration", "$description": "Rows and lists." },
+    "layer-gauges": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Bars and gauges (lcFill, lcDraw)." },
+    "layer-dots": { "$value": "800ms", "$type": "duration", "$description": "Status dots." },
+    "layer-window": { "$value": "1500ms", "$type": "duration", "$description": "How long lc-page counts as entering; longer than the latest layer delay plus its cascade (800 ms + 8 ranks)." },
     "stack-dim": { "$value": "0.12", "$type": "number", "$description": "Veil opacity over the receding page (unitless number)." }
   },
   "sheet": {

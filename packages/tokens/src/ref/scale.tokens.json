@@ -268,7 +268,7 @@
         "$type": "duration"
       },
       "stagger-cards": {
-        "$value": "67ms",
+        "$value": "60ms",
         "$type": "duration"
       },
       "stagger-chars": {
