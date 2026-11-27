@@ -55,7 +55,7 @@ const DEMOS = {
   d25: ['overlays-drawer--animation', 'lc-drawer'],
   d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur', [rejouer('d26', { keep: '^(cdk-dialog-container|div\\.cdk-overlay-backdrop)' })]],
   d28: ['navigation-menu--animation', 'lc-menu, liste de lc-combobox, calendriers : pop depuis l\'ancrage', [acting('d28', 'Ouvrir le menu', '#d28btn')]], // Rejouer du catalogue ouvre puis referme aussitôt (le clic hors du menu le ferme)
-  d29: ['feedback-toast--animation', 'lc-toast', [rejouer('d29', { skip: 'trow' })]], // les lignes `.trow` (FLIP du catalogue) ne sont pas le toast
+  d29: ['feedback-toast--animation', 'lc-toast', [rejouer('d29', { skip: 'trow', early: true })]], // les lignes `.trow` (FLIP du catalogue) ne sont pas le toast
   d31: ['layout-card--animation', 'lc-card : .lc-lift au survol', [rejouer('d31'), acting('d31', 'Survol de la carte', '#d31s .lift-card', 'hover')]],
   d33: ['data-data-table--animation', 'lc-data-table : suppression, voisines qui glissent', [acting('d33', 'Glisser la barre A (les suivantes suivent)', '#d33a', { drag: 120 })]],
   d36: ['data-data-table--animation', 'lc-data-table : tri, lignes qui glissent', [acting('d36', 'Flèche droite sur la barre', '#d36bar', { key: 'ArrowRight' })]],
@@ -93,7 +93,7 @@ const TABLE = Object.fromEntries(Object.entries(DEMOS).map(([id, [story, label, 
 const startScan = (el) => { window.__fid = { before: new Set(document.getAnimations()), t0: performance.now() }; el?.click(); };
 
 /** Après le déclencheur : relève chaque nouvelle animation à sa première apparition (puis la met en pause à 0), ou échantillonne `sampler` en rAF. */
-const finishScan = async ({ mode, sampler, scope, quiet, live }) => {
+const finishScan = async ({ mode, sampler, scope, quiet, live, early }) => {
   const { before, t0 } = window.__fid;
   const frame = () => new Promise((resolve) => requestAnimationFrame(resolve)); // résout avec l'horodatage de l'image
   const r3 = (n) => Math.round(n * 1000) / 1000;
@@ -161,7 +161,7 @@ const finishScan = async ({ mode, sampler, scope, quiet, live }) => {
       const resume = a.currentTime;
       a.pause();
       const last = recs.at(-1);
-      last.early = [0, 25, 50, 75, 100].map((pct) => { a.currentTime = last.rec.delay + (pct / 100) * last.rec.duration - (pct === 100 ? 0.01 : 0); return state(last); }); a.currentTime = 0; if (live) { a.currentTime = resume; a.play(); last.live = true; } // relevé dès l'apparition : la cible peut être retirée avant la fin du relevé (sortie du toast, d29 et d60)
+      if (early || live) last.early = [0, 25, 50, 75, 100].map((pct) => { a.currentTime = last.rec.delay + (pct / 100) * last.rec.duration - (pct === 100 ? 0.01 : 0); return state(last); }); a.currentTime = 0; if (live) { a.currentTime = resume; a.play(); last.live = true; } // relevé dès l'apparition (option `early`, d29 et d60 : la sortie du toast est retirée avant la fin du relevé) ; sans l'option, lire le style en cours de route crée des transitions parasites (d31, d45)
       lastNew = performance.now();
     }
     if (performance.now() - t0 > MIN_MS && performance.now() - lastNew > QUIET_MS) break;
@@ -173,11 +173,11 @@ const finishScan = async ({ mode, sampler, scope, quiet, live }) => {
   const at = (entry, pct) => { entry.a.currentTime = entry.rec.delay + (pct / 100) * entry.rec.duration - (pct === 100 ? 0.01 : 0); };
   for (const [index, pct] of [0, 25, 50, 75, 100].entries()) {
     for (const entry of recs) at(entry, pct);
-    for (const entry of recs) if (!recs.some((other) => overlaps(entry, other))) entry.rec.values.push(entry.target.isConnected && !entry.live ? state(entry) : entry.early[index]);
+    for (const entry of recs) if (!recs.some((other) => overlaps(entry, other))) entry.rec.values.push(entry.target.isConnected && !entry.live || !entry.early ? state(entry) : entry.early[index]);
     for (const entry of recs.filter((e) => recs.some((other) => overlaps(e, other)))) {
       for (const other of recs) if (overlaps(entry, other)) { other.a.effect.updateTiming({ fill: 'none' }); other.a.currentTime = -1; } // sans remplissage `backwards`, sinon la 1re image clé de l'autre s'applique encore
       at(entry, pct);
-      entry.rec.values.push(entry.target.isConnected && !entry.live ? state(entry) : entry.early[index]);
+      entry.rec.values.push(entry.target.isConnected && !entry.live || !entry.early ? state(entry) : entry.early[index]);
     }
   }
   return { animations: recs.map((e) => e.rec) };
@@ -232,7 +232,7 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
       await page.mouse.up();
     }
   }
-  const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null, quiet: catalogue ? trigger.quiet : null, live: trigger.live });
+  const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null, quiet: catalogue ? trigger.quiet : null, live: trigger.live, early: trigger.early });
   // Survol, glissement, touche : la latence de Playwright n'est pas celle de la démo, l'origine est le premier changement de valeur (2e échantillon : le 1er est la valeur au repos).
   if (result.series && action !== 'click' && result.series.length > 1) { const [origin] = result.series[1]; result.series = result.series.map(([t, v]) => [t - origin, v]); }
   await context.close();
