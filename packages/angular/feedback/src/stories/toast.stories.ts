@@ -62,6 +62,9 @@ class ToastDemoComponent implements OnDestroy {
     <div #root data-demo="d29">
       <button lcButton fillMode="outline" size="small" (click)="demo.replay(root)">Rejouer</button>
     </div>
+    <div #phone data-demo="d60" style="margin-top:var(--lc-sys-space-4)">
+      <button lcButton fillMode="outline" size="small" (click)="demo.replay(phone)">Rejouer (téléphone)</button>
+    </div>
     <lc-toast-outlet />`,
 })
 class ToastAnimationDemoComponent implements OnDestroy {

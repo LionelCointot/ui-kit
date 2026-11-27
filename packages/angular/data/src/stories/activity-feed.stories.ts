@@ -11,7 +11,7 @@ import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot
   imports: [LcActivityFeedComponent, LcActivityItemComponent, LcButtonComponent, StoryMotionNoticeComponent],
   template: `
     <lc-story-motion-notice />
-    <section #root>
+    <section #root data-demo="d06">
       <p>
         <button lcButton fillMode="outline" size="small" (click)="replay.replay(root)">Rejouer</button>
         <button lcButton fillMode="outline" size="small" (click)="add()">Ajouter</button>

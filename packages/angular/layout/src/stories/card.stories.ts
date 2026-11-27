@@ -12,12 +12,12 @@ import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcGridItemComp
   styles: `.lc-demo__handmade { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--lc-sys-space-4); }`,
   template: `
     <lc-story-motion-notice />
-    <section #root>
-      <h3>lc-grid <button lcButton fillMode="outline" size="small" (click)="grid.replay(root)">Rejouer</button></h3>
+    <section #root data-demo="d31">
+      <h3>lc-grid<button lcButton fillMode="outline" size="small" (click)="grid.replay(root)">Rejouer</button></h3>
       @for (key of grid.keys(); track key) {
         <lc-grid [columns]="3" gap="4">
           @for (name of names; track name) {
-            <lc-card><lc-card-header [title]="name" subtitle="Mis à jour aujourd'hui" /><p>Trois tâches ouvertes.</p></lc-card>
+            <lc-card class="lc-lift" [attr.data-trigger]="$first ? '' : null"><lc-card-header [title]="name" subtitle="Mis à jour aujourd'hui" /><p>Trois tâches ouvertes.</p></lc-card>
           }
         </lc-grid>
       }
