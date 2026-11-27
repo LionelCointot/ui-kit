@@ -1,6 +1,6 @@
 import { provideLocationMocks } from '@angular/common/testing';
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterOutlet, provideRouter, type Routes } from '@angular/router';
+import { Router, RouterLink, RouterOutlet, type Routes } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { StoryMotionNoticeComponent, fixedExample } from '@lc/storybook';
@@ -101,7 +101,9 @@ class AppShellStackDemoComponent {
   private readonly router = inject(Router);
 
   constructor() {
-    if (!this.router.navigated) void this.router.navigateByUrl('/requests');
+    // Le routeur global de Storybook (preview.ts) déclare `**` en premier et masque toute route ajoutée par la story : on remplace sa configuration.
+    this.router.resetConfig(stackRoutes);
+    if (!this.router.navigated || this.router.url === '/') void this.router.navigateByUrl('/requests');
   }
 
   /** Ouvre la demande depuis la liste, ou revient à la liste depuis la demande : une vraie navigation, donc la vraie transition. */
@@ -136,7 +138,7 @@ export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   decorators: [
     moduleMetadata({ imports: [AppShellStackDemoComponent, StoryMotionNoticeComponent] }),
-    applicationConfig({ providers: [provideRouter(stackRoutes), provideLocationMocks()] }),
+    applicationConfig({ providers: [provideLocationMocks()] }),
   ],
   render: () => ({ template: `<lc-story-motion-notice /><lc-app-shell-stack-demo />` }),
 };
