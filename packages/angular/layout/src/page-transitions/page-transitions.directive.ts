@@ -2,10 +2,14 @@ import { Directive, ElementRef, Injector, afterNextRender, effect, inject } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ResolveEnd, Router } from '@angular/router';
 import { lcAnimate, lcPrefersReducedMotion, type LcMotionToken } from '@lionelcointot/ui-angular';
+import { pathOf } from './page-nav.direction';
 import { LcPageNav, type LcPageChange } from './page-nav.service';
+import { pageBackSettleMs, pageBackShouldEngage, pageBackTranslation, type LcPageSample, PAGE_BACK_FLICK_WINDOW_MS } from './page-gesture';
 
 const COPY = 'data-lc-page-copy';
 const VEIL = 'data-lc-page-veil';
+/** Bande du bord gauche posée par `lc-app-shell` (< 768 px, niveau ≥ 2) : seul endroit où le geste de retour démarre. */
+const EDGE = 'data-lc-page-edge';
 const PHONE = '(max-width: 767.98px)';
 
 /** `value` (« 16px », « 30% ») avec le signe `sign` ; 0 si le token est absent. */
@@ -39,9 +43,53 @@ function overlay(attribute: string, rect: DOMRect, zIndex: number): HTMLElement 
   return element;
 }
 
+/** Écritures de style en ligne, défaites en bloc par `restore()`. */
+function inlineStyles() {
+  const undo: (() => void)[] = [];
+  return {
+    set(element: HTMLElement, name: string, value: string): void {
+      const before = element.style.getPropertyValue(name);
+      element.style.setProperty(name, value);
+      undo.push(() => element.style.setProperty(name, before));
+    },
+    restore: () => undo.splice(0).reverse().forEach((restore) => restore()),
+  };
+}
+
+/** Voile de l'empilement : opaque, l'opacité animée est celle du token (Baseline 2024). */
+function stackVeil(rect: DOMRect, zIndex: number): HTMLElement {
+  const veil = overlay(VEIL, rect, zIndex);
+  veil.style.setProperty('opacity', '0');
+  veil.style.setProperty('background', 'var(--lc-sys-color-backdrop)'); // repli si la couleur relative n'est pas prise en charge
+  veil.style.setProperty('background', 'rgb(from var(--lc-sys-color-backdrop) r g b / 1)');
+  return veil;
+}
+
 interface Snapshot {
   readonly rect: DOMRect;
   readonly pages: readonly Element[];
+}
+
+/** Dernière page quittée par un empilement, gardée pour le geste de retour (la copie de la sortie est consommée par son animation). */
+interface Previous {
+  readonly url: string;
+  readonly pages: readonly Element[];
+}
+
+interface Drag {
+  readonly pointerId: number;
+  readonly startX: number;
+  readonly width: number;
+  readonly pages: readonly HTMLElement[];
+  readonly under: HTMLElement;
+  readonly inner: HTMLElement;
+  readonly veil: HTMLElement;
+  readonly styles: ReturnType<typeof inlineStyles>;
+  readonly recede: string;
+  readonly dim: number;
+  readonly samples: LcPageSample[];
+  offset: number;
+  frame: number;
 }
 
 /**
@@ -60,12 +108,22 @@ export class LcPageTransitionsDirective {
   private readonly injector = inject(Injector);
   private snapshot: Snapshot | null = null;
   private settle: () => void = () => {};
+  private previous: Previous | null = null;
+  private drag: Drag | null = null;
+  /** Vrai entre l'engagement du geste et le rendu de la page précédente : la navigation finale ne rejoue pas la transition. */
+  private silent = false;
+  private finishGesture: () => void = () => {};
 
   constructor() {
     let seen = this.nav.change();
     this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
       if (event instanceof ResolveEnd) this.capture(event.urlAfterRedirects);
     });
+    this.host.addEventListener('pointerdown', (event) => this.onDown(event));
+    this.host.addEventListener('pointermove', (event) => this.onMove(event));
+    this.host.addEventListener('pointerup', (event) => this.onUp(event));
+    this.host.addEventListener('pointercancel', () => this.release(false));
+    this.host.addEventListener('lostpointercapture', () => this.release(false));
     effect(() => {
       const change = this.nav.change();
       if (!change || change === seen) return;
@@ -81,22 +139,26 @@ export class LcPageTransitionsDirective {
 
   /** Pages affichées : enfants de `<main>` hors copies, voiles et `router-outlet`. */
   private pages(): Element[] {
-    return [...this.host.children].filter((el) => !el.hasAttribute(COPY) && !el.hasAttribute(VEIL) && el.localName !== 'router-outlet');
+    return [...this.host.children].filter((el) => !el.hasAttribute(COPY) && !el.hasAttribute(VEIL) && !el.hasAttribute(EDGE) && el.localName !== 'router-outlet');
   }
 
   private capture(url: string): void {
     this.snapshot = null;
-    if (!this.animates() || !this.nav.willTransition()) return;
+    if (this.silent || !this.animates() || !this.nav.willTransition()) return;
     // Seule lecture de position de la transition : avant toute écriture.
     this.snapshot = { rect: this.host.getBoundingClientRect(), pages: this.pages().map(frozenCopy) };
   }
 
   private run(change: LcPageChange): void {
     const snapshot = this.snapshot;
+    const silent = this.silent;
     this.snapshot = null;
+    this.silent = false;
+    this.previous = null;
     if (change.from === null) return; // premier affichage
     const heading = this.pages().map((page) => page.querySelector<HTMLElement>('h1')).find(Boolean);
     (heading ?? this.host).focus({ preventScroll: true });
+    if (silent) return this.finishGesture(); // le geste a déjà montré la page précédente
     if (!this.animates()) return;
 
     this.settle();
@@ -110,12 +172,7 @@ export class LcPageTransitionsDirective {
     const dim = parseFloat(token('--lc-page-stack-dim')) || 0;
     const slide = { exit: signed(token('--lc-page-exit-offset'), -sign), enter: signed(token('--lc-page-enter-offset'), sign) };
 
-    const undo: (() => void)[] = [];
-    const set = (element: HTMLElement, name: string, value: string) => {
-      const before = element.style.getPropertyValue(name);
-      element.style.setProperty(name, value);
-      undo.push(() => element.style.setProperty(name, before));
-    };
+    const { set, restore } = inlineStyles();
     set(this.host, 'overflow-x', 'clip'); // le glissement ne crée pas de défilement horizontal de la page
     // Un composant routé sans sélecteur s'affiche dans `<ng-component>`, `inline` : `translate` n'y a aucun effet.
     for (const page of pages as HTMLElement[]) if (getComputedStyle(page).display === 'inline') set(page, 'display', 'block');
@@ -138,6 +195,7 @@ export class LcPageTransitionsDirective {
       animation.finished.then(remove, remove);
     };
     if (snapshot) {
+      if (mode === 'stack' && forward && change.from) this.previous = { url: change.from, pages: snapshot.pages.map((page) => page.cloneNode(true) as Element) };
       const copy = overlay(COPY, snapshot.rect, mode === 'stack' && forward ? 1 : 2);
       copy.setAttribute('inert', '');
       copy.style.setProperty('overflow', 'clip');
@@ -149,10 +207,7 @@ export class LcPageTransitionsDirective {
       const leaving = mode === 'fade' ? [{ opacity: 1 }, { opacity: 0 }] : mode === 'slide' ? [{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: to }] : [{ translate: '0 0' }, { translate: to }];
       removeAt(lcAnimate(inner, leaving, exitTiming), copy);
       if (mode === 'stack') {
-        const veil = overlay(VEIL, snapshot.rect, forward ? 2 : 1);
-        veil.style.setProperty('opacity', '0');
-        veil.style.setProperty('background', 'var(--lc-sys-color-backdrop)'); // repli si la couleur relative n'est pas prise en charge
-        veil.style.setProperty('background', 'rgb(from var(--lc-sys-color-backdrop) r g b / 1)'); // opaque : l'opacité animée est celle du token (Baseline 2024)
+        const veil = stackVeil(snapshot.rect, forward ? 2 : 1);
         this.host.append(veil);
         removeAt(lcAnimate(veil, forward ? [{ opacity: 0 }, { opacity: dim }] : [{ opacity: dim }, { opacity: 0 }], exitTiming), veil);
       }
@@ -160,11 +215,112 @@ export class LcPageTransitionsDirective {
 
     const settle = () => {
       for (const animation of entering) animation.cancel();
-      undo.splice(0).reverse().forEach((restore) => restore());
+      restore();
     };
     this.settle = settle;
     void Promise.allSettled(entering.map((animation) => animation.finished)).then(() => {
       if (this.settle === settle) settle();
+    });
+  }
+  /** Geste en cours ou impossible ici : feuille ouverte, ou doigt posé sur une bande de panneaux. */
+  private blocked(event: PointerEvent): boolean {
+    if (document.querySelector('dialog[open]')) return true;
+    return (document.elementsFromPoint?.(event.clientX, event.clientY) ?? []).some((element) => element.closest('lc-swipe-panels'));
+  }
+
+  private onDown(event: PointerEvent): void {
+    const edge = (event.target as Element).closest?.(`[${EDGE}]`);
+    if (!edge || this.drag || !event.isPrimary || event.pointerType === 'mouse' || !this.animates() || !matchMedia(PHONE).matches || this.blocked(event)) return;
+    this.settle();
+    const rect = this.host.getBoundingClientRect();
+    const style = getComputedStyle(this.host);
+    const styles = inlineStyles();
+    const pages = this.pages() as HTMLElement[];
+    styles.set(this.host, 'overflow-x', 'clip');
+    for (const page of pages) {
+      styles.set(page, 'position', 'relative');
+      styles.set(page, 'z-index', '3');
+      styles.set(page, 'background', 'var(--lc-sys-color-background)');
+    }
+    // Sous la page : sa copie figée si elle est celle de la page parente, sinon un fond neutre qui porte le titre du parent (lien direct).
+    const parent = this.nav.parent();
+    const under = overlay(COPY, rect, 1);
+    under.setAttribute('inert', '');
+    under.style.setProperty('overflow', 'clip');
+    const inner = document.createElement('div');
+    inner.style.setProperty('block-size', '100%');
+    if (this.previous && parent && pathOf(this.previous.url) === pathOf(parent.url)) {
+      inner.append(...this.previous.pages.map((page) => page.cloneNode(true)));
+    } else {
+      for (const [name, value] of Object.entries({ padding: 'var(--lc-sys-space-4)', 'box-sizing': 'border-box', background: 'var(--lc-sys-color-background)', color: 'var(--lc-sys-color-on-surface-variant)', 'font-weight': 'var(--lc-sys-font-weight-semibold)' })) inner.style.setProperty(name, value);
+      inner.textContent = parent?.title ?? '';
+    }
+    under.append(inner);
+    const veil = stackVeil(rect, 2);
+    this.host.append(under, veil);
+    edge.setPointerCapture?.(event.pointerId);
+    this.drag = { pointerId: event.pointerId, startX: event.clientX, width: rect.width, pages, under, inner, veil, styles, recede: style.getPropertyValue('--lc-page-stack-recede').trim(), dim: parseFloat(style.getPropertyValue('--lc-page-stack-dim')) || 0, samples: [], offset: 0, frame: 0 };
+  }
+
+  private onMove(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    drag.offset = event.clientX - drag.startX;
+    drag.samples.push({ time: event.timeStamp, offset: drag.offset });
+    while (drag.samples.length && event.timeStamp - drag.samples[0].time > PAGE_BACK_FLICK_WINDOW_MS) drag.samples.shift();
+    drag.frame ||= requestAnimationFrame(() => {
+      drag.frame = 0;
+      this.paint(drag);
+    });
+  }
+
+  private onUp(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    this.release(pageBackShouldEngage(drag.offset, drag.width, drag.samples, event.timeStamp));
+  }
+
+  /** Style de chaque élément du geste quand la page est tirée de la part `progress` (0 à 1) : la page suit le doigt, la précédente avance de son recul à 0, le voile s'éteint. */
+  private frame(drag: Drag, progress: number): [HTMLElement, Record<string, string>][] {
+    return [
+      ...drag.pages.map((page): [HTMLElement, Record<string, string>] => [page, { translate: `${progress * drag.width}px 0` }]),
+      [drag.inner, { translate: `${signed(drag.recede, -(1 - progress))} 0` }],
+      [drag.veil, { opacity: `${drag.dim * (1 - progress)}` }],
+    ];
+  }
+
+  private paint(drag: Drag): void {
+    for (const [element, style] of this.frame(drag, pageBackTranslation(drag.offset, drag.width) / drag.width)) Object.assign(element.style, style);
+  }
+
+  /** Relâchement : engage (la page sort, puis navigation silencieuse vers la parente) ou ramène la page en place ; durée proportionnelle à la distance restante. */
+  private release(engage: boolean): void {
+    const drag = this.drag;
+    if (!drag) return;
+    this.drag = null;
+    cancelAnimationFrame(drag.frame);
+    const progress = pageBackTranslation(drag.offset, drag.width) / drag.width;
+    const to = this.frame(drag, engage ? 1 : 0);
+    const animations = this.frame(drag, progress).map(([element, from], index) => lcAnimate(element, [from, to[index][1]], { duration: '--lc-page-stack-duration', easing: '--lc-page-stack-easing', fill: 'forwards' }));
+    // La course entière dure `page.stack-duration` ; ici seule la part restante, sans passer sous le minimum.
+    const full = Number(animations[0]?.effect?.getTiming().duration) || 0;
+    for (const animation of animations) animation.effect?.updateTiming({ duration: pageBackSettleMs(engage ? 1 - progress : progress, full) });
+    const cleanup = () => {
+      for (const animation of animations) animation.cancel();
+      drag.under.remove();
+      drag.veil.remove();
+      drag.styles.restore();
+      this.finishGesture = () => {};
+    };
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+      if (!engage) return cleanup();
+      this.silent = true;
+      this.finishGesture = cleanup; // appelé par `run` une fois la page précédente rendue
+      void this.nav.back().then((done) => {
+        if (done) return;
+        this.silent = false;
+        cleanup();
+      });
     });
   }
 }

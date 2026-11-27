@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationStart, ResolveEnd, Router, type ActivatedRouteSnapshot } from '@angular/router';
@@ -42,6 +43,7 @@ function resolve(root: ActivatedRouteSnapshot, level: number): Resolved {
 export class LcPageNav {
   private readonly registry = inject(LcNavRegistry);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   private readonly _direction = signal<LcPageDirection>('none');
   private readonly _level = signal(1);
@@ -58,6 +60,14 @@ export class LcPageNav {
   /** @internal Vrai entre le `ResolveEnd` et le `NavigationEnd` d'une navigation qui va transitionner : seule règle d'éligibilité, lue par `lcPageTransitions` pour ne copier la page quittée que si une transition suit. */
   willTransition(): boolean {
     return this.transitions;
+  }
+
+  /** @internal Retour : vers la page parente (`parent()`), sinon d'un cran dans l'historique. Commun au bouton `‹ titre` de l'en-tête mobile et au geste. */
+  back(): Promise<boolean> {
+    const parent = this.parent();
+    if (parent) return this.router.navigateByUrl(parent.url);
+    this.location.back();
+    return Promise.resolve(true);
   }
 
   constructor() {

@@ -137,6 +137,8 @@ const WHITELIST = [
   { file: 'navigation/src/swipe-panels/swipe-panels.component.ts', motif: 'durée en TypeScript', contient: 'PROGRAMMATIC_SCROLL_MAX_MS', raison: 'seuil de défilement programmatique (constante nommée)', tache: 'permanent' },
   { file: 'navigation/src/swipe-panels/swipe-panels.component.ts', motif: 'setTimeout', contient: 'mutedTimer', raison: 'fin du défilement programmatique (comportement, pas un mouvement)', tache: 'permanent' },
   { file: 'overlay/src/sheet/sheet-gesture.ts', motif: 'durée en TypeScript', contient: 'SHEET_FLICK_WINDOW_MS', raison: 'fenêtre de mesure de la vitesse du geste (seuil de geste, ADR 0011 décision 6)', tache: 'permanent' },
+  { file: 'layout/src/page-transitions/page-gesture.ts', motif: 'durée en TypeScript', contient: 'PAGE_BACK_FLICK_WINDOW_MS', raison: 'fenêtre de mesure de la vitesse du geste de retour (seuil de geste, ADR 0011 décision 6)', tache: 'permanent' },
+  { file: 'layout/src/page-transitions/page-gesture.ts', motif: 'durée en TypeScript', contient: 'PAGE_BACK_SETTLE_MIN_MS', raison: 'durée minimale du retour en place du geste (§5.4.3, seuil de geste)', tache: 'permanent' },
   { file: 'overlay/src/tooltip/tooltip.directive.ts', motif: 'durée en TypeScript', contient: 'SHOW_DELAY_MS', raison: 'délai d\'affichage de l\'info-bulle (comportement)', tache: 'permanent' },
   { file: 'overlay/src/tooltip/tooltip.directive.ts', motif: 'durée en TypeScript', contient: 'HIDE_GRACE_MS', raison: 'délai de grâce avant masquage de l\'info-bulle (comportement)', tache: 'permanent' },
   { file: 'overlay/src/tooltip/tooltip.directive.ts', motif: 'setTimeout', contient: 'this.timer', raison: 'délais d\'affichage et de masquage de l\'info-bulle (comportement)', tache: 'permanent' },
