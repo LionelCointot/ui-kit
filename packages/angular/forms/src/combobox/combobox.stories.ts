@@ -63,15 +63,14 @@ export const Playground: Story = {
   parameters: { controlsCheck: { stateDependent: ['minChars', 'maxResults', 'clearable', 'invalid', 'touched'] } },
   render: (args) => ({
     // Flat controls rebuilt into the settings object, like a consumer would write it.
-    props: { ...args, cities: CITIES, display, trackBy, city: signal<City | null>(null),
-      settings: { minChars: args.minChars, maxResults: args.maxResults, openOnFocus: args.openOnFocus } },
+    props: { ...args, cities: CITIES, display, trackBy, city: signal<City | null>(null) },
     template: `
       <div style="max-width:24rem">
         <lc-form-field label="Ville" hint="Tapez « ro » ou « zu » ; Bas ouvre la liste, Entrée choisit, Échap ferme.">
           <lc-combobox [options]="cities" [displayWith]="display" [trackBy]="trackBy" [(value)]="city"
             [placeholder]="placeholder" [clearable]="clearable" [size]="size" [fillMode]="fillMode" [rounded]="rounded"
             [disabled]="disabled" [readonly]="readonly" [required]="required" [invalid]="invalid" [touched]="touched"
-            [searchSettings]="settings" />
+            [searchSettings]="{ minChars, maxResults, openOnFocus }" />
         </lc-form-field>
         <p style="margin-top:1rem">Valeur : {{ city()?.name ?? 'aucune' }}</p>
       </div>`,
