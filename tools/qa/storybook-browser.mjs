@@ -438,23 +438,42 @@ const MOTION_INIT = () => {
   };
   q.measure = measure;
   q.transitions = transitions;
-  // Entrée des panneaux CDK : CSSAnimation `lc-overlay-enter` sur le contenu du panneau (premier enfant) ; fondu de sortie : CSSTransition d'opacité sur le conteneur.
-  q.starts = 0;
-  document.addEventListener('animationstart', (e) => { if (e.animationName === 'lc-overlay-enter') q.starts += 1; }, true);
-  // Contenu du panneau : premier enfant, hors ancres du piège à focus du CDK (le menu de filtre en pose).
+  // Pops d'ancrage (T9c, spec 2026-12-mouvement-v2) : animations (CSSTransition, CSSAnimation ou WAAPI) sur le contenu du panneau (premier enfant, hors ancres du piège à focus du CDK) ; fondu de sortie : CSSTransition d'opacité sur le conteneur.
+  q.tokenMsSafe = (name) => { try { return q.tokenMs(name); } catch { return Number.NaN; } };
   const contentOf = (pane) => pane.querySelector(':scope > :not(.cdk-focus-trap-anchor)');
-  const enterAnims = (pane) => (contentOf(pane)?.getAnimations() ?? []).filter((a) => a instanceof CSSAnimation && a.animationName === 'lc-overlay-enter');
-  q.enterAnims = enterAnims;
-  const measureEnter = (pane, keepPaused) => {
+  const animsOf = (pane) => contentOf(pane)?.getAnimations() ?? [];
+  const FAMILY = ['transform', 'translate', 'scale', 'rotate'];
+  const propsOf = (a) => [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((p) => !['offset', 'computedOffset', 'easing', 'composite'].includes(p));
+  const curveOf = (a) => { const t = a.effect.getComputedTiming().easing; const k = a.effect.getKeyframes()[0]?.easing; return t === 'linear' && k && k !== 'linear' ? k : t; };
+  /** Valeurs calculées de l'élément : opacité et matrice composée translate, rotate, scale, transform (comme motion-fidelity.mjs). */
+  const stateOf = (el) => {
+    const cs = getComputedStyle(el);
+    const m = new DOMMatrix();
+    const len = (v, ref) => (v.endsWith('%') ? (parseFloat(v) / 100) * ref : parseFloat(v));
+    if (cs.translate !== 'none') { const [x = '0', y = '0'] = cs.translate.split(' '); m.translateSelf(len(x, el.offsetWidth), len(y, el.offsetHeight)); }
+    if (cs.rotate !== 'none') m.rotateSelf(parseFloat(cs.rotate));
+    if (cs.scale !== 'none') { const [x, y = x] = cs.scale.split(' ').map(parseFloat); m.scaleSelf(x, y); }
+    if (cs.transform !== 'none') m.multiplySelf(new DOMMatrix(cs.transform));
+    return { opacity: cs.opacity, a: m.a, d: m.d, e: m.e, f: m.f };
+  };
+  q.stateOf = stateOf;
+  const frames = (n) => new Promise((resolve) => { const step = (i) => (i === 0 ? resolve() : requestAnimationFrame(() => step(i - 1))); step(n); });
+  q.frames = frames;
+  /** Mesure l'entrée d'un panneau : attend l'apparition des animations (dix images au plus), les suspend à 0 puis relève valeurs de départ, d'arrivée, durées, courbes. */
+  const measurePop = async (pane, keepPaused) => {
     const content = contentOf(pane);
-    const list = enterAnims(pane);
+    let list = [];
+    for (let i = 0; i < 10 && list.length === 0; i += 1) { await frames(1); list = animsOf(pane); }
+    await frames(1); // le CDK pose la position et `lc-overlay--above` après le premier calcul
+    list = animsOf(pane);
+    q.enterSet = new Set(list);
     list.forEach((a) => a.pause());
     list.forEach((a) => { a.currentTime = 0; });
+    const timings = list.map((a) => ({ props: propsOf(a), duration: a.effect.getComputedTiming().duration, delay: a.effect.getComputedTiming().delay, easing: curveOf(a) }));
     const cs = getComputedStyle(content);
-    const info = { className: pane.className, count: list.length, durations: list.map((a) => a.effect.getComputedTiming().duration), delays: list.map((a) => a.effect.getComputedTiming().delay), startOpacity: cs.opacity, startTransform: cs.transform, cssDuration: cs.animationDuration, cssDelay: cs.animationDelay };
+    const info = { className: pane.className, list: timings, start: stateOf(content), originY: parseFloat(cs.transformOrigin.split(' ')[1]), height: content.offsetHeight };
     if (!keepPaused) list.forEach((a) => a.finish());
-    const end = getComputedStyle(content);
-    Object.assign(info, { endOpacity: end.opacity, endTransform: end.transform });
+    info.end = stateOf(content);
     return info;
   };
   q.watchPane = (selector, keepEnterPaused = false) => {
@@ -464,19 +483,19 @@ const MOTION_INIT = () => {
       if (!q.pane) {
         q.pane = pane;
         q.classAtAttach = pane.className;
-        requestAnimationFrame(() => {
-          q.enter = measureEnter(pane, keepEnterPaused);
+        measurePop(pane, keepEnterPaused).then((info) => {
+          q.enter = info;
           q.enterRect = pane.getBoundingClientRect().toJSON();
           q.aboveAtEnter = pane.classList.contains('lc-overlay--above');
-          q.startsAtEnter = q.starts;
+          info.above = q.aboveAtEnter;
         });
       } else if (pane.classList.contains('lc-overlay--closing') && !q.closing) {
         const list = transitions(pane);
-        q.closing = { connected: pane.isConnected, children: pane.childElementCount, enterStillRunning: enterAnims(pane).length > 0, props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
+        q.closing = { connected: pane.isConnected, children: pane.childElementCount, enterStillRunning: animsOf(pane).some((a) => q.enterSet?.has(a) && a.playState !== 'finished'), props: list.map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration]), transitionDuration: getComputedStyle(pane).transitionDuration, transitionDelay: getComputedStyle(pane).transitionDelay };
         if (q.hold) list.forEach((a) => a.pause());
-        if (keepEnterPaused) enterAnims(pane).forEach((a) => a.play());
+        if (keepEnterPaused) animsOf(pane).forEach((a) => a.play());
       } else if (q.enter && !q.closing && !q.flip && pane.classList.contains('lc-overlay--above') !== q.aboveAtEnter) {
-        q.flip = { above: pane.classList.contains('lc-overlay--above'), entering: enterAnims(pane).length };
+        q.flip = { above: pane.classList.contains('lc-overlay--above'), entering: animsOf(pane).filter((a) => !q.enterSet.has(a)).length };
       }
     }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   };
@@ -625,19 +644,37 @@ const MOTION_INIT = () => {
   };
 };
 
+/** Empreinte d'une démo de `fidelite.json` (CA-20 : la source de vérité des valeurs, avec les §5.4.1 de la spec) : durée et courbe du fondu et du mouvement, décalage et échelle de départ du pop. */
+const FID = JSON.parse(await readFile(path.join(root, 'docs', 'design', 'explorations', '2026-12-mouvement-v2', 'fidelite.json'), 'utf8')).fingerprints;
+const popRef = (demo, target) => {
+  const list = FID[demo].triggers[0].animations.filter((a) => a.target.startsWith(target));
+  const opacity = list.find((a) => a.props.length === 1 && a.props[0] === 'opacity');
+  const move = list.find((a) => a.props.includes('transform') && !a.props.includes('opacity'));
+  const [ty, scale] = move.keyframes[0].transform.match(/-?[\d.]+/g).map(Number);
+  return { opacity: { ms: opacity.duration, easing: opacity.easing }, move: { ms: move.duration, easing: move.easing }, ty, scale };
+};
+// Valeurs de la spec (§5.4.1) : `menu.*` pour le menu, la liste du combobox, les calendriers et le menu de filtre ; `popover.*` pour lc-toggletip.
+const MENU = { tokens: 'menu', enterMs: 350, exitMs: 140, scale: 0.94, ref: popRef('d28', 'div.menu-panel') };
+const POPOVER = { tokens: 'popover', enterMs: 450, exitMs: 150, scale: 0.95, ref: popRef('d39', 'div#d39pop'), revive: false };
 const PANELS = {
-  menu: { pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'Enter' },
-  combobox: { pane: '.cdk-overlay-pane.lc-combobox-overlay', open: 'lc-combobox input', host: 'lc-combobox', reopen: 'ArrowDown' },
-  date: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-input button[aria-expanded]', host: 'lc-date-input', reopen: 'Enter' },
-  range: { pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-range-input button[aria-expanded]', host: 'lc-date-range-input', reopen: 'Enter' },
-  // Menu de filtre de lc-data-table (T6) : ordinateur seulement, pas de place « middle » dans sa story.
-  filter: { pane: '.cdk-overlay-pane.lc-data-table__overlay', open: '[id$="-funnel-cat"]', host: '[id$="-funnel-cat"]', reopen: 'Enter', table: true },
+  menu: { ...MENU, pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'Enter' },
+  combobox: { ...MENU, pane: '.cdk-overlay-pane.lc-combobox-overlay', open: 'lc-combobox input', host: 'lc-combobox', reopen: 'ArrowDown' },
+  date: { ...MENU, pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-input button[aria-expanded]', host: 'lc-date-input', reopen: 'Enter' },
+  range: { ...MENU, pane: '.cdk-overlay-pane.lc-calendar-overlay', open: 'lc-date-range-input button[aria-expanded]', host: 'lc-date-range-input', reopen: 'Enter' },
+  // Menu de filtre de lc-data-table : ordinateur seulement, pas de place « middle » dans sa story ; il partage la règle CSS des panneaux et passe aux valeurs `menu.*`.
+  filter: { ...MENU, pane: '.cdk-overlay-pane.lc-data-table__overlay', open: '[id$="-funnel-cat"]', host: '[id$="-funnel-cat"]', reopen: 'Enter', table: true },
+  // lc-toggletip : le conteneur du panneau porte `lc-toggletip-overlay` (et `lc-overlay--above` quand il s'ouvre au-dessus), comme les autres panneaux.
+  toggletip: { ...POPOVER, pane: '.cdk-overlay-pane.lc-toggletip-overlay', open: '#trigger', host: '#trigger', reopen: 'Enter' },
 };
 const panelStory = (spec, control, place) => (spec.table ? ['qa-motion-data-table--table', `place:${place}`] : ['qa-motion-acceptance--panel', `control:${control};place:${place}`]);
 const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
 /** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
 const m42 = (value) => (value === 'none' ? 0 : parseFloat(value.slice(value.indexOf('(') + 1, -1).split(',')[value.startsWith('matrix3d') ? 13 : 5]));
+/** Le panneau a été mesuré à l'ouverture (5 s au plus) ; sinon un échec écrit, pas un délai de 30 s qui interrompt la suite. */
+const panelOpened = (page) => page.waitForFunction(() => window.__qa.enter !== null, undefined, { timeout: 5000 }).then(() => true, () => false);
 const near = (a, b, eps = 0.05) => Math.abs(a - b) <= eps;
+/** Deux `cubic-bezier(...)` égaux à 1e-3 près (CA-1) ; toute autre courbe : égalité de texte. */
+const sameCurve = (x, y) => { const n = (c) => (/^cubic-bezier\(/.test(c) ? c.match(/-?[\d.]+/g).map(Number) : null); const [a, b] = [n(x), n(y)]; return a && b ? a.every((v, i) => near(v, b[i], 1e-3)) : x === y; };
 
 async function motionPage(context, base, id, args = '', hash = '') {
   const page = await context.newPage();
@@ -1121,6 +1158,7 @@ async function motion(browser, base) {
   const contexts = [['normal', {}], ['reduced', { reducedMotion: 'reduce' }], ['forced', { forcedColors: 'active' }]];
   const sizes = [[1280, 720], [360, 640]];
   const animationIds = await animationStoryIds();
+  for (const id of T9C_STORIES) check(animationIds.includes(id), `CA-38 T9c story ${id} dans l'index`);
   for (const [name, options] of contexts) {
     const reduced = name === 'reduced';
     for (const [width, height] of sizes) {
@@ -1192,6 +1230,8 @@ async function motion(browser, base) {
         await page.close();
       }
 
+      if (name !== 'forced' && width === 1280) await motionCalendar(context, base, reduced, tag, check);
+
       // CA-7, CA-8 : panneaux, en haut (descente) puis en bas d'écran (montée).
       for (const [control, spec] of Object.entries(PANELS)) {
         if (spec.table && width < 768) continue;
@@ -1201,20 +1241,29 @@ async function motion(browser, base) {
           const { page, errors } = await motionPage(context, base, ...panelStory(spec, control, place));
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
           await page.click(spec.open);
-          await page.waitForFunction(() => window.__qa.enter !== null);
-          const got = await page.evaluate((host) => {
+          if (!(await panelOpened(page))) { check(false, `CA-7/20 ${label} le panneau ${spec.pane} n'apparaît pas`); await page.close(); continue; }
+          const got = await page.evaluate(([host, tokens]) => {
             const q = window.__qa;
-            return { enter: q.enter, rect: q.enterRect, classAtAttach: q.classAtAttach, hostRect: document.querySelector(host).getBoundingClientRect().toJSON(), enterMs: q.tokenMs('--lc-overlay-enter-duration'), offset: q.tokenPx('--lc-sys-motion-offset-sm') };
-          }, spec.host);
+            return { enter: q.enter, rect: q.enterRect, classAtAttach: q.classAtAttach, hostRect: document.querySelector(host).getBoundingClientRect().toJSON(), enterMs: q.tokenMsSafe(`--lc-${tokens}-enter-duration`), exitMs: q.tokenMsSafe(`--lc-${tokens}-exit-duration`), scaleToken: parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--lc-${tokens}-enter-scale`)) };
+          }, [spec.host, spec.tokens]);
           const e = got.enter;
           if (reduced) {
-            check(e.count === 0 || (msList(e.cssDuration).every((ms) => ms <= 0.01) && msList(e.cssDelay).every((ms) => ms <= 0.01)), `CA-7/13 ${label} entrée`, `animation=${e.cssDuration} délai=${e.cssDelay} opacité finale=${e.endOpacity}`);
+            check(e.list.every((x) => x.duration <= 0.01 && x.delay <= 0.01) && e.end.opacity === '1', `CA-7/13 ${label} entrée`, `animations=${JSON.stringify(e.list.map((x) => [x.props.join('+'), x.duration, x.delay]))} opacité finale=${e.end.opacity}`);
           } else {
             const sign = above ? 1 : -1;
             const placed = above ? got.rect.bottom <= got.hostRect.top + 1 : got.rect.top >= got.hostRect.bottom - 1;
-            const dy = m42(e.startTransform);
-            const ok = e.count === 1 && near(e.durations[0], got.enterMs) && e.delays[0] === 0 && e.startOpacity === '0' && e.endOpacity === '1' && near(dy, sign * got.offset, 0.01) && m42(e.endTransform) === 0 && e.className.includes('lc-overlay--above') === above;
-            check(ok, `CA-7 ${label} entrée`, `animations lc-overlay-enter=${e.count} durée=${e.durations} attendu ${got.enterMs}, départ opacité=${e.startOpacity} décalageY=${dy} attendu ${sign * got.offset}, fin=${e.endOpacity}/${e.endTransform}, classe à l'attache="${got.classAtAttach}"`);
+            const { ref } = spec;
+            const opacityAnims = e.list.filter((x) => x.props.includes('opacity'));
+            const moveAnims = e.list.filter((x) => x.props.some((p) => ['transform', 'translate', 'scale', 'rotate'].includes(p)));
+            const [fade, move] = [opacityAnims[0], moveAnims[0]];
+            const ok = e.list.length === 2 && opacityAnims.length === 1 && moveAnims.length === 1 && fade !== move
+              && near(fade.duration, ref.opacity.ms) && sameCurve(fade.easing, ref.opacity.easing)
+              && near(move.duration, ref.move.ms) && sameCurve(move.easing, ref.move.easing) && e.list.every((x) => x.delay === 0)
+              && near(got.enterMs, spec.enterMs) && near(move.duration, got.enterMs) && near(got.exitMs, spec.exitMs) && near(got.scaleToken, spec.scale, 0.005)
+              && e.start.opacity === '0' && e.end.opacity === '1' && near(e.start.a, spec.scale, 0.005) && near(e.start.d, spec.scale, 0.005)
+              && near(e.start.f, sign * Math.abs(ref.ty), 0.5) && near(e.end.a, 1, 0.001) && near(e.end.d, 1, 0.001) && near(e.end.f, 0, 0.01) && e.above === above
+              && near(e.originY, above ? e.height : 0, 1);
+            check(ok, `CA-7/20 ${label} entrée pop`, `animations=${JSON.stringify(e.list.map((x) => [x.props.join('+'), x.duration, x.delay, x.easing]))} attendu fondu ${ref.opacity.ms} ms et mouvement ${ref.move.ms} ms (jeton ${got.enterMs}, fermeture ${got.exitMs} attendu ${spec.enterMs}/${spec.exitMs}), échelle de départ=${e.start.a?.toFixed(3)} attendu ${spec.scale} (jeton ${got.scaleToken}), décalageY=${e.start.f} attendu ${sign * Math.abs(ref.ty)}, opacité ${e.start.opacity}->${e.end.opacity}, fin a=${e.end.a} f=${e.end.f}, origine y=${e.originY} attendu ${above ? e.height : 0}, au-dessus=${e.above}`);
             // Le calendrier de la période recouvre le champ à 360 px (positions de calendar-overlay.ts antérieures à T3) : information, pas un échec (spec mouvement, section 13).
             if (!placed && control === 'range' && width === 360) console.log(`INFO placement ${label} : le panneau recouvre le champ (limite connue antérieure au mouvement, hors CA-7, spec section 13) ; haut ${Math.round(got.rect.top)}, bas ${Math.round(got.rect.bottom)} ; champ haut ${Math.round(got.hostRect.top)}, bas ${Math.round(got.hostRect.bottom)}`);
             else check(placed, `placement ${label} (précondition de CA-7, hors critère)`, `panneau ${above ? 'au-dessus' : 'au-dessous'} du champ=${placed} (haut ${Math.round(got.rect.top)}, bas ${Math.round(got.rect.bottom)} ; champ haut ${Math.round(got.hostRect.top)}, bas ${Math.round(got.hostRect.bottom)})`);
@@ -1223,10 +1272,10 @@ async function motion(browser, base) {
           await page.keyboard.press('Escape');
           await page.waitForFunction(() => window.__qa.closing !== null);
           await page.waitForFunction(() => !window.__qa.pane.isConnected, undefined, { timeout: 5000 });
-          const closed = await page.evaluate((s) => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMs('--lc-overlay-exit-duration'), focused: document.activeElement?.matches(s) ?? false, active: document.activeElement?.outerHTML.slice(0, 80) }), spec.open);
+          const closed = await page.evaluate((s) => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMsSafe(`--lc-${s.tokens}-exit-duration`), focused: document.activeElement?.matches(s.open) ?? false, active: document.activeElement?.outerHTML.slice(0, 80) }), spec);
           const c = closed.closing;
           if (reduced) check(c.connected && msList(c.transitionDuration).every((ms) => ms <= 0.01) && closed.focused, `CA-8/13 ${label} fermeture`, `durée=${c.transitionDuration} focus déclencheur=${closed.focused}`);
-          else check(c.connected && c.children > 0 && c.props.some(([prop, ms]) => prop === 'opacity' && near(ms, closed.exitMs)) && closed.focused, `CA-8a/8c ${label} fermeture`, `classe posée, présent=${c.connected}, contenu présent pendant le fondu=${c.children > 0}, transitions=${JSON.stringify(c.props)} attendu opacity ${closed.exitMs}, retiré du DOM=oui, focus déclencheur=${closed.focused} (${closed.active})`);
+          else check(c.connected && c.children > 0 && c.props.some(([prop, ms]) => prop === 'opacity' && near(ms, closed.exitMs)) && near(closed.exitMs, spec.exitMs) && closed.focused, `CA-8a/8c ${label} fermeture`, `classe posée, présent=${c.connected}, contenu présent pendant le fondu=${c.children > 0}, transitions=${JSON.stringify(c.props)} attendu opacity ${closed.exitMs} (spec ${spec.exitMs}), retiré du DOM=oui, focus déclencheur=${closed.focused} (${closed.active})`);
           check(errors.length === 0, `erreurs page ${label}`, errors.join(' ; '));
           await page.close();
         }
@@ -1238,11 +1287,11 @@ async function motion(browser, base) {
           const { page } = await motionPage(context, base, ...panelStory(spec, control, 'top'));
           await page.evaluate((selector) => window.__qa.watchPane(selector, true), spec.pane);
           await page.click(spec.open);
-          await page.waitForFunction(() => window.__qa.enter !== null);
+          if (!(await panelOpened(page))) { check(false, `CA-7/20 ${label} le panneau ${spec.pane} n'apparaît pas`); await page.close(); continue; }
           await page.keyboard.press('Escape');
           await page.waitForFunction(() => window.__qa.closing !== null);
           await page.waitForFunction(() => !window.__qa.pane.isConnected, undefined, { timeout: 5000 });
-          const r = await page.evaluate(() => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMs('--lc-overlay-exit-duration') }));
+          const r = await page.evaluate((tokens) => ({ closing: window.__qa.closing, exitMs: window.__qa.tokenMsSafe(`--lc-${tokens}-exit-duration`) }), spec.tokens);
           check(r.closing.enterStillRunning && r.closing.props.some(([prop, ms]) => prop === 'opacity' && near(ms, r.exitMs)), `CA-8a ${label} fermeture pendant l'entrée`, `entrée en cours=${r.closing.enterStillRunning}, transitions=${JSON.stringify(r.closing.props)} attendu opacity ${r.exitMs}, retiré du DOM=oui`);
           await page.close();
         }
@@ -1253,21 +1302,22 @@ async function motion(browser, base) {
           const { page } = await motionPage(context, base, ...panelStory(spec, control, 'top'));
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
           await page.click(spec.open);
-          await page.waitForFunction(() => window.__qa.enter !== null);
+          if (!(await panelOpened(page))) { check(false, `CA-7/20 ${label} le panneau ${spec.pane} n'apparaît pas`); await page.close(); continue; }
           await page.evaluate(() => { window.__qa.hold = true; });
           await page.keyboard.press('Escape');
           await page.waitForFunction(() => window.__qa.closing !== null);
           // Au clavier : pendant le fondu, le fond transparent du CDK intercepte encore la souris.
           await page.waitForFunction((open) => document.activeElement?.matches(open), spec.open); // le focus revient au déclencheur après le prochain rendu
           await page.keyboard.press(spec.reopen);
-          const got = await page.evaluate(async () => {
+          const got = await page.evaluate(async (selector) => {
             const pane = window.__qa.pane;
             await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             pane.getAnimations().forEach((a) => { if (a.playState === 'paused') a.play(); });
             await Promise.allSettled(pane.getAnimations().map((a) => a.finished));
-            return { connected: pane.isConnected, closingClass: pane.classList.contains('lc-overlay--closing'), opacity: getComputedStyle(pane).opacity };
-          });
-          check(got.connected && !got.closingClass && got.opacity === '1', `CA-8b ${label} réouverture pendant le fondu`, `présent=${got.connected} classe closing=${got.closingClass} opacité=${got.opacity}`);
+            const live = [...document.querySelectorAll(selector)].find((p) => !p.classList.contains('lc-overlay--closing'));
+            return { connected: pane.isConnected, closingClass: pane.classList.contains('lc-overlay--closing'), opacity: getComputedStyle(pane).opacity, reopened: !!live && getComputedStyle(live).opacity === '1' };
+          }, spec.pane);
+          check((spec.revive === false ? got.reopened : got.connected && !got.closingClass && got.opacity === '1'), `CA-8b ${label} réouverture pendant le fondu`, `présent=${got.connected} classe closing=${got.closingClass} opacité=${got.opacity}`);
           await page.close();
         }
       }
@@ -1280,12 +1330,11 @@ async function motion(browser, base) {
           await page.setViewportSize({ width, height: 1000 });
           await page.evaluate((selector) => window.__qa.watchPane(selector), spec.pane);
           await page.click(spec.open);
-          await page.waitForFunction(() => window.__qa.enter !== null);
-          await page.evaluate(async () => { await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); window.__qa.startsAtEnter = window.__qa.starts; });
+          if (!(await panelOpened(page))) { check(false, `CA-7b ${tag} ${control} le panneau n'apparaît pas`); await page.close(); continue; }
+          await page.evaluate(async () => { await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); });
           await page.setViewportSize({ width, height: 480 });
           const flipped = await page.waitForFunction(() => window.__qa.flip, undefined, { timeout: 3000 }).then((h) => h.jsonValue()).catch(() => null);
-          const restarts = flipped === null ? -1 : await page.evaluate(async () => { await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); return window.__qa.starts - window.__qa.startsAtEnter; });
-          check(flipped !== null && flipped.above && flipped.entering === 0 && restarts === 0, `CA-7b ${tag} ${control} retournement`, flipped === null ? 'le panneau ne s\'est pas retourné (classe lc-overlay--above non posée)' : `au-dessus=${flipped.above}, animations lc-overlay-enter en cours=${flipped.entering}, démarrées depuis l'entrée=${restarts}`);
+          check(flipped !== null && flipped.above && flipped.entering === 0, `CA-7b ${tag} ${control} retournement`, flipped === null ? 'le panneau ne s\'est pas retourné (classe lc-overlay--above non posée)' : `au-dessus=${flipped.above}, nouvelles animations sur le contenu après le retournement=${flipped.entering}`);
           await page.close();
         }
       }
@@ -1295,6 +1344,59 @@ async function motion(browser, base) {
   }
   return failures;
 }
+
+/** Calendrier (T9c, spec 2026-12-mouvement-v2 §5.4.1, d41 et d61) : l'anneau de sélection ne bouge pas ; le changement de mois glisse de ±calendar.slide-offset, calendar.slide-duration, calendar.row-stagger par ligne. Valeurs de d61 dans `fidelite.json`. */
+async function motionCalendar(context, base, reduced, tag, check) {
+  const slideRef = FID.d61.triggers[0].animations[0];
+  const [slidePx, slideFrom] = [Math.abs(parseFloat(slideRef.keyframes[0].transform.match(/-?[\d.]+/)[0])), Number(slideRef.keyframes[0].opacity)];
+  const { page, errors } = await motionPage(context, base, 'qa-motion-acceptance--panel', 'control:date;place:top');
+  await page.click('lc-date-input button[aria-expanded]');
+  await page.waitForSelector('.cdk-overlay-pane.lc-calendar-overlay lc-calendar-panel');
+  await finiteIdle(page, `${tag} calendrier`, check);
+  // d41 : l'anneau de sélection / de focus ne bouge pas (seuls les retours de couleur des contrôles sont admis).
+  await page.evaluate(() => { window.__ring = new Set(document.getAnimations()); });
+  await page.keyboard.press('ArrowRight');
+  await page.evaluate(() => window.__qa.frames(3));
+  const ring = await page.evaluate(() => {
+    const panel = document.querySelector('lc-calendar-panel');
+    return [...document.getAnimations()].filter((a) => !window.__ring.has(a) && a.effect?.target && panel.contains(a.effect.target))
+      .flatMap((a) => [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((p) => !['offset', 'computedOffset', 'easing', 'composite'].includes(p)));
+  });
+  const moving = ring.filter((p) => !/^(color|background|backgroundColor|border\w*Color)$/.test(p));
+  check(moving.length === 0, `CA-20 d41 ${tag} l'anneau de sélection et de focus ne bouge pas`, `propriétés animées au déplacement du focus : ${JSON.stringify(ring)}`);
+  // d61 : glissement du changement de mois, dans les deux sens.
+  for (const [button, sign, name] of [['.lc-calendar__nav--next', 1, 'mois suivant'], ['.lc-calendar__nav:not(.lc-calendar__nav--next)', -1, 'mois précédent']]) {
+    await finiteIdle(page, `${tag} ${name}`, check);
+    const got = await page.evaluate(async (selector) => {
+      const q = window.__qa;
+      const before = new Set(document.getAnimations());
+      document.querySelector(selector).click();
+      await q.frames(4);
+      const cells = [...document.getAnimations()].filter((a) => !before.has(a) && a.effect?.target?.closest('.lc-calendar__grid tbody tr'));
+      const rowOf = (el) => { const tr = el.closest('tr'); return [...tr.parentElement.children].indexOf(tr); };
+      const rows = cells.map((a) => ({ row: rowOf(a.effect.target), duration: a.effect.getComputedTiming().duration, delay: a.effect.getComputedTiming().delay, easing: a.effect.getComputedTiming().easing === 'linear' ? a.effect.getKeyframes()[0].easing : a.effect.getComputedTiming().easing, props: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((p) => !['offset', 'computedOffset', 'easing', 'composite'].includes(p)) }));
+      cells.forEach((a) => a.pause());
+      cells.forEach((a) => { a.currentTime = 0; });
+      const starts = cells.map((a) => q.stateOf(a.effect.target));
+      cells.forEach((a) => a.finish());
+      const ends = cells.map((a) => q.stateOf(a.effect.target));
+      return { rows, starts, ends, duration: q.tokenMsSafe('--lc-calendar-slide-duration'), stagger: q.tokenMsSafe('--lc-calendar-row-stagger'), offset: q.tokenPx('--lc-calendar-slide-offset'), running: document.getAnimations().filter((a) => !before.has(a) && (a.playState === 'running' || a.pending)).length };
+    }, button);
+    if (reduced) { check(got.rows.every((r) => r.duration <= 0.01 && r.delay <= 0.01), `CA-3 ${tag} calendrier ${name} : aucune animation`, JSON.stringify(got.rows.slice(0, 3))); continue; }
+    const rowCount = new Set(got.rows.map((r) => r.row)).size;
+    const ok = got.rows.length >= 28 && rowCount >= 4
+      && got.rows.every((r, i) => near(r.duration, slideRef.duration) && sameCurve(r.easing, slideRef.easing) && near(r.delay, r.row * 30, 0.5) && r.props.includes('opacity')
+        && near(got.starts[i].opacity === undefined ? Number.NaN : Number(got.starts[i].opacity), slideFrom, 0.005) && near(got.starts[i].e, sign * slidePx, 0.5) && near(got.starts[i].f, 0, 0.5)
+        && near(got.ends[i].e, 0, 0.01) && near(Number(got.ends[i].opacity), 1, 0.001))
+      && near(got.duration, slideRef.duration) && near(got.stagger, 30) && near(got.offset, slidePx, 0.5);
+    check(ok, `CA-20 d61 ${tag} calendrier ${name} : glissement ${sign * slidePx} px, ${slideRef.duration} ms, ${30} ms par ligne`, `cellules animées=${got.rows.length} sur ${rowCount} ligne(s) ; jetons durée=${got.duration} décalage=${got.stagger} distance=${got.offset} ; première=${JSON.stringify(got.rows[0])} départ=${JSON.stringify(got.starts[0])}`);
+  }
+  check(errors.length === 0, `erreurs page ${tag} calendrier`, errors.join(' ; '));
+  await page.close();
+}
+
+/** Stories d'animation attendues par T9c (CA-38, CA-20 : démos d28, d39, d41, d61, d50) : présentes dans l'index de Storybook. */
+const T9C_STORIES = ['navigation-menu--animation', 'overlays-toggletip--animation', 'overlays-tooltip--animation', 'forms-date-input--animation'];
 
 /** Stories d'animation, dérivées de l'index de Storybook (CA-38 de 2026-12-mouvement-v2 : plus de liste codée en dur) : toute story `Animation*`, la page Foundations/Motion et les deux pages gardées de 2026-11 (Elevation, Playground de Reveal). */
 const ANIMATION_STORY = /--animation|^foundations-(motion|elevation)--|^layout-reveal--playground$/;
