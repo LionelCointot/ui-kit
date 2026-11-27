@@ -1,9 +1,9 @@
 import { provideLocationMocks } from '@angular/common/testing';
-import { ChangeDetectionStrategy, Component, ElementRef, Injectable, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterOutlet, type Routes } from '@angular/router';
+import { ChangeDetectionStrategy, Component, ElementRef, Injectable, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink, RouterOutlet, type Routes } from '@angular/router';
 import { applicationConfig, moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
-import { LcAvatarComponent, LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
+import { LcAvatarComponent, LcButtonComponent, LcIconComponent, LcThemeToggleComponent } from '@lionelcointot/ui-angular';
 import { LcBarChartComponent, type LcCartesianData } from '@lionelcointot/ui-angular/charts';
 import {
   LcActivityFeedComponent, LcActivityItemComponent, LcCellDirective, LcDataTableComponent, LcDescriptionListComponent, LcKpiCardComponent,
@@ -177,16 +177,16 @@ class FilterDrawerComponent {
       @if (store.tasks().length) {
         <lc-data-table caption="Tâches" [captionHidden]="true" [source]="store.visible()" [columns]="columns" [trackBy]="trackBy" emptyMessage="Aucune tâche ne correspond.">
           <ng-template lcCell="title" let-row>
-            <a href="#" (click)="$event.preventDefault(); open(row)">{{ row.title }}</a>
+            <button lcButton type="button" fillMode="flat" themeColor="neutral" size="small" [attr.data-task]="row.id" (click)="open(row)">{{ row.title }}</button>
           </ng-template>
           <ng-template lcCell="status" let-row><lc-status-badge [kind]="statuses[row.status].kind" size="small">{{ statuses[row.status].label }}</lc-status-badge></ng-template>
           <ng-template lcCell="actions" let-row>
-            <button lcButton type="button" iconOnly fillMode="flat" themeColor="neutral" size="small" [lcMenuTriggerFor]="menu" [attr.aria-label]="'Actions : ' + row.title">
+            <button lcButton type="button" iconOnly fillMode="flat" themeColor="neutral" size="small" #trigger [lcMenuTriggerFor]="menu" [attr.aria-label]="'Actions : ' + row.title">
               <lc-icon name="ellipsis-vertical" />
             </button>
             <lc-menu #menu ariaLabel="Actions de la tâche">
               <button lcMenuItem icon="pencil" (click)="open(row)">Ouvrir</button>
-              <button lcMenuItem icon="trash-2" destructive (click)="confirmRemove(row)">Supprimer</button>
+              <button lcMenuItem icon="trash-2" destructive (click)="confirmRemove(row, trigger)">Supprimer</button>
             </lc-menu>
           </ng-template>
         </lc-data-table>
@@ -202,6 +202,7 @@ class ListPageComponent {
   private readonly router = inject(Router);
   private readonly dialogs = inject(LcDialogService);
   private readonly drawers = inject(LcDrawerService);
+  private readonly injector = inject(Injector);
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly statuses = STATUS;
   protected readonly trackBy = (task: Task) => task.id;
@@ -221,9 +222,21 @@ class ListPageComponent {
     this.drawers.open(FilterDrawerComponent, { size: 'small' });
   }
 
-  protected async confirmRemove(task: Task): Promise<void> {
+  /** Le menu de la ligne est détruit à la fermeture : le focus va au bouton de menu (annulation), à la ligne suivante, ou au titre de la page (suppression). */
+  protected async confirmRemove(task: Task, trigger: HTMLElement): Promise<void> {
     const confirmed = await this.dialogs.confirm({ title: 'Supprimer la tâche ?', message: `« ${task.title} » sera retirée de la liste.`, confirmLabel: 'Supprimer', destructive: true });
-    if (confirmed) this.store.remove(task);
+    if (!confirmed) return trigger.focus();
+    const rows = this.store.visible();
+    const next = rows[rows.indexOf(task) + 1];
+    this.store.remove(task);
+    // Le tableau se redessine après le prochain rendu : on réessaie quelques images.
+    let tries = 10;
+    const focus = () => {
+      const target = next && document.querySelector<HTMLElement>(`[data-task="${next.id}"]`) || (tries === 0 ? document.querySelector<HTMLElement>('lc-page h1') : null);
+      if (target) target.focus();
+      else if (tries-- > 0) requestAnimationFrame(focus);
+    };
+    afterNextRender(focus, { injector: this.injector });
   }
 }
 
@@ -323,7 +336,7 @@ const ROUTES: Routes = [
 @Component({
   selector: 'lc-motion-demo',
   imports: [
-    LcAppShellComponent, LcNavListComponent, LcNavItemComponent, LcButtonComponent, LcIconComponent, LcToastOutletComponent, RouterOutlet, StoryMotionNoticeComponent,
+    LcAppShellComponent, LcNavListComponent, LcNavItemComponent, LcButtonComponent, LcIconComponent, LcThemeToggleComponent, LcToastOutletComponent, RouterLink, RouterOutlet, StoryMotionNoticeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -334,6 +347,7 @@ const ROUTES: Routes = [
         <button lcShellHeader lcButton type="button" fillMode="flat" themeColor="neutral" size="small" style="margin-inline-start:auto" (click)="replay.replay(host)">
           <lc-icon name="rotate-ccw" />Rejouer l'entrée
         </button>
+        <lc-theme-toggle lcShellHeader />
         <lc-nav-list lcShellNav>
           <a lcNavItem routerLink="/dashboard" icon="layout-dashboard" [primary]="true">Tableau de bord</a>
           <a lcNavItem routerLink="/list" icon="list-checks" [primary]="true">Liste</a>
@@ -347,7 +361,9 @@ const ROUTES: Routes = [
 class MotionDemoComponent {
   private readonly router = inject(Router);
   protected readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  protected readonly replay = replayable();
+  // Le rejeu repart de la liste complète (tâches supprimées, filtres).
+  private readonly store = inject(DemoStore);
+  protected readonly replay = replayable({ reset: () => this.store.reset() });
 
   constructor() {
     // Le routeur global de Storybook (preview.ts) déclare `**` en premier et masque toute route ajoutée par la story : on remplace sa configuration.
@@ -381,14 +397,14 @@ export const Demo: StoryObj = {
     docs: {
       source: {
         code: `import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { LcAppShellComponent } from '@lionelcointot/ui-angular/layout';
 import { LcNavItemComponent, LcNavListComponent } from '@lionelcointot/ui-angular/navigation';
 
 // Pages, cartes, tableaux, jauges et fenêtres s'animent seuls : aucun attribut de mouvement.
 @Component({
   selector: 'app-root',
-  imports: [LcAppShellComponent, LcNavListComponent, LcNavItemComponent, RouterOutlet],
+  imports: [LcAppShellComponent, LcNavListComponent, LcNavItemComponent, RouterLink, RouterOutlet],
   template: \`
     <lc-app-shell>
       <strong lcShellHeader>Atelier</strong>
