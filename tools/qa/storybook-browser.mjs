@@ -1489,7 +1489,7 @@ async function animationStoryIds() {
  *  CA-3 (mouvement réduit : durées et délais ≤ 0,01 ms, rien en cours), CA-5 (propriétés animées), CA-31 (aucun défilement horizontal à 360 px à 0, 50 et 100 %). */
 const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate', 'strokeDashoffset']);
 const CA5_INDICATORS = '.lc-tabs__indicator, .lc-nav-list__indicator, .lc-segmented-control__indicator, .lc-switch__thumb';
-const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select';
+const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, .lc-switch__track, .lc-switch__thumb'; // lc-switch : contrôle de formulaire, piste et bouton changent de couleur à la bascule (d46, retour d'état);
 /** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même), 'transition' : transitions seulement]. Tout le reste est un écart. */
 const CA5_ALLOW = [
   [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
