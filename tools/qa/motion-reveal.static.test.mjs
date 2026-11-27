@@ -318,7 +318,8 @@ describe('fidélité au site Talmo (d08, d25, d46)', () => {
   });
   test('d25 : le contenu du tiroir lit les jetons drawer.content-* (y, durée, départ, rythme)', () => {
     const css = read(join(angular, 'styles/motion.css'));
-    const rule = css.match(/\.lc-drawer__content \.lc-reveal \{([^}]*)\}/)?.[1] ?? '';
+    // Départ et rythme sont hérités du conteneur (un lcStagger de l'application garde la priorité) ; y et durée vivent sur la ligne.
+    const rule = (css.match(/\.lc-drawer__content \{([^}]*)\}/)?.[1] ?? '') + (css.match(/\.lc-drawer__content \.lc-reveal \{([^}]*)\}/)?.[1] ?? '');
     for (const name of ['offset', 'duration', 'delay', 'stagger']) assert.match(rule, new RegExp(`var\\(--lc-drawer-content-${name}\\)`));
   });
   test('d46 : l\'interrupteur n\'anime que la couleur de la piste et le glissement du bouton', () => {

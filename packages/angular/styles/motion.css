@@ -156,15 +156,18 @@
   --lc-reveal-y: 0px;
 }
 
-/* Cartes (cascade du site) : 26 px, échelle 0,985, 800 ms `entrance`, au rythme `cards` sauf `lcStagger` au-dessus. */
-/* Contenu du tiroir (lignes projetées, hors de l'encapsulation de lc-drawer) : monte de `drawer.content-offset`, départ après `content-delay`, un rang tous les `content-stagger` ; courbe `out`. */
-.lc-drawer__content .lc-reveal {
-  --lc-reveal-y: var(--lc-drawer-content-offset);
-  --lc-reveal-time: var(--lc-drawer-content-duration);
+/* Contenu du tiroir (lignes projetées, hors de l'encapsulation de lc-drawer) : départ après `content-delay` et un rang tous les `content-stagger`, valeurs héritées (un `lcStagger` de l'application garde la priorité, comme pour lc-grid) ; chaque ligne monte de `drawer.content-offset`, courbe `out`. */
+.lc-drawer__content {
   --lc-reveal-offset: var(--lc-drawer-content-delay);
   --lc-stagger-pace: var(--lc-drawer-content-stagger);
 }
 
+.lc-drawer__content .lc-reveal {
+  --lc-reveal-y: var(--lc-drawer-content-offset);
+  --lc-reveal-time: var(--lc-drawer-content-duration);
+}
+
+/* Cartes (cascade du site) : 26 px, échelle 0,985, 800 ms `entrance`, au rythme `cards` sauf `lcStagger` au-dessus. */
 .lc-reveal--card {
   --lc-reveal-time: var(--lc-reveal-card-duration);
   --lc-reveal-curve: var(--lc-reveal-card-easing);
