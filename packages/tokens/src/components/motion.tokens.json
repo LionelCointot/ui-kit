@@ -42,8 +42,9 @@
     "indicator-back-delay": { "$value": "75ms", "$type": "duration" }
   },
   "tabbar": {
-    "enter-duration": { "$value": "750ms", "$type": "duration" },
-    "enter-delay": { "$value": "265ms", "$type": "duration" },
+    "enter-duration": { "$value": "{sys.duration.view}", "$type": "duration" },
+    "enter-delay": { "$value": "200ms", "$type": "duration" },
+    "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier", "$description": "expo.out of the Talmo site." },
     "enter-offset": { "$value": "90px", "$type": "dimension" },
     "indicator-front-duration": { "$value": "{segmented-control.indicator-front-duration}", "$type": "duration" },
     "indicator-front-easing": { "$value": "{segmented-control.indicator-front-easing}", "$type": "cubicBezier" },

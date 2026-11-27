@@ -208,6 +208,7 @@ export const MOTION_SCHEMA = [
   {"path":"segmented-control.indicator-back-delay","cssVar":"--lc-segmented-control-indicator-back-delay","type":"duration"},
   {"path":"tabbar.enter-duration","cssVar":"--lc-tabbar-enter-duration","type":"duration"},
   {"path":"tabbar.enter-delay","cssVar":"--lc-tabbar-enter-delay","type":"duration"},
+  {"path":"tabbar.enter-easing","cssVar":"--lc-tabbar-enter-easing","type":"cubicBezier"},
   {"path":"tabbar.enter-offset","cssVar":"--lc-tabbar-enter-offset","type":"dimension","unit":"length"},
   {"path":"tabbar.indicator-front-duration","cssVar":"--lc-tabbar-indicator-front-duration","type":"duration"},
   {"path":"tabbar.indicator-front-easing","cssVar":"--lc-tabbar-indicator-front-easing","type":"cubicBezier"},

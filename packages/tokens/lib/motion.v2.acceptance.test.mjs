@@ -69,7 +69,7 @@ test('CA-1 : --lc-sys-motion-offset, --lc-sys-motion-stagger et --lc-ref-motion-
 // Un nombre de pourcentage est accepté en pourcentage ou en fraction.
 const E = (role) => `cubic-bezier(${EASINGS[role].join(', ')})`;
 const GROUPS = {
-  tabbar: ['750ms', '265ms', '90px'],
+  tabbar: ['700ms', '200ms', '90px'],
   tabs: ['380ms', E('title'), '400ms', E('inout'), '80ms'],
   'nav-item': ['380ms', E('title'), '400ms', E('inout'), '80ms'],
   'segmented-control': ['300ms', E('out'), '410ms', E('inout'), '75ms'],
