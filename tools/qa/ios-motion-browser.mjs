@@ -456,7 +456,7 @@ async function misc() {
     check('CA-C1 calendrier : grille en fondu de 200 ms au changement de mois', !k.none && k.n > 0 && k.d.every((d) => near(d, k.normal, 0.5)), JSON.stringify(k));
     await page.close();
     page = await open(c, 'layout-app-shell--playground');
-    const a = await page.evaluate(async () => { const b = document.querySelector('lc-app-shell button[aria-controls]'); const shell = document.querySelector('lc-app-shell'); b.click(); await Q.raf(); return { d: Q.anims(shell).map((x) => x.t.duration), long: Q.ms('--lc-sys-duration-long') }; });
+    const a = await page.evaluate(async () => { const b = document.querySelector('lc-app-shell button[aria-controls]'); const shell = document.querySelector('lc-app-shell'); b.click(); await Q.raf(); return { d: Q.anims(shell).map((x) => x.t.duration), long: Q.ms('--lc-shell-nav-duration') }; }); // v2 : `duration-long` passe à 600 ms, la barre latérale garde son token propre (350 ms)
     check('CA-A1 app-shell 1 280 px : largeur de la nav en 350 ms (--lc-shell-nav-duration)', a.d.some((d) => near(d, a.long, 0.5)) && a.long === 350, JSON.stringify(a));
     await page.close();
   });
