@@ -1,5 +1,6 @@
 export * from './motion.types';
 export * from './directives/reveal.directive';
+export * from './directives/split-text.directive';
 export * from './directives/stagger.directive';
 export * from './runtime/animate';
 export * from './runtime/detach-animated';

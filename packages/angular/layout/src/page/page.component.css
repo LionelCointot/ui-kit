@@ -23,6 +23,25 @@
   line-height: var(--lc-sys-font-line-height-tight);
 }
 
+/* Trait tracé sous le titre (keyframes dans motion.css) ; démarre après la première lettre. */
+.lc-page__line {
+  display: block;
+  inline-size: min(calc(var(--lc-sys-space-16) * 4), 80%);
+  block-size: var(--lc-sys-border-width-thick);
+  margin-block-start: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-sm);
+  background: var(--lc-sys-color-primary);
+  transform-origin: left center;
+  animation: lc-title-line-in var(--lc-title-line-duration) var(--lc-title-line-easing) backwards;
+  animation-delay: var(--lc-title-line-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-page__line {
+    animation: none;
+  }
+}
+
 .lc-page__description {
   max-width: 70ch;
   margin: var(--lc-sys-space-1) 0 0;

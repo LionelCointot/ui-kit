@@ -8,6 +8,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
 | `[lcReveal]` | LcRevealDirective | directive | lcReveal, lcRevealIndex | – |
+| `[lcSplitText]` | LcSplitTextDirective | directive | lcSplitText (requis) | – |
 | `[lcStagger]` | LcStaggerDirective | directive | lcStagger | – |
 | `[lcTruncate]` | LcTruncateDirective | directive | – | – |
 | `button[lcButton], a[lcButton]` | LcButtonComponent | composant | themeColor, fillMode, size, rounded, loading, iconOnly, fullWidth, pressed | – |

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { LcSplitTextDirective } from '@lionelcointot/ui-angular';
 
 /** Page : titre `<h1>`, description, actions (`[lcPageActions]`), barre d'outils (`[lcPageToolbar]`) et contenu. */
 @Component({
@@ -6,7 +7,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <header class="lc-page__header">
       <div class="lc-page__heading">
-        <h1 class="lc-page__title">{{ title() }}</h1>
+        <h1 class="lc-page__title" tabindex="-1" [lcSplitText]="title()"></h1>
+        <span class="lc-page__line" aria-hidden="true"></span>
         @if (description()) {
           <p class="lc-page__description">{{ description() }}</p>
         }
@@ -16,6 +18,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     <div class="lc-page__toolbar"><ng-content select="[lcPageToolbar]" /></div>
     <div class="lc-page__content"><ng-content /></div>
   `,
+  imports: [LcSplitTextDirective],
   styleUrl: './page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'lc-page' },
