@@ -6,6 +6,7 @@ import { lcSpaceVar } from '../space';
 /**
  * Carte : surface avec élévation. Avec `collapsible`, l'en-tête (`lc-card-header`) devient un bouton
  * (`aria-expanded`, `aria-controls`) qui replie le contenu et le pied.
+ * En relief (élévation 1 et 2), le bord est un filet translucide posé en `inset` : un contenu opaque qui touche le bord (en-tête coloré) le masque.
  * Elle entre seule (`lcReveal` `card`, rang d'après `lcStagger` ou ses frères) : rien à écrire côté application.
  */
 @Component({

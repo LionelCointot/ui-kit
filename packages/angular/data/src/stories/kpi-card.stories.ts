@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent, LcCountUpDirective, LcRevealDirective } from '@lionelcointot/ui-angular';
-import { LcGridComponent } from '@lionelcointot/ui-angular/layout';
-import { LcDescriptionListComponent, LcKpiCardComponent, type LcKpiDelta } from '@lionelcointot/ui-angular/data';
+import { LcAppShellComponent, LcCardComponent, LcGridComponent } from '@lionelcointot/ui-angular/layout';
+import { LcInputDirective } from '@lionelcointot/ui-angular/forms';
+import { LcDescriptionListComponent, LcKpiCardComponent, LcKpiCardLinkDirective, type LcKpiDelta } from '@lionelcointot/ui-angular/data';
 
 /** Demo of the `Animation` story: three cards in an `lc-grid`; "Mettre à jour" changes a value. */
 @Component({
@@ -154,7 +155,72 @@ export const WithDescriptionList: Story = {
   }),
 };
 
-const ANIMATION_CODE = `import { Component } from '@angular/core';
+const FILLED_DELTA: LcKpiDelta = { value: 4.2, format: 'percent', trend: 'up', sentiment: 'positive' };
+
+/** Cards in relief (hairline plus soft shadow, 16 px corners) on the content background of the app shell; `elevation="0"` stays flat with a border. */
+export const Relief: Story = {
+  parameters: { ...fixedExample, layout: 'fullscreen' },
+  decorators: [moduleMetadata({ imports: [LcAppShellComponent, LcCardComponent, LcButtonComponent, LcInputDirective] })],
+  render: () => ({
+    template: `<lc-app-shell navMode="none">
+      <strong lcShellHeader>Application</strong>
+      <div style="display:grid;gap:var(--lc-sys-space-4);padding:var(--lc-sys-space-4);max-width:40rem">
+        <lc-card><p>Carte en relief (élévation 1).</p></lc-card>
+        <lc-card [elevation]="0"><p>Carte à plat (élévation 0).</p></lc-card>
+        <lc-kpi-card label="Commandes du jour" [value]="1248" format="integer" hint="Depuis minuit" />
+        <div style="display:flex;gap:var(--lc-sys-space-3)"><button lcButton type="button">Enregistrer</button><input lcInput aria-label="Nom" value="Exemple" /></div>
+      </div></lc-app-shell>`,
+  }),
+};
+
+/** The solid tile for each `themeColor`: every text and icon takes the matching `on-<color>`. */
+export const Filled: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { delta: FILLED_DELTA, colors: ['primary', 'secondary', 'success', 'warning', 'error', 'highlight', 'neutral'] as const },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-4);grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));max-width:56rem">
+      @for (color of colors; track color) {
+        <lc-kpi-card [attr.data-color]="color" [themeColor]="color" fillMode="solid" [label]="color" [value]="1248" format="integer" [delta]="delta" hint="Depuis minuit" />
+      }</div>`,
+  }),
+};
+
+/** The whole card is the link (click, Tab, focus ring on the card). The anchor stays empty: its text comes from the `aria-label` the card sets. */
+export const Link: Story = {
+  parameters: fixedExample,
+  decorators: [moduleMetadata({ imports: [LcKpiCardLinkDirective, LcButtonComponent] })],
+  render: () => ({
+    props: { delta: FILLED_DELTA },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-4);max-width:20rem;justify-items:start">
+      <button lcButton id="before" type="button">Avant</button>
+      <lc-kpi-card style="justify-self:stretch" label="Commandes du jour" [value]="1248" format="integer" [delta]="delta" hint="Depuis minuit"><a lcKpiCardLink href="#opened"></a></lc-kpi-card>
+      <button lcButton id="after" type="button">Après</button></div>`,
+  }),
+};
+
+/** `layout="horizontal"`: label and footer on the left, the figure on the right. */
+export const Horizontal: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { delta: FILLED_DELTA },
+    template: `<div style="max-width:28rem"><lc-kpi-card layout="horizontal" label="Commandes du jour" [value]="1248" format="integer" [delta]="delta" hint="Depuis minuit" /></div>`,
+  }),
+};
+
+/** Tiles of different content heights in one row: the footers line up on the bottom edge. */
+export const Row: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { delta: FILLED_DELTA },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-4);grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;max-width:64rem">
+      <lc-kpi-card label="Commandes" [value]="1248" format="integer" hint="Aujourd'hui" />
+      <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" [delta]="delta" />
+      <lc-kpi-card label="Taux de conversion sur les sept derniers jours" [value]="3.2" format="percent" [delta]="delta" hint="Depuis minuit, hors retours" />
+      <lc-kpi-card themeColor="primary" fillMode="solid" label="Retours" [value]="37" format="integer" hint="Ce mois" /></div>`,
+  }),
+};
+
+const ANIMATION_CODE =`import { Component } from '@angular/core';
 import { LcGridComponent } from '@lionelcointot/ui-angular/layout';
 import { LcKpiCardComponent } from '@lionelcointot/ui-angular/data';
 
