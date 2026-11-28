@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
 import { LC_LABELS, LC_LOCALE, LcAvatarComponent, FLIP_THRESHOLD_PX, LcIconComponent, LcSkeletonComponent, isSafePreviewUrl, lcDataState, lcAnimate, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars, staggerDelay } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
@@ -161,9 +161,9 @@ export class LcMessageThreadComponent {
   /** Messages du plus ancien au plus récent ; seule entrée obligatoire. `undefined` : squelette ; `null` ou `[]` : état vide. */
   readonly messages = input.required<readonly LcThreadMessage[] | null | undefined>();
   /** Chargement forcé : squelette même si des messages sont présents. */
-  readonly loading = input(false);
+  readonly loading = input(false, { transform: booleanAttribute });
   /** Rechargement en cours : les messages restent, atténués (`aria-busy`). Ignoré pendant le squelette. */
-  readonly stale = input(false);
+  readonly stale = input(false, { transform: booleanAttribute });
   /** Texte de l'état vide ; `noData` par défaut. */
   readonly emptyMessage = input<string>();
   /** Avatar des autres auteurs, une fois par groupe. */
