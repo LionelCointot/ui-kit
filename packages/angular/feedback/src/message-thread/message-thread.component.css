@@ -42,7 +42,7 @@
 }
 
 :host(.lc-message-thread--stale) .lc-message-thread__log {
-  opacity: var(--lc-message-thread-stale-opacity, 0.6);
+  opacity: var(--lc-message-thread-stale-opacity, var(--lc-sys-state-stale-opacity));
 }
 
 .lc-message-thread__skeleton {

@@ -33,7 +33,7 @@ import type { LcChartValue } from '../types';
   },
   styles: `
     :host { display: block; min-width: 4rem; }
-    :host(.lc-sparkline--stale) { opacity: var(--lc-sparkline-stale-opacity, 0.6); }
+    :host(.lc-sparkline--stale) { opacity: var(--lc-sparkline-stale-opacity, var(--lc-sys-state-stale-opacity)); }
     .lc-sparkline__empty { display: flex; align-items: center; color: var(--lc-sys-color-on-surface-muted); }
   `,
 })

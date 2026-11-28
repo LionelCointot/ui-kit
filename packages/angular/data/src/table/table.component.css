@@ -16,7 +16,7 @@
 
 :host(.lc-table--stale) .lc-table__table,
 :host(.lc-tree-table--stale) .lc-table__table {
-  opacity: var(--lc-table-stale-opacity, 0.6);
+  opacity: var(--lc-table-stale-opacity, var(--lc-sys-state-stale-opacity));
 }
 
 .lc-table__scroll:focus-visible {

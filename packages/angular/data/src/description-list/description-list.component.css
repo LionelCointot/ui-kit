@@ -74,7 +74,7 @@
 }
 
 :host(.lc-description-list--stale) .lc-description-list__list {
-  opacity: var(--lc-description-list-stale-opacity, 0.6);
+  opacity: var(--lc-description-list-stale-opacity, var(--lc-sys-state-stale-opacity));
 }
 
 .lc-description-list__action {

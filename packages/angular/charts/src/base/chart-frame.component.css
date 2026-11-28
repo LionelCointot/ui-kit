@@ -193,7 +193,7 @@ button.lc-chart-frame__legend-item:focus-visible,
 
 /* Recalcul en cours : le rendu précédent reste affiché, atténué, sans squelette. */
 .lc-chart-frame__chart--stale {
-  opacity: 0.6;
+  opacity: var(--lc-sys-state-stale-opacity);
 }
 
 .lc-chart-frame__data-toggle {

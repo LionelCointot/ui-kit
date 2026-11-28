@@ -32,7 +32,7 @@ p {
 }
 
 .lc-kpi-card__value--stale {
-  opacity: 0.6;
+  opacity: var(--lc-sys-state-stale-opacity);
 }
 
 .lc-kpi-card__footer {

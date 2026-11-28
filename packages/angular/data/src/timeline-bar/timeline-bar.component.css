@@ -8,7 +8,7 @@
 /* Périmée : la barre et les repères passent à 60 % ; les textes gardent leur contraste (≥ 4,5:1). */
 :host(.lc-timeline-bar--stale) .lc-timeline-bar__track,
 :host(.lc-timeline-bar--stale) .lc-timeline-bar__marker {
-  opacity: var(--lc-timeline-bar-stale-opacity, 0.6);
+  opacity: var(--lc-timeline-bar-stale-opacity, var(--lc-sys-state-stale-opacity));
 }
 
 .lc-timeline-bar__track {
@@ -171,7 +171,7 @@
 }
 
 :host(.lc-timeline-bar--stale) .lc-timeline-bar__lane-track {
-  opacity: var(--lc-timeline-bar-stale-opacity, 0.6);
+  opacity: var(--lc-timeline-bar-stale-opacity, var(--lc-sys-state-stale-opacity));
 }
 
 .lc-timeline-bar__lane {
