@@ -28,7 +28,7 @@ export const suites = [
   browser('thread', qa('message-thread-browser.mjs'), ['packages/angular/feedback/src/message-thread/**', 'packages/angular/styles/**', 'packages/tokens/**', '.storybook/**', ...CONF, 'tools/qa/message-thread-browser.mjs']),
   browser('composer', qa('message-composer-browser.mjs', 'all'), ['packages/angular/forms/src/message-composer/**', 'packages/angular/styles/**', 'packages/tokens/**', '.storybook/**', ...CONF, 'tools/qa/message-composer-browser.mjs', 'tools/qa/wait.mjs']),
   browser('page-transitions', qa('page-transitions-browser.mjs'), ['packages/angular/layout/**', 'packages/angular/styles/**', 'packages/tokens/**', ...CONF, 'tools/qa/page-transitions/**', 'tools/qa/page-transitions-browser.mjs']),
-  ...['indicators', 'reveal', 'fill-draw', 'count-flash', 'split-text', 'flip', 'theme-toggle', 'overlays-motion', 'motion-runtime'].map((n) => browser(n, qa(`${n}-browser.mjs`), [...KIT, `tools/qa/${n}-browser.mjs`])),
+  ...['indicators', 'reveal', 'fill-draw', 'count-flash', 'split-text', 'flip', 'theme-toggle', 'overlays-motion', 'motion-runtime', 'relief'].map((n) => browser(n, qa(`${n}-browser.mjs`), [...KIT, `tools/qa/${n}-browser.mjs`])),
   ...['dom', 'treegrid', 'filter-date', 'swipe'].map((n) => browser(n, qa('storybook-browser.mjs', n), [...KIT, 'tools/qa/storybook-browser.mjs'])),
   browser('snippets', qa('storybook-snippets.mjs'), [...STORIES, 'tools/qa/storybook-snippets.mjs']),
   browser('controls', qa('storybook-controls.mjs'), [...STORIES, 'tools/qa/storybook-controls.mjs']),
