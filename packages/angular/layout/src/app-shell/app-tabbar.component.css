@@ -71,6 +71,12 @@
   color: var(--lc-tabbar-active-color, var(--lc-sys-color-on-primary));
 }
 
+/* Sous mouvement réduit, `base.css` met toute durée de transition à 0,01 ms sur `all` : le changement de couleur ci-dessus créerait une transition par élément. */
+.lc-tabbar__tab,
+.lc-tabbar__tab :is(lc-icon, .lc-tabbar__label) {
+  transition: none;
+}
+
 .lc-tabbar__tab:focus-visible {
   outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
   outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
