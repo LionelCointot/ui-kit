@@ -1,6 +1,6 @@
 # Spec : squelette automatique des composants de données
 
-- **Statut** : Relue (architect, qa-engineer, cadreur, 2026-11-28), à valider par l'utilisateur
+- **Statut** : Validée le 2026-11-28 par l'utilisateur (« Oui je valide »), avec une demande : voir le squelette de chaque composant avant de coder
 - **Auteur** : Lionel Cointot (rédaction Claude)
 - **Date** : 2026-11-28
 - **ADR liés** : 0012 (à écrire en T0 : règle commune `undefined` / `null` des entrées de données) · [0010 Options groupées](../adr/0010-options-groupees.md) (`loading`, `stale` et l'entrée de données restent à plat)
