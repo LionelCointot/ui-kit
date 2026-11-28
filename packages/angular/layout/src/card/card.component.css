@@ -44,7 +44,8 @@
 }
 
 @media (forced-colors: active) {
+  /* Le filet du relief est une ombre interne, supprimée en contraste forcé : on rend un vrai bord. */
   :host {
-    border-color: CanvasText;
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
   }
 }
