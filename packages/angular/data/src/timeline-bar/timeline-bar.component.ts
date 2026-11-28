@@ -193,6 +193,7 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
     class: 'lc-timeline-bar',
     role: 'group',
     '[class.lc-timeline-bar--stale]': 'reloading()',
+    '[class.lc-reloading]': 'reloading()',
     '[class.lc-timeline-bar--lanes]': 'laneList().length > 0',
     '[attr.aria-label]': 'label()',
     '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
@@ -227,7 +228,7 @@ export class LcTimelineBarComponent {
   readonly minLabelShare = input(0.06);
   /** Message quand aucun segment n'est dessiné (défaut : `LC_LABELS.noData`). */
   readonly emptyMessage = input<string>();
-  /** Résultat périmé : barre et repères atténués à 60 % (les textes gardent leur contraste). */
+  /** Résultat périmé : fine barre de progression en haut, contenu intact. */
   readonly stale = input(false, { transform: booleanAttribute });
   /** Squelette, même avec des données. */
   readonly loading = input(false, { transform: booleanAttribute });

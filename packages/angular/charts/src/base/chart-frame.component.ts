@@ -70,7 +70,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
       } @else if (empty()) {
         <p class="lc-chart-frame__empty" [style.height]="height()">{{ emptyMessage() || labels.noData }}</p>
       } @else {
-        <lc-chart-host class="lc-chart-frame__chart" [class.lc-chart-frame__chart--stale]="stale()"
+        <lc-chart-host class="lc-chart-frame__chart" [class.lc-chart-frame__chart--stale]="stale()" [class.lc-reloading]="stale()"
           [option]="option()" [ariaLabel]="title()" [height]="height()" [navigation]="navigation()" [categoryCount]="categoryCount()"
           (pointSelect)="pointSelect.emit($event)" />
       }

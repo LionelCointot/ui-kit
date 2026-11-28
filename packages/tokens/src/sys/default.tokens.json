@@ -183,10 +183,6 @@
         "$value": "0.38",
         "$type": "number"
       },
-      "stale-opacity": {
-        "$value": "0.6",
-        "$type": "number"
-      },
       "selected-opacity": {
         "$value": "0.12",
         "$type": "number"

@@ -131,15 +131,6 @@ export const ExternalSorting: Story = {
   }),
 };
 
-/** No row: the table shows its empty message. */
-export const Empty: Story = {
-  parameters: fixedExample,
-  render: () => ({
-    props: { columns, trackBy },
-    template: `<lc-table caption="Commandes par semaine" [data]="[]" [columns]="columns" [trackBy]="trackBy" />`,
-  }),
-};
-
 /** Tones live in a plain stylesheet in <head>: a template `<style>` is emulated-encapsulated and would not reach the rows rendered inside `lc-table`. */
 function installTones(): true {
   if (!document.getElementById('story-table-tones')) {
@@ -173,7 +164,7 @@ export const SelectionAndTones: Story = {
   }),
 };
 
-/** Data states: `undefined` shows the skeleton (real headers, 3 placeholder rows), `null` or `[]` the empty message, `stale` dims the rows during a reload. The last table has 3 rows, for comparison. */
+/** Data states: `undefined` shows the skeleton (real headers, 3 placeholder rows), `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last table has 3 rows, for comparison. */
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({

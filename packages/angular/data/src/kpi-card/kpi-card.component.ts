@@ -58,6 +58,7 @@ const TREND_ICONS = { up: 'arrow-up', down: 'arrow-down', flat: 'arrow-right' } 
     '[attr.role]': "link() ? null : 'group'",
     '[attr.aria-label]': 'link() ? null : accessibleName()',
     '[attr.aria-busy]': "busy() ? 'true' : null",
+    '[class.lc-reloading]': "stale() && dataState() === 'ready'",
   },
 })
 export class LcKpiCardComponent {
@@ -80,7 +81,7 @@ export class LcKpiCardComponent {
   readonly delta = input<LcKpiDelta>();
   readonly hint = input<string>();
   readonly loading = input(false, { transform: booleanAttribute });
-  /** Valeur atténuée pendant un recalcul. */
+  /** Recalcul en cours : fine barre de progression en haut, valeur intacte. */
   readonly stale = input(false, { transform: booleanAttribute });
   /** Couleur de la tuile pleine (`fillMode="solid"`) ; sans effet en contour. */
   readonly themeColor = input<LcThemeColor>('neutral');

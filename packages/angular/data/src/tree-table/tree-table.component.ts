@@ -101,6 +101,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
     '[class.lc-table--sticky-header]': 'stickyHeader()',
     '[class.lc-table--compact]': "density() === 'compact'",
     '[class.lc-tree-table--stale]': 'reloading()',
+    '[class.lc-reloading]': 'reloading()',
     '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
   },
 })
@@ -116,7 +117,7 @@ export class LcTreeTableComponent<T> {
   readonly data = input.required<readonly T[] | null | undefined>();
   /** Squelette même avec des données. */
   readonly loading = input(false, { transform: booleanAttribute });
-  /** Rechargement : données gardées, atténuées. Sans effet pendant le squelette. */
+  /** Rechargement : données gardées, fine barre de progression en haut. Sans effet pendant le squelette. */
   readonly stale = input(false, { transform: booleanAttribute });
   /** Enfants d'un nœud. */
   readonly children = input.required<(node: T) => readonly T[] | null | undefined>();

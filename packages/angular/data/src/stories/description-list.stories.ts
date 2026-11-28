@@ -51,7 +51,7 @@ export const Playground: Story = {
   }),
 };
 
-/** Data states: `undefined` shows 3 skeleton pairs, `null` or `[]` the empty message, `stale` dims the items during a reload. The last list has 3 items, for comparison. */
+/** Data states: `undefined` shows 3 skeleton pairs, `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last list has 3 items, for comparison. */
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({

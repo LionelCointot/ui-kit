@@ -138,7 +138,7 @@ export const Loading: Story = {
   }),
 };
 
-/** Data states: `undefined` shows the skeleton, `null` or `[]` the empty message, `stale` dims the bar during a reload. The last bar has its segments, for comparison. */
+/** Data states: `undefined` shows the skeleton, `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last bar has its segments, for comparison. */
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({

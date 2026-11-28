@@ -70,6 +70,7 @@ export interface LcDescriptionItemAction {
     class: 'lc-description-list',
     '[class.lc-description-list--inline]': "layout() === 'inline'",
     '[class.lc-description-list--stale]': 'reloading()',
+    '[class.lc-reloading]': 'reloading()',
     '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
   },
 })
@@ -81,7 +82,7 @@ export class LcDescriptionListComponent {
   readonly items = input.required<readonly LcDescriptionItem[] | null | undefined>();
   /** Squelette même avec des données. */
   readonly loading = input(false, { transform: booleanAttribute });
-  /** Rechargement : données gardées, atténuées. Sans effet pendant le squelette. */
+  /** Rechargement : données gardées, fine barre de progression en haut. Sans effet pendant le squelette. */
   readonly stale = input(false, { transform: booleanAttribute });
   /** Texte de l'état vide (défaut ou chaîne vide : `LC_LABELS.noData`). */
   readonly emptyMessage = input<string>();

@@ -41,10 +41,6 @@
   block-size: 0;
 }
 
-:host(.lc-message-thread--stale) .lc-message-thread__log {
-  opacity: var(--lc-message-thread-stale-opacity, var(--lc-sys-state-stale-opacity));
-}
-
 .lc-message-thread__skeleton {
   display: flex;
   flex-direction: column;

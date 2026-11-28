@@ -169,16 +169,7 @@ export const SmallScreen: Story = {
   }),
 };
 
-/** No data: the table shows its empty message. */
-export const Empty: Story = {
-  parameters: fixedExample,
-  render: () => ({
-    props: { ...base, data: [] },
-    template: `<lc-tree-table caption="Organisation" [data]="data" [columns]="columns" [trackBy]="trackBy" [children]="children" />`,
-  }),
-};
-
-/** Data states: `undefined` shows the skeleton (real headers, 3 placeholder rows), `null` or `[]` the empty message, `stale` dims the rows during a reload. The last table has 3 rows, for comparison. */
+/** Data states: `undefined` shows the skeleton (real headers, 3 placeholder rows), `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last table has 3 rows, for comparison. */
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({

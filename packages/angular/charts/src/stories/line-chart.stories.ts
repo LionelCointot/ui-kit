@@ -87,15 +87,6 @@ export const States: Story = {
   }),
 };
 
-/** Dimmed while a recalculation is under way (`stale`). */
-export const Stale: Story = {
-  parameters: fixedExample,
-  render: () => ({
-    props: { data: channels },
-    template: `<lc-line-chart title="Recalcul en cours" [stale]="true" [data]="data" [yAxis]="{ format: 'money' }" />`,
-  }),
-};
-
 /** Vertical marker (3 at most) and annotated points (`labelPosition`: side of the label, `left` on the last category); `lineStyle` and `symbol` tell series apart without colour alone. */
 export const MarkersAndAnnotations: Story = {
   parameters: fixedExample,

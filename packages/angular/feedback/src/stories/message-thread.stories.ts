@@ -146,7 +146,7 @@ export const Minimal: Story = {
   render: () => ({ props: { messages: SHORT }, template: `<lc-message-thread [messages]="messages" />` }),
 };
 
-/** Data states: `undefined` shows 3 skeleton bubbles, `null` or `[]` the empty message, `stale` dims the bubbles during a reload. The last thread has 3 messages, for comparison. */
+/** Data states: `undefined` shows 3 skeleton bubbles, `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last thread has 3 messages, for comparison. */
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({

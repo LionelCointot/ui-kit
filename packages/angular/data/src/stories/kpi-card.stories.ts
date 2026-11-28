@@ -67,7 +67,7 @@ const DELTA: LcKpiDelta = { value: 4.2, format: 'percent', trend: 'up', sentimen
 /**
  * Indicator card: label, main value (proportional digits), variation (trend icon, sign and text: never colour alone) and a hint.
  * The value is formatted by `format`, or replaced by free text (`valueText`) for results that are not a number.
- * Loading shows a skeleton; `stale` dims the value during a recalculation. The `[lcKpiVisual]` slot accepts a small visual such as a sparkline.
+ * Loading shows a skeleton; `stale` shows a thin progress bar during a recalculation. The `[lcKpiVisual]` slot accepts a small visual such as a sparkline.
  *
  * Import: `import { LcKpiCardComponent } from '@lionelcointot/ui-angular/data';`
  */
@@ -130,7 +130,7 @@ export const FreeText: Story = {
   }),
 };
 
-/** Data states: no `value` yet (`undefined`) shows the skeleton, `value: null` the empty dash, `stale` dims the value during a recalculation. The last card has a value, for comparison. */
+/** Data states: no `value` yet (`undefined`) shows the skeleton, `value: null` the empty dash, `stale` shows a thin progress bar during a recalculation. The last card has a value, for comparison. */
 export const States: Story = {
   parameters: fixedExample,
   render: () => ({

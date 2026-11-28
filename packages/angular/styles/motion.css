@@ -343,3 +343,33 @@
   animation: none;
   mix-blend-mode: normal;
 }
+
+/* Rechargement (`stale` avec donnée prête) : fine barre indéterminée en haut du composant, contenu intact ; classe posée par chaque composant de données. */
+@keyframes lc-reloading-slide {
+  to {
+    background-position-x: 0;
+  }
+}
+
+.lc-reloading {
+  position: relative;
+}
+
+.lc-reloading::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: var(--lc-sys-border-width-thick);
+  background: linear-gradient(to right, transparent 40%, var(--lc-sys-color-primary) 40% 60%, transparent 60%) 100% 0 / 200% 100% no-repeat;
+  pointer-events: none;
+  animation: lc-reloading-slide var(--lc-progress-bar-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
+}
+
+/* Mouvement réduit : barre pleine, immobile. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-reloading::after {
+    background: var(--lc-sys-color-primary);
+    animation: none;
+  }
+}

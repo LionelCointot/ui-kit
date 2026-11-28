@@ -151,7 +151,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
   `,
   styleUrl: './message-thread.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-message-thread', '[class.lc-message-thread--stale]': 'staleShown()', '[attr.aria-busy]': 'busy() || null' },
+  host: { class: 'lc-message-thread', '[class.lc-message-thread--stale]': 'staleShown()', '[class.lc-reloading]': 'staleShown()','[attr.aria-busy]': 'busy() || null' },
 })
 export class LcMessageThreadComponent {
   protected readonly labels = inject(LC_LABELS);
@@ -162,7 +162,7 @@ export class LcMessageThreadComponent {
   readonly messages = input.required<readonly LcThreadMessage[] | null | undefined>();
   /** Chargement forcé : squelette même si des messages sont présents. */
   readonly loading = input(false, { transform: booleanAttribute });
-  /** Rechargement en cours : les messages restent, atténués (`aria-busy`). Ignoré pendant le squelette. */
+  /** Rechargement en cours : les messages restent, une fine barre court en haut (`aria-busy`). Ignoré pendant le squelette. */
   readonly stale = input(false, { transform: booleanAttribute });
   /** Texte de l'état vide ; `noData` par défaut. */
   readonly emptyMessage = input<string>();
