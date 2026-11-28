@@ -330,7 +330,7 @@ function shape(list, trigger, story) {
   let out = list.filter((a) => a.name !== 'lc-page-entering' && !(skip && skip.test(a.target)) && !(story && keep && !keep.test(a.target)) && !(props && !props.test(a.props[0])) && !a.values.every((v) => same(v, a.values[0])));
   if (trigger.distinct) out = out.filter((a, i) => out.findIndex((b) => [b.delay, b.duration, b.easing, JSON.stringify(b.values)].join() === [a.delay, a.duration, a.easing, JSON.stringify(a.values)].join()) === i);
   if (trigger.shapes) { // une seule animation par forme (durée, courbe, progression), sans le délai ni l'amplitude : les cascades de la story et du catalogue n'ont pas la même composition ni les mêmes valeurs finales
-    const unit = (a) => ({ ...a, delay: 0, values: a.values.map((v) => (v.m?.[0] ? { ...v, m: v.m.map((x, i) => (i === 0 ? r6(x / a.values[4].m[0]) : x)) } : v)) });
+    const unit = (a) => ({ ...a, delay: 0, values: a.values.map((v) => (v.m?.[0] && a.values[4]?.m?.[0] ? { ...v, m: v.m.map((x, i) => (i === 0 ? r6(x / a.values[4].m[0]) : x)) } : v)) });
     const key = (a) => [a.duration, a.easing, JSON.stringify(a.values.map((v) => v.m?.map((x) => Math.round(x * 10) / 10)))].join();
     out = out.map(unit).filter((a, i, all) => all.findIndex((b) => key(b) === key(a)) === i);
   }
