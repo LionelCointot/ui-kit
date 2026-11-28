@@ -78,7 +78,7 @@ Entrée de données : type élargi à `| null | undefined`. Une entrée `require
 | 12 | `lc-message-thread` | `messages` | 3 bulles alternées en squelette | `noData` | `lc-message-thread--stale` | `loading`, `stale`, `emptyMessage` ; le signal interne de pagination `loading` devient `loadingOlder` |
 | 13 | `lc-chart-frame` (cadre partagé de 6 à 10) | reçoit `loading` et `empty` calculés | rectangle d'aujourd'hui | texte d'aujourd'hui | existante | aucun changement d'API ; l'entrée `empty` reste son contrat interne |
 
-- **Rechargement** : opacité du jeton déjà utilisé par la carte et la frise ; `aria-busy="true"` sur l'hôte (sur le cadre pour les graphiques 6 à 10) ; ignoré pendant le squelette (ni classe ni atténuation). Le fil : `aria-busy` = `loadingOlder() || squelette || stale`.
+- **Rechargement** (révisé le 2026-11-28 par l'utilisateur : « Fine barre animée, texte intact », l'atténuation à 60 % faisait passer le texte secondaire sous 4,5:1) : le contenu garde ses couleurs ; une fine barre de progression indéterminée court en haut du composant (immobile sous mouvement réduit), stylée une fois par une classe commune ; `aria-busy="true"` sur l'hôte (sur le cadre pour les graphiques 6 à 10) ; ignoré pendant le squelette (ni classe ni atténuation). Le fil : `aria-busy` = `loadingOlder() || squelette || stale`.
 - **Accessibilité** : `lc-skeleton` reste `aria-hidden` ; l'hôte (ou le cadre) porte `aria-busy="true"` pendant le squelette ; jamais dans l'état vide.
 - **Mouvement** : rien de nouveau ; le passage squelette → données réutilise l'entrée existante du composant.
 
