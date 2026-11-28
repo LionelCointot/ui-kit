@@ -42,7 +42,7 @@ export const States: Story = {
   }),
 };
 
-const ANIMATION_CODE =`import { Component } from '@angular/core';
+const ANIMATION_CODE = `import { Component } from '@angular/core';
 import { LcSparklineComponent } from '@lionelcointot/ui-angular/charts';
 
 @Component({

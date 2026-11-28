@@ -18,7 +18,7 @@ import type { LcChartValue } from '../types';
         <lc-skeleton shape="rect" width="100%" [height]="height()" />
       }
       @case ('empty') {
-        <span class="lc-sparkline__empty" role="img" [style.height]="height()" [attr.aria-label]="ariaLabel() + ' : ' + labels.noData">{{ emptyText }}</span>
+        <span class="lc-sparkline__empty" role="img" [style.height]="height()" [attr.aria-label]="ariaLabel() + ' : ' + labels.noData">{{ emptyText() }}</span>
       }
       @default {
         <lc-chart-host [option]="option()" [ariaLabel]="ariaLabel()" [height]="height()" [focusable]="false" />
@@ -40,7 +40,8 @@ import type { LcChartValue } from '../types';
 export class LcSparklineComponent {
   private readonly themeService = inject(LcChartThemeService);
   protected readonly labels = inject(LC_LABELS);
-  protected readonly emptyText = inject(LcFormatService).format(null);
+  private readonly format = inject(LcFormatService);
+  protected readonly emptyText = computed(() => this.format.format(null));
 
   /** `undefined` : squelette ; `null` ou `[]` : « — ». */
   readonly values = input.required<readonly LcChartValue[] | null | undefined>();

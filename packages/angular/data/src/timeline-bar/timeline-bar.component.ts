@@ -255,12 +255,13 @@ export class LcTimelineBarComponent {
 
   /** Affinage de « vide » : rien de dessiné (ni voie ni segment) ; les deux entrées à `undefined` restent un squelette. */
   protected readonly state = computed(() => {
-    const content = this.segments() === undefined && this.lanes() === undefined ? undefined : this.laneList().length > 0 || this.drawn().length > 0 || null;
-    return lcDataState(content, this.loading());
+    if (this.segments() === undefined && this.lanes() === undefined) return lcDataState(undefined, this.loading());
+    const hasContent = this.laneList().length > 0 || this.drawn().length > 0;
+    return lcDataState(hasContent || null, this.loading());
   });
   protected readonly reloading = computed(() => this.stale() && this.state() === 'ready');
 
-  /** Longueur de l'axe :`axisEnd` ou la plus grande fin de période en mode voies, sinon la somme des poids dessinés. */
+  /** Longueur de l'axe :`axisEnd` : `axisEnd` ou la plus grande fin de période en mode voies, sinon la somme des poids dessinés. */
   private readonly axisTotal = computed(() => {
     if (this.laneList().length === 0) return this.drawn().reduce((sum, item) => sum + item.segment.weight, 0);
     const end = this.axisEnd();
