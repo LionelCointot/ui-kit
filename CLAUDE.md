@@ -67,7 +67,7 @@ Correctif : `senior-developer` (test qui échoue, puis correctif), puis `code-re
 - Aucune liste de régions, départements ou communes dans le code : `geo` lit les API officielles (tests : `fetch` simulé ou source factice, jamais le réseau).
 - Ne pas ajouter de vocabulaire métier (finance, prêt…) ni de composant sans consommateur identifié.
 - Cible navigateurs : Baseline 2024, millésime fixe revu chaque année (ADR 0009) ; rien de postérieur sans repli écrit et testé (pas d'*anchor positioning*, pas de `popover` déclaratif) ; les statuts Baseline sont dans les fiches de `modern-web-guidance`.
-- Limites connues : le contrôle de palette de `lc-tokens` ne vérifie que le contraste (pas la distinction pour daltoniens) ; `charts` pèse ~563 Kio minifiés (objectif 350 non tenu, ECharts 6) ; pas de `lc-dropdown-list` ni de phase 5 (hors `lc-combobox` et le calendrier de `lc-date-input` / `lc-date-range-input`) ; saisie de date par zones non essayée au lecteur d'écran, collage prouvé sous Chromium seulement.
+- Limites connues : le contrôle de palette de `lc-tokens` ne vérifie que le contraste (pas la distinction pour daltoniens) ; `charts` pèse ~563 Kio minifiés (objectif 350 non tenu, ECharts 6) ; pas de `lc-dropdown-list` ni de phase 5 (hors `lc-combobox` et le calendrier de `lc-date-input` / `lc-date-range-input`) ; saisie de date par zones non essayée au lecteur d'écran, collage prouvé sous Chromium seulement ; titre des tableaux collant au défilement horizontal (`position: sticky` sur `<caption>`) prouvé sous Chromium seulement (sous WebKit, au pire le titre défile comme avant).
 - Ne pas commiter de secrets ; ne pas ajouter de dépendance sans la justifier ; ne pas modifier du code hors périmètre.
 
 ## Skills (`.claude/skills/`)
