@@ -9,11 +9,11 @@ export interface LcKpiDelta {
   readonly sentiment: 'positive' | 'negative' | 'neutral';
 }
 
-const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as const;
+const TREND_ICONS = { up: 'arrow-up', down: 'arrow-down', flat: 'arrow-right' } as const;
 
 /**
  * Carte indicateur (entrée `tilt`, chiffre qui compte) : libellé, valeur principale (chiffres tabulaires), pied ancré en bas avec la variation
- * (icône de tendance, signe et mot de tendance : jamais la couleur seule) et la précision. `fillMode="solid"` : tuile pleine de `themeColor`. L'emplacement `[lcKpiVisual]` accueille une sparkline.
+ * (flèche de tendance et signe à l'écran, mot de tendance pour les lecteurs d'écran : jamais la couleur seule) et la précision. `fillMode="solid"` : tuile pleine de `themeColor`. L'emplacement `[lcKpiVisual]` accueille une sparkline.
  */
 @Component({
   selector: 'lc-kpi-card',
@@ -36,7 +36,7 @@ const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as
           <p class="lc-kpi-card__delta" [class]="'lc-kpi-card__delta--' + change.sentiment">
             <lc-icon [name]="trendIcon()" />
             <span>{{ deltaText() }}</span>
-            <span class="lc-kpi-card__trend">{{ trendWord() }}</span>
+            <span class="lc-kpi-card__trend lc-visually-hidden">{{ trendWord() }}</span>
           </p>
         }
         @if (hint()) {
