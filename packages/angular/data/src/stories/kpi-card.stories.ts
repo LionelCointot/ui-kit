@@ -130,12 +130,24 @@ export const FreeText: Story = {
   }),
 };
 
-/** Loading (skeleton) and stale (dimmed value during a recalculation). */
+/** Data states: no `value` yet (`undefined`) shows the skeleton, `value: null` the empty dash, `stale` dims the value during a recalculation. The last card has a value, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `<div style="display:grid;gap:var(--lc-sys-space-4);grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));max-width:48rem">
+      <lc-kpi-card label="Chargement" [value]="undefined" />
+      <lc-kpi-card label="Vide" [value]="null" />
+      <lc-kpi-card label="Rechargement" [value]="1248" [stale]="true" />
+      <lc-kpi-card label="Valeur" [value]="1248" /></div>`,
+  }),
+};
+
+/** Forced loading (`[loading]="true"` over an existing value) and stale (dimmed value during a recalculation). */
 export const LoadingAndStale: Story = {
   parameters: fixedExample,
   render: () => ({
     template: `<div style="display:grid;gap:var(--lc-sys-space-4);grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));max-width:40rem">
-      <lc-kpi-card label="Chargement" [loading]="true" />
+      <lc-kpi-card label="Chargement" [value]="1248" [loading]="true" />
       <lc-kpi-card label="Recalcul en cours" [value]="1248" [stale]="true" /></div>`,
   }),
 };

@@ -146,6 +146,19 @@ export const Minimal: Story = {
   render: () => ({ props: { messages: SHORT }, template: `<lc-message-thread [messages]="messages" />` }),
 };
 
+/** Data states: `undefined` shows 3 skeleton bubbles, `null` or `[]` the empty message, `stale` dims the bubbles during a reload. The last thread has 3 messages, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { three: [other('1', 30, 'Bonjour !'), other('2', 29, 'À demain.'), mine('3', 20, 'Merci.')] },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);max-width:32rem">
+      <section><h3>Chargement</h3><div data-qa-state="loading"><lc-message-thread ariaLabel="Conversation en chargement" [messages]="undefined" /></div></section>
+      <section><h3>Vide</h3><div data-qa-state="empty"><lc-message-thread ariaLabel="Conversation vide" [messages]="null" /></div></section>
+      <section><h3>Rechargement</h3><div data-qa-state="stale"><lc-message-thread ariaLabel="Conversation en rechargement" [messages]="three" [stale]="true" /></div></section>
+      <section><h3>Trois messages</h3><div data-qa-state="three"><lc-message-thread ariaLabel="Conversation, trois messages" [messages]="three" /></div></section></div>`,
+  }),
+};
+
 /** Day separators, system lines, an internal note, photo thumbnails (open through `attachmentOpen`) and a clickable link. */
 export const Conversation: Story = {
   parameters: fixedExample,

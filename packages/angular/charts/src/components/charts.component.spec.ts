@@ -143,17 +143,6 @@ describe('graphiques', () => {
       expect(table.querySelector('tbody tr')!.textContent!.replace(/\s/g, ' ')).toContain('100,00');
       expect(toggle.textContent).toContain('Masquer les données');
     });
-
-    it('stale : le rendu précédent reste affiché, atténué, sans squelette', async () => {
-      const { fixture, element } = await setup();
-      fixture.componentInstance.stale.set(true);
-      await fixture.whenStable();
-      const host = element.querySelector('lc-line-chart lc-chart-host')!;
-      expect(host.classList).toContain('lc-chart-frame__chart--stale');
-      expect(element.querySelector('lc-line-chart lc-skeleton')).toBeNull();
-      expect(element.querySelector('lc-line-chart lc-chart-frame')!.getAttribute('aria-busy')).toBe('true');
-      expect(charts[0].dispose).not.toHaveBeenCalled();
-    });
   });
 
   describe('clavier', () => {

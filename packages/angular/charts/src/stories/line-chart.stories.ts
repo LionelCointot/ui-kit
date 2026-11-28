@@ -74,6 +74,19 @@ export const Playground: Story = {
   }),
 };
 
+/** Data states (shared by every chart through the chart frame): `undefined` shows the skeleton, `null` or no series the empty message, `stale` dims the plot during a reload. The last chart has its data, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { channels },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))">
+      <section><h3>Chargement</h3><lc-line-chart title="Chiffre d'affaires par canal" height="180px" [data]="undefined" /></section>
+      <section><h3>Vide</h3><lc-line-chart title="Chiffre d'affaires par canal" height="180px" [data]="null" /></section>
+      <section><h3>Rechargement</h3><lc-line-chart title="Chiffre d'affaires par canal" height="180px" [data]="channels" [yAxis]="{ format: 'money' }" [stale]="true" /></section>
+      <section><h3>Données</h3><lc-line-chart title="Chiffre d'affaires par canal" height="180px" [data]="channels" [yAxis]="{ format: 'money' }" /></section></div>`,
+  }),
+};
+
 /** Dimmed while a recalculation is under way (`stale`). */
 export const Stale: Story = {
   parameters: fixedExample,

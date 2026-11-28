@@ -72,6 +72,19 @@ export const Playground: Story = {
   }),
 };
 
+/** Data states: `undefined` shows the skeleton, `null` or `[]` the empty message, `stale` dims the bar during a reload. The last bar has its parts, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { parts: BUDGET },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6)">
+      <section><h3>Chargement</h3><lc-segmented-bar title="Répartition du budget" format="money" [parts]="undefined" /></section>
+      <section><h3>Vide</h3><lc-segmented-bar title="Répartition du budget" format="money" [parts]="null" /></section>
+      <section><h3>Rechargement</h3><lc-segmented-bar title="Répartition du budget" format="money" [parts]="parts" [stale]="true" /></section>
+      <section><h3>Données</h3><lc-segmented-bar title="Répartition du budget" format="money" [parts]="parts" /></section></div>`,
+  }),
+};
+
 /** `tall` and `thin` variants. */
 export const Variants: Story = {
   parameters: fixedExample,

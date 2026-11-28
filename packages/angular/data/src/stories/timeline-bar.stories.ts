@@ -132,8 +132,29 @@ export const LaneNeverAhead: Story = lanesBar(
 /** Faded while a recalculation is under way (`stale`). */
 export const Stale: Story = bar(`[segments]="PHASES" [description]="DESCRIPTION" [stale]="true"`);
 
-/** Loading state (`loading`): skeleton in place of the bar. */
-export const Loading: Story = bar(`[segments]="PHASES" [description]="DESCRIPTION" [loading]="true"`);
+/** Loading state: no `segments` yet (`undefined`) shows a skeleton in place of the bar; `[loading]="true"` forces it over existing data. */
+export const Loading: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { PHASES, DESCRIPTION },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-4);width:40rem;max-width:100%">
+      <lc-timeline-bar label="Répartition des phases" [segments]="undefined" />
+      <lc-timeline-bar label="Répartition des phases, rechargée" [segments]="PHASES" [description]="DESCRIPTION" [loading]="true" /></div>`,
+  }),
+};
+
+/** Data states: `undefined` shows the skeleton, `null` or `[]` the empty message, `stale` dims the bar during a reload. The last bar has its segments, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { PHASES, DESCRIPTION },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);width:40rem;max-width:100%">
+      <section><h3>Chargement</h3><lc-timeline-bar label="Répartition des phases" [segments]="undefined" /></section>
+      <section><h3>Vide</h3><lc-timeline-bar label="Répartition des phases" [segments]="null" emptyMessage="Aucune phase à afficher." /></section>
+      <section><h3>Rechargement</h3><lc-timeline-bar label="Répartition des phases" [segments]="PHASES" [description]="DESCRIPTION" [stale]="true" /></section>
+      <section><h3>Trois segments</h3><lc-timeline-bar label="Répartition des phases" [segments]="PHASES" [description]="DESCRIPTION" /></section></div>`,
+  }),
+};
 
 /** No segment: the bar shows its empty message. */
 export const Empty: Story = bar(`[segments]="[]" description="Aucune phase." emptyMessage="Aucune phase à afficher."`);

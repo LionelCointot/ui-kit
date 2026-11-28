@@ -85,6 +85,19 @@ export const Playground: Story = {
   }),
 };
 
+/** Data states: `undefined` shows the skeleton, `null` or no series the empty message, `stale` dims the plot during a reload. The last chart has its data, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { channels },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))">
+      <section><h3>Chargement</h3><lc-bar-chart title="Chiffre d'affaires par canal" height="180px" [data]="undefined" /></section>
+      <section><h3>Vide</h3><lc-bar-chart title="Chiffre d'affaires par canal" height="180px" [data]="null" /></section>
+      <section><h3>Rechargement</h3><lc-bar-chart title="Chiffre d'affaires par canal" height="180px" [data]="channels" [yAxis]="{ format: 'money' }" [stale]="true" /></section>
+      <section><h3>Données</h3><lc-bar-chart title="Chiffre d'affaires par canal" height="180px" [data]="channels" [yAxis]="{ format: 'money' }" /></section></div>`,
+  }),
+};
+
 /** Colour by role (`colorRole`): theme colour, pattern and icon specific to the role, independent of the rank. */
 export const ByRole: Story = {
   parameters: fixedExample,

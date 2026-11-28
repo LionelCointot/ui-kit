@@ -172,3 +172,16 @@ export const SelectionAndTones: Story = {
       <p>{{ selection.size }} sélectionnée(s)</p>`,
   }),
 };
+
+/** Data states: `undefined` shows the skeleton (real headers, 3 placeholder rows), `null` or `[]` the empty message, `stale` dims the rows during a reload. The last table has 3 rows, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { columns, trackBy, three: orders.slice(0, 3) },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6)">
+      <section><h3>Chargement</h3><div data-qa-state="loading"><lc-table caption="Commandes en chargement" [data]="undefined" [columns]="columns" [trackBy]="trackBy" /></div></section>
+      <section><h3>Vide</h3><div data-qa-state="empty"><lc-table caption="Commandes, aucune" [data]="null" [columns]="columns" [trackBy]="trackBy" /></div></section>
+      <section><h3>Rechargement</h3><div data-qa-state="stale"><lc-table caption="Commandes en rechargement" [data]="three" [columns]="columns" [trackBy]="trackBy" [stale]="true" /></div></section>
+      <section><h3>Trois lignes</h3><div data-qa-state="three"><lc-table caption="Commandes, trois lignes" [data]="three" [columns]="columns" [trackBy]="trackBy" /></div></section></div>`,
+  }),
+};
