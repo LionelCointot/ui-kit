@@ -14,7 +14,6 @@
   { "demo": "—", "valeur": "150ms", "token": "--lc-sys-duration-fast" },
   { "demo": "—", "valeur": "200ms", "token": "--lc-sys-duration-exit" },
   { "demo": "—", "valeur": "250ms", "token": "--lc-sys-duration-normal" },
-  { "demo": "—", "valeur": "350ms", "token": "--lc-sys-duration-slow" },
   { "demo": "—", "valeur": "450ms", "token": "--lc-sys-duration-enter" },
   { "demo": "—", "valeur": "500ms", "token": "--lc-sys-duration-move" },
   { "demo": "—", "valeur": "600ms", "token": "--lc-sys-duration-long" },

@@ -11,7 +11,7 @@ import * as kit from '@lionelcointot/ui-angular';
   template: `
     <div id="qa-default" style="inline-size:40px;block-size:40px;background:currentColor"></div>
     <div id="qa-override" style="inline-size:40px;block-size:40px;background:currentColor;--lc-sys-duration-enter:123ms;--lc-sys-easing-entrance:cubic-bezier(0.1, 0.2, 0.3, 0.4)"></div>
-    <div id="qa-wrap" style="--lc-sys-duration-slow:77ms;--lc-sys-easing-out:cubic-bezier(0.4, 0.5, 0.6, 0.7)">
+    <div id="qa-wrap" style="--lc-sys-duration-fast:77ms;--lc-sys-easing-out:cubic-bezier(0.4, 0.5, 0.6, 0.7)">
       <div id="qa-inherit" style="inline-size:40px;block-size:40px;background:currentColor"></div>
     </div>
   `,

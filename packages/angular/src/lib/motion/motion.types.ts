@@ -3,7 +3,7 @@
  *
  * @internal Réservé aux points d'entrée du kit : le contrat public est le type `LcMotionDuration`.
  */
-export const LC_MOTION_DURATIONS = ['fast', 'exit', 'normal', 'slow', 'enter', 'move', 'long', 'view', 'title', 'draw', 'fill'] as const;
+export const LC_MOTION_DURATIONS = ['fast', 'exit', 'normal', 'enter', 'move', 'long', 'view', 'title', 'draw', 'fill'] as const;
 
 /**
  * Rôles de courbe : `--lc-sys-easing-<rôle>`. Égal aux `sys.easing.*` hors `emphasized` (vérifié par `motion.types.spec.ts`).
