@@ -67,7 +67,7 @@
 }
 
 :host(.lc-disclosure--expanded) .lc-disclosure__chevron {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 
 .lc-disclosure__actions {

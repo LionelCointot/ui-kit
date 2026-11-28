@@ -117,7 +117,7 @@ const WHITELIST = [
   { file: 'src/lib/spinner/spinner.component.css', motif: 'transform numérique', contient: 'rotate(1turn)', raison: 'tour complet du spinner', tache: 'permanent' },
   { file: 'data/src/data-table/data-table.component.css', motif: 'transform numérique', contient: 'rotate(180deg)', raison: 'orientation du chevron (état)', tache: 'permanent' },
   { file: 'forms/src/combobox/combobox.component.css', motif: 'transform numérique', contient: 'rotate(180deg)', raison: 'orientation du chevron (état)', tache: 'permanent' },
-  { file: 'layout/src/disclosure/disclosure.component.css', motif: 'transform numérique', contient: 'rotate(90deg)', raison: 'orientation du chevron (état)', tache: 'permanent' },
+  { file: 'layout/src/disclosure/disclosure.component.css', motif: 'transform numérique', contient: 'rotate(180deg)', raison: 'orientation du chevron (état)', tache: 'permanent' },
   { file: 'navigation/src/nav-group/nav-group.component.css', motif: 'transform numérique', contient: 'rotate(90deg)', raison: 'orientation du chevron (état)', tache: 'permanent' },
   { file: 'overlay/src/toggletip/toggletip.component.css', motif: 'transform numérique', contient: 'rotate(45deg)', raison: 'forme de la flèche (carré tourné)', tache: 'permanent' },
   // Valeurs à remplacer par des tokens (§5.4.1) : tâche à confirmer par l'orchestrateur quand §11 ne nomme pas le composant.
