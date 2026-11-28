@@ -200,7 +200,7 @@ lc-form-field [lcSuffix] {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  border-radius: var(--lc-kpi-card-radius, var(--lc-sys-radius-xl));
 }
 
 /* Focus de l'ancre dessiné sur la carte entière. */

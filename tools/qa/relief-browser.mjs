@@ -61,7 +61,7 @@ try {
       check(r.card === r.relief && r.kpi === r.relief && r.cardBorder === '0px' && r.kpiBorder === '0px', t('CA-1 lc-card et lc-kpi-card : filet inset puis shadow-1, sans bord'), JSON.stringify(r));
       check(r.flatShadow === 'none' && r.flatBorder !== '0px' && r.flatColor === r.border, t('CA-1 elevation 0 : bord sys.color.border, sans ombre'), JSON.stringify(r));
       check(r.shell < r.raised, t('CA-2 fond de la zone de contenu plus sombre que surface-raised'), JSON.stringify(r));
-      check(r.radii.join() === '16px,16px,12px,12px', t('CA-3 rayons : cartes 16 px, bouton et champ 12 px'), r.radii.join());
+      check(r.radii.join() === '16px,16px,8px,8px', t('CA-3 rayons : cartes 16 px, bouton et champ inchangés (radius-md, 8 px)'), r.radii.join());
       check(!r.notRead.length && r.lineRead, t('CA-8 surcharge de chaque jeton de lc-kpi-card et de card.line-color'), `${r.notRead} ${r.lineRead}`);
     });
 
@@ -94,7 +94,7 @@ try {
       const stops = [];
       for (let i = 0; i < 6 && stops.at(-1)?.id !== 'after'; i += 1) {
         await page.keyboard.press('Tab');
-        stops.push(await page.evaluate(() => { const a = document.activeElement, k = a.closest('lc-kpi-card'), o = k && getComputedStyle(k); return { id: a.id, link: a.matches('a[lcKpiCardLink]'), outline: !!k && o.outlineStyle !== 'none' && parseFloat(o.outlineWidth) > 0 }; }));
+        stops.push(await page.evaluate(() => { const a = document.activeElement, k = a.closest('lc-kpi-card'), o = k && getComputedStyle(a, '::after'), box = k?.getBoundingClientRect(); return { id: a.id, link: a.matches('a[lcKpiCardLink]'), outline: !!k && o.outlineStyle !== 'none' && parseFloat(o.outlineWidth) > 0 && o.position === 'absolute' && box.width > 0 }; }));
       }
       const inCard = stops.filter((s) => s.link);
       check(stops.at(-1)?.id === 'after' && inCard.length === 1 && inCard[0].outline && stops.filter((s) => !s.id && !s.link).length === 0, t('CA-5b Tab atteint la carte une seule fois, focus visible sur la carte'), JSON.stringify(stops));
