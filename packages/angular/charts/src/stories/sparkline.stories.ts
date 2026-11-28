@@ -29,6 +29,19 @@ export const Playground: Story = {
   }),
 };
 
+/** Data states: `undefined` shows a skeleton at the sparkline height, `null` a dash, `stale` dims the line during a reload. The last one has its values, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { values: VALUES },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));max-width:48rem">
+      <section><h3>Chargement</h3><lc-sparkline ariaLabel="Temps de réponse sur 12 mois" [values]="undefined" /></section>
+      <section><h3>Vide</h3><lc-sparkline ariaLabel="Temps de réponse sur 12 mois" [values]="null" /></section>
+      <section><h3>Rechargement</h3><lc-sparkline ariaLabel="Temps de réponse sur 12 mois, en baisse" [values]="values" [stale]="true" /></section>
+      <section><h3>Valeurs</h3><lc-sparkline ariaLabel="Temps de réponse sur 12 mois, en baisse" [values]="values" /></section></div>`,
+  }),
+};
+
 const ANIMATION_CODE = `import { Component } from '@angular/core';
 import { LcSparklineComponent } from '@lionelcointot/ui-angular/charts';
 

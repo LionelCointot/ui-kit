@@ -86,6 +86,19 @@ export const Playground: Story = {
   }),
 };
 
+/** Data states (this story also stands for the shared chart frame): `undefined` shows the skeleton, `null` the empty message, `stale` dims the plot during a reload. The last chart has its options, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { options: mixed, table: mixedTable },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))">
+      <section><h3>Chargement</h3><lc-chart ariaLabel="Demandes et délai de traitement" title="Demandes et délai" height="200px" [options]="undefined" /></section>
+      <section><h3>Vide</h3><lc-chart ariaLabel="Demandes et délai de traitement" title="Demandes et délai" height="200px" [options]="null" /></section>
+      <section><h3>Rechargement</h3><lc-chart ariaLabel="Demandes et délai de traitement" title="Demandes et délai" height="200px" [options]="options" [table]="table" [stale]="true" /></section>
+      <section><h3>Données</h3><lc-chart ariaLabel="Demandes et délai de traitement" title="Demandes et délai" height="200px" [options]="options" [table]="table" /></section></div>`,
+  }),
+};
+
 /** Horizontal bars with value labels, for long category names. */
 export const HorizontalBars: Story = {
   parameters: fixedExample,

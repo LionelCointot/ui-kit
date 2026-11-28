@@ -749,3 +749,23 @@ class ButtonCellHostComponent {
   readonly trackBy = (item: Node) => item.id;
   readonly columns: readonly LcTableColumn<Node>[] = [{ id: 'name', header: 'Nom', value: (item) => item.name }];
 }
+
+describe('LcTreeTableComponent : états', () => {
+  const nodes = [{ name: 'A' }];
+  const render = async (inputs: Record<string, unknown>) => {
+    const fixture = TestBed.createComponent(LcTreeTableComponent<{ name: string }>);
+    fixture.componentRef.setInput('caption', 'Arbre');
+    fixture.componentRef.setInput('columns', [{ id: 'name', header: 'Nom', value: (node: { name: string }) => node.name }]);
+    fixture.componentRef.setInput('children', () => undefined);
+    fixture.componentRef.setInput('trackBy', (node: { name: string }) => node.name);
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  it('undefined : vraies en-têtes pendant le squelette', async () => {
+    const element = await render({ data: undefined });
+    expect(element.querySelector('th')!.textContent).toContain('Nom');
+    expect(element.querySelector('tbody lc-skeleton')).not.toBeNull();
+  });
+});

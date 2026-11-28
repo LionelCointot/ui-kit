@@ -473,7 +473,7 @@ async function t10(engine) {
           const t0 = topOf();
           const reached = await Q.until(() => Q.bubbles().length === target, 4000);
           const anims = Q.anims().length; await Q.raf(); await Q.raf();
-          return { wit, drift: topOf() - t0, reached, n: Q.bubbles().length, anims, busy: Q.log().getAttribute('aria-busy') };
+          return { wit, drift: topOf() - t0, reached, n: Q.bubbles().length, anims, busy: Q.log().closest('lc-message-thread').getAttribute('aria-busy') };
         }, { mode, target });
         log.push(r); if (!r.reached || Math.abs(r.drift) > 2 || r.anims !== 0 || r.busy === 'true') ok = false;
       }

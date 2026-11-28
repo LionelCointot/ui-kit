@@ -20,6 +20,17 @@ class HostComponent {
   readonly opened: LcThreadAttachmentOpenEvent[] = [];
 }
 
+@Component({
+  imports: [LcMessageThreadComponent],
+  template: `<lc-message-thread [messages]="messages()" [loading]="loading()" [stale]="stale()" [pageSize]="pageSize()" />`,
+})
+class StateHostComponent {
+  readonly messages = signal<LcThreadMessage[] | null | undefined>(undefined);
+  readonly loading = signal(false);
+  readonly stale = signal(false);
+  readonly pageSize = signal(30);
+}
+
 @Component({ imports: [LcMessageThreadComponent], template: `<lc-message-thread [messages]="messages" />` })
 class MinimalHostComponent {
   readonly messages = [msg('1')];
@@ -239,7 +250,7 @@ describe('lc-message-thread', () => {
         expect(qa('[data-message-id]').length).toBe(expected);
       }
       expect(ids(qa)[0]).toBe('1');
-      expect(q('[role="log"]')?.hasAttribute('aria-busy')).toBe(false);
+      expect(q('lc-message-thread')?.hasAttribute('aria-busy')).toBe(false);
     });
 
     it('conteneur qui défile non rempli (place libre au-dessus de la sentinelle) : les paliers s\'enchaînent jusqu\'au premier message, sans boucle', async () => {
@@ -254,6 +265,52 @@ describe('lc-message-thread', () => {
     it.each([0, -3, 2.5, NaN])('pageSize %s : 30 messages rendus', (size) => {
       const { qa } = render(many(40), (h) => h.pageSize.set(size));
       expect(qa('[data-message-id]').length).toBe(30);
+    });
+  });
+
+  describe('états de données', () => {
+    const setup = (messages: LcThreadMessage[] | null | undefined, over: (h: StateHostComponent) => void = () => undefined) => {
+      const fixture = TestBed.createComponent(StateHostComponent);
+      fixture.componentInstance.messages.set(messages);
+      over(fixture.componentInstance);
+      fixture.detectChanges();
+      const root: HTMLElement = fixture.nativeElement;
+      return { fixture, host: fixture.componentInstance, root, log: () => root.querySelector<HTMLElement>('[role="log"]')!, thread: () => root.querySelector<HTMLElement>('lc-message-thread')! };
+    };
+
+    it('undefined : trois bulles en squelette, dont une à droite', () => {
+      const { root } = setup(undefined);
+      expect(root.querySelectorAll('.lc-message-thread__skeleton lc-skeleton').length).toBe(3);
+      expect(root.querySelectorAll('.lc-message-thread__skeleton-row--mine').length).toBe(1);
+    });
+
+    it('stale sans messages (vide) : ni aria-busy ni classe', () => {
+      const { thread } = setup([], (h) => h.stale.set(true));
+      expect(thread().hasAttribute('aria-busy')).toBe(false);
+      expect(thread().classList).not.toContain('lc-message-thread--stale');
+    });
+
+    it('pagination pendant stale : aria-busy sans squelette, puis aria-busy tombé avec stale', async () => {
+      let notify: (visible: boolean) => void = () => undefined;
+      vi.stubGlobal('IntersectionObserver', class {
+        constructor(callback: (entries: { isIntersecting: boolean }[]) => void) { notify = (isIntersecting) => callback([{ isIntersecting }]); }
+        observe() { /* sans effet */ }
+        disconnect() { /* sans effet */ }
+      });
+      const many = Array.from({ length: 25 }, (_, i) => msg(String(i + 1), { sentAt: at(9, i) }));
+      const { fixture, host, root, thread } = setup(many, (h) => { h.stale.set(true); h.pageSize.set(10); });
+      await fixture.whenStable();
+      notify(false);
+      notify(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(root.querySelectorAll('[data-message-id]').length).toBe(20);
+      expect(root.querySelector('lc-skeleton')).toBeNull();
+      expect(thread().getAttribute('aria-busy')).toBe('true');
+      host.stale.set(false);
+      fixture.detectChanges();
+      expect(thread().hasAttribute('aria-busy')).toBe(false);
+      vi.unstubAllGlobals();
     });
   });
 });

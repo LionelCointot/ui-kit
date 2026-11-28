@@ -35,10 +35,10 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 |---|---|---|---|---|
 | `lc-area-chart` | LcAreaChartComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), data (requis), yAxis, markers, annotations, stacked, directLabels | pointSelect |
 | `lc-bar-chart` | LcBarChartComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), data (requis), yAxis, orientation, stacked, totals | pointSelect |
-| `lc-chart` | LcChartComponent | composant | options (requis), ariaLabel (requis), table, title, description, height, loading, stale, showDataTable (model) | pointSelect |
+| `lc-chart` | LcChartComponent | composant | options (requis), ariaLabel (requis), table, title, description, height, loading, stale, emptyMessage, showDataTable (model) | pointSelect |
 | `lc-line-chart` | LcLineChartComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), data (requis), yAxis, markers, annotations, showPoints, directLabels | pointSelect |
 | `lc-segmented-bar` | LcSegmentedBarComponent | composant | title (requis), titleHidden, description, height, loading, stale, emptyMessage, showDataTable (model), parts (requis), format, variant, total, palette, legendPosition, legendValues | pointSelect |
-| `lc-sparkline` | LcSparklineComponent | composant | values (requis), ariaLabel (requis), height, showEndPoint | – |
+| `lc-sparkline` | LcSparklineComponent | composant | values (requis), ariaLabel (requis), height, showEndPoint, loading, stale | – |
 
 ## `@lionelcointot/ui-angular/data`
 
@@ -46,11 +46,11 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 |---|---|---|---|---|
 | `a[lcKpiCardLink]` | LcKpiCardLinkDirective | directive | – | – |
 | `lc-data-table` | LcDataTableComponent | composant | source (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, query (model), chips, emptyMessage | – |
-| `lc-description-list` | LcDescriptionListComponent | composant | items (requis), layout | itemAction |
+| `lc-description-list` | LcDescriptionListComponent | composant | items (requis), loading, stale, emptyMessage, layout | itemAction |
 | `lc-kpi-card` | LcKpiCardComponent | composant | label (requis), value, format, valueText, delta, hint, loading, stale, themeColor, fillMode, layout | – |
-| `lc-table` | LcTableComponent | composant | data (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), rowClass | groupToggled |
+| `lc-table` | LcTableComponent | composant | data (requis), loading, stale, columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), rowClass | groupToggled |
 | `lc-timeline-bar` | LcTimelineBarComponent | composant | segments, lanes, axisEnd, reference, axisLabel, label (requis), description (requis), startLabel, endLabel, minLabelShare, emptyMessage, stale, loading, ticks | – |
-| `lc-tree-table` | LcTreeTableComponent | composant | data (requis), children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
+| `lc-tree-table` | LcTreeTableComponent | composant | data (requis), loading, stale, children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
 | `li[lcActivityItem]` | LcActivityItemComponent | composant | heading (requis), icon, date, dateTime | – |
 | `ng-template[lcCell]` | LcCellDirective | directive | lcCell (requis) | – |
 | `ol[lcActivityFeed]` | LcActivityFeedComponent | composant | density | – |
@@ -64,7 +64,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 | `lc-badge` | LcBadgeComponent | composant | themeColor, fillMode, size | – |
 | `lc-empty-state` | LcEmptyStateComponent | composant | icon, title (requis), description | – |
 | `lc-error-state` | LcErrorStateComponent | composant | title (requis), description, retryLabel | retry |
-| `lc-message-thread` | LcMessageThreadComponent | composant | messages (requis), showAvatars, pageSize, ariaLabel | attachmentOpen, systemAction |
+| `lc-message-thread` | LcMessageThreadComponent | composant | messages (requis), loading, stale, emptyMessage, showAvatars, pageSize, ariaLabel | attachmentOpen, systemAction |
 | `lc-progress-bar` | LcProgressBarComponent | composant | value, label | – |
 | `lc-status-badge` | LcStatusBadgeComponent | composant | kind, icon, size | – |
 | `lc-toast-outlet` | LcToastOutletComponent | composant | – | – |

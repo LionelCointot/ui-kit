@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import { LC_LABELS, LC_LOCALE, LcAvatarComponent, FLIP_THRESHOLD_PX, LcIconComponent, isSafePreviewUrl, lcAnimate, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars, staggerDelay } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, booleanAttribute, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
+import { LC_LABELS, LC_LOCALE, LcAvatarComponent, FLIP_THRESHOLD_PX, LcIconComponent, LcSkeletonComponent, isSafePreviewUrl, lcDataState, lcAnimate, lcCssMs, lcPrefersReducedMotion, lcStripUnsafeChars, staggerDelay } from '@lionelcointot/ui-angular';
 import { groupThreadMessages, type LcThreadItem, type LcThreadTime } from './message-thread-grouping';
 import { splitLinks, type LcTextPart } from './message-thread-links';
 import { LC_STATUS_ICONS } from '../status-icons';
@@ -75,11 +75,20 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
  */
 @Component({
   selector: 'lc-message-thread',
-  imports: [LcAvatarComponent, LcIconComponent, LcStatusBadgeComponent],
+  imports: [LcAvatarComponent, LcIconComponent, LcSkeletonComponent, LcStatusBadgeComponent],
   template: `
-    <div #log class="lc-message-thread__log" role="log" [attr.aria-label]="ariaLabel() || labels.threadLabel" [attr.tabindex]="scrolls() ? 0 : null" [attr.aria-busy]="loading() || null">
+    <div #log class="lc-message-thread__log" role="log" [attr.aria-label]="ariaLabel() || labels.threadLabel" [attr.tabindex]="scrolls() ? 0 : null">
       <div #inner class="lc-message-thread__inner">
         <div #sentinel class="lc-message-thread__sentinel"></div>
+        @if (state() === 'loading') {
+          <div class="lc-message-thread__skeleton" aria-hidden="true">
+            <div class="lc-message-thread__skeleton-row"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 3)" height="var(--lc-sys-space-12)" /></div>
+            <div class="lc-message-thread__skeleton-row lc-message-thread__skeleton-row--mine"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 2)" height="var(--lc-sys-space-12)" /></div>
+            <div class="lc-message-thread__skeleton-row"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 4)" height="var(--lc-sys-space-12)" /></div>
+          </div>
+        } @else if (state() === 'empty') {
+          <p class="lc-message-thread__empty">{{ emptyMessage() || labels.noData }}</p>
+        }
         @for (item of view(); track item.key) {
           @switch (item.type) {
             @case ('day') {
@@ -142,15 +151,21 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
   `,
   styleUrl: './message-thread.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-message-thread' },
+  host: { class: 'lc-message-thread', '[class.lc-message-thread--stale]': 'staleShown()', '[class.lc-reloading]': 'staleShown()','[attr.aria-busy]': 'busy() || null' },
 })
 export class LcMessageThreadComponent {
   protected readonly labels = inject(LC_LABELS);
   private readonly locale = inject(LC_LOCALE).locale;
   private readonly destroyRef = inject(DestroyRef);
 
-  /** Messages du plus ancien au plus récent ; seule entrée obligatoire. */
-  readonly messages = input.required<readonly LcThreadMessage[]>();
+  /** Messages du plus ancien au plus récent ; seule entrée obligatoire. `undefined` : squelette ; `null` ou `[]` : état vide. */
+  readonly messages = input.required<readonly LcThreadMessage[] | null | undefined>();
+  /** Chargement forcé : squelette même si des messages sont présents. */
+  readonly loading = input(false, { transform: booleanAttribute });
+  /** Rechargement en cours : les messages restent, une fine barre court en haut (`aria-busy`). Ignoré pendant le squelette. */
+  readonly stale = input(false, { transform: booleanAttribute });
+  /** Texte de l'état vide ; `noData` par défaut. */
+  readonly emptyMessage = input<string>();
   /** Avatar des autres auteurs, une fois par groupe. */
   readonly showAvatars = input(true);
   /** Taille d'une page de l'affichage progressif : seuls les derniers messages sont rendus, les plus anciens se révèlent en remontant. Entier > 0, sinon 30. */
@@ -169,10 +184,15 @@ export class LcMessageThreadComponent {
   /** Le fil défile lui-même : il devient atteignable au clavier. */
   protected readonly scrolls = signal(false);
   /** Les anciens messages s'insèrent (`aria-busy`). */
-  protected readonly loading = signal(false);
+  private readonly loadingOlder = signal(false);
+
+  private readonly list = computed(() => this.messages() ?? []);
+  protected readonly state = computed(() => lcDataState(this.messages(), this.loading()));
+  protected readonly staleShown = computed(() => this.stale() && this.state() === 'ready');
+  protected readonly busy = computed(() => this.loadingOlder() || this.state() === 'loading' || this.staleShown());
 
   private readonly pages = signal(1);
-  private readonly shown = computed(() => this.messages().slice(-this.pages() * normalizePageSize(this.pageSize())));
+  private readonly shown = computed(() => (this.state() === 'ready' ? this.list().slice(-this.pages() * normalizePageSize(this.pageSize())) : []));
   protected readonly view = computed(() => groupThreadMessages(this.shown(), { locale: this.locale, labels: this.labels }).map(toView));
 
   private readonly arrivals = new ArrivalTracker();
@@ -189,8 +209,9 @@ export class LcMessageThreadComponent {
       untracked(() => this.measureBefore());
     });
     afterRenderEffect(() => {
-      const ids = this.messages().map((message) => message.id);
+      const ids = this.list().map((message) => message.id);
       this.view();
+      if (this.state() === 'loading') return; // l'ouverture du fil (défilement en bas) attend les vrais messages
       untracked(() => {
         this.settle(ids);
         this.fillUp();
@@ -217,7 +238,7 @@ export class LcMessageThreadComponent {
 
   /** Conteneur qui défile et que les messages rendus ne remplissent pas : la sentinelle reste visible, on enchaîne un palier (fini quand tout est rendu). */
   private fillUp(): void {
-    if (this.shown().length >= this.messages().length) return;
+    if (this.shown().length >= this.list().length) return;
     const inner = this.inner().nativeElement;
     const free = this.sentinel().nativeElement.getBoundingClientRect().top - inner.getBoundingClientRect().top - (parseFloat(getComputedStyle(inner).paddingTop) || 0);
     // shortcut: un contenu qui remplit pile le conteneur (place libre nulle) n'enchaîne pas, le défilement de page non plus ; l'observateur prend le relais.
@@ -225,9 +246,9 @@ export class LcMessageThreadComponent {
   }
 
   private showMore(): void {
-    if (this.shown().length >= this.messages().length) return;
+    if (this.shown().length >= this.list().length) return;
     this.armed = false;
-    this.loading.set(true);
+    this.loadingOlder.set(true);
     this.pages.update((n) => n + 1);
   }
 
@@ -246,7 +267,7 @@ export class LcMessageThreadComponent {
     const opening = !this.arrivals.hasStarted;
     const arrived = this.arrivals.next(ids);
     const scrolls = log.scrollHeight > log.clientHeight + 1;
-    this.loading.set(false);
+    this.loadingOlder.set(false);
     if (!ids.length) this.pages.set(1); // fil vidé : l'affichage progressif repart de zéro
     if (opening) {
       if (scrolls) log.scrollTop = log.scrollHeight;

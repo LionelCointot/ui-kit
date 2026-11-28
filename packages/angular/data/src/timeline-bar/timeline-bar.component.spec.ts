@@ -963,14 +963,15 @@ describe('LcTimelineBarComponent : voies (lanes)', () => {
       expect(element.querySelector('.lc-timeline-bar__lane, .lc-timeline-bar__reference, .lc-timeline-bar__ticks')).toBeNull();
     });
 
-    it('stale : classe posée sur l\'hôte, retirée sinon ; les pistes sont atténuées par la feuille', async () => {
+    it('stale : classes de rechargement posées sur l\'hôte, retirées sinon ; le contenu n\'est pas atténué', async () => {
       const { fixture, element } = await setup({ lanes: [RENT, BUY], stale: true });
       expect(element.classList).toContain('lc-timeline-bar--stale');
+      expect(element.classList).toContain('lc-reloading');
       fixture.componentRef.setInput('stale', false);
       await fixture.whenStable();
       expect(element.classList).not.toContain('lc-timeline-bar--stale');
-      const rule = blockAt(css(), css().indexOf(':host(.lc-timeline-bar--stale) .lc-timeline-bar__lane-track {'));
-      expect(rule).toContain('opacity: var(--lc-timeline-bar-stale-opacity, 0.6)');
+      expect(element.classList).not.toContain('lc-reloading');
+      expect(css()).not.toContain('stale-opacity');
     });
   });
 
@@ -1026,9 +1027,10 @@ describe('LcTimelineBarComponent : voies (lanes)', () => {
       expect(await html({ lanes: [] })).toBe(await html({}));
     });
 
-    it('CA-21 : segments devient facultatif (défaut vide) : sans segment ni voie, message vide', async () => {
+    it('CA-21 : segments devient facultatif : sans segment ni voie, message vide', async () => {
       const fixture = TestBed.createComponent(LcTimelineBarComponent);
       fixture.componentRef.setInput('label', 'L');
+      fixture.componentRef.setInput('segments', null);
       fixture.componentRef.setInput('description', 'D');
       await fixture.whenStable();
       expect(fixture.nativeElement.querySelector('.lc-timeline-bar__empty')).not.toBeNull();

@@ -51,6 +51,19 @@ export const Playground: Story = {
   }),
 };
 
+/** Data states: `undefined` shows 3 skeleton pairs, `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last list has 3 items, for comparison. */
+export const States: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    props: { items: ITEMS },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6);max-width:28rem">
+      <section><h3>Chargement</h3><div data-qa-state="loading"><lc-description-list [items]="undefined" /></div></section>
+      <section><h3>Vide</h3><div data-qa-state="empty"><lc-description-list [items]="null" /></div></section>
+      <section><h3>Rechargement</h3><div data-qa-state="stale"><lc-description-list [items]="items" [stale]="true" /></div></section>
+      <section><h3>Trois éléments</h3><div data-qa-state="three"><lc-description-list [items]="items" /></div></section></div>`,
+  }),
+};
+
 /** One action per row: flat button (at least 44 px); `itemAction` emits the row index. */
 export const ActionPerRow: Story = {
   parameters: fixedExample,

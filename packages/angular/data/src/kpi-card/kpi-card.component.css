@@ -31,10 +31,6 @@ p {
   transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-.lc-kpi-card__value--stale {
-  opacity: 0.6;
-}
-
 .lc-kpi-card__footer {
   display: flex;
   flex-direction: column;

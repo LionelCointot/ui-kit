@@ -169,12 +169,16 @@ export const SmallScreen: Story = {
   }),
 };
 
-/** No data: the table shows its empty message. */
-export const Empty: Story = {
+/** Data states: `undefined` shows the skeleton (real headers, 3 placeholder rows), `null` or `[]` the empty message, `stale` shows a thin progress bar during a reload. The last table has 3 rows, for comparison. */
+export const States: Story = {
   parameters: fixedExample,
   render: () => ({
-    props: { ...base, data: [] },
-    template: `<lc-tree-table caption="Organisation" [data]="data" [columns]="columns" [trackBy]="trackBy" [children]="children" />`,
+    props: { ...base, three: units },
+    template: `<div style="display:grid;gap:var(--lc-sys-space-6)">
+      <section><h3>Chargement</h3><div data-qa-state="loading"><lc-tree-table caption="Organisation en chargement" [data]="undefined" [columns]="columns" [trackBy]="trackBy" [children]="children" /></div></section>
+      <section><h3>Vide</h3><div data-qa-state="empty"><lc-tree-table caption="Organisation, aucune entité" [data]="null" [columns]="columns" [trackBy]="trackBy" [children]="children" /></div></section>
+      <section><h3>Rechargement</h3><div data-qa-state="stale"><lc-tree-table caption="Organisation en rechargement" [data]="three" [columns]="columns" [trackBy]="trackBy" [children]="children" [stale]="true" /></div></section>
+      <section><h3>Trois lignes</h3><div data-qa-state="three"><lc-tree-table caption="Organisation, trois lignes" [data]="three" [columns]="columns" [trackBy]="trackBy" [children]="children" /></div></section></div>`,
   }),
 };
 

@@ -21,7 +21,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
       <ng-container [ngTemplateOutlet]="legendTemplate" />
     }
     <ng-template #legendTemplate>
-    @if (legend().length >= 2) {
+    @if (legend().length >= 2 && !loading()) {
       <ul class="lc-chart-frame__legend" [class.lc-chart-frame__legend--values]="hasLegendValues()">
         @for (item of legend(); track item.id) {
           <li>
@@ -70,7 +70,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
       } @else if (empty()) {
         <p class="lc-chart-frame__empty" [style.height]="height()">{{ emptyMessage() || labels.noData }}</p>
       } @else {
-        <lc-chart-host class="lc-chart-frame__chart" [class.lc-chart-frame__chart--stale]="stale()"
+        <lc-chart-host class="lc-chart-frame__chart" [class.lc-chart-frame__chart--stale]="stale()" [class.lc-reloading]="stale()"
           [option]="option()" [ariaLabel]="title()" [height]="height()" [navigation]="navigation()" [categoryCount]="categoryCount()"
           (pointSelect)="pointSelect.emit($event)" />
       }

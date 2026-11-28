@@ -13,6 +13,7 @@ export * from './lib/core/pipes';
 export * from './lib/core/theme.service';
 export type { LcThemeBase, LcThemeDefinition } from '@lionelcointot/ui-tokens/theme';
 export * from './lib/core/id';
+export * from './lib/core/data-state';
 export * from './lib/core/safe-text';
 export { LC_DEFAULT_ICONS } from './lib/icon/default-icons';
 export { LC_ICONS, provideLcIcons } from './lib/icon/icons';

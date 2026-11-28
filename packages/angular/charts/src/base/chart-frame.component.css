@@ -191,11 +191,6 @@ button.lc-chart-frame__legend-item:focus-visible,
   transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
-/* Recalcul en cours : le rendu précédent reste affiché, atténué, sans squelette. */
-.lc-chart-frame__chart--stale {
-  opacity: 0.6;
-}
-
 .lc-chart-frame__data-toggle {
   align-self: flex-start;
   min-block-size: var(--lc-sys-control-height-sm);

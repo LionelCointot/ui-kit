@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, model, output } from '@angular/core';
+import { lcDataState } from '@lionelcointot/ui-angular';
 import type { EChartsCoreOption } from '../echarts-registry';
 import { LcChartFrameComponent } from '../base/chart-frame.component';
 import { textStyle } from '../builders/shared';
@@ -15,7 +16,7 @@ import type { LcChartPointSelect, LcChartTable } from '../types';
   imports: [LcChartFrameComponent],
   template: `
     <lc-chart-frame [title]="title() || ariaLabel()" [titleHidden]="!title()" [description]="description()" [height]="height()"
-      [loading]="loading()" [stale]="stale()" [empty]="!options()" [table]="table() ?? null" [(showDataTable)]="showDataTable"
+      [loading]="state() === 'loading'" [stale]="stale()" [empty]="state() === 'empty'" [emptyMessage]="emptyMessage()" [table]="table() ?? null" [(showDataTable)]="showDataTable"
       [option]="mergedOption()" (pointSelect)="pointSelect.emit($event)" />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +26,8 @@ import type { LcChartPointSelect, LcChartTable } from '../types';
 export class LcChartComponent {
   private readonly themeService = inject(LcChartThemeService);
 
-  readonly options = input.required<EChartsCoreOption | null>();
+  /** `undefined` : squelette ; `null` : état vide. */
+  readonly options = input.required<EChartsCoreOption | null | undefined>();
   readonly ariaLabel = input.required<string>();
   /** Vue tableau : obligatoire pour que les valeurs restent accessibles. */
   readonly table = input<LcChartTable>();
@@ -34,8 +36,11 @@ export class LcChartComponent {
   readonly height = input('280px');
   readonly loading = input(false, { transform: booleanAttribute });
   readonly stale = input(false, { transform: booleanAttribute });
+  readonly emptyMessage = input<string>();
   readonly showDataTable = model(false);
   readonly pointSelect = output<LcChartPointSelect>();
+
+  protected readonly state = computed(() => lcDataState(this.options(), this.loading()));
 
   protected readonly mergedOption = computed<EChartsCoreOption | null>(() => {
     const options = this.options();

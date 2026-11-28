@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode, model, output, signal } from '@angular/core';
-import { LC_LABELS, LcFormatService, LcIconComponent } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcFormatService, LcIconComponent, LcSkeletonComponent, lcDataState } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from './cell.directive';
 import {
   LC_TABLE_MAX_ROWS, LcSort, LcTableColumn, LcTableGrouping, LcTableSelectable, buildTableModel, nextSort,
@@ -17,7 +17,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'lc-table',
-  imports: [NgTemplateOutlet, LcIconComponent],
+  imports: [NgTemplateOutlet, LcIconComponent, LcSkeletonComponent],
   template: `
     <div class="lc-table__scroll" tabindex="0" role="region" [attr.aria-label]="caption()">
       <table class="lc-table__table">
@@ -48,6 +48,13 @@ let nextId = 0;
           </tr>
         </thead>
         <tbody>
+          @if (state() === 'loading') {
+            @for (row of skeletonRows; track row) {
+              <tr class="lc-table__skeleton-row">
+                <td [attr.colspan]="columns().length + (selectSettings() ? 1 : 0)"><lc-skeleton /></td>
+              </tr>
+            }
+          } @else {
           @for (item of model().items; track item.id) {
             @if (item.kind === 'group') {
               <tr class="lc-table__group">
@@ -92,11 +99,12 @@ let nextId = 0;
             }
           } @empty {
             <tr class="lc-table__empty">
-              <td [attr.colspan]="columns().length + (selectSettings() ? 1 : 0)">{{ emptyMessage() ?? labels.noData }}</td>
+              <td [attr.colspan]="columns().length + (selectSettings() ? 1 : 0)">{{ emptyMessage() || labels.noData }}</td>
             </tr>
           }
+          }
         </tbody>
-        @if (footer(); as totals) {
+        @if (state() !== 'loading' && footer(); as totals) {
           <tfoot>
             <tr>
               @if (selectSettings()) {
@@ -133,6 +141,9 @@ let nextId = 0;
     '[class.lc-table--sticky-header]': 'stickyHeader()',
     '[class.lc-table--selectable]': 'selectSettings()',
     '[class.lc-table--compact]': "density() === 'compact'",
+    '[class.lc-table--stale]': 'reloading()',
+    '[class.lc-reloading]': 'reloading()',
+    '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
   },
 })
 export class LcTableComponent<T> {
@@ -143,7 +154,12 @@ export class LcTableComponent<T> {
   protected readonly cellText = cellText;
   protected readonly sortIcon = sortIcon;
 
-  readonly data = input.required<readonly T[]>();
+  /** `undefined` : squelette ; `null` ou `[]` : état vide. */
+  readonly data = input.required<readonly T[] | null | undefined>();
+  /** Squelette même avec des données. */
+  readonly loading = input(false, { transform: booleanAttribute });
+  /** Rechargement : données gardées, fine barre de progression en haut. Sans effet pendant le squelette. */
+  readonly stale = input(false, { transform: booleanAttribute });
   readonly columns = input.required<readonly LcTableColumn<T>[]>();
   readonly trackBy = input.required<(row: T) => unknown>();
   readonly caption = input.required<string>();
@@ -155,6 +171,7 @@ export class LcTableComponent<T> {
   readonly sortMode = input<'client' | 'external'>('client');
   readonly stickyHeader = input(false, { transform: booleanAttribute });
   readonly density = input<'comfortable' | 'compact'>('comfortable');
+  /** Texte de l'état vide (défaut ou chaîne vide : `LC_LABELS.noData`). */
   readonly emptyMessage = input<string>();
   /** Colonne de cases à cocher en tête : `true` (défauts), `false`, ou réglages (`LcTableSelectable`). L'attribut nu `selectable` vaut `true`. */
   readonly selectable = input<boolean | LcTableSelectable<T>, boolean | LcTableSelectable<T> | ''>(false, {
@@ -172,13 +189,17 @@ export class LcTableComponent<T> {
   readonly groupToggled = output<{ key: string; expanded: boolean }>();
 
   protected readonly hintId = `lc-table-hint-${nextId++}`;
+  protected readonly skeletonRows = [0, 1, 2];
+  protected readonly state = computed(() => lcDataState(this.data(), this.loading()));
+  protected readonly reloading = computed(() => this.stale() && this.state() === 'ready');
+  private readonly rows = computed(() => this.data() ?? []);
   /** Dernier texte annoncé : écrit seulement par un geste dans le tableau, jamais par `selection.set` du parent ni par `data`. */
   protected readonly announcement = signal('');
   /** Clés des lignes cochables de tout `data` (groupes repliés compris). */
   protected readonly selectableKeys = computed(() => {
     const keyOf = this.trackBy();
     const test = this.selectSettings()?.isRowSelectable ?? (() => true);
-    const keys = this.data().filter((row) => test(row)).map((row) => keyOf(row));
+    const keys = this.rows().filter((row) => test(row)).map((row) => keyOf(row));
     return keys;
   });
   private readonly selectedCount = computed(() => this.selectableKeys().filter((key) => this.selection().has(key)).length);
@@ -189,7 +210,7 @@ export class LcTableComponent<T> {
   private readonly warnDuplicateKeys = effect(() => {
     if (!isDevMode() || !this.selectSettings()) return;
     const keyOf = this.trackBy();
-    const keys = this.data().map((row) => keyOf(row));
+    const keys = this.rows().map((row) => keyOf(row));
     if (new Set(keys).size !== keys.length) console.warn('lc-table: `trackBy` renvoie deux fois la même clé, la sélection est ambiguë.');
   });
   protected readonly maxRows = LC_TABLE_MAX_ROWS;
@@ -198,7 +219,7 @@ export class LcTableComponent<T> {
   private readonly expandedOverrides = signal<ReadonlyMap<string, boolean>>(new Map());
 
   protected readonly model = computed(() => buildTableModel<T>({
-    data: this.data(),
+    data: this.rows(),
     columns: this.columns(),
     trackBy: this.trackBy(),
     sort: this.sortMode() === 'client' ? this.sort() : null,

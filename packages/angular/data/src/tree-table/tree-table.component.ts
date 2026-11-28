@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy, Component, afterNextRender, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
   linkedSignal, model, output, signal, viewChild,
 } from '@angular/core';
-import { LC_LABELS, LC_REVEAL_ANIMATION, LcFormatService, LcIconComponent, LcStaggerDirective, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_REVEAL_ANIMATION, LcFormatService, LcIconComponent, LcSkeletonComponent, LcStaggerDirective, lcDataState, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcSort, LcTableColumn, nextSort } from '../table/table-model';
 import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from '../table/table-shared';
@@ -18,7 +18,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
  */
 @Component({
   selector: 'lc-tree-table',
-  imports: [NgTemplateOutlet, LcIconComponent],
+  imports: [NgTemplateOutlet, LcIconComponent, LcSkeletonComponent],
   hostDirectives: [LcStaggerDirective],
   template: `
     <div class="lc-table__scroll">
@@ -41,6 +41,13 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
           </tr>
         </thead>
         <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)" (animationend)="onRevealEnd($event)" (animationcancel)="onRevealEnd($event)">
+          @if (state() === 'loading') {
+            @for (row of skeletonRows; track row) {
+              <tr class="lc-tree-table__skeleton-row" role="row">
+                <td [attr.colspan]="columns().length"><lc-skeleton /></td>
+              </tr>
+            }
+          } @else {
           @for (row of rows(); track row.key; let rowIndex = $index) {
             <tr class="lc-tree-table__row" role="row" [class.lc-reveal]="entering() && rowIndex < revealRows" [style.--lc-reveal-rank]="rowIndex" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
               [attr.aria-setsize]="row.setSize" [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
@@ -76,8 +83,9 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
             </tr>
           } @empty {
             <tr class="lc-table__empty" role="row">
-              <td [attr.colspan]="columns().length">{{ emptyMessage() ?? labels.noData }}</td>
+              <td [attr.colspan]="columns().length">{{ emptyMessage() || labels.noData }}</td>
             </tr>
+          }
           }
         </tbody>
       </table>
@@ -92,6 +100,9 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
     class: 'lc-table lc-tree-table',
     '[class.lc-table--sticky-header]': 'stickyHeader()',
     '[class.lc-table--compact]': "density() === 'compact'",
+    '[class.lc-tree-table--stale]': 'reloading()',
+    '[class.lc-reloading]': 'reloading()',
+    '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
   },
 })
 export class LcTreeTableComponent<T> {
@@ -102,8 +113,12 @@ export class LcTreeTableComponent<T> {
   protected readonly cellText = cellText;
   protected readonly sortIcon = sortIcon;
 
-  /** Nœuds racines. */
-  readonly data = input.required<readonly T[]>();
+  /** Nœuds racines. `undefined` : squelette ; `null` ou `[]` : état vide. */
+  readonly data = input.required<readonly T[] | null | undefined>();
+  /** Squelette même avec des données. */
+  readonly loading = input(false, { transform: booleanAttribute });
+  /** Rechargement : données gardées, fine barre de progression en haut. Sans effet pendant le squelette. */
+  readonly stale = input(false, { transform: booleanAttribute });
   /** Enfants d'un nœud. */
   readonly children = input.required<(node: T) => readonly T[] | null | undefined>();
   /** Colonnes (type de `lc-table`) ; la première porte le bouton de dépliage et l'indentation. */
@@ -122,10 +137,14 @@ export class LcTreeTableComponent<T> {
   readonly filter = input<((node: T) => boolean) | undefined>(undefined);
   readonly stickyHeader = input(false, { transform: booleanAttribute });
   readonly density = input<'comfortable' | 'compact'>('comfortable');
+  /** Texte de l'état vide (défaut ou chaîne vide : `LC_LABELS.noData`). */
   readonly emptyMessage = input<string>();
   readonly rowToggled = output<{ node: T; expanded: boolean }>();
 
   protected readonly maxRows = LC_TREE_TABLE_MAX_ROWS;
+  protected readonly skeletonRows = [0, 1, 2];
+  protected readonly state = computed(() => lcDataState(this.data(), this.loading()));
+  protected readonly reloading = computed(() => this.stale() && this.state() === 'ready');
   /** Lignes de l'entrée en cascade : celles de la première page ; les suivantes, hors écran, apparaissent d'un coup (pas une animation par ligne d'un grand arbre). */
   protected readonly revealRows = 30;
   /**
@@ -152,7 +171,7 @@ export class LcTreeTableComponent<T> {
     const everything = this.allExpanded();
     const expanded = this.expanded();
     return buildTreeTableModel<T>({
-      data: this.data(),
+      data: this.data() ?? [],
       children: this.children(),
       columns: this.columns(),
       trackBy: this.trackBy(),

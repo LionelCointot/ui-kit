@@ -47,6 +47,7 @@ describe('LcKpiCardComponent', () => {
   it('affiche un tiret sans valeur et un squelette pendant le chargement', async () => {
     const fixture = TestBed.createComponent(LcKpiCardComponent);
     fixture.componentRef.setInput('label', 'Coût total');
+    fixture.componentRef.setInput('value', null);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('.lc-kpi-card__value')!.textContent).toBe('—');
@@ -186,5 +187,21 @@ describe('LcKpiCardComponent : mot de tendance et forme lien (relief)', () => {
     expect(card.getAttribute('role')).toBeNull();
     expect(card.getAttribute('aria-label')).toBeNull();
     expect(card.querySelectorAll('lc-icon').length, 'icône de tendance + chevron').toBe(2);
+  });
+});
+
+describe('LcKpiCardComponent : squelette selon la donnée', () => {
+  const render = async (inputs: Record<string, unknown>) => {
+    const fixture = TestBed.createComponent(LcKpiCardComponent);
+    fixture.componentRef.setInput('label', 'Coût');
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  it.each([{ value: 0 }, { valueText: '' }, { valueText: 'Aucun' }])('%o : prête, sans squelette ni aria-busy', async (inputs) => {
+    const element = await render(inputs);
+    expect(element.querySelector('lc-skeleton')).toBeNull();
+    expect(element.getAttribute('aria-busy')).toBeNull();
   });
 });
