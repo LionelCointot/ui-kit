@@ -129,17 +129,12 @@ export const LaneNeverAhead: Story = lanesBar(
   false,
 );
 
-/** Faded while a recalculation is under way (`stale`). */
-export const Stale: Story = bar(`[segments]="PHASES" [description]="DESCRIPTION" [stale]="true"`);
-
-/** Loading state: no `segments` yet (`undefined`) shows a skeleton in place of the bar; `[loading]="true"` forces it over existing data. */
+/** Forced loading: `[loading]="true"` shows the skeleton over existing data. */
 export const Loading: Story = {
   parameters: fixedExample,
   render: () => ({
     props: { PHASES, DESCRIPTION },
-    template: `<div style="display:grid;gap:var(--lc-sys-space-4);width:40rem;max-width:100%">
-      <lc-timeline-bar label="Répartition des phases" [segments]="undefined" />
-      <lc-timeline-bar label="Répartition des phases, rechargée" [segments]="PHASES" [description]="DESCRIPTION" [loading]="true" /></div>`,
+    template: `<lc-timeline-bar style="display:block;width:40rem;max-width:100%" label="Répartition des phases, rechargée" [segments]="PHASES" [description]="DESCRIPTION" [loading]="true" />`,
   }),
 };
 
@@ -155,9 +150,6 @@ export const States: Story = {
       <section><h3>Trois segments</h3><lc-timeline-bar label="Répartition des phases" [segments]="PHASES" [description]="DESCRIPTION" /></section></div>`,
   }),
 };
-
-/** No segment: the bar shows its empty message. */
-export const Empty: Story = bar(`[segments]="[]" description="Aucune phase." emptyMessage="Aucune phase à afficher."`);
 
 /** Decorative ticks under the track (`at` in the weight unit); `description` remains the text equivalent. */
 export const WithTicks: Story = bar(`[segments]="PHASES" [description]="DESCRIPTION" [ticks]="ticks"`, { ticks: GRADUATIONS });

@@ -142,13 +142,11 @@ export const States: Story = {
   }),
 };
 
-/** Forced loading (`[loading]="true"` over an existing value) and stale (dimmed value during a recalculation). */
-export const LoadingAndStale: Story = {
+/** Forced loading: `[loading]="true"` shows the skeleton over an existing value. */
+export const Loading: Story = {
   parameters: fixedExample,
   render: () => ({
-    template: `<div style="display:grid;gap:var(--lc-sys-space-4);grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));max-width:40rem">
-      <lc-kpi-card label="Chargement" [value]="1248" [loading]="true" />
-      <lc-kpi-card label="Recalcul en cours" [value]="1248" [stale]="true" /></div>`,
+    template: `<lc-kpi-card style="display:block;max-width:16rem" label="Chargement" [value]="1248" [loading]="true" />`,
   }),
 };
 
