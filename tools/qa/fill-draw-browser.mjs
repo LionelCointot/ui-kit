@@ -199,19 +199,22 @@ const liftState = (page) => page.evaluate(() => {
 });
 await section(4, async () => {
   const { page, context } = await open(story('pulse-lift'), { wait: '#lift' });
-  const tok = await page.evaluate(() => { const q = window.__q; return { fine: matchMedia('(pointer: fine)').matches, offset: q.px('--lc-lift-offset'), duration: q.ms('--lc-lift-duration'), easing: q.flat(q.raw('--lc-lift-easing')), out: q.flat(q.raw('--lc-sys-easing-out')) }; });
+  const tok = await page.evaluate(() => { const q = window.__q; return { fine: matchMedia('(pointer: fine)').matches, offset: q.px('--lc-lift-offset'), duration: q.ms('--lc-lift-duration'), leave: q.ms('--lc-lift-leave-duration'), easing: q.flat(q.raw('--lc-lift-easing')), out: q.flat(q.raw('--lc-sys-easing-out')) }; });
   check(tok.fine, 'CA-30 précondition : (pointer: fine) vrai', JSON.stringify(tok));
-  check(tok.offset === -4 && tok.duration === 350 && tok.easing === tok.out, 'CA-30 tokens lift.* = −4 px, 350 ms, courbe out (spec)', JSON.stringify(tok));
+  check(tok.offset === -4 && tok.duration === 450 && tok.leave === 500 && tok.easing === tok.out, 'CA-30 tokens lift.* = −4 px, 450 ms à l\'entrée, 500 ms au retour, courbe out (relevé du site)', JSON.stringify(tok));
   check((await liftState(page)).ty === 0, 'CA-30 .lc-lift au repos : aucun décalage');
   await page.locator('#lift').hover();
   let s = { transitions: [] };
   for (let i = 0; i < 20 && !s.transitions.length; i += 1) { await frames(page, 1); s = await liftState(page); }
   check(s.transitions.length === 1 && s.transitions[0].prop === 'transform', 'CA-30 survol : une seule transition, sur `transform` (ADR 0011, CA-5)', JSON.stringify(s.transitions));
-  if (s.transitions[0]) check(s.transitions[0].duration === tok.duration && s.transitions[0].easings.includes(tok.easing), 'CA-30 survol : 350 ms, courbe --lc-lift-easing', JSON.stringify(s.transitions[0]));
+  if (s.transitions[0]) check(s.transitions[0].duration === tok.duration && s.transitions[0].easings.includes(tok.easing), 'CA-30 survol : 450 ms, courbe --lc-lift-easing', JSON.stringify(s.transitions[0]));
   await idle(page);
   s = await liftState(page);
   check(near(s.ty, -4, 0.01), 'CA-30 .lc-lift au survol : soulevé de 4 px (translateY −4)', String(s.ty));
   await page.mouse.move(0, 0);
+  s = { transitions: [] };
+  for (let i = 0; i < 20 && !s.transitions.length; i += 1) { await frames(page, 1); s = await liftState(page); }
+  check(s.transitions.length === 1 && s.transitions[0].duration === 500 && s.transitions[0].easings.includes(tok.easing), 'CA-30 retour : 500 ms, courbe out', JSON.stringify(s.transitions));
   await idle(page);
   check(near((await liftState(page)).ty, 0, 0.01), 'CA-30 .lc-lift : retour à 0 hors survol');
   await context.close();

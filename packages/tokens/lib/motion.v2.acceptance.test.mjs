@@ -86,7 +86,7 @@ const GROUPS = {
   flash: ['950ms'],
   title: ['115%', '700ms', E('inout'), '320ms'],
   live: ['2000ms', '0.1', '0.45'],
-  lift: ['-4px', '350ms', E('out')],
+  lift: ['-4px', '450ms', '500ms', E('out')],
   calendar: ['18px', '450ms', '30ms'],
   list: ['420ms', E('draw')],
   chart: ['1300ms', '700ms', '20ms'],
