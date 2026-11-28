@@ -712,6 +712,16 @@ describe('LcTreeTableComponent', () => {
       expect(revealed(rows())).toBe(0);
     });
 
+    it('sous mouvement réduit, aucune entrée : la cascade est close au premier rendu', async () => {
+      vi.stubGlobal('matchMedia', () => ({ matches: true }));
+      try {
+        const { rows } = await setup();
+        expect(revealed(rows())).toBe(0);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
     it('seules les 30 premières lignes entrent ; la 30e clôt la cascade', async () => {
       const many = Array.from({ length: 40 }, (_, index) => node(`N${index}`, index));
       const { rows, fixture } = await setup((host) => host.data.set(many));

@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy, Component, afterNextRender, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
   linkedSignal, model, output, signal, viewChild,
 } from '@angular/core';
-import { LC_LABELS, LC_REVEAL_ANIMATION, LcFormatService, LcIconComponent, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_REVEAL_ANIMATION, LcFormatService, LcIconComponent, LcStaggerDirective, lcPrefersReducedMotion, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcSort, LcTableColumn, nextSort } from '../table/table-model';
 import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from '../table/table-shared';
@@ -172,10 +172,9 @@ export class LcTreeTableComponent<T> {
   });
 
   constructor() {
-    // Aucune animation en cours au premier rendu d'un arbre non vide (animations coupées) : ni fin ni annulation n'arriveront, l'entrée est close.
+    // Mouvement réduit : `motion.css` ne joue aucune entrée, ni fin ni annulation n'arriveront ; l'entrée est close au premier rendu d'un arbre non vide.
     afterNextRender(() => {
-      const body = this.body().nativeElement;
-      if (this.rows().length && typeof body.getAnimations === 'function' && !body.getAnimations({ subtree: true }).length) this.entering.set(false);
+      if (this.rows().length && lcPrefersReducedMotion()) this.entering.set(false);
     });
     if (isDevMode()) {
       effect(() => {
