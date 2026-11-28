@@ -605,3 +605,44 @@ describe('LcTableComponent selectable (ADR 0010)', () => {
     expect(custom.querySelector('tbody input')!.getAttribute('aria-label')).toBe(`Cocher ${rows[0].name}`);
   });
 });
+
+describe('LcTableComponent : états', () => {
+  const render = async (inputs: Record<string, unknown>) => {
+    const fixture = TestBed.createComponent(LcTableComponent<Payment>);
+    fixture.componentRef.setInput('caption', 'Échéances');
+    fixture.componentRef.setInput('columns', [{ id: 'month', header: 'Mois', value: (row: Payment) => row.month }]);
+    fixture.componentRef.setInput('trackBy', (row: Payment) => row.id);
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  it('undefined : vraies en-têtes, 3 lignes de squelette en colspan, aria-busy', async () => {
+    const element = await render({ data: undefined, footer: { amount: 1 } });
+    expect(element.querySelector('th')!.textContent).toContain('Mois');
+    expect(element.querySelectorAll('tbody tr lc-skeleton').length).toBe(3);
+    expect(element.querySelector('tbody td')!.getAttribute('colspan')).toBe('1');
+    expect(element.querySelector('tfoot')).toBeNull();
+    expect(element.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('loading avec données : squelette, aucune cellule de donnée', async () => {
+    const element = await render({ data, loading: true });
+    expect(element.textContent).not.toContain('Janvier');
+  });
+
+  it('null : état vide (chaîne vide : noData), sans aria-busy', async () => {
+    const element = await render({ data: null, emptyMessage: '' });
+    expect(element.querySelector('.lc-table__empty')!.textContent).toContain('Aucune donnée');
+    expect(element.querySelector('lc-skeleton')).toBeNull();
+    expect(element.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('stale : données gardées, classe et aria-busy ; sans donnée : pas de classe', async () => {
+    const element = await render({ data, stale: true });
+    expect(element.classList).toContain('lc-table--stale');
+    expect(element.getAttribute('aria-busy')).toBe('true');
+    expect(element.textContent).toContain('Janvier');
+    expect((await render({ data: undefined, stale: true })).classList).not.toContain('lc-table--stale');
+  });
+});
