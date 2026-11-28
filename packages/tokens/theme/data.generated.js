@@ -309,6 +309,7 @@ export const MOTION_SCHEMA = [
   {"path":"live.opacity-to","cssVar":"--lc-live-opacity-to","type":"number"},
   {"path":"lift.offset","cssVar":"--lc-lift-offset","type":"dimension","unit":"length"},
   {"path":"lift.duration","cssVar":"--lc-lift-duration","type":"duration"},
+  {"path":"lift.leave-duration","cssVar":"--lc-lift-leave-duration","type":"duration"},
   {"path":"lift.easing","cssVar":"--lc-lift-easing","type":"cubicBezier"},
   {"path":"calendar.duration","cssVar":"--lc-calendar-duration","type":"duration"},
   {"path":"calendar.easing","cssVar":"--lc-calendar-easing","type":"cubicBezier"},

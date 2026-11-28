@@ -199,7 +199,8 @@
   },
   "lift": {
     "offset": { "$value": "-4px", "$type": "dimension" },
-    "duration": { "$value": "{sys.duration.slow}", "$type": "duration" },
+    "duration": { "$value": "{sys.duration.enter}", "$type": "duration", "$description": "Rise on hover (Talmo site: 450 ms)." },
+    "leave-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Return when the pointer leaves (Talmo site: 500 ms)." },
     "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" }
   },
   "calendar": {

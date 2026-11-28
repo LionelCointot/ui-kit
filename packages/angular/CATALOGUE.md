@@ -196,7 +196,7 @@ Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton don
 - `flash` : `duration` → sys-duration-fill · `easing` → sys-easing-title
 - `title` : `letter-duration` → sys-duration-title · `letter-easing` → sys-easing-title · `letter-offset` 115% · `letter-rotate` → sys-motion-rotate-char · `letter-stagger` → sys-motion-stagger-chars · `line-duration` → sys-duration-view · `line-easing` → sys-easing-inout · `line-delay` 320ms
 - `live` : `duration` 2000ms · `opacity-from` 0.1 · `opacity-to` 0.45
-- `lift` : `offset` -4px · `duration` → sys-duration-slow · `easing` → sys-easing-out
+- `lift` : `offset` -4px · `duration` → sys-duration-enter · `leave-duration` → sys-duration-move · `easing` → sys-easing-out
 - `calendar` : `duration` → overlay-enter-duration · `easing` → overlay-easing · `slide-offset` 18px · `slide-duration` → sys-duration-enter · `slide-opacity` 0.14 · `row-stagger` 30ms
 - `chart` : `sparkline-duration` 1300ms · `update-duration` → sys-duration-view · `update-stagger` 20ms
 - `topbar` : `enter-offset` 10px · `enter-duration` → sys-duration-move · `enter-stagger` 30ms · `enter-delay` 80ms
