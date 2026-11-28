@@ -122,6 +122,43 @@ async function perf(browser, base) {
 }
 
 
+/**
+ * CA-6 (spec 2026-12-squelette-automatique) : hauteur du squelette proche de celle de 3 éléments, à 1280 et 360 px.
+ * Contrat des stories `States` (créées par T5, ids Storybook fixés ici) :
+ *   data-table--states, data-tree-table--states, data-description-list--states, feedback-message-thread--states.
+ * Chaque story rend, dans le même ordre de colonnes et avec le même `layout`, un seul composant par conteneur :
+ *   - `[data-qa-state="loading"]` : le composant en état « Chargement » (donnée `undefined`) ; il contient au moins un `lc-skeleton` ;
+ *   - `[data-qa-state="three"]` : le même composant avec 3 éléments (3 lignes, 3 paires terme / valeur, 3 messages) ; aucun `lc-skeleton`.
+ * Les conteneurs n'imposent ni hauteur ni largeur au composant (la story n'ajoute aucun `height`). La mesure porte sur le premier enfant
+ * élément du conteneur (l'hôte `lc-table`, `lc-tree-table`, `lc-description-list` ou `lc-message-thread`). D'autres conteneurs
+ * (`empty`, `stale`) sont libres.
+ * Réussite : |hauteur(loading) - hauteur(three)| < 25 % de hauteur(three) ou < 24 px.
+ */
+async function skeletonHeights(browser, base) {
+  const stories = ['data-table--states', 'data-tree-table--states', 'data-description-list--states', 'feedback-message-thread--states'];
+  const results = [];
+  for (const width of [1280, 360]) {
+    for (const id of stories) {
+      const context = await browser.newContext({ viewport: { width, height: 800 } });
+      const page = await context.newPage();
+      await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
+      await page.waitForSelector('[data-qa-state="loading"], #error-message', { state: 'attached', timeout: 20000 }).catch(() => {});
+      await settled(page).catch(() => {});
+      const m = await page.evaluate(() => {
+        const host = (state) => document.querySelector(`[data-qa-state="${state}"]`)?.firstElementChild ?? null;
+        const [loading, three] = [host('loading'), host('three')];
+        return { found: !!loading && !!three, skeleton: !!loading?.querySelector('lc-skeleton'), loading: loading?.getBoundingClientRect().height, three: three?.getBoundingClientRect().height, noSkeletonInThree: !three?.querySelector('lc-skeleton') };
+      });
+      const delta = Math.abs(m.loading - m.three);
+      const ok = m.found && m.skeleton && m.noSkeletonInThree && (delta < 24 || delta < 0.25 * m.three);
+      results.push(ok);
+      console.log(`${ok ? 'OK ' : 'KO '} CA-6 ${id} à ${width} px : squelette ${Math.round(m.loading)} px, 3 éléments ${Math.round(m.three)} px${m.found ? '' : ' (conteneurs data-qa-state absents)'}`);
+      await context.close();
+    }
+  }
+  return results.every(Boolean);
+}
+
 /** Comportements qui dépendent du CSS réel et du focus du navigateur (non vérifiables dans jsdom). */
 async function dom(browser, base) {
   const results = [];
@@ -207,6 +244,7 @@ async function dom(browser, base) {
     check('CA-K1.3 forced-colors : bordure du badge visible (non transparente)', borders.length === 6 && borders.every((color) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'), borders.join(' | '));
     await context.close();
   }
+  results.push(await skeletonHeights(browser, base));
   return results.every(Boolean) ? 0 : 1;
 }
 
