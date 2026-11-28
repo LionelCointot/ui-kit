@@ -41,6 +41,36 @@
   block-size: 0;
 }
 
+:host(.lc-message-thread--stale) .lc-message-thread__log {
+  opacity: var(--lc-message-thread-stale-opacity, 0.6);
+}
+
+.lc-message-thread__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-message-thread-group-gap, var(--lc-sys-space-4));
+}
+
+.lc-message-thread__skeleton-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.lc-message-thread__skeleton-row--mine {
+  justify-content: flex-end;
+}
+
+.lc-message-thread__skeleton-row lc-skeleton {
+  max-inline-size: 100%;
+}
+
+.lc-message-thread__empty {
+  margin: 0;
+  color: var(--lc-message-thread-day-color, var(--lc-sys-color-on-surface-muted));
+  font-size: var(--lc-sys-font-size-md);
+  text-align: center;
+}
+
 .lc-message-thread__day {
   display: flex;
   justify-content: center;

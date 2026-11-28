@@ -20,6 +20,18 @@ class HostComponent {
   readonly opened: LcThreadAttachmentOpenEvent[] = [];
 }
 
+@Component({
+  imports: [LcMessageThreadComponent],
+  template: `<lc-message-thread [messages]="messages()" [loading]="loading()" [stale]="stale()" [emptyMessage]="emptyMessage()" [pageSize]="pageSize()" />`,
+})
+class StateHostComponent {
+  readonly messages = signal<LcThreadMessage[] | null | undefined>(undefined);
+  readonly loading = signal(false);
+  readonly stale = signal(false);
+  readonly emptyMessage = signal<string | undefined>(undefined);
+  readonly pageSize = signal(30);
+}
+
 @Component({ imports: [LcMessageThreadComponent], template: `<lc-message-thread [messages]="messages" />` })
 class MinimalHostComponent {
   readonly messages = [msg('1')];
@@ -254,6 +266,87 @@ describe('lc-message-thread', () => {
     it.each([0, -3, 2.5, NaN])('pageSize %s : 30 messages rendus', (size) => {
       const { qa } = render(many(40), (h) => h.pageSize.set(size));
       expect(qa('[data-message-id]').length).toBe(30);
+    });
+  });
+
+  describe('états de données', () => {
+    const setup = (messages: LcThreadMessage[] | null | undefined, over: (h: StateHostComponent) => void = () => undefined) => {
+      const fixture = TestBed.createComponent(StateHostComponent);
+      fixture.componentInstance.messages.set(messages);
+      over(fixture.componentInstance);
+      fixture.detectChanges();
+      const root: HTMLElement = fixture.nativeElement;
+      return { fixture, host: fixture.componentInstance, root, log: () => root.querySelector<HTMLElement>('[role="log"]')!, thread: () => root.querySelector<HTMLElement>('lc-message-thread')! };
+    };
+
+    it('undefined : trois bulles en squelette, aria-busy, aucun texte de vide', () => {
+      const { root, log } = setup(undefined);
+      expect(root.querySelectorAll('.lc-message-thread__skeleton lc-skeleton').length).toBe(3);
+      expect(root.querySelectorAll('.lc-message-thread__skeleton-row--mine').length).toBe(1);
+      expect(log().getAttribute('aria-busy')).toBe('true');
+      expect(root.querySelector('.lc-message-thread__empty')).toBeNull();
+    });
+
+    it.each([null, []])('%j : texte noData, ni squelette ni aria-busy', (value) => {
+      const { root, log } = setup(value);
+      expect(root.querySelector('.lc-message-thread__empty')?.textContent).toBe(TestBed.inject(LC_LABELS).noData);
+      expect(root.querySelector('lc-skeleton')).toBeNull();
+      expect(log().hasAttribute('aria-busy')).toBe(false);
+    });
+
+    it('emptyMessage remplace noData, une chaîne vide y retombe', () => {
+      const { fixture, host, root } = setup(null, (h) => h.emptyMessage.set('Rien ici'));
+      expect(root.querySelector('.lc-message-thread__empty')?.textContent).toBe('Rien ici');
+      host.emptyMessage.set('');
+      fixture.detectChanges();
+      expect(root.querySelector('.lc-message-thread__empty')?.textContent).toBe(TestBed.inject(LC_LABELS).noData);
+    });
+
+    it('loading avec des messages : squelette, messages non rendus', () => {
+      const { root, log } = setup([msg('1')], (h) => h.loading.set(true));
+      expect(root.querySelector('lc-skeleton')).not.toBeNull();
+      expect(root.querySelector('[data-message-id]')).toBeNull();
+      expect(log().getAttribute('aria-busy')).toBe('true');
+    });
+
+    it('stale avec des messages : messages gardés, classe et aria-busy ; avec undefined : squelette sans classe', () => {
+      const { fixture, host, root, log, thread } = setup([msg('1')], (h) => h.stale.set(true));
+      expect(root.querySelector('[data-message-id]')).not.toBeNull();
+      expect(thread().classList).toContain('lc-message-thread--stale');
+      expect(log().getAttribute('aria-busy')).toBe('true');
+      host.messages.set(undefined);
+      fixture.detectChanges();
+      expect(root.querySelector('lc-skeleton')).not.toBeNull();
+      expect(thread().classList).not.toContain('lc-message-thread--stale');
+    });
+
+    it('stale sans messages (vide) : ni aria-busy ni classe', () => {
+      const { log, thread } = setup([], (h) => h.stale.set(true));
+      expect(log().hasAttribute('aria-busy')).toBe(false);
+      expect(thread().classList).not.toContain('lc-message-thread--stale');
+    });
+
+    it('pagination pendant stale : aria-busy sans squelette, puis aria-busy tombé avec stale', async () => {
+      let notify: (visible: boolean) => void = () => undefined;
+      vi.stubGlobal('IntersectionObserver', class {
+        constructor(callback: (entries: { isIntersecting: boolean }[]) => void) { notify = (isIntersecting) => callback([{ isIntersecting }]); }
+        observe() { /* sans effet */ }
+        disconnect() { /* sans effet */ }
+      });
+      const many = Array.from({ length: 25 }, (_, i) => msg(String(i + 1), { sentAt: at(9, i) }));
+      const { fixture, host, root, log } = setup(many, (h) => { h.stale.set(true); h.pageSize.set(10); });
+      await fixture.whenStable();
+      notify(false);
+      notify(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(root.querySelectorAll('[data-message-id]').length).toBe(20);
+      expect(root.querySelector('lc-skeleton')).toBeNull();
+      expect(log().getAttribute('aria-busy')).toBe('true');
+      host.stale.set(false);
+      fixture.detectChanges();
+      expect(log().hasAttribute('aria-busy')).toBe(false);
+      vi.unstubAllGlobals();
     });
   });
 });
