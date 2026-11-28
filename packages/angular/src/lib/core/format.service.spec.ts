@@ -22,6 +22,12 @@ describe('LcFormatService', () => {
     expect(format.money(250000, { compact: true })).toBe(`250${NBSP}k${NBSP}€`);
   });
 
+  it('garde une décimale compacte quand elle existe, sans zéro superflu', () => {
+    expect(format.money(1250000, { compact: true })).toBe(`1,3${NBSP}M${NBSP}€`);
+    expect(format.compactNumber(250000)).toBe(`250${NBSP}k`);
+    expect(format.compactNumber(1250000)).toBe(`1,3${NBSP}M`);
+  });
+
   it('affiche un tiret pour une valeur absente', () => {
     expect(format.money(null)).toBe('—');
     expect(format.percent(undefined)).toBe('—');

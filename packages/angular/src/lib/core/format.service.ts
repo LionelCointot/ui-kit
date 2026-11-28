@@ -24,7 +24,7 @@ export class LcFormatService {
   money(value: number | null | undefined, options: { compact?: boolean; decimals?: number } = {}): string {
     if (isMissing(value)) return EMPTY_VALUE;
     if (options.compact) {
-      return this.numberFormat({ style: 'currency', currency: this.options.currency, notation: 'compact', maximumFractionDigits: 1 })
+      return this.numberFormat({ style: 'currency', currency: this.options.currency, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 })
         .format(value);
     }
     const digits = options.decimals === undefined ? {} : { minimumFractionDigits: options.decimals, maximumFractionDigits: options.decimals };
@@ -46,7 +46,7 @@ export class LcFormatService {
   /** Nombre compact pour les graduations d'axe (250 000 → « 250 k »). */
   compactNumber(value: number | null | undefined): string {
     if (isMissing(value)) return EMPTY_VALUE;
-    return this.numberFormat({ notation: 'compact', maximumFractionDigits: 1 }).format(value);
+    return this.numberFormat({ notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value);
   }
 
   /** Date ISO (« 2026-01-15 ») ou objet Date ; style 'short' (15/01/2026), 'long' (15 janvier 2026), 'month' (janvier 2026). */
