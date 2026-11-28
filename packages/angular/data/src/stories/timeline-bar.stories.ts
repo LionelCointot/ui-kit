@@ -144,8 +144,8 @@ export const States: Story = {
   render: () => ({
     props: { PHASES, DESCRIPTION },
     template: `<div style="display:grid;gap:var(--lc-sys-space-6);width:40rem;max-width:100%">
-      <section><h3>Chargement</h3><lc-timeline-bar label="Répartition des phases" [segments]="undefined" /></section>
-      <section><h3>Vide</h3><lc-timeline-bar label="Répartition des phases" [segments]="null" emptyMessage="Aucune phase à afficher." /></section>
+      <section><h3>Chargement</h3><lc-timeline-bar label="Répartition des phases" [segments]="undefined" [description]="DESCRIPTION" /></section>
+      <section><h3>Vide</h3><lc-timeline-bar label="Répartition des phases" [segments]="null" [description]="DESCRIPTION" emptyMessage="Aucune phase à afficher." /></section>
       <section><h3>Rechargement</h3><lc-timeline-bar label="Répartition des phases" [segments]="PHASES" [description]="DESCRIPTION" [stale]="true" /></section>
       <section><h3>Trois segments</h3><lc-timeline-bar label="Répartition des phases" [segments]="PHASES" [description]="DESCRIPTION" /></section></div>`,
   }),
