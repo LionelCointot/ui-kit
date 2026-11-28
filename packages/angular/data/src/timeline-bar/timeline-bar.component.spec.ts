@@ -1026,9 +1026,10 @@ describe('LcTimelineBarComponent : voies (lanes)', () => {
       expect(await html({ lanes: [] })).toBe(await html({}));
     });
 
-    it('CA-21 : segments devient facultatif (défaut vide) : sans segment ni voie, message vide', async () => {
+    it('CA-21 : segments devient facultatif : sans segment ni voie, message vide', async () => {
       const fixture = TestBed.createComponent(LcTimelineBarComponent);
       fixture.componentRef.setInput('label', 'L');
+      fixture.componentRef.setInput('segments', null);
       fixture.componentRef.setInput('description', 'D');
       await fixture.whenStable();
       expect(fixture.nativeElement.querySelector('.lc-timeline-bar__empty')).not.toBeNull();
@@ -1112,5 +1113,39 @@ describe('LcTimelineBarComponent : voies (lanes)', () => {
         expect(dotted).not.toContain('striped-edge');
       });
     });
+  });
+});
+
+describe('LcTimelineBarComponent : squelette selon la donnée', () => {
+  const lane = { id: 'a', label: 'A', colorSlot: 1, spans: [{ from: 0, to: 5 }] } as const;
+  const render = async (inputs: Record<string, unknown>) => {
+    const fixture = TestBed.createComponent(LcTimelineBarComponent);
+    fixture.componentRef.setInput('label', 'L');
+    fixture.componentRef.setInput('description', 'D');
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  it('segments et lanes absents : squelette et aria-busy', async () => {
+    const element = await render({});
+    expect(element.querySelector('lc-skeleton')).not.toBeNull();
+    expect(element.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('segments [] avec des voies : prête ; null seul : vide sans aria-busy', async () => {
+    const ready = await render({ segments: [], lanes: [lane] });
+    expect(ready.querySelector('.lc-timeline-bar__lanes')).not.toBeNull();
+    expect(ready.querySelector('lc-skeleton')).toBeNull();
+    const empty = await render({ segments: null, emptyMessage: '' });
+    expect(empty.querySelector('.lc-timeline-bar__empty')!.textContent).toContain('Aucune donnée');
+    expect(empty.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('stale : classe et aria-busy avec données, aucune des deux sans donnée', async () => {
+    const reloading = await render({ lanes: [lane], stale: true });
+    expect(reloading.classList).toContain('lc-timeline-bar--stale');
+    expect(reloading.getAttribute('aria-busy')).toBe('true');
+    expect((await render({ stale: true })).classList).not.toContain('lc-timeline-bar--stale');
   });
 });

@@ -12,7 +12,7 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { LC_LABELS, LcFillDirective, LcSkeletonComponent } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcFillDirective, LcSkeletonComponent, lcDataState } from '@lionelcointot/ui-angular';
 
 export type LcTimelineColorSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 'neutral';
 export type LcTimelineMarker = 'circle' | 'square' | 'diamond';
@@ -108,12 +108,12 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
   selector: 'lc-timeline-bar',
   imports: [LcFillDirective, LcSkeletonComponent],
   template: `
-    @if (loading()) {
+    @if (state() === 'loading') {
       <lc-skeleton shape="rect" height="var(--lc-sys-space-8)" />
-    } @else if (lanes().length === 0 && drawn().length === 0) {
-      <p class="lc-timeline-bar__empty">{{ emptyMessage() ?? labels.noData }}</p>
+    } @else if (state() === 'empty') {
+      <p class="lc-timeline-bar__empty">{{ emptyMessage() || labels.noData }}</p>
     } @else {
-      @if (lanes().length > 0) {
+      @if (laneList().length > 0) {
         <div class="lc-timeline-bar__lanes" role="img" [attr.aria-label]="description()">
           @for (item of drawnLanes(); track item.lane.id; let lane = $index) {
             <div class="lc-timeline-bar__lane">
@@ -175,7 +175,7 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
       @if (axisLabel()) {
         <p class="lc-timeline-bar__axis-label">{{ axisLabel() }}</p>
       }
-      @if (lanes().length === 0 && legend().length > 0) {
+      @if (laneList().length === 0 && legend().length > 0) {
         <ul class="lc-timeline-bar__legend">
           @for (item of legend(); track item.segment.id) {
             <li class="lc-timeline-bar__entry">
@@ -192,23 +192,23 @@ export function lcTimelinePattern(slot: LcTimelineColorSlot): LcTimelinePattern 
   host: {
     class: 'lc-timeline-bar',
     role: 'group',
-    '[class.lc-timeline-bar--stale]': 'stale()',
-    '[class.lc-timeline-bar--lanes]': 'lanes().length > 0',
+    '[class.lc-timeline-bar--stale]': 'reloading()',
+    '[class.lc-timeline-bar--lanes]': 'laneList().length > 0',
     '[attr.aria-label]': 'label()',
-    '[attr.aria-busy]': "loading() ? 'true' : null",
+    '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
   },
 })
 export class LcTimelineBarComponent {
   protected readonly labels = inject(LC_LABELS);
 
-  /** Segments contigus d'une seule barre. Ignoré quand `lanes` est renseigné. */
-  readonly segments = input<readonly LcTimelineSegment[]>([]);
+  /** Segments contigus d'une seule barre. Ignoré quand `lanes` est renseigné. `segments` et `lanes` à `undefined` : squelette ; `null`, `[]` ou rien de dessiné : état vide. */
+  readonly segments = input<readonly LcTimelineSegment[] | null | undefined>(undefined);
   /**
    * Voies alignées sur un même axe, de 0 à `axisEnd` : une ligne par voie avec sa légende (repère de forme, nom, `caption`) et ses périodes colorées.
    * Remplace `segments` quand elle n'est pas vide. L'hôte doit être un bloc de pleine largeur : dès 700 px, le nom de la voie est à gauche de sa piste,
    * en dessous il la surmonte. `description` est le texte équivalent de toute la frise (les voies, `reference` et les graduations sont lues à travers lui).
    */
-  readonly lanes = input<readonly LcTimelineLane[]>([]);
+  readonly lanes = input<readonly LcTimelineLane[] | null | undefined>(undefined);
   /** Fin de l'axe des voies, dans l'unité des périodes (défaut : la plus grande fin de période). */
   readonly axisEnd = input<number>();
   /** Repère transversal des voies (ex. un point d'équilibre) : trait de 2 px sur chaque voie, étiqueté sous la dernière. Hors de l'axe : ignoré. */
@@ -229,6 +229,7 @@ export class LcTimelineBarComponent {
   readonly emptyMessage = input<string>();
   /** Résultat périmé : barre et repères atténués à 60 % (les textes gardent leur contraste). */
   readonly stale = input(false, { transform: booleanAttribute });
+  /** Squelette, même avec des données. */
   readonly loading = input(false, { transform: booleanAttribute });
   /** Graduations sous la piste (`at` dans l'unité des poids, de 0 au total) ; décoratives, `description` reste le texte équivalent. */
   readonly ticks = input<readonly LcTimelineTick[]>([]);
@@ -240,8 +241,10 @@ export class LcTimelineBarComponent {
   /** Rangs (dans `tickMarks`) des libellés masqués parce qu'ils chevaucheraient un libellé précédent. */
   protected readonly hiddenTicks = signal<ReadonlySet<number>>(new Set());
 
+  protected readonly laneList = computed(() => this.lanes() ?? []);
+
   protected readonly drawn = computed<readonly DrawnSegment[]>(() => {
-    const visible = this.segments().filter((segment) => Number.isFinite(segment.weight) && segment.weight > 0);
+    const visible = (this.segments() ?? []).filter((segment) => Number.isFinite(segment.weight) && segment.weight > 0);
     const total = visible.reduce((sum, segment) => sum + segment.weight, 0);
     return visible.map((segment) => ({
       segment,
@@ -250,18 +253,25 @@ export class LcTimelineBarComponent {
     }));
   });
 
-  /** Longueur de l'axe : `axisEnd` ou la plus grande fin de période en mode voies, sinon la somme des poids dessinés. */
+  /** Affinage de « vide » : rien de dessiné (ni voie ni segment) ; les deux entrées à `undefined` restent un squelette. */
+  protected readonly state = computed(() => {
+    const content = this.segments() === undefined && this.lanes() === undefined ? undefined : this.laneList().length > 0 || this.drawn().length > 0 || null;
+    return lcDataState(content, this.loading());
+  });
+  protected readonly reloading = computed(() => this.stale() && this.state() === 'ready');
+
+  /** Longueur de l'axe :`axisEnd` ou la plus grande fin de période en mode voies, sinon la somme des poids dessinés. */
   private readonly axisTotal = computed(() => {
-    if (this.lanes().length === 0) return this.drawn().reduce((sum, item) => sum + item.segment.weight, 0);
+    if (this.laneList().length === 0) return this.drawn().reduce((sum, item) => sum + item.segment.weight, 0);
     const end = this.axisEnd();
     if (end !== undefined && Number.isFinite(end)) return Math.max(end, 0);
-    const ends = this.lanes().flatMap((lane) => lane.spans.map((span) => span.to)).filter(Number.isFinite);
+    const ends = this.laneList().flatMap((lane) => lane.spans.map((span) => span.to)).filter(Number.isFinite);
     return Math.max(0, ...ends);
   });
 
   protected readonly drawnLanes = computed<readonly DrawnLane[]>(() => {
     const total = this.axisTotal();
-    return this.lanes().map((lane) => ({
+    return this.laneList().map((lane) => ({
       lane,
       swatchClass: swatchClassOf(lane.colorSlot),
       spans: lane.spans

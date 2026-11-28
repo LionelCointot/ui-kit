@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, contentChild, effect, inject, input } from '@angular/core';
-import { LC_LABELS, LcCountUpDirective, LcFlashDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, LcThemeColor, LcValueFormat, lcRevealHost } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcCountUpDirective, LcFlashDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, LcThemeColor, LcValueFormat, lcDataState, lcRevealHost } from '@lionelcointot/ui-angular';
 import { LcKpiCardLinkDirective } from './kpi-card-link.directive';
 
 export interface LcKpiDelta {
@@ -22,7 +22,7 @@ const TREND_ICONS = { up: 'arrow-up', down: 'arrow-down', flat: 'arrow-right' } 
   hostDirectives: [{ directive: LcRevealDirective, inputs: ['lcReveal', 'lcRevealIndex'] }],
   template: `
     <p class="lc-kpi-card__label">{{ label() }}</p>
-    @if (loading()) {
+    @if (skeleton()) {
       <lc-skeleton shape="text" width="60%" height="2rem" />
     } @else {
       @if (counted()) {
@@ -57,7 +57,7 @@ const TREND_ICONS = { up: 'arrow-up', down: 'arrow-down', flat: 'arrow-right' } 
     '[class]': 'variantClass()',
     '[attr.role]': "link() ? null : 'group'",
     '[attr.aria-label]': 'link() ? null : accessibleName()',
-    '[attr.aria-busy]': "loading() ? 'true' : null",
+    '[attr.aria-busy]': "busy() ? 'true' : null",
   },
 })
 export class LcKpiCardComponent {
@@ -69,13 +69,14 @@ export class LcKpiCardComponent {
   }
 
   readonly label = input.required<string>();
-  readonly value = input<number | null>(null);
+  /** `undefined` (avec `valueText` aussi) : squelette ; `null` : « — ». */
+  readonly value = input<number | null | undefined>(undefined);
   readonly format = input<LcValueFormat>('number');
   /**
    * Texte affiché à la place de la valeur numérique formatée (ex. « 7 ans et 4 mois », « Dès l'achat », « Aucun ») ;
-   * il nomme aussi la carte pour les technologies d'assistance. `null` : la valeur est formatée selon `format`.
+   * il nomme aussi la carte pour les technologies d'assistance. `null` ou `undefined` : la valeur est formatée selon `format`.
    */
-  readonly valueText = input<string | null>(null);
+  readonly valueText = input<string | null | undefined>(undefined);
   readonly delta = input<LcKpiDelta>();
   readonly hint = input<string>();
   readonly loading = input(false, { transform: booleanAttribute });
@@ -95,13 +96,16 @@ export class LcKpiCardComponent {
   );
 
   /** Une valeur numérique sans texte libre : le chiffre compte jusqu'à elle (`lcCountUp`) et flashe à chaque changement. */
-  protected readonly counted = computed(() => this.valueText() === null && this.value() !== null);
-  protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value(), this.format()));
+  protected readonly counted = computed(() => this.valueText() == null && this.value() != null);
+  private readonly dataState = computed(() => lcDataState(this.valueText() ?? this.value(), this.loading()));
+  protected readonly skeleton = computed(() => this.dataState() === 'loading');
+  protected readonly busy = computed(() => this.skeleton() || (this.stale() && this.dataState() === 'ready'));
+  protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value() ?? null, this.format()));
   /** Nom du groupe : libellé et valeur affichée (le texte libre remplace le nombre). */
-  protected readonly accessibleName = computed(() => this.labels.kpiCardName({ label: this.label(), value: this.loading() ? undefined : this.displayText() }));
+  protected readonly accessibleName = computed(() => this.labels.kpiCardName({ label: this.label(), value: this.skeleton() ? undefined : this.displayText() }));
   /** Libellé, valeur, variation et tendance, précision : les parties absentes sont omises (en chargement, le libellé seul). */
   protected readonly linkName = computed(() => {
-    if (this.loading()) return this.accessibleName();
+    if (this.skeleton()) return this.accessibleName();
     const change = this.delta();
     return this.labels.kpiCardName({ label: this.label(), value: this.displayText(), delta: change && `${this.deltaText()} ${this.trendWord()}`, hint: this.hint() });
   });

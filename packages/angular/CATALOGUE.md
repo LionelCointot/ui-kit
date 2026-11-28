@@ -46,11 +46,11 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 |---|---|---|---|---|
 | `a[lcKpiCardLink]` | LcKpiCardLinkDirective | directive | – | – |
 | `lc-data-table` | LcDataTableComponent | composant | source (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, query (model), chips, emptyMessage | – |
-| `lc-description-list` | LcDescriptionListComponent | composant | items (requis), layout | itemAction |
+| `lc-description-list` | LcDescriptionListComponent | composant | items (requis), loading, stale, emptyMessage, layout | itemAction |
 | `lc-kpi-card` | LcKpiCardComponent | composant | label (requis), value, format, valueText, delta, hint, loading, stale, themeColor, fillMode, layout | – |
-| `lc-table` | LcTableComponent | composant | data (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), rowClass | groupToggled |
+| `lc-table` | LcTableComponent | composant | data (requis), loading, stale, columns (requis), trackBy (requis), caption (requis), captionHidden, groupBy, footer, sort (model), sortMode, stickyHeader, density, emptyMessage, selectable, selection (model), rowClass | groupToggled |
 | `lc-timeline-bar` | LcTimelineBarComponent | composant | segments, lanes, axisEnd, reference, axisLabel, label (requis), description (requis), startLabel, endLabel, minLabelShare, emptyMessage, stale, loading, ticks | – |
-| `lc-tree-table` | LcTreeTableComponent | composant | data (requis), children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
+| `lc-tree-table` | LcTreeTableComponent | composant | data (requis), loading, stale, children (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, sort (model), expanded (model), expandAllInitially, filter, stickyHeader, density, emptyMessage | rowToggled |
 | `li[lcActivityItem]` | LcActivityItemComponent | composant | heading (requis), icon, date, dateTime | – |
 | `ng-template[lcCell]` | LcCellDirective | directive | lcCell (requis) | – |
 | `ol[lcActivityFeed]` | LcActivityFeedComponent | composant | density | – |

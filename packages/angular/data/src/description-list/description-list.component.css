@@ -59,6 +59,24 @@
   color: var(--lc-sys-color-on-surface);
 }
 
+.lc-description-list__row--skeleton .lc-description-list__term {
+  inline-size: 35%;
+}
+
+.lc-description-list__row--skeleton .lc-description-list__value {
+  inline-size: 25%;
+}
+
+.lc-description-list__empty {
+  margin: 0;
+  padding-block: var(--lc-sys-space-2);
+  color: var(--lc-sys-color-on-surface-muted);
+}
+
+:host(.lc-description-list--stale) .lc-description-list__list {
+  opacity: var(--lc-description-list-stale-opacity, 0.6);
+}
+
 .lc-description-list__action {
   display: flex;
   align-items: center;

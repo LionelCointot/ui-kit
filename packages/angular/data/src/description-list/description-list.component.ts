@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { LcButtonComponent, LcFormatService, LcRevealDirective, LcStaggerDirective, LcValueFormat } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, output } from '@angular/core';
+import { LC_LABELS, LcButtonComponent, LcFormatService, LcRevealDirective, LcSkeletonComponent, LcStaggerDirective, LcValueFormat, lcDataState } from '@lionelcointot/ui-angular';
 import { LcBadgeComponent } from '@lionelcointot/ui-angular/feedback';
 
 export interface LcDescriptionItem {
@@ -25,11 +25,22 @@ export interface LcDescriptionItemAction {
 /** Liste de définitions (`<dl>`) : paires terme / valeur formatée, avec ligne de total et mention. */
 @Component({
   selector: 'lc-description-list',
-  imports: [LcBadgeComponent, LcButtonComponent, LcRevealDirective],
+  imports: [LcBadgeComponent, LcButtonComponent, LcRevealDirective, LcSkeletonComponent],
   hostDirectives: [LcStaggerDirective],
   template: `
+    @if (state() === 'empty') {
+      <p class="lc-description-list__empty">{{ emptyMessage() || labels.noData }}</p>
+    } @else {
     <dl class="lc-description-list__list">
-      @for (item of items(); track $index) {
+      @if (state() === 'loading') {
+        @for (row of skeletonRows; track row) {
+          <div class="lc-description-list__row lc-description-list__row--skeleton">
+            <dt class="lc-description-list__term"><lc-skeleton /></dt>
+            <dd class="lc-description-list__value"><lc-skeleton /></dd>
+          </div>
+        }
+      }
+      @for (item of list(); track $index) {
         <div lcReveal class="lc-description-list__row" [class.lc-description-list__row--emphasis]="item.emphasis">
           <dt class="lc-description-list__term">
             {{ item.term }}
@@ -51,15 +62,34 @@ export interface LcDescriptionItemAction {
         </div>
       }
     </dl>
+    }
   `,
   styleUrl: './description-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-description-list', '[class.lc-description-list--inline]': "layout() === 'inline'" },
+  host: {
+    class: 'lc-description-list',
+    '[class.lc-description-list--inline]': "layout() === 'inline'",
+    '[class.lc-description-list--stale]': 'reloading()',
+    '[attr.aria-busy]': "state() === 'loading' || reloading() ? 'true' : null",
+  },
 })
 export class LcDescriptionListComponent {
   private readonly format = inject(LcFormatService);
+  protected readonly labels = inject(LC_LABELS);
 
-  readonly items = input.required<readonly LcDescriptionItem[]>();
+  /** `undefined` : squelette ; `null` ou `[]` : état vide. */
+  readonly items = input.required<readonly LcDescriptionItem[] | null | undefined>();
+  /** Squelette même avec des données. */
+  readonly loading = input(false, { transform: booleanAttribute });
+  /** Rechargement : données gardées, atténuées. Sans effet pendant le squelette. */
+  readonly stale = input(false, { transform: booleanAttribute });
+  /** Texte de l'état vide (défaut ou chaîne vide : `LC_LABELS.noData`). */
+  readonly emptyMessage = input<string>();
+  protected readonly skeletonRows = [0, 1, 2];
+  protected readonly state = computed(() => lcDataState(this.items(), this.loading()));
+  protected readonly reloading = computed(() => this.stale() && this.state() === 'ready');
+  /** Pas de ligne de donnée pendant le squelette, même avec des données et `loading`. */
+  protected readonly list = computed(() => (this.state() === 'ready' ? this.items() ?? [] : []));
   readonly layout = input<'stacked' | 'inline'>('inline');
   /** Index (dans `items`) de la ligne dont l'action a été activée. */
   readonly itemAction = output<number>();
