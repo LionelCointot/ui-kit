@@ -1520,6 +1520,8 @@ const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate
 const CA5_INDICATORS = '.lc-tabs__indicator, .lc-nav-list__indicator, .lc-segmented-control__indicator, .lc-switch__thumb';
 const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, .lc-switch__track'; // lc-switch : la piste change de couleur à la bascule (d46, retour d'état) ; le bouton ne fait que se déplacer (`translate`)
 /** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même), 'transition' : transitions seulement]. Tout le reste est un écart. */
+/** Stories dont « Rejouer » n'a volontairement aucun effet visible : exemptées de CA-16b, avec la raison (motion-fidelity.mjs marque d17 « aucun mouvement »). */
+const REPLAY_NO_EFFECT = new Map([['feedback-status-badge--animation', 'd17 lc-status-badge : aucun mouvement, le rejeu ne change rien de visible (voulu)']]);
 const CA5_ALLOW = [
   [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
   [['color'], '.lc-flash'], // lcFlash : l'hôte porte `lc-flash` (contrat fixé par la QA de T5, tools/qa/count-flash-browser.mjs)
@@ -1572,6 +1574,11 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
         const before = new Set(document.getAnimations());
         const seen = new Map();
+        // Rejeu piloté en JavaScript (compteur, canvas, style posé par script) : aucune animation du navigateur, mais le DOM ou les pixels d'un canvas changent après le clic.
+        const root = document.querySelector('#storybook-root');
+        const snap = () => root.outerHTML + [...root.querySelectorAll('canvas')].map((c) => { try { return c.toDataURL(); } catch { return ''; } }).join(); // toDataURL seulement par canvas présent
+        const base = snap();
+        let changed = false;
         const row = (a) => {
           const timing = a.effect.getComputedTiming();
           const target = a.effect.target;
@@ -1581,7 +1588,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
         let lastNew = performance.now();
-        const collect = () => document.getAnimations().forEach((a) => { if (!before.has(a) && !seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
+        const collect = () => { changed ||= snap() !== base; document.getAnimations().forEach((a) => { if (!before.has(a) && !seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } }); };
         button.click();
         const t0 = performance.now();
         await frame();
@@ -1589,7 +1596,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const early = seen.size;
         await frame();
         const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).map(row); // une image après l'action
-        for (let now = t0; now - t0 < (waitFirst ? 8000 : MAX_MS) && ((waitFirst && seen.size === 0) || (now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet))); now = performance.now()) { collect(); await frame(); }
+        for (let now = t0; now - t0 < (waitFirst ? 8000 : MAX_MS) && ((waitFirst && seen.size === 0 && !changed) || (now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet))); now = performance.now()) { collect(); await frame(); }
         collect();
         const overflow = [];
         if (scrub) {
@@ -1601,7 +1608,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           finite.forEach((a) => a.finish());
         }
         const rows = [...seen.values()];
-        return { rows, running, overflow, late: rows.length - early };
+        return { rows, running, overflow, late: rows.length - early, changed };
       };
       const win = reduced ? { min: chains.has(id) ? 900 : 400, quiet: 250 } : { min: 900, quiet: 600, waitFirst: true };
       const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW, ...win });
@@ -1610,7 +1617,8 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         check(bad.length === 0 && got.running.length === 0, `CA-3 ${label} aucune animation en cours après une image, durées et délais ≤ 0,01 ms`, JSON.stringify([...got.running, ...bad].slice(0, 3)));
       } else {
         if (got.late > 0) chains.add(id);
-        check(got.rows.length > 0, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre bien une animation
+        if (REPLAY_NO_EFFECT.has(id)) console.log(`EXEMPT CA-16b ${label} : ${REPLAY_NO_EFFECT.get(id)}`);
+        else check(got.rows.length > 0 || got.changed, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre une animation du navigateur, ou change le DOM ou un canvas (démo pilotée en JavaScript)
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }

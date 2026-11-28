@@ -202,7 +202,7 @@ h3{font-size:1.0625rem;font-weight:600;line-height:1.3}
 .is-entering .fcard{animation:flip-card calc(850ms * var(--lc-m-time)) cubic-bezier(0.34,1.7,0.64,1) backwards;animation-delay:calc(var(--i,0) * 70ms * var(--lc-m-time))}
 @keyframes flip-card{from{opacity:0;transform:translateY(40px) scale(.95) rotate(var(--tilt,0deg))}}
 .srows{margin-top:1rem;border-top:1px solid var(--lc-sys-color-border)}
-.srow{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--lc-sys-color-border);font-size:.875rem}
+.srow{--lc-m-dist:8px;display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--lc-sys-color-border);font-size:.875rem}
 .srow:last-child{border-bottom:0}
 
 /* ================= d04 · Transition de vue direction-aware ================= */

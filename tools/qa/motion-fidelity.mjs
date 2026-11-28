@@ -43,7 +43,8 @@ const DEMOS = {
   d06: ['data-activity-feed--animation', 'lc-activity-feed, lc-tree-table, lc-description-list : cascade (lcStagger)', [rejouer('d06', { distinct: true, skip: '^div\\.ev' })]],
   d07: ['data-data-table--animation', 'lc-data-table, lc-table : lignes en cascade ; cascade de lc-activity-feed'],
   d08: ['data-data-table--animation', 'lc-data-table : changement de filtre'],
-  d09: ['feedback-progress-bar--animation', 'lc-progress-bar : lcFill'],
+  // d09 : le catalogue rejoue la scène du Planner (onglets des jours et note, comparés en d03/d45 et par lcReveal) autour de deux jauges ; la story rejoue trois lc-progress-bar. Seule la forme du remplissage se compare (`shapes`).
+  d09: ['feedback-progress-bar--animation', 'lc-progress-bar : lcFill', [rejouer('d09', { skip: '^(button\\.day|p\\.pl-note)', keep: '\\.lc-fill\\b', shapes: true })]],
   d10: ['navigation-tabs--animation', 'lc-tabs, lc-nav-list : indicateur à deux bords', [rejouer('d10', { edges: true, keep: 'lc-tabs__indicator' })]],
   d13: ['navigation-stepper--animation', 'lc-stepper : points de progression en pop', [rejouer('d13', { keep: 'stepper__badge' })]],
   d14: ['data-kpi-card--animation', 'lc-kpi-card : lcCountUp (rAF)', [sampled('d14', 'Rejouer (échantillonné)', '#d14s [data-cu]', 'text')]],
@@ -53,7 +54,8 @@ const DEMOS = {
   d16: ['data-kpi-card--animation', 'lc-kpi-card : lcFlash', [rejouer('d16', { keep: 'lc-flash' })]],
   d17: ['feedback-status-badge--animation', 'lc-status-badge : aucun mouvement'],
   d19: ['charts-sparkline--animation', 'lc-chart : sparkline 1 000 ms', [catalogueOnly(rejouer('d19'), 'ECharts : tracé par clipPath en rAF, aucune animation CSS ; couvert par l\'échantillonnage'), sampled('d19', 'Rejouer (échantillonné)', '#d19s path.draw', 'css:stroke-dashoffset', undefined, 'echarts:clip-width')]],
-  d21: ['feedback-progress-bar--animation', 'lc-timeline-bar, barres de lc-file-upload et lc-message-composer : lcFill'],
+  // d21 : le catalogue enchaîne cinq barres en une cascade ; la story en a trois (lc-timeline-bar) + une (lc-file-upload) + une (lc-message-composer, dont la miniature n'est pas un remplissage) qui repartent chacune de 0. Seule la forme du remplissage se compare.
+  d21: ['feedback-progress-bar--animation', 'lc-timeline-bar, barres de lc-file-upload et lc-message-composer : lcFill', [rejouer('d21', { keep: '\\.lc-fill\\b', shapes: true })]],
   d24: ['charts-bar-chart--animation', 'lc-chart : re-calcul 480 ms, décalage 20 ms', [catalogueOnly(rejouer('d24'), 'ECharts : entrée initiale des barres en rAF, aucune animation CSS ni WAAPI ; la story ne rejoue que le re-calcul'), sampled('d24', 'Changer la période (échantillonné)', '#d24svg rect', 'attr:height', '#d24btn', 'echarts:bar-height')]],
   d25: ['overlays-drawer--animation', 'lc-drawer'],
   d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur', [rejouer('d26', { keep: '^(cdk-dialog-container|div\\.cdk-overlay-backdrop)' })]],
@@ -327,6 +329,11 @@ function shape(list, trigger, story) {
   const [keep, skip, props] = [trigger.keep, trigger.skip, trigger.props].map((r) => r && new RegExp(r));
   let out = list.filter((a) => a.name !== 'lc-page-entering' && !(skip && skip.test(a.target)) && !(story && keep && !keep.test(a.target)) && !(props && !props.test(a.props[0])) && !a.values.every((v) => same(v, a.values[0])));
   if (trigger.distinct) out = out.filter((a, i) => out.findIndex((b) => [b.delay, b.duration, b.easing, JSON.stringify(b.values)].join() === [a.delay, a.duration, a.easing, JSON.stringify(a.values)].join()) === i);
+  if (trigger.shapes) { // une seule animation par forme (durée, courbe, progression), sans le délai ni l'amplitude : les cascades de la story et du catalogue n'ont pas la même composition ni les mêmes valeurs finales
+    const unit = (a) => ({ ...a, delay: 0, values: a.values.map((v) => (v.m?.[0] && a.values[4]?.m?.[0] ? { ...v, m: v.m.map((x, i) => (i === 0 ? r6(x / a.values[4].m[0]) : x)) } : v)) });
+    const key = (a) => [a.duration, a.easing, JSON.stringify(a.values.map((v) => v.m?.map((x) => Math.round(x * 10) / 10)))].join();
+    out = out.map(unit).filter((a, i, all) => all.findIndex((b) => key(b) === key(a)) === i);
+  }
   if (trigger.timingOnly) out = out.map((a) => (new RegExp(trigger.timingOnly).test(a.props[0]) ? { ...a, values: a.values.map(() => ({})) } : a));
   if (trigger.edges) {
     out = out.filter((a) => !['width', 'color'].includes(a.props[0])).map((a) => { // width : même bord que `left` ; color : le kit ne l'anime pas sur ces indicateurs
