@@ -82,9 +82,9 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
         <div #sentinel class="lc-message-thread__sentinel"></div>
         @if (state() === 'loading') {
           <div class="lc-message-thread__skeleton" aria-hidden="true">
-            <div class="lc-message-thread__skeleton-row"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 3)" height="var(--lc-sys-space-10)" /></div>
-            <div class="lc-message-thread__skeleton-row lc-message-thread__skeleton-row--mine"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 2)" height="var(--lc-sys-space-10)" /></div>
-            <div class="lc-message-thread__skeleton-row"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 4)" height="var(--lc-sys-space-10)" /></div>
+            <div class="lc-message-thread__skeleton-row"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 3)" height="var(--lc-sys-space-12)" /></div>
+            <div class="lc-message-thread__skeleton-row lc-message-thread__skeleton-row--mine"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 2)" height="var(--lc-sys-space-12)" /></div>
+            <div class="lc-message-thread__skeleton-row"><lc-skeleton shape="rect" width="calc(var(--lc-sys-space-16) * 4)" height="var(--lc-sys-space-12)" /></div>
           </div>
         } @else if (state() === 'empty') {
           <p class="lc-message-thread__empty">{{ emptyMessage() || labels.noData }}</p>
