@@ -281,7 +281,7 @@ async function sheet() {
 // ---------- hauteurs animées ----------
 const CASES = {
   section: { story: 'qa-motion-data-table--table', ctx: 'phone', pre: async (p) => { await p.click('button[id$="-filters"]'); await p.waitForFunction(() => document.querySelector('lc-sheet dialog')?.open); await p.waitForTimeout(700); }, toggle: 'lc-sheet dialog .lc-data-table__section-toggle', box: 'section', deg: 180 },
-  disclosure: { story: 'layout-disclosure--accordion', ctx: 'desk', toggle: 'lc-disclosure button[aria-expanded]', box: 'lc-disclosure', deg: 90 },
+  disclosure: { story: 'layout-disclosure--accordion', ctx: 'desk', toggle: 'lc-disclosure button[aria-expanded]', box: 'lc-disclosure', deg: 180 },
   'nav-group': { story: 'navigation-nav-group--collapsible', ctx: 'desk', toggle: '.lc-nav-group__toggle', box: 'lc-nav-group', deg: 90 },
 };
 async function collapse() {
