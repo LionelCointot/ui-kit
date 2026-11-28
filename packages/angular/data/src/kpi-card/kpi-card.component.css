@@ -46,23 +46,31 @@ p {
   display: none;
 }
 
+/* Variation en pastille teintée (comme Talmo) : la flèche et le signe portent le sens, la teinte le renforce. */
 .lc-kpi-card__delta {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: var(--lc-sys-space-1);
+  padding-block: calc(var(--lc-sys-space-1) / 2);
+  padding-inline: var(--lc-sys-space-2);
+  border-radius: var(--lc-sys-radius-full);
   font-size: var(--lc-sys-font-size-sm);
-  font-weight: var(--lc-sys-font-weight-medium);
+  font-weight: var(--lc-sys-font-weight-bold);
 }
 
 .lc-kpi-card__delta--positive {
-  color: var(--lc-sys-color-success);
+  background: var(--lc-sys-color-success-container);
+  color: var(--lc-sys-color-on-success-container);
 }
 
 .lc-kpi-card__delta--negative {
-  color: var(--lc-sys-color-error);
+  background: var(--lc-sys-color-error-container);
+  color: var(--lc-sys-color-on-error-container);
 }
 
 .lc-kpi-card__delta--neutral {
+  background: var(--lc-sys-color-surface-sunken);
   color: var(--lc-sys-color-on-surface-muted);
 }
 
@@ -131,11 +139,17 @@ p {
   grid-area: visual;
 }
 
-/* Tuile pleine : tous les textes en on-<couleur>, sans couleur de sentiment (l'icône et le mot portent le sens). */
+/* Tuile pleine : tous les textes en on-<couleur>, sans couleur de sentiment (la flèche et le signe portent le sens). */
 :host(.lc-kpi-card--solid) .lc-kpi-card__label,
 :host(.lc-kpi-card--solid) .lc-kpi-card__delta,
 :host(.lc-kpi-card--solid) .lc-kpi-card__hint {
   color: inherit;
+}
+
+/* Sur une tuile pleine, la pastille perd sa teinte et se cale sur le texte. */
+:host(.lc-kpi-card--solid) .lc-kpi-card__delta {
+  background: none;
+  padding-inline: 0;
 }
 
 :host(.lc-kpi-card--solid.lc-kpi-card--primary) {
