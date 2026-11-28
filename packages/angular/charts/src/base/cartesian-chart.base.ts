@@ -1,5 +1,5 @@
 import { Directive, booleanAttribute, computed, inject, input, isDevMode, model, output, signal } from '@angular/core';
-import { LC_LABELS, LcFormatService, LcValueFormat } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcFormatService, LcValueFormat, lcDataState } from '@lionelcointot/ui-angular';
 import type { EChartsCoreOption } from '../echarts-registry';
 import { prepareSeries } from '../builders/palette';
 import { LC_CHART_ROLE_ICONS } from '../builders/series-roles';
@@ -14,12 +14,13 @@ import type { LcCartesianData, LcChartPointSelect, LcColorSlot, LcLegendItem, Lc
 /** Gabarit commun des graphiques cartésiens (ligne, aire, barres) : un cadre et ses entrées. */
 export const LC_CARTESIAN_TEMPLATE = `
   <lc-chart-frame [title]="title()" [titleHidden]="titleHidden()" [description]="description()" [height]="height()"
-    [loading]="loading()" [stale]="stale()" [empty]="empty()" [emptyMessage]="emptyMessage()"
+    [loading]="isLoading()" [stale]="stale()" [empty]="empty()" [emptyMessage]="emptyMessage()"
     [legend]="legend()" [table]="table()" [(showDataTable)]="showDataTable" [option]="option()" [navigation]="navigation()"
     (legendToggle)="toggleSeries($event)" (pointSelect)="pointSelect.emit($event)" />
 `;
 
 const MAX_POINTS_WARNING = 5000;
+const NO_DATA: LcCartesianData = { categories: [], series: [] };
 
 /**
  * Base des graphiques cartésiens : couleurs mémorisées par identifiant de série, séries masquables par la légende
@@ -39,7 +40,8 @@ export abstract class LcCartesianChartBase {
   readonly stale = input(false, { transform: booleanAttribute });
   readonly emptyMessage = input<string>();
   readonly showDataTable = model(false);
-  readonly data = input.required<LcCartesianData>();
+  /** `undefined` : squelette ; `null` : état vide. */
+  readonly data = input.required<LcCartesianData | null | undefined>();
   readonly yAxis = input<LcValueAxis>({});
   readonly pointSelect = output<LcChartPointSelect>();
 
@@ -58,17 +60,21 @@ export abstract class LcCartesianChartBase {
   private readonly hidden = signal<ReadonlySet<string>>(new Set());
 
   protected readonly valueFormat = computed<LcValueFormat>(() => this.yAxis().format ?? 'number');
-  protected readonly categories = computed(() => categoryLabels(this.data(), this.formatService));
+  protected readonly categories = computed(() => categoryLabels(this.data() ?? NO_DATA, this.formatService));
   protected readonly prepared = computed(() => {
-    const data = this.data();
+    const data = this.data() ?? NO_DATA;
     this.warnAboutData(data);
     this.warnAboutAxis();
     return prepareSeries(data.series, this.colorMemory, this.themeService.theme(), this.labels.other, this.hidden());
   });
 
+  private readonly state = computed(() => lcDataState(this.data(), this.loading()));
+  /** Squelette demandé au cadre : donnée `undefined` ou `loading`. */
+  readonly isLoading = computed(() => this.state() === 'loading');
+
   readonly empty = computed(() => {
     const { all } = this.prepared();
-    return this.categories().length === 0 || all.length === 0
+    return this.state() === 'empty' || this.categories().length === 0 || all.length === 0
       || all.every((item) => item.values.every((value) => value === null || value === undefined));
   });
 
@@ -108,7 +114,7 @@ export abstract class LcCartesianChartBase {
       seriesCount: all.length,
       directLabels: 'auto',
       overlays: this.overlays('visible'),
-      annualTicks: annualTicks(this.data().categories, this.data().categoryKind),
+      annualTicks: annualTicks(this.data()?.categories ?? [], this.data()?.categoryKind),
     });
   });
 
