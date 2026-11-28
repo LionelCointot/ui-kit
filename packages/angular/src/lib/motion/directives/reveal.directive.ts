@@ -4,6 +4,9 @@ import { LcStaggerBatch } from '../runtime/stagger';
 /** Départ de l'entrée : `rise` monte, `drop` descend, `fade` sur place, `scale` et `pop` grossissent, `left` et `right` glissent, `tilt` (indicateurs) monte en s'inclinant, `card` (cartes) monte de 26 px en 800 ms. */
 export type LcRevealVariant = 'rise' | 'drop' | 'fade' | 'scale' | 'pop' | 'left' | 'right' | 'tilt' | 'card';
 
+/** Nom du `@keyframes` d'entrée de `lcReveal` (`motion.css`) : à lire dans `animationend` / `animationcancel`. */
+export const LC_REVEAL_ANIMATION = 'lc-reveal-in';
+
 /** Variante d'un composant dont l'hôte entre seul (`lc-card`, `lc-kpi-card`) quand `lcReveal` est vide. */
 const REVEAL_DEFAULT = new InjectionToken<LcRevealVariant>('LC_REVEAL_DEFAULT');
 /** Lot dont l'hôte d'une carte prend son rang : celui du `lcStagger` ou de la grille au-dessus, sinon un lot par élément parent. */
@@ -85,6 +88,6 @@ export class LcRevealDirective {
   }
 
   protected ended(event: AnimationEvent): void {
-    if (event.target === event.currentTarget && event.animationName === 'lc-reveal-in') this.playing.set(false);
+    if (event.target === event.currentTarget && event.animationName === LC_REVEAL_ANIMATION) this.playing.set(false);
   }
 }

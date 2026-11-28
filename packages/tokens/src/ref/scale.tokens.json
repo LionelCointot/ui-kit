@@ -155,10 +155,6 @@
         "$value": "250ms",
         "$type": "duration"
       },
-      "slow": {
-        "$value": "350ms",
-        "$type": "duration"
-      },
       "enter": {
         "$value": "450ms",
         "$type": "duration"

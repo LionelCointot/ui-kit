@@ -30,7 +30,7 @@ lc-icon > svg {
   height: 100%;
 }
 
-/* Les tracés suivent la couleur de l'icône : sans cette règle, sous mouvement réduit, la règle globale de `base.css` (0,01 ms sur `all`) leur ferait une transition `color` à chaque changement. */
+/* Les tracés suivent la couleur de l'icône sans transition, toujours : la couleur change à l'image près ; sans cette règle, `base.css` (0,01 ms sur `all` sous mouvement réduit) leur ferait une transition `color` à chaque changement. */
 lc-icon > svg * {
   transition: none;
 }

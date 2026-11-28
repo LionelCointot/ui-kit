@@ -70,7 +70,7 @@ export class AppShellTabbarDemoComponent {
   private readonly injector = inject(Injector);
   protected readonly shown = signal(true);
   // La barre du bas n'existe que sous 768 px : au-dessus la coquille est inerte, pour qu'un seul repère banner et main soit exposé par page (axe).
-  // shortcut: lu une fois à la création, pas réactif au redimensionnement.
+  // shortcut: lu une fois à la création, pas réactif au redimensionnement ; à rendre réactif (signal sur le `change` de la media query) si la story doit suivre le redimensionnement.
   protected readonly phone = matchMedia(LC_PHONE_QUERY).matches;
 
   constructor() {

@@ -674,6 +674,55 @@ describe('LcTreeTableComponent', () => {
       error.mockRestore();
     });
   });
+
+  describe('entrée en cascade', () => {
+    const revealed = (rows: HTMLElement[]) => rows.filter((row) => row.classList.contains('lc-reveal')).length;
+    // jsdom n'a pas AnimationEvent : un évènement simple porte le nom d'animation.
+    const animation = (target: Element, type: 'animationend' | 'animationcancel', name = 'lc-reveal-in') =>
+      target.dispatchEvent(Object.assign(new Event(type, { bubbles: true }), { animationName: name }));
+
+    it('la cascade se termine à la fin de la dernière ligne, et les lignes dépliées ensuite ne la rejouent pas', async () => {
+      const { rows, row, update, fixture } = await setup();
+      expect(rows()).toHaveLength(3);
+      expect(revealed(rows())).toBe(3);
+      animation(rows()[1], 'animationend');
+      await fixture.whenStable();
+      expect(revealed(rows())).toBe(3); // pas la dernière : la cascade continue
+      animation(rows()[2], 'animationend');
+      await fixture.whenStable();
+      expect(revealed(rows())).toBe(0);
+      await update((host) => host.expanded.set(new Set(['A'])));
+      expect(rows()).toHaveLength(5);
+      expect(revealed(rows())).toBe(0);
+      expect(row('A1')).toBeDefined();
+    });
+
+    it('ignore ce qui ne vient pas d\'une ligne ou n\'est pas l\'animation d\'entrée', async () => {
+      const { rows, fixture } = await setup();
+      animation(rows()[2].querySelector('td')!, 'animationend');
+      animation(rows()[2], 'animationend', 'autre');
+      await fixture.whenStable();
+      expect(revealed(rows())).toBe(3);
+    });
+
+    it('une animation annulée sur la dernière ligne clôt aussi l\'entrée', async () => {
+      const { rows, fixture } = await setup();
+      animation(rows()[2], 'animationcancel');
+      await fixture.whenStable();
+      expect(revealed(rows())).toBe(0);
+    });
+
+    it('seules les 30 premières lignes entrent ; la 30e clôt la cascade', async () => {
+      const many = Array.from({ length: 40 }, (_, index) => node(`N${index}`, index));
+      const { rows, fixture } = await setup((host) => host.data.set(many));
+      expect(rows()).toHaveLength(40);
+      expect(revealed(rows())).toBe(30);
+      expect(rows()[30].classList.contains('lc-reveal')).toBe(false);
+      animation(rows()[29], 'animationend');
+      await fixture.whenStable();
+      expect(revealed(rows())).toBe(0);
+    });
+  });
 });
 
 @Component({

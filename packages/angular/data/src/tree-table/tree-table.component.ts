@@ -1,9 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
+  ChangeDetectionStrategy, Component, afterNextRender, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
   linkedSignal, model, output, signal, viewChild,
 } from '@angular/core';
-import { LC_LABELS, LcFormatService, LcIconComponent, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_REVEAL_ANIMATION, LcFormatService, LcIconComponent, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcSort, LcTableColumn, nextSort } from '../table/table-model';
 import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from '../table/table-shared';
@@ -40,7 +40,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
             }
           </tr>
         </thead>
-        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)" (animationend)="onRevealEnd($event)">
+        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)" (animationend)="onRevealEnd($event)" (animationcancel)="onRevealEnd($event)">
           @for (row of rows(); track row.key; let rowIndex = $index) {
             <tr class="lc-tree-table__row" role="row" [class.lc-reveal]="entering() && rowIndex < revealRows" [style.--lc-reveal-rank]="rowIndex" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
               [attr.aria-setsize]="row.setSize" [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
@@ -172,6 +172,11 @@ export class LcTreeTableComponent<T> {
   });
 
   constructor() {
+    // Aucune animation en cours au premier rendu d'un arbre non vide (animations coupées) : ni fin ni annulation n'arriveront, l'entrée est close.
+    afterNextRender(() => {
+      const body = this.body().nativeElement;
+      if (this.rows().length && typeof body.getAnimations === 'function' && !body.getAnimations({ subtree: true }).length) this.entering.set(false);
+    });
     if (isDevMode()) {
       effect(() => {
         if (this.model().truncated) {
@@ -206,9 +211,10 @@ export class LcTreeTableComponent<T> {
     return { element, index: element.sectionRowIndex };
   }
 
+  /** Fin (ou annulation : ligne retirée) de l'entrée d'une ligne ; la dernière de la cascade clôt l'entrée. */
   protected onRevealEnd(event: AnimationEvent): void {
-    const row = event.target as HTMLTableRowElement;
-    if (event.animationName === 'lc-reveal-in' && row.sectionRowIndex >= Math.min(this.rows().length, this.revealRows) - 1) this.entering.set(false);
+    const row = this.rowOf(event);
+    if (row && event.animationName === LC_REVEAL_ANIMATION && row.index >= Math.min(this.rows().length, this.revealRows) - 1) this.entering.set(false);
   }
 
   protected onFocusin(event: FocusEvent): void {
