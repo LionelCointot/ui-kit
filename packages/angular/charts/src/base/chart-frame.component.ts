@@ -21,7 +21,7 @@ import { LcChartHostComponent, LcChartNavigationSeries } from './chart-host.comp
       <ng-container [ngTemplateOutlet]="legendTemplate" />
     }
     <ng-template #legendTemplate>
-    @if (legend().length >= 2) {
+    @if (legend().length >= 2 && !loading()) {
       <ul class="lc-chart-frame__legend" [class.lc-chart-frame__legend--values]="hasLegendValues()">
         @for (item of legend(); track item.id) {
           <li>

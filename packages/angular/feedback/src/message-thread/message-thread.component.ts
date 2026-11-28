@@ -77,7 +77,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
   selector: 'lc-message-thread',
   imports: [LcAvatarComponent, LcIconComponent, LcSkeletonComponent, LcStatusBadgeComponent],
   template: `
-    <div #log class="lc-message-thread__log" role="log" [attr.aria-label]="ariaLabel() || labels.threadLabel" [attr.tabindex]="scrolls() ? 0 : null" [attr.aria-busy]="busy() || null">
+    <div #log class="lc-message-thread__log" role="log" [attr.aria-label]="ariaLabel() || labels.threadLabel" [attr.tabindex]="scrolls() ? 0 : null">
       <div #inner class="lc-message-thread__inner">
         <div #sentinel class="lc-message-thread__sentinel"></div>
         @if (state() === 'loading') {
@@ -151,7 +151,7 @@ const ENTERING = '[data-message-id], .lc-message-thread__system';
   `,
   styleUrl: './message-thread.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'lc-message-thread', '[class.lc-message-thread--stale]': 'staleShown()' },
+  host: { class: 'lc-message-thread', '[class.lc-message-thread--stale]': 'staleShown()', '[attr.aria-busy]': 'busy() || null' },
 })
 export class LcMessageThreadComponent {
   protected readonly labels = inject(LC_LABELS);
