@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Component, type Type } from '@angular/core';
 import { LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
@@ -140,6 +141,19 @@ describe('LcKpiCardComponent : mot de tendance et forme lien (relief)', () => {
   it.each([['up', 3, 'hausse'], ['down', -3, 'baisse'], ['flat', 0, 'stable'], ['flat', 1, 'stable']] as const)('CA-6 : trend %s (variation %s) affiche « %s »', async (trend, value, word) => {
     const element = await render({ value, format: 'integer', trend, sentiment: 'neutral' });
     expect(element.querySelector('.lc-kpi-card__delta')!.textContent).toContain(word);
+  });
+
+  it.each([['up', 'arrow-up'], ['down', 'arrow-down'], ['flat', 'arrow-right']] as const)('CA-6 : trend %s : flèche %s, mot masqué à l\'écran (lu par les lecteurs d\'écran)', async (trend, icon) => {
+    const fixture = TestBed.createComponent(LcKpiCardComponent);
+    fixture.componentRef.setInput('label', 'Impayés');
+    fixture.componentRef.setInput('value', 12);
+    fixture.componentRef.setInput('format', 'integer');
+    fixture.componentRef.setInput('delta', { value: 3, format: 'integer', trend, sentiment: 'neutral' });
+    await fixture.whenStable();
+    vi.advanceTimersByTime(2000);
+    const iconEl = fixture.debugElement.query(By.css('.lc-kpi-card__delta lc-icon'));
+    expect((iconEl.componentInstance as { name: () => string }).name()).toBe(icon);
+    expect(fixture.nativeElement.querySelector('.lc-kpi-card__trend').classList).toContain('lc-visually-hidden');
   });
 
   it('CA-6 : le mot suit LC_LABELS (anglais fourni, distinct du français)', async () => {

@@ -1,4 +1,4 @@
-// Relief et carte de chiffre (docs/specs/2026-12-relief.md §9) en navigateur réel, un passage par thème : CA-1 et CA-3 (rendu), CA-2, CA-4, CA-5 a b, CA-7, CA-8 (surcharges).
+// Relief et carte de chiffre (docs/specs/2026-12-relief.md §9) en navigateur réel, un passage par thème : CA-1 et CA-3 (rendu), CA-2, CA-4, CA-5 a b c, CA-7, CA-8 (surcharges).
 //   node tools/qa/relief-browser.mjs        Storybook statique (STORYBOOK_DIR ou dist/storybook)
 // Stories attendues, dans packages/angular/data/src/stories/kpi-card.stories.ts (titre « Data/KPI card ») :
 //   data-kpi-card--relief     : `lc-app-shell` dont le `main` contient `lc-card` (élévation 1 par défaut, classe lc-card--elevation-1), `lc-card elevation="0"`
@@ -90,6 +90,8 @@ try {
         hits.push(await page.evaluate(() => location.hash));
       }
       check(hits.every((h) => h === '#opened'), t('CA-5a un clic aux quatre coins de la carte suit le lien'), hits.join());
+      const link = await page.locator('a[lcKpiCardLink]').boundingBox();
+      check(link.width >= 44 && link.height >= 44 && Math.abs(link.width - box.width) <= 1 && Math.abs(link.height - box.height) <= 1, t('CA-5c zone cliquable = toute la carte, au moins 44 × 44 px'), JSON.stringify(link));
       await page.focus('#before');
       const stops = [];
       for (let i = 0; i < 6 && stops.at(-1)?.id !== 'after'; i += 1) {
