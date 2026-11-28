@@ -140,9 +140,13 @@ async function dom(browser, base) {
     await page.waitForTimeout(200);
     const after = await toggle.getAttribute('aria-expanded');
     const links = page.locator('lc-nav-group').first().locator('a');
-    const hiddenLinks = await links.evaluateAll((nodes) => nodes.map((node) => node.offsetParent === null || getComputedStyle(node).visibility === 'hidden'));
+    // Replié, le contenu reste mis en page (grille à 0fr, mouvement-ios : `hidden` remplacé par `inert`) : hors tabulation et hors arbre d'accessibilité par `inert`.
+    const hiddenLinks = await links.evaluateAll((nodes) => nodes.map((node) => node.closest('[inert]') !== null || node.offsetParent === null || getComputedStyle(node).visibility === 'hidden'));
+    await page.keyboard.press('Tab');
+    const tabbedInto = await page.evaluate(() => !!document.activeElement?.closest('lc-nav-group a'));
     check('CA-K8.2 Entrée bascule aria-expanded', before !== after, `${before} -> ${after}`);
-    check('CA-K8.2 liens repliés non rendus (hors tabulation)', hiddenLinks.length > 0 && hiddenLinks.every(Boolean));
+    check('CA-K8.2 liens repliés non rendus (hors tabulation)', hiddenLinks.length > 0 && hiddenLinks.every(Boolean) && !tabbedInto, `inert ou masqués : ${hiddenLinks.join()} ; Tab entre dans un lien : ${tabbedInto}`);
+    await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Space');
     await page.waitForTimeout(200);
     check('CA-K8.2 Espace rouvre le groupe', (await toggle.getAttribute('aria-expanded')) === before);
