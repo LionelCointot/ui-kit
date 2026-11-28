@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, inject, input, output, signal, untracked, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterRenderEffect, computed, inject, input, output, signal, untracked, viewChildren } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -58,8 +58,10 @@ export class LcAppTabbarComponent {
   private readonly indicator = viewChildren<ElementRef<HTMLElement>>('indicator');
   private readonly moreButton = viewChildren<ElementRef<HTMLButtonElement>>('more');
   private placed = -2;
+  private frame = 0;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => cancelAnimationFrame(this.frame));
     afterRenderEffect(() => this.place(false));
     afterRenderEffect((onCleanup) => {
       // Rotation ou changement de largeur : la pastille se remesure sans glisser.
@@ -99,5 +101,21 @@ export class LcAppTabbarComponent {
     this.placed = index;
     lcPlaceIndicator(indicator, 'x', item.offsetLeft, item.offsetLeft + item.offsetWidth, bar.clientWidth, 'edges');
     this.ready.set(true);
+    cancelAnimationFrame(this.frame);
+    this.syncLabels(indicator);
+  }
+
+  /** Le libellé d'un onglet passe « sur la pastille » à l'image où elle recouvre son centre, et en sort de même : image par image tant qu'elle glisse. */
+  private syncLabels(indicator: HTMLElement): void {
+    const pill = indicator.getBoundingClientRect();
+    const tabs = this.items().map((item) => item.nativeElement);
+    // Toutes les lectures d'abord, puis les écritures : une seule mise en page par image.
+    const under = tabs.map((tab) => {
+      const label = tab.querySelector('.lc-tabbar__label')?.getBoundingClientRect();
+      const center = label ? label.left + label.width / 2 : -1;
+      return pill.width > 0 && center >= pill.left && center <= pill.right;
+    });
+    tabs.forEach((tab, index) => tab.classList.toggle('lc-tabbar__tab--under', under[index]));
+    if (indicator.getAnimations?.().length) this.frame = requestAnimationFrame(() => this.syncLabels(indicator));
   }
 }

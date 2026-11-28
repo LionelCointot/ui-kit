@@ -45,7 +45,7 @@ const HEADER_TITLE_SCROLL_PX = 80;
           </button>
         }
       }
-      <span class="lc-shell__title" aria-hidden="true" [class.lc-shell__title--shown]="scrolled()">{{ nav.title() }}</span>
+      <span class="lc-shell__title" aria-hidden="true" [class.lc-shell__title--shown]="scrolled() && nav.title() !== ''">{{ nav.title() }}</span>
       <div class="lc-shell__header-content"><ng-content select="[lcShellHeader]" /></div>
     </header>
     <div class="lc-shell__body">

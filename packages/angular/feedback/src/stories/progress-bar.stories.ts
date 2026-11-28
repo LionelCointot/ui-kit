@@ -21,30 +21,42 @@ const upload = (progress: number): LcFileUploadItem => ({ id: 'up', name: 'rappo
   template: `
     <lc-story-motion-notice />
     <div #root style="max-width:36rem">
-      <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="demo.replay(root)">Rejouer</button>
-      @for (key of demo.keys(); track key) {
-        <div data-demo="d09" style="display:grid;gap:var(--lc-sys-space-3);margin-bottom:var(--lc-sys-space-6)">
-          <lc-progress-bar [value]="value()" label="Import des écritures" />
-          <lc-progress-bar [value]="value() - 25" label="Rapprochement" />
-          <lc-progress-bar [value]="value() - 45" label="Export" />
-        </div>
-        <div data-demo="d21" style="display:grid;gap:var(--lc-sys-space-4)">
-          <lc-timeline-bar [segments]="phases" label="Phases du projet" description="Trois phases de 60, 24 et 36 mois." />
-          <lc-file-upload [items]="[item()]" ariaLabel="Pièces jointes" />
-          <lc-message-composer [items]="[item()]" ariaLabel="Votre message" />
-        </div>
-      }
+      <section data-demo="d09" style="margin-bottom:var(--lc-sys-space-6)">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="bars.replay(root)">Rejouer</button>
+        @for (key of bars.keys(); track key) {
+          <div style="display:grid;gap:var(--lc-sys-space-3)">
+            <lc-progress-bar [value]="value()" label="Import des écritures" />
+            <lc-progress-bar [value]="value() - 25" label="Rapprochement" />
+            <lc-progress-bar [value]="value() - 45" label="Export" />
+          </div>
+        }
+      </section>
+      <section data-demo="d21">
+        <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="uploads.replay(root)">Rejouer</button>
+        @for (key of uploads.keys(); track key) {
+          <div style="display:grid;gap:var(--lc-sys-space-4)">
+            <lc-timeline-bar [segments]="phases" label="Phases du projet" description="Trois phases de 60, 24 et 36 mois." />
+            <lc-file-upload [items]="[item()]" ariaLabel="Pièces jointes" />
+            <lc-message-composer [items]="[item()]" ariaLabel="Votre message" />
+          </div>
+        }
+      </section>
     </div>`,
 })
 class FillAnimationDemoComponent {
   protected readonly phases = PHASES;
   protected readonly value = signal(80);
   protected readonly item = signal(upload(70));
-  protected readonly demo = replayable({
+  // Une démo par zone : « Rejouer » de d09 ne rejoue pas d21, et inversement. Après l'entrée, une valeur qui change se joue sans décalage.
+  protected readonly bars = replayable({
     destroyRef: inject(DestroyRef),
-    reset: () => { this.value.set(80); this.item.set(upload(70)); },
-    // Après l'entrée : une valeur qui change se joue sans décalage.
-    play: (later) => later(1800, () => { this.value.set(95); this.item.set(upload(90)); }),
+    reset: () => this.value.set(80),
+    play: (later) => later(1800, () => this.value.set(95)),
+  });
+  protected readonly uploads = replayable({
+    destroyRef: inject(DestroyRef),
+    reset: () => this.item.set(upload(70)),
+    play: (later) => later(1800, () => this.item.set(upload(90))),
   });
 }
 

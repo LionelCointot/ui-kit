@@ -56,9 +56,7 @@
     "indicator-front-easing": { "$value": "{segmented-control.indicator-front-easing}", "$type": "cubicBezier" },
     "indicator-back-duration": { "$value": "{segmented-control.indicator-back-duration}", "$type": "duration" },
     "indicator-back-easing": { "$value": "{segmented-control.indicator-back-easing}", "$type": "cubicBezier" },
-    "indicator-back-delay": { "$value": "{segmented-control.indicator-back-delay}", "$type": "duration" },
-    "indicator-label-switch-front": { "$value": "0.5", "$type": "number", "$description": "Fraction of the front-edge duration after which the label of the arriving tab switches colour (unitless)." },
-    "indicator-label-switch-back": { "$value": "0.35", "$type": "number", "$description": "Fraction of the back-edge duration after which the label of the leaving tab switches colour (unitless)." }
+    "indicator-back-delay": { "$value": "{segmented-control.indicator-back-delay}", "$type": "duration" }
   },
   "overlay": {
     "enter-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
@@ -201,7 +199,8 @@
   },
   "lift": {
     "offset": { "$value": "-4px", "$type": "dimension" },
-    "duration": { "$value": "{sys.duration.slow}", "$type": "duration" },
+    "duration": { "$value": "{sys.duration.enter}", "$type": "duration", "$description": "Rise on hover (Talmo site: 450 ms)." },
+    "leave-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Return when the pointer leaves (Talmo site: 500 ms)." },
     "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" }
   },
   "calendar": {

@@ -52,7 +52,7 @@ export class LcDisclosureGroupDirective {
     <ng-template #summaryButton>
       <button #summary type="button" class="lc-disclosure__summary" [id]="summaryId" [disabled]="disabled()"
         [attr.aria-expanded]="expanded()" [attr.aria-controls]="regionId" (click)="toggle()">
-        <lc-icon class="lc-disclosure__chevron" name="chevron-right" aria-hidden="true" />
+        <lc-icon class="lc-disclosure__chevron" name="chevron-down" aria-hidden="true" />
         <span class="lc-disclosure__summary-content"><ng-content select="[lcDisclosureSummary]" /></span>
       </button>
     </ng-template>

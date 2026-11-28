@@ -39,7 +39,7 @@
 
 .lc-shell__header-content {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
@@ -143,13 +143,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    flex: 0 1 auto;
+    /* Le titre (transparent tant que la page n'a pas défilé) cède sa place d'abord : le contenu projeté ne doit jamais être écrasé par un texte invisible. */
+    flex: 0 100 auto;
     font-weight: var(--lc-sys-font-weight-semibold);
     opacity: 0;
     transition: opacity var(--lc-sys-duration-exit) var(--lc-sys-easing-standard);
   }
 
   .lc-shell__title--shown {
+    /* Visible, le titre garde de quoi montrer quelques caractères et l'ellipse, même devant un contenu projeté large. */
+    min-inline-size: var(--lc-sys-space-12);
     opacity: 1;
   }
 

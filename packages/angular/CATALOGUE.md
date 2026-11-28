@@ -178,7 +178,7 @@ Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton don
 - `tabs` : `indicator-front-duration` 380ms · `indicator-front-easing` → sys-easing-title · `indicator-back-duration` 400ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 80ms
 - `nav-item` : `indicator-front-duration` 380ms · `indicator-front-easing` → sys-easing-title · `indicator-back-duration` 400ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 80ms
 - `segmented-control` : `indicator-front-duration` 300ms · `indicator-front-easing` → sys-easing-out · `indicator-back-duration` 410ms · `indicator-back-easing` → sys-easing-inout · `indicator-back-delay` 75ms
-- `tabbar` : `enter-duration` → sys-duration-view · `enter-delay` 200ms · `enter-easing` → sys-easing-entrance · `enter-offset` 90px · `height` 66px · `indicator-radius` 16px · `indicator-front-duration` → segmented-control-indicator-front-duration · `indicator-front-easing` → segmented-control-indicator-front-easing · `indicator-back-duration` → segmented-control-indicator-back-duration · `indicator-back-easing` → segmented-control-indicator-back-easing · `indicator-back-delay` → segmented-control-indicator-back-delay · `indicator-label-switch-front` 0.5 · `indicator-label-switch-back` 0.35
+- `tabbar` : `enter-duration` → sys-duration-view · `enter-delay` 200ms · `enter-easing` → sys-easing-entrance · `enter-offset` 90px · `height` 66px · `indicator-radius` 16px · `indicator-front-duration` → segmented-control-indicator-front-duration · `indicator-front-easing` → segmented-control-indicator-front-easing · `indicator-back-duration` → segmented-control-indicator-back-duration · `indicator-back-easing` → segmented-control-indicator-back-easing · `indicator-back-delay` → segmented-control-indicator-back-delay
 - `overlay` : `enter-duration` → sys-duration-normal · `exit-duration` → sys-duration-fast · `easing` → sys-easing-standard
 - `chip` : `enter-duration` → sys-duration-fast
 - `list` : `move-duration` 420ms · `move-easing` → sys-easing-draw
@@ -196,7 +196,7 @@ Jetons composant (`--lc-<groupe>-<nom>` ; `→` renvoie au rôle ou au jeton don
 - `flash` : `duration` → sys-duration-fill · `easing` → sys-easing-title
 - `title` : `letter-duration` → sys-duration-title · `letter-easing` → sys-easing-title · `letter-offset` 115% · `letter-rotate` → sys-motion-rotate-char · `letter-stagger` → sys-motion-stagger-chars · `line-duration` → sys-duration-view · `line-easing` → sys-easing-inout · `line-delay` 320ms
 - `live` : `duration` 2000ms · `opacity-from` 0.1 · `opacity-to` 0.45
-- `lift` : `offset` -4px · `duration` → sys-duration-slow · `easing` → sys-easing-out
+- `lift` : `offset` -4px · `duration` → sys-duration-enter · `leave-duration` → sys-duration-move · `easing` → sys-easing-out
 - `calendar` : `duration` → overlay-enter-duration · `easing` → overlay-easing · `slide-offset` 18px · `slide-duration` → sys-duration-enter · `slide-opacity` 0.14 · `row-stagger` 30ms
 - `chart` : `sparkline-duration` 1300ms · `update-duration` → sys-duration-view · `update-stagger` 20ms
 - `topbar` : `enter-offset` 10px · `enter-duration` → sys-duration-move · `enter-stagger` 30ms · `enter-delay` 80ms

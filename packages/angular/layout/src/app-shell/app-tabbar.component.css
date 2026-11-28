@@ -64,17 +64,11 @@
 }
 
 /*
- * Le texte bascule d'un bloc quand le bord de la pastille a recouvert (ou quitté) l'étiquette, jamais en fondu : un fondu passerait par des gris sous 3:1 sur
- * le fond comme sur la pastille. L'onglet qui devient actif attend l'arrivée du bord avant (durée « avant »), celui qui se libère le départ du bord arrière.
+ * Le texte bascule d'un bloc, jamais en fondu (un fondu passerait par des gris sous 3:1 sur le fond comme sur la pastille) : le composant pose `--under`
+ * sur l'onglet dont le centre d'étiquette est recouvert par la pastille, image par image pendant le glissement.
  */
-.lc-tabbar__tab {
-  transition: color 0s linear calc(var(--lc-tabbar-indicator-back-delay) + var(--lc-tabbar-indicator-back-duration) * var(--lc-tabbar-indicator-label-switch-back));
-}
-
-.lc-tabbar__tab[aria-current='page'],
-.lc-tabbar__tab--active {
+.lc-tabbar__tab--under {
   color: var(--lc-tabbar-active-color, var(--lc-sys-color-on-primary));
-  transition: color 0s linear calc(var(--lc-tabbar-indicator-front-duration) * var(--lc-tabbar-indicator-label-switch-front));
 }
 
 .lc-tabbar__tab:focus-visible {
@@ -121,12 +115,6 @@
 @media (prefers-reduced-motion: reduce) {
   .lc-tabbar {
     animation: none;
-  }
-
-  .lc-tabbar__tab,
-  .lc-tabbar__tab[aria-current='page'],
-  .lc-tabbar__tab--active {
-    transition: none;
   }
 
   :host(.lc-app-tabbar--ready) .lc-tabbar__indicator,

@@ -304,12 +304,13 @@
 
 /* Soulèvement au survol : `transform` est la propriété du survol (ADR 0011), le survol exige un pointeur fin. */
 .lc-lift {
-  transition: transform var(--lc-lift-duration) var(--lc-lift-easing);
+  transition: transform var(--lc-lift-leave-duration) var(--lc-lift-easing);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .lc-lift:hover {
     transform: translateY(var(--lc-lift-offset));
+    transition-duration: var(--lc-lift-duration);
   }
 }
 

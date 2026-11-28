@@ -46,6 +46,8 @@ export class StoryNavDirective {
   selector: 'lc-app-shell-tabbar-demo',
   imports: [LcAppShellComponent, LcButtonComponent, RouterLink, RouterOutlet, StoryNavDirective],
   host: { 'data-demo': 'd57' },
+  // Les coquilles de la page écoutent toutes le défilement de la fenêtre (une seule par application) : le titre d'en-tête se démontre dans d53 / d59, pas ici.
+  styles: `:host ::ng-deep lc-app-shell .lc-shell__title { transition: none; }`,
   template: `
     <button lcButton fillMode="outline" size="small" type="button" (click)="replay()">Rejouer</button>
     @if (shown()) {

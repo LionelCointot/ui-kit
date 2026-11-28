@@ -27,3 +27,13 @@ Déjà conformes, non touchés : titre lettre par lettre, transitions de page, g
 
 - **Cascade de cartes** : le site pose y 26, échelle 0,985, 800 ms expo.out, décalage 60 ms. Le kit n'a pas de variante lcReveal pour cela (`rise` et `tilt` seulement).
 - **Chorégraphie par couches** : KPI vers 0,1 s, cartes 0,1 à 0,25 s, lignes 0,25 à 0,65 s, jauges 0,4 à 0,6 s, points 0,7 à 0,9 s. Le kit ne la pose nulle part : chaque composant démarre à son propre rythme.
+
+## Relevé complémentaire du 2026-11-27 (écarts restants du passage final)
+
+| Geste | Site Talmo | Kit | Décision |
+|---|---|---|---|
+| Sortie du toast | y 16 px, 250 ms, power2.in | 16 px, 250 ms | Kit conforme ; catalogue d29 (13 px) et d60 (10 px) périmés |
+| Survol d'une carte (`[data-lift]`) | y −4 px, entrée 450 ms power3.out, sortie 500 ms power3.out ; aucune ombre animée | −4 px, 350 ms `out`, aller et retour | Kit à corriger : 450 ms à l'entrée, 500 ms au retour ; catalogue d31 (ombre animée) périmé |
+| Chevron de section repliable (`.fold`) | `rotate: 180deg` à l'ouverture (CSS, sans transition propre) | 90° | Kit à aligner sur 180° (durée du kit conservée) |
+| Onglets | liens de navigation : le panneau change de page, son contenu réapparaît en cascade (lignes y 8 px, 450 ms power3.out, 40 ms) | démo sans cascade du panneau | Démo à corriger (d45) |
+| Mini-courbe de carte de chiffre (`.kpi__foot .spark`, 92 × 30 px) | tracé 1,2 s, départ 0,3 s, power2.inOut, aire à 12 % d'opacité ; masquée en dessous d'une largeur | `lc-kpi-card` sans mini-courbe | Reportée au chantier « relief » (évolutions de `lc-kpi-card`) |
