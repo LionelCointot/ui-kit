@@ -94,7 +94,7 @@ try {
       const stops = [];
       for (let i = 0; i < 6 && stops.at(-1)?.id !== 'after'; i += 1) {
         await page.keyboard.press('Tab');
-        stops.push(await page.evaluate(() => { const a = document.activeElement, k = a.closest('lc-kpi-card'), o = k && getComputedStyle(a, '::after'), box = k?.getBoundingClientRect(); return { id: a.id, link: a.matches('a[lcKpiCardLink]'), outline: !!k && o.outlineStyle !== 'none' && parseFloat(o.outlineWidth) > 0 && o.position === 'absolute' && box.width > 0 }; }));
+        stops.push(await page.evaluate(() => { const a = document.activeElement, k = a.closest('lc-kpi-card'), o = k && getComputedStyle(a), box = k?.getBoundingClientRect(), anchor = a.getBoundingClientRect(); return { id: a.id, link: a.matches('a[lcKpiCardLink]'), outline: !!k && o.outlineStyle !== 'none' && parseFloat(o.outlineWidth) > 0 && o.position === 'absolute' && Math.abs(anchor.width - box.width) <= 1 && Math.abs(anchor.height - box.height) <= 1 }; }));
       }
       const inCard = stops.filter((s) => s.link);
       check(stops.at(-1)?.id === 'after' && inCard.length === 1 && inCard[0].outline && stops.filter((s) => !s.id && !s.link).length === 0, t('CA-5b Tab atteint la carte une seule fois, focus visible sur la carte'), JSON.stringify(stops));
