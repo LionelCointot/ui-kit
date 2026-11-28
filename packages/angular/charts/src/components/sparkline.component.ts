@@ -29,7 +29,7 @@ import type { LcChartValue } from '../types';
   host: {
     class: 'lc-sparkline',
     '[class.lc-sparkline--stale]': "stale() && state() === 'ready'",
-    '[attr.aria-busy]': "state() === 'loading' || stale() ? 'true' : null",
+    '[attr.aria-busy]': "state() === 'loading' || (stale() && state() === 'ready') ? 'true' : null",
   },
   styles: `
     :host { display: block; min-width: 4rem; }
