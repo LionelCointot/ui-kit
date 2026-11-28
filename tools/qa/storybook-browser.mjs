@@ -286,7 +286,7 @@ async function treegrid(browser, base) {
   }
 
   {
-    const { page, context } = await open('données-tableau-hiérarchique--defaut');
+    const { page, context } = await open('data-tree-table--playground');
     const start = await state(page);
     const current = await press(page, '*');
     check('* : déplie tous les frères repliés du niveau, focus conservé', current.isRow && current.index === 0 && current.count > start.count && current.expanded === 'true', JSON.stringify({ start: start.count, current }));
@@ -297,7 +297,7 @@ async function treegrid(browser, base) {
 
   {
     // Clic souris sur le bouton de dépliage : la ligne bascule, aucune erreur ; le focus clavier reste cohérent ensuite.
-    const { page, context, errors } = await open('données-tableau-hiérarchique--defaut');
+    const { page, context, errors } = await open('data-tree-table--playground');
     const toggle = page.locator('lc-tree-table tbody tr[aria-level="1"] .lc-tree-table__toggle').first();
     await toggle.click();
     await page.waitForTimeout(100);
