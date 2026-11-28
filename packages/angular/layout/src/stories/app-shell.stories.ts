@@ -127,7 +127,7 @@ class AppShellStackDemoComponent {
     <section #section>
       <button lcButton fillMode="outline" size="small" type="button" (click)="demo.replay(section)">Rejouer</button>
       @for (key of demo.keys(); track key) {
-        <lc-app-shell navMode="none">
+        <lc-app-shell navMode="none" inert>
           <strong lcShellHeader>Halden &amp; Moor</strong>
           <span lcShellHeader>Planner</span>
           <span lcShellHeader>Calendar</span>

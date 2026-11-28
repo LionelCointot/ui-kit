@@ -47,7 +47,10 @@ export class StoryNavDirective {
   imports: [LcAppShellComponent, LcButtonComponent, RouterLink, RouterOutlet, StoryNavDirective],
   host: { 'data-demo': 'd57' },
   // Les coquilles de la page écoutent toutes le défilement de la fenêtre (une seule par application) : le titre d'en-tête se démontre dans d53 / d59, pas ici.
-  styles: `:host ::ng-deep lc-app-shell .lc-shell__title { transition: none; }`,
+  // La barre du bas n'existe que sous 768 px : au-dessus, la démo est masquée (une seule coquille, donc un seul repère banner et main, par page).
+  styles: `
+    :host ::ng-deep lc-app-shell .lc-shell__title { transition: none; }
+    @media (min-width: 768px) { :host { display: none; } }`,
   template: `
     <button lcButton fillMode="outline" size="small" type="button" (click)="replay()">Rejouer</button>
     @if (shown()) {
