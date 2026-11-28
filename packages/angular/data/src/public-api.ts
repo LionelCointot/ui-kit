@@ -10,6 +10,7 @@ export * from './tree-table/tree-table-model';
 export * from './tree-table/tree-table.component';
 export * from './description-list/description-list.component';
 export * from './kpi-card/kpi-card.component';
+export * from './kpi-card/kpi-card-link.directive';
 export * from './timeline-bar/timeline-bar.component';
 export * from './activity-feed/activity-feed.component';
 export * from './activity-feed/activity-item.component';

@@ -44,6 +44,7 @@ Entrées : `input()` et `model()` (liaison `[x]`, et `[(x)]` pour `model`) ; sor
 
 | Sélecteur | Classe | Genre | Entrées | Sorties |
 |---|---|---|---|---|
+| `a[lcKpiCardLink]` | LcKpiCardLinkDirective | directive | – | – |
 | `lc-data-table` | LcDataTableComponent | composant | source (requis), columns (requis), trackBy (requis), caption (requis), captionHidden, query (model), chips, emptyMessage | – |
 | `lc-description-list` | LcDescriptionListComponent | composant | items (requis), layout | itemAction |
 | `lc-kpi-card` | LcKpiCardComponent | composant | label (requis), value, format, valueText, delta, hint, loading, stale, themeColor, fillMode, layout | – |

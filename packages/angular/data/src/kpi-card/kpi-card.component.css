@@ -79,6 +79,27 @@ p {
   margin-block-start: var(--lc-sys-space-2);
 }
 
+/* Forme lien : la zone cliquable (::after de l'ancre, feuille globale) couvre la carte ; chevron en fin de pied. */
+:host(.lc-kpi-card--linked) {
+  position: relative;
+  min-block-size: var(--lc-sys-control-height-md);
+}
+
+:host(.lc-kpi-card--linked) .lc-kpi-card__footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+:host(.lc-kpi-card--linked) .lc-kpi-card__footer > :not(.lc-kpi-card__chevron) {
+  grid-column: 1;
+}
+
+.lc-kpi-card__chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
 /* Disposition horizontale : libellé et pied à gauche, chiffre à droite. */
 :host(.lc-kpi-card--horizontal) {
   display: grid;

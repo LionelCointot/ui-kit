@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, contentChild, effect, inject, input } from '@angular/core';
 import { LC_LABELS, LcCountUpDirective, LcFlashDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, LcThemeColor, LcValueFormat, lcRevealHost } from '@lionelcointot/ui-angular';
+import { LcKpiCardLinkDirective } from './kpi-card-link.directive';
 
 export interface LcKpiDelta {
   readonly value: number;
@@ -41,23 +42,31 @@ const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as
         @if (hint()) {
           <p class="lc-kpi-card__hint">{{ hint() }}</p>
         }
+        @if (link()) {
+          <lc-icon class="lc-kpi-card__chevron" name="chevron-right" aria-hidden="true" />
+        }
       </div>
     }
     <div class="lc-kpi-card__visual"><ng-content select="[lcKpiVisual]" /></div>
+    <ng-content select="a[lcKpiCardLink]" />
   `,
   styleUrl: './kpi-card.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-kpi-card',
     '[class]': 'variantClass()',
-    role: 'group',
-    '[attr.aria-label]': 'accessibleName()',
+    '[attr.role]': "link() ? null : 'group'",
+    '[attr.aria-label]': 'link() ? null : accessibleName()',
     '[attr.aria-busy]': "loading() ? 'true' : null",
   },
 })
 export class LcKpiCardComponent {
   private readonly formatService = inject(LcFormatService);
   private readonly labels = inject(LC_LABELS);
+
+  constructor() {
+    effect(() => this.link()?.name.set(this.linkName()));
+  }
 
   readonly label = input.required<string>();
   readonly value = input<number | null>(null);
@@ -78,13 +87,25 @@ export class LcKpiCardComponent {
   /** `horizontal` : libellé et pied à gauche, chiffre à droite. */
   readonly layout = input<'vertical' | 'horizontal'>('vertical');
 
-  protected readonly variantClass = computed(() => `lc-kpi-card--${this.fillMode()} lc-kpi-card--${this.themeColor()} lc-kpi-card--${this.layout()}`);
+  /** Ancre projetée : toute la carte devient le lien (le nom accessible passe de la carte à l'ancre). */
+  protected readonly link = contentChild(LcKpiCardLinkDirective);
+
+  protected readonly variantClass = computed(
+    () => `lc-kpi-card--${this.fillMode()} lc-kpi-card--${this.themeColor()} lc-kpi-card--${this.layout()}${this.link() ? ' lc-kpi-card--linked' : ''}`,
+  );
 
   /** Une valeur numérique sans texte libre : le chiffre compte jusqu'à elle (`lcCountUp`) et flashe à chaque changement. */
   protected readonly counted = computed(() => this.valueText() === null && this.value() !== null);
   protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value(), this.format()));
   /** Nom du groupe : libellé et valeur affichée (le texte libre remplace le nombre). */
   protected readonly accessibleName = computed(() => (this.loading() ? this.label() : `${this.label()} : ${this.displayText()}`));
+  /** « libellé : valeur, variation tendance, précision » : les parties absentes sont omises (en chargement, le libellé seul). */
+  protected readonly linkName = computed(() => {
+    if (this.loading()) return this.label();
+    const change = this.delta();
+    const parts = [this.accessibleName(), change && `${this.deltaText()} ${this.trendWord()}`, this.hint()];
+    return parts.filter(Boolean).join(', ');
+  });
   protected readonly trendIcon = computed(() => TREND_ICONS[this.delta()?.trend ?? 'flat']);
   /** Mot de la tendance, jamais sans `delta` (le gabarit le garde) : une variation nulle dit « stable » (`flat`). */
   protected readonly trendWord = computed(() => {
