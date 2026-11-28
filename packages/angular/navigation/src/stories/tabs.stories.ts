@@ -39,9 +39,9 @@ const ROWS: Record<string, readonly string[]> = {
       @for (key of cascadeDemo.keys(); track key) {
         <div class="lc-demo__grid">
           <lc-tabs ariaLabel="Réglages" [(selected)]="settings">
-            <lc-tab id="general" label="Général"><p class="lc-demo__row">Nom du projet</p><p class="lc-demo__row">Langue</p><p class="lc-demo__row">Fuseau horaire</p></lc-tab>
-            <lc-tab id="notifications" label="Notifications"><p class="lc-demo__row">Courriel</p><p class="lc-demo__row">Mobile</p><p class="lc-demo__row">Résumé du lundi</p></lc-tab>
-            <lc-tab id="avance" label="Avancé"><p class="lc-demo__row">Export</p><p class="lc-demo__row">Archives</p><p class="lc-demo__row">Suppression</p></lc-tab>
+            <lc-tab id="general" label="Général"><div lcStagger><p class="lc-demo__row" lcReveal>Nom du projet</p><p class="lc-demo__row" lcReveal>Langue</p><p class="lc-demo__row" lcReveal>Fuseau horaire</p></div></lc-tab>
+            <lc-tab id="notifications" label="Notifications"><div lcStagger><p class="lc-demo__row" lcReveal>Courriel</p><p class="lc-demo__row" lcReveal>Mobile</p><p class="lc-demo__row" lcReveal>Résumé du lundi</p></div></lc-tab>
+            <lc-tab id="avance" label="Avancé"><div lcStagger><p class="lc-demo__row" lcReveal>Export</p><p class="lc-demo__row" lcReveal>Archives</p><p class="lc-demo__row" lcReveal>Suppression</p></div></lc-tab>
           </lc-tabs>
           <div>
             <lc-segmented-control ariaLabel="Filtre" [options]="filters" [value]="filter()" (valueChange)="filterBy($event)" />
@@ -73,9 +73,7 @@ class TabsAnimationDemoComponent {
       this.filter.set('all');
       this.rows.set(ROWS['all']);
     },
-    play: () => {
-      this.filterBy('mine');
-    },
+    // Pas de `play` : « Rejouer » réinsère la démo, donc la liste entre une fois ; le filtre se démontre au clic sur le contrôle segmenté.
   });
 
   constructor() {
