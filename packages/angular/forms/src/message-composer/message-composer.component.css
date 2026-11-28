@@ -348,9 +348,9 @@
     animation: none;
   }
 
-  /* Vignette en fondu seul, calque immédiat. */
+  /* Vignette sans transition : une durée réduite laisse un fondu `pending` (0,01 ms) que la preuve de mouvement réduit voit encore. */
   .lc-message-composer__thumb {
-    transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+    transition: none;
   }
 
   .lc-message-composer__drop {
