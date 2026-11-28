@@ -1572,6 +1572,12 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
         const before = new Set(document.getAnimations());
         const seen = new Map();
+        // Rejeu piloté en JavaScript (compteur, canvas, style posé par script) : aucune animation du navigateur, mais le DOM ou les pixels d'un canvas changent après le clic.
+        const root = document.querySelector('#storybook-root');
+        const snap = () => root.outerHTML + [...root.querySelectorAll('canvas')].map((c) => { try { return c.toDataURL(); } catch { return ''; } }).join();
+        const base = snap();
+        const known = new WeakSet(root.querySelectorAll('*')); // élément recréé (d17 : « Rejouer » réinsère le badge, au HTML identique)
+        let changed = false;
         const row = (a) => {
           const timing = a.effect.getComputedTiming();
           const target = a.effect.target;
@@ -1581,7 +1587,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
         let lastNew = performance.now();
-        const collect = () => document.getAnimations().forEach((a) => { if (!before.has(a) && !seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
+        const collect = () => { changed ||= snap() !== base || [...root.querySelectorAll('*')].some((e) => !known.has(e)); document.getAnimations().forEach((a) => { if (!before.has(a) && !seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } }); };
         button.click();
         const t0 = performance.now();
         await frame();
@@ -1589,7 +1595,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         const early = seen.size;
         await frame();
         const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).map(row); // une image après l'action
-        for (let now = t0; now - t0 < (waitFirst ? 8000 : MAX_MS) && ((waitFirst && seen.size === 0) || (now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet))); now = performance.now()) { collect(); await frame(); }
+        for (let now = t0; now - t0 < (waitFirst ? 8000 : MAX_MS) && ((waitFirst && seen.size === 0 && !changed) || (now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet))); now = performance.now()) { collect(); await frame(); }
         collect();
         const overflow = [];
         if (scrub) {
@@ -1601,7 +1607,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           finite.forEach((a) => a.finish());
         }
         const rows = [...seen.values()];
-        return { rows, running, overflow, late: rows.length - early };
+        return { rows, running, overflow, late: rows.length - early, changed };
       };
       const win = reduced ? { min: chains.has(id) ? 900 : 400, quiet: 250 } : { min: 900, quiet: 600, waitFirst: true };
       const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW, ...win });
@@ -1610,7 +1616,7 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
         check(bad.length === 0 && got.running.length === 0, `CA-3 ${label} aucune animation en cours après une image, durées et délais ≤ 0,01 ms`, JSON.stringify([...got.running, ...bad].slice(0, 3)));
       } else {
         if (got.late > 0) chains.add(id);
-        check(got.rows.length > 0, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre bien une animation
+        check(got.rows.length > 0 || got.changed, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre une animation du navigateur, ou change, recrée le DOM ou change un canvas (démo pilotée en JavaScript)
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }
