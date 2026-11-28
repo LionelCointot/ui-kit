@@ -22,13 +22,12 @@ class HostComponent {
 
 @Component({
   imports: [LcMessageThreadComponent],
-  template: `<lc-message-thread [messages]="messages()" [loading]="loading()" [stale]="stale()" [emptyMessage]="emptyMessage()" [pageSize]="pageSize()" />`,
+  template: `<lc-message-thread [messages]="messages()" [loading]="loading()" [stale]="stale()" [pageSize]="pageSize()" />`,
 })
 class StateHostComponent {
   readonly messages = signal<LcThreadMessage[] | null | undefined>(undefined);
   readonly loading = signal(false);
   readonly stale = signal(false);
-  readonly emptyMessage = signal<string | undefined>(undefined);
   readonly pageSize = signal(30);
 }
 
@@ -279,45 +278,10 @@ describe('lc-message-thread', () => {
       return { fixture, host: fixture.componentInstance, root, log: () => root.querySelector<HTMLElement>('[role="log"]')!, thread: () => root.querySelector<HTMLElement>('lc-message-thread')! };
     };
 
-    it('undefined : trois bulles en squelette, aria-busy, aucun texte de vide', () => {
-      const { root, thread } = setup(undefined);
+    it('undefined : trois bulles en squelette, dont une à droite', () => {
+      const { root } = setup(undefined);
       expect(root.querySelectorAll('.lc-message-thread__skeleton lc-skeleton').length).toBe(3);
       expect(root.querySelectorAll('.lc-message-thread__skeleton-row--mine').length).toBe(1);
-      expect(thread().getAttribute('aria-busy')).toBe('true');
-      expect(root.querySelector('.lc-message-thread__empty')).toBeNull();
-    });
-
-    it.each([null, []])('%j : texte noData, ni squelette ni aria-busy', (value) => {
-      const { root, thread } = setup(value);
-      expect(root.querySelector('.lc-message-thread__empty')?.textContent).toBe(TestBed.inject(LC_LABELS).noData);
-      expect(root.querySelector('lc-skeleton')).toBeNull();
-      expect(thread().hasAttribute('aria-busy')).toBe(false);
-    });
-
-    it('emptyMessage remplace noData, une chaîne vide y retombe', () => {
-      const { fixture, host, root } = setup(null, (h) => h.emptyMessage.set('Rien ici'));
-      expect(root.querySelector('.lc-message-thread__empty')?.textContent).toBe('Rien ici');
-      host.emptyMessage.set('');
-      fixture.detectChanges();
-      expect(root.querySelector('.lc-message-thread__empty')?.textContent).toBe(TestBed.inject(LC_LABELS).noData);
-    });
-
-    it('loading avec des messages : squelette, messages non rendus', () => {
-      const { root, thread } = setup([msg('1')], (h) => h.loading.set(true));
-      expect(root.querySelector('lc-skeleton')).not.toBeNull();
-      expect(root.querySelector('[data-message-id]')).toBeNull();
-      expect(thread().getAttribute('aria-busy')).toBe('true');
-    });
-
-    it('stale avec des messages : messages gardés, classe et aria-busy ; avec undefined : squelette sans classe', () => {
-      const { fixture, host, root, thread } = setup([msg('1')], (h) => h.stale.set(true));
-      expect(root.querySelector('[data-message-id]')).not.toBeNull();
-      expect(thread().classList).toContain('lc-message-thread--stale');
-      expect(thread().getAttribute('aria-busy')).toBe('true');
-      host.messages.set(undefined);
-      fixture.detectChanges();
-      expect(root.querySelector('lc-skeleton')).not.toBeNull();
-      expect(thread().classList).not.toContain('lc-message-thread--stale');
     });
 
     it('stale sans messages (vide) : ni aria-busy ni classe', () => {

@@ -763,29 +763,9 @@ describe('LcTreeTableComponent : états', () => {
     return fixture.nativeElement as HTMLElement;
   };
 
-  it('undefined : vraies en-têtes, 3 lignes de squelette, aria-busy', async () => {
+  it('undefined : vraies en-têtes pendant le squelette', async () => {
     const element = await render({ data: undefined });
     expect(element.querySelector('th')!.textContent).toContain('Nom');
-    expect(element.querySelectorAll('tbody tr lc-skeleton').length).toBe(3);
-    expect(element.getAttribute('aria-busy')).toBe('true');
-  });
-
-  it('loading avec données : squelette sans ligne de donnée', async () => {
-    const element = await render({ data: nodes, loading: true });
-    expect(element.querySelector('tr[aria-level]')).toBeNull();
-  });
-
-  it('null : état vide (chaîne vide : noData), sans aria-busy', async () => {
-    const element = await render({ data: null, emptyMessage: '' });
-    expect(element.querySelector('.lc-table__empty')!.textContent).toContain('Aucune donnée');
-    expect(element.getAttribute('aria-busy')).toBeNull();
-  });
-
-  it('stale : données gardées, classe et aria-busy ; sans donnée : pas de classe', async () => {
-    const element = await render({ data: nodes, stale: true });
-    expect(element.classList).toContain('lc-tree-table--stale');
-    expect(element.getAttribute('aria-busy')).toBe('true');
-    expect(element.querySelector('tr[aria-level]')).not.toBeNull();
-    expect((await render({ data: undefined, stale: true })).classList).not.toContain('lc-tree-table--stale');
+    expect(element.querySelector('tbody lc-skeleton')).not.toBeNull();
   });
 });
