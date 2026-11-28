@@ -1,7 +1,7 @@
 :host {
   display: block;
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
-  border-radius: var(--lc-card-radius, var(--lc-sys-radius-lg));
+  border-radius: var(--lc-card-radius, var(--lc-sys-radius-xl));
   background: var(--lc-card-background, var(--lc-sys-color-surface-raised));
   color: var(--lc-sys-color-on-surface);
 }
@@ -11,15 +11,15 @@
 }
 
 :host(.lc-card--elevation-1) {
-  box-shadow: var(--lc-sys-shadow-1);
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-card-line-color, var(--lc-sys-color-line)), var(--lc-sys-shadow-1);
 }
 
 :host(.lc-card--elevation-2) {
-  box-shadow: var(--lc-sys-shadow-2);
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-card-line-color, var(--lc-sys-color-line)), var(--lc-sys-shadow-2);
 }
 
 :host(:not(.lc-card--elevation-0)) {
-  border-color: transparent;
+  border-width: 0;
 }
 
 /* Le contenu d'une carte repart au rythme `normal` : celui des cartes d'une grille (`--lc-stagger-pace` hérité) ne vaut que pour la carte. */

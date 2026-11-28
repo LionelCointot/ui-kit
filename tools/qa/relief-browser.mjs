@@ -7,7 +7,7 @@
 //   data-kpi-card--link       : `button#before`, `lc-kpi-card` avec `a[lcKpiCardLink][href="#opened"]`, `button#after`
 //   data-kpi-card--horizontal : un `lc-kpi-card` layout="horizontal"
 //   data-kpi-card--row        : 4 `lc-kpi-card` de contenus de hauteurs différentes, dont une pleine
-// Classes de lc-kpi-card lues : `.lc-kpi-card__label`, `.lc-kpi-card__value`, `.lc-kpi-card__foot` (variation, mot de tendance et précision).
+// Classes de lc-kpi-card lues : `.lc-kpi-card__label`, `.lc-kpi-card__value`, `.lc-kpi-card__footer` (variation, mot de tendance et précision).
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -108,7 +108,7 @@ try {
 
     await run('Row', async () => {
       const page = await open('row', theme);
-      const bottoms = await page.evaluate(() => [...document.querySelectorAll('lc-kpi-card')].map((k) => k.querySelector('.lc-kpi-card__foot')?.getBoundingClientRect().bottom));
+      const bottoms = await page.evaluate(() => [...document.querySelectorAll('lc-kpi-card')].map((k) => k.querySelector('.lc-kpi-card__footer')?.getBoundingClientRect().bottom));
       check(bottoms.length === 4 && bottoms.every((b) => b !== undefined && Math.abs(b - bottoms[0]) <= 1), t('CA-7 Row : bas des pieds des 4 tuiles alignés à 1 px'), bottoms.join());
     });
   }

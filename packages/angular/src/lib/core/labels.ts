@@ -193,6 +193,10 @@ export interface LcLabels {
   readonly threadToday: string;
   readonly threadYesterday: string;
   readonly threadAttachmentOpen: (name: string) => string;
+  /** Mot de tendance de `lc-kpi-card`, dérivé de `delta.trend` (aussi pour une variation nulle). */
+  readonly kpiTrendUp: string;
+  readonly kpiTrendDown: string;
+  readonly kpiTrendFlat: string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -788,6 +792,9 @@ export const LC_LABELS_FR: LcLabels = {
   threadToday: 'Aujourd\'hui',
   threadYesterday: 'Hier',
   threadAttachmentOpen: (name) => `Ouvrir la pièce jointe : ${name}`,
+  kpiTrendUp: 'hausse',
+  kpiTrendDown: 'baisse',
+  kpiTrendFlat: 'stable',
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -1031,6 +1038,9 @@ export const LC_LABELS_EN: LcLabels = {
   threadToday: 'Today',
   threadYesterday: 'Yesterday',
   threadAttachmentOpen: (name) => `Open attachment: ${name}`,
+  kpiTrendUp: 'up',
+  kpiTrendDown: 'down',
+  kpiTrendFlat: 'flat',
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });

@@ -153,6 +153,10 @@
         "$value": "{ref.color.neutral.800}",
         "$type": "color"
       },
+      "line": {
+        "$value": "rgba(255, 255, 255, 0.08)",
+        "$type": "color"
+      },
       "border-strong": {
         "$value": "{ref.color.neutral.400}",
         "$type": "color"
@@ -325,6 +329,10 @@
         "$value": "{ref.radius.lg}",
         "$type": "dimension"
       },
+      "xl": {
+        "$value": "{ref.radius.xl}",
+        "$type": "dimension"
+      },
       "full": {
         "$value": "{ref.radius.full}",
         "$type": "dimension"
@@ -348,11 +356,11 @@
     },
     "shadow": {
       "1": {
-        "$value": "0 1px 2px rgba(0, 0, 0, 0.5)",
+        "$value": "0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 30px -20px rgba(0, 0, 0, 0.85)",
         "$type": "shadow"
       },
       "2": {
-        "$value": "0 2px 8px rgba(0, 0, 0, 0.55)",
+        "$value": "0 2px 6px rgba(0, 0, 0, 0.5), 0 40px 80px -28px rgba(0, 0, 0, 0.95)",
         "$type": "shadow"
       },
       "3": {

@@ -3,10 +3,12 @@
   flex-direction: column;
   gap: var(--lc-sys-space-1);
   padding: var(--lc-sys-space-4);
-  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
-  border-radius: var(--lc-kpi-card-radius, var(--lc-sys-radius-lg));
+  border: 0;
+  border-radius: var(--lc-kpi-card-radius, var(--lc-sys-radius-xl));
+  /* Filet en première couche du box-shadow, comme lc-card : il ne déplace pas la mise en page. */
+  box-shadow: inset 0 0 0 var(--lc-sys-border-width-thin) var(--lc-kpi-card-border-color, var(--lc-sys-color-line)), var(--lc-kpi-card-shadow, var(--lc-sys-shadow-1));
   background: var(--lc-kpi-card-background, var(--lc-sys-color-surface-raised));
-  color: var(--lc-sys-color-on-surface);
+  color: var(--lc-kpi-card-color, var(--lc-sys-color-on-surface));
 }
 
 p {
@@ -14,21 +16,34 @@ p {
 }
 
 .lc-kpi-card__label {
-  color: var(--lc-sys-color-on-surface-muted);
+  color: var(--lc-kpi-card-label-color, var(--lc-sys-color-on-surface-muted));
   font-size: var(--lc-sys-font-size-sm);
+  font-weight: var(--lc-kpi-card-label-weight, var(--lc-sys-font-weight-regular));
 }
 
-/* Chiffres proportionnels pour la valeur principale ; les chiffres tabulaires sont réservés aux colonnes. */
+/* Chiffres tabulaires : le comptage et les recalculs ne font pas trembler la largeur. */
 .lc-kpi-card__value {
   font-size: var(--lc-sys-font-size-3xl);
-  font-weight: var(--lc-sys-font-weight-bold);
+  font-weight: var(--lc-kpi-card-value-weight, var(--lc-sys-font-weight-bold));
+  letter-spacing: var(--lc-kpi-card-value-letter-spacing, normal);
   line-height: var(--lc-sys-font-line-height-tight);
-  font-variant-numeric: proportional-nums;
+  font-variant-numeric: tabular-nums;
   transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 .lc-kpi-card__value--stale {
   opacity: 0.6;
+}
+
+.lc-kpi-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-sys-space-1);
+  margin-block-start: auto;
+}
+
+.lc-kpi-card__footer:empty {
+  display: none;
 }
 
 .lc-kpi-card__delta {
@@ -62,6 +77,106 @@ p {
 
 .lc-kpi-card__visual {
   margin-block-start: var(--lc-sys-space-2);
+}
+
+/* Forme lien : la zone cliquable (::after de l'ancre, feuille globale) couvre la carte ; chevron en fin de pied. */
+:host(.lc-kpi-card--linked) {
+  position: relative;
+  min-block-size: var(--lc-sys-control-height-md);
+}
+
+:host(.lc-kpi-card--linked) .lc-kpi-card__footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+:host(.lc-kpi-card--linked) .lc-kpi-card__footer > :not(.lc-kpi-card__chevron) {
+  grid-column: 1;
+}
+
+.lc-kpi-card__chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* Disposition horizontale : libellé et pied à gauche, chiffre à droite. */
+:host(.lc-kpi-card--horizontal) {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'label value'
+    'footer value'
+    'visual visual';
+  align-items: start;
+  column-gap: var(--lc-sys-space-4);
+}
+
+:host(.lc-kpi-card--horizontal) .lc-kpi-card__label {
+  grid-area: label;
+}
+
+:host(.lc-kpi-card--horizontal) .lc-kpi-card__value,
+:host(.lc-kpi-card--horizontal) lc-skeleton {
+  grid-area: value;
+  align-self: center;
+}
+
+:host(.lc-kpi-card--horizontal) .lc-kpi-card__footer {
+  grid-area: footer;
+  align-self: end;
+}
+
+:host(.lc-kpi-card--horizontal) .lc-kpi-card__visual {
+  grid-area: visual;
+}
+
+/* Tuile pleine : tous les textes en on-<couleur>, sans couleur de sentiment (l'icône et le mot portent le sens). */
+:host(.lc-kpi-card--solid) .lc-kpi-card__label,
+:host(.lc-kpi-card--solid) .lc-kpi-card__delta,
+:host(.lc-kpi-card--solid) .lc-kpi-card__hint {
+  color: inherit;
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--primary) {
+  background: var(--lc-sys-color-primary);
+  color: var(--lc-sys-color-on-primary);
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--secondary) {
+  background: var(--lc-sys-color-secondary);
+  color: var(--lc-sys-color-on-secondary);
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--success) {
+  background: var(--lc-sys-color-success);
+  color: var(--lc-sys-color-on-success);
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--warning) {
+  background: var(--lc-sys-color-warning);
+  color: var(--lc-sys-color-on-warning);
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--error) {
+  background: var(--lc-sys-color-error);
+  color: var(--lc-sys-color-on-error);
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--highlight) {
+  background: var(--lc-sys-color-highlight);
+  color: var(--lc-sys-color-on-highlight);
+}
+
+:host(.lc-kpi-card--solid.lc-kpi-card--neutral) {
+  background: var(--lc-sys-color-neutral);
+  color: var(--lc-sys-color-on-neutral);
+}
+
+@media (forced-colors: active) {
+  :host {
+    border: var(--lc-sys-border-width-thin) solid CanvasText;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

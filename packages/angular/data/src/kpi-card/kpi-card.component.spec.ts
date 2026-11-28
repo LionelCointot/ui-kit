@@ -80,6 +80,52 @@ describe('LcKpiCardComponent', () => {
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).querySelector('.lc-kpi-card__value')!.textContent).toBe('Aucun');
   });
+
+  describe('relief : mot de tendance, variantes', () => {
+    const render = async (inputs: Record<string, unknown>) => {
+      const fixture = TestBed.createComponent(LcKpiCardComponent);
+      fixture.componentRef.setInput('label', 'Mensualité');
+      fixture.componentRef.setInput('value', 10);
+      Object.entries(inputs).forEach(([key, value]) => fixture.componentRef.setInput(key, value));
+      await fixture.whenStable();
+      return fixture.nativeElement as HTMLElement;
+    };
+    const trend = (element: HTMLElement) => element.querySelector('.lc-kpi-card__trend')?.textContent;
+
+    it.each([
+      ['up', 'hausse'],
+      ['down', 'baisse'],
+      ['flat', 'stable'],
+    ] as const)('dit « %s » en français, aussi pour une variation nulle', async (kind, word) => {
+      const element = await render({ delta: { value: kind === 'flat' ? 0 : 1, format: 'percent', trend: kind, sentiment: 'neutral' } });
+      expect(trend(element)).toBe(word);
+    });
+
+    it('dit la tendance en anglais avec le jeu anglais', async () => {
+      TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: LC_LABELS_EN }] });
+      const element = await render({ delta: { value: 1, format: 'percent', trend: 'up', sentiment: 'positive' } });
+      expect(trend(element)).toBe('up');
+    });
+
+    it('n\'affiche aucun mot sans variation', async () => {
+      expect(trend(await render({ hint: 'Sur 12 mois' }))).toBeUndefined();
+    });
+
+    it('pose les classes de variante et de disposition (contour, vertical, neutre par défaut)', async () => {
+      const element = await render({});
+      expect(element.classList).toContain('lc-kpi-card--outline');
+      expect(element.classList).toContain('lc-kpi-card--vertical');
+      expect(element.classList).toContain('lc-kpi-card--neutral');
+      expect(element.classList).toContain('lc-kpi-card');
+    });
+
+    it('pose la tuile pleine de la couleur demandée, en disposition horizontale', async () => {
+      const element = await render({ fillMode: 'solid', themeColor: 'primary', layout: 'horizontal' });
+      expect(element.classList).toContain('lc-kpi-card--solid');
+      expect(element.classList).toContain('lc-kpi-card--primary');
+      expect(element.classList).toContain('lc-kpi-card--horizontal');
+    });
+  });
 });
 
 // Acceptation de docs/specs/2026-12-relief.md (CA-6, CA-5 c d). Les valeurs viennent de la spec ; la directive est lue par la sortie publique du point d'entrée.

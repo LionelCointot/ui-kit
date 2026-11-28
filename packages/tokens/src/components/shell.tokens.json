@@ -8,6 +8,10 @@
       "$value": "{sys.color.surface}",
       "$type": "color"
     },
+    "content-background": {
+      "$value": "{sys.color.surface-sunken}",
+      "$type": "color"
+    },
     "nav-width": {
       "$value": "16rem",
       "$type": "dimension"

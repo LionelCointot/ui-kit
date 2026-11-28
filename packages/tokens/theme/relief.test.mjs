@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolvedTokens } from '../lib/tokens.mjs';
-import { contrastRatio } from './index.js';
+import { baseValues, contrastRatio, validateTheme } from './index.js';
 
 const THEMES = ['default', 'dark'];
 const tokens = Object.fromEntries(await Promise.all(THEMES.map(async (theme) => [theme, await resolvedTokens(theme)])));
@@ -48,3 +48,10 @@ for (const theme of THEMES) {
     }
   });
 }
+
+test('T1 : le profil d\'ombre à deux couches du kit passe le validateur de thème', () => {
+  for (const base of THEMES) {
+    const values = baseValues(base);
+    for (const path of ['shadow.1', 'shadow.2']) assert.equal(validateTheme({ name: 'relief', extends: 'default', overrides: { [path]: values[path] } }).valid, true, `${base} ${path}`);
+  }
+});
