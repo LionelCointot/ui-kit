@@ -970,7 +970,7 @@ describe('LcTimelineBarComponent : voies (lanes)', () => {
       await fixture.whenStable();
       expect(element.classList).not.toContain('lc-timeline-bar--stale');
       const rule = blockAt(css(), css().indexOf(':host(.lc-timeline-bar--stale) .lc-timeline-bar__lane-track {'));
-      expect(rule).toContain('opacity: var(--lc-timeline-bar-stale-opacity, 0.6)');
+      expect(rule).toContain('opacity: var(--lc-timeline-bar-stale-opacity, var(--lc-sys-state-stale-opacity))');
     });
   });
 
