@@ -50,6 +50,7 @@ p {
 .lc-kpi-card__delta {
   display: inline-flex;
   align-self: flex-start;
+  justify-self: start;
   align-items: center;
   gap: var(--lc-sys-space-1);
   padding-block: calc(var(--lc-sys-space-1) / 2);
