@@ -1,11 +1,15 @@
 {
   "card": {
     "radius": {
-      "$value": "{sys.radius.lg}",
+      "$value": "{sys.radius.xl}",
       "$type": "dimension"
     },
     "background": {
       "$value": "{sys.color.surface-raised}",
+      "$type": "color"
+    },
+    "line-color": {
+      "$value": "{sys.color.line}",
       "$type": "color"
     }
   }

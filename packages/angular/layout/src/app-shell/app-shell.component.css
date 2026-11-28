@@ -110,6 +110,7 @@
 .lc-shell__main {
   flex: 1;
   min-width: 0;
+  background: var(--lc-shell-content-background, var(--lc-sys-color-surface-sunken));
 }
 
 .lc-shell__main:focus {
