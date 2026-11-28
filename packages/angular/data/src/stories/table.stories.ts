@@ -126,8 +126,8 @@ export const ExternalSorting: Story = {
       source: orders.slice(0, 12), columns, trackBy, sort: null as LcSort | null,
       serverSorted: memo((source: readonly Order[], sort: LcSort | null) => sortRows(source, columns, sort)),
     },
-    template: `<lc-table caption="Commandes triées par le serveur" sortMode="external" [data]="serverSorted(source, sort)"
-      [columns]="columns" [trackBy]="trackBy" [(sort)]="sort" />`,
+    template: `<div style="--lc-table-sticky-start-size: 9rem"><lc-table caption="Commandes triées par le serveur" sortMode="external" [data]="serverSorted(source, sort)"
+      [columns]="columns" [trackBy]="trackBy" [(sort)]="sort" /></div>`,
   }),
 };
 

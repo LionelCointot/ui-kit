@@ -169,6 +169,7 @@ lc-data-table {
 /* ---------- Tableau ---------- */
 .lc-data-table__scroll {
   overflow-x: auto;
+  container-type: inline-size;
 }
 
 .lc-data-table__table {
@@ -180,6 +181,11 @@ lc-data-table {
 }
 
 .lc-data-table__caption {
+  /* Le titre reste à gauche pendant le défilement horizontal : sa boîte ne doit pas couvrir toute la largeur du tableau. */
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: fit-content;
+  max-inline-size: 100cqw;
   padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
   font-weight: var(--lc-sys-font-weight-semibold);
   text-align: start;

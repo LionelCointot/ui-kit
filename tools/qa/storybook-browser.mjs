@@ -244,6 +244,33 @@ async function dom(browser, base) {
     check('CA-K1.3 forced-colors : bordure du badge visible (non transparente)', borders.length === 6 && borders.every((color) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'), borders.join(' | '));
     await context.close();
   }
+  // Titre de tableau : reste en place, entier, pendant le défilement horizontal (téléphone).
+  // lc-data-table : en cartes sous 768 px ; mesuré à 900 px, titre visible et largeur minimale forcée pour qu'il défile.
+  const captions = [
+    { id: 'data-table--external-sorting', width: 390 },
+    { id: 'data-tree-table--small-screen', width: 390 },
+    { id: 'data-data-table--playground', width: 900, args: '&args=captionHidden:!false', minWidth: true },
+  ];
+  for (const { id, width, args = '', minWidth = false } of captions) {
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/iframe.html?id=${id}&viewMode=story${args}`);
+    await page.waitForSelector('caption', { state: 'attached' });
+    const info = await page.evaluate(async (minWidth) => {
+      if (minWidth) document.querySelector('lc-data-table').style.setProperty('--lc-data-table-min-width', '1400px');
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const scroll = document.querySelector('caption').closest('[class$="__scroll"]');
+      scroll.scrollLeft = scroll.scrollWidth;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const frame = scroll.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(document.querySelector('caption'));
+      const text = range.getBoundingClientRect();
+      return { scrolled: scroll.scrollLeft, left: Math.round(text.left - frame.left), right: Math.round(text.right - frame.right) };
+    }, minWidth);
+    check(`titre de tableau ${id} : visible en entier après défilement`, info.scrolled > 0 && info.left >= 0 && info.right <= 0, JSON.stringify(info));
+    await context.close();
+  }
   results.push(await skeletonHeights(browser, base));
   return results.every(Boolean) ? 0 : 1;
 }
