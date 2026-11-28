@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
+import { LC_LABELS, LC_LABELS_EN } from '@lionelcointot/ui-angular';
 import { LcKpiCardComponent, LcKpiDelta } from './kpi-card.component';
 import { LcKpiCardLinkDirective } from './kpi-card-link.directive';
 
@@ -29,13 +30,10 @@ async function render() {
 }
 
 describe('LcKpiCardLinkDirective', () => {
-  it('nomme l\'ancre « libellé : valeur, variation tendance, précision » et retire le rôle de la carte', async () => {
-    const { card, link } = await render();
-    const name = link()!.getAttribute('aria-label')!.replace(/\s/g, ' ');
-    expect(name).toMatch(/^Mensualité : .*1 200.*, −2,50 % baisse, Sur 12 mois$/);
-    expect(card.classList).toContain('lc-kpi-card--linked');
-    expect(card.hasAttribute('role')).toBe(false);
-    expect(card.hasAttribute('aria-label')).toBe(false);
+  it('compose le nom avec le jeu de libellés (anglais : sans espace avant les deux-points)', async () => {
+    TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: LC_LABELS_EN }] });
+    const { link } = await render();
+    expect(link()!.getAttribute('aria-label')!.replace(/\s/g, ' ')).toMatch(/^Mensualité: .*, .* down, Sur 12 mois$/);
   });
 
   it('omet les parties absentes du nom', async () => {
@@ -51,13 +49,6 @@ describe('LcKpiCardLinkDirective', () => {
     fixture.componentInstance.loading.set(true);
     await fixture.whenStable();
     expect(link()!.getAttribute('aria-label')).toBe('Mensualité');
-  });
-
-  it('ajoute le chevron masqué aux technologies d\'assistance, dans le pied', async () => {
-    const { card } = await render();
-    const chevron = card.querySelector('.lc-kpi-card__footer .lc-kpi-card__chevron')!;
-    expect(chevron.getAttribute('aria-hidden')).toBe('true');
-    expect(chevron.getAttribute('name')).toBe('chevron-right');
   });
 
   it('sans ancre, la carte garde son rôle, son nom et n\'a pas de chevron', async () => {

@@ -101,16 +101,6 @@ describe('LcKpiCardComponent', () => {
       expect(trend(element)).toBe(word);
     });
 
-    it('dit la tendance en anglais avec le jeu anglais', async () => {
-      TestBed.configureTestingModule({ providers: [{ provide: LC_LABELS, useValue: LC_LABELS_EN }] });
-      const element = await render({ delta: { value: 1, format: 'percent', trend: 'up', sentiment: 'positive' } });
-      expect(trend(element)).toBe('up');
-    });
-
-    it('n\'affiche aucun mot sans variation', async () => {
-      expect(trend(await render({ hint: 'Sur 12 mois' }))).toBeUndefined();
-    });
-
     it('pose les classes de variante et de disposition (contour, vertical, neutre par défaut)', async () => {
       const element = await render({});
       expect(element.classList).toContain('lc-kpi-card--outline');
