@@ -98,13 +98,12 @@ export class LcKpiCardComponent {
   protected readonly counted = computed(() => this.valueText() === null && this.value() !== null);
   protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value(), this.format()));
   /** Nom du groupe : libellé et valeur affichée (le texte libre remplace le nombre). */
-  protected readonly accessibleName = computed(() => (this.loading() ? this.label() : `${this.label()} : ${this.displayText()}`));
-  /** « libellé : valeur, variation tendance, précision » : les parties absentes sont omises (en chargement, le libellé seul). */
+  protected readonly accessibleName = computed(() => this.labels.kpiCardName({ label: this.label(), value: this.loading() ? undefined : this.displayText() }));
+  /** Libellé, valeur, variation et tendance, précision : les parties absentes sont omises (en chargement, le libellé seul). */
   protected readonly linkName = computed(() => {
-    if (this.loading()) return this.label();
+    if (this.loading()) return this.accessibleName();
     const change = this.delta();
-    const parts = [this.accessibleName(), change && `${this.deltaText()} ${this.trendWord()}`, this.hint()];
-    return parts.filter(Boolean).join(', ');
+    return this.labels.kpiCardName({ label: this.label(), value: this.displayText(), delta: change && `${this.deltaText()} ${this.trendWord()}`, hint: this.hint() });
   });
   protected readonly trendIcon = computed(() => TREND_ICONS[this.delta()?.trend ?? 'flat']);
   /** Mot de la tendance, jamais sans `delta` (le gabarit le garde) : une variation nulle dit « stable » (`flat`). */

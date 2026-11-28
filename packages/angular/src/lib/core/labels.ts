@@ -197,6 +197,8 @@ export interface LcLabels {
   readonly kpiTrendUp: string;
   readonly kpiTrendDown: string;
   readonly kpiTrendFlat: string;
+  /** Nom accessible de `lc-kpi-card` : les parties présentes (libellé, valeur, variation avec son mot de tendance, précision), dans cet ordre. */
+  readonly kpiCardName: (parts: { label: string; value?: string; delta?: string; hint?: string }) => string;
 }
 
 /** Textes du tableau filtrable (`lc-data-table`). */
@@ -795,6 +797,7 @@ export const LC_LABELS_FR: LcLabels = {
   kpiTrendUp: 'hausse',
   kpiTrendDown: 'baisse',
   kpiTrendFlat: 'stable',
+  kpiCardName: ({ label, value, delta, hint }) => [value ? `${label} : ${value}` : label, delta, hint].filter(Boolean).join(', '),
 };
 
 const THEME_BUILDER_EN: LcThemeBuilderLabels = {
@@ -1041,6 +1044,7 @@ export const LC_LABELS_EN: LcLabels = {
   kpiTrendUp: 'up',
   kpiTrendDown: 'down',
   kpiTrendFlat: 'flat',
+  kpiCardName: ({ label, value, delta, hint }) => [value ? `${label}: ${value}` : label, delta, hint].filter(Boolean).join(', '),
 };
 
 export const LC_LABELS = new InjectionToken<LcLabels>('LC_LABELS', { providedIn: 'root', factory: () => LC_LABELS_FR });
