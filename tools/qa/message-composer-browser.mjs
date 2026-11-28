@@ -7,25 +7,27 @@
 // CSP (CA-S5) : l'en-tête CSP de la spec est servi avec toutes les réponses (mode csp). Storybook et Angular violent eux-mêmes cette CSP (scripts et styles
 //   en ligne, eval ; script-src est donc élargi à 'unsafe-inline' 'unsafe-eval', seule différence avec la CSP de la spec) : ces violations sont mesurées une fois l'histoire affichée (référence), et seules les violations NOUVELLES pendant les gestes du composant,
 //   ou toute violation d'image, de réseau ou portant sur un élément du composant (attribut style en ligne compris), comptent.
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
+import { calm } from './wait.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
 const axeSource = await readFile(require.resolve('axe-core/axe.min.js'), 'utf8');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const CSP = "default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'"; // script-src élargi : Storybook compile ses histoires (eval) et ouvre ses pages par des scripts en ligne ; le reste est celui de la spec
 let csp = false;
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream', ...(csp ? { 'content-security-policy': CSP } : {}) }).end(await readFile(f)); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir, { base: null, headers: () => (csp ? { 'content-security-policy': CSP } : {}) });
+const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };
+/** Rendu fait et transitions finies (aucune minuterie dans le composant : les anciennes pauses fixes n'attendaient que cela). */
+const rest = (page) => calm(page, 100).then((ok) => ok || check('animations finies encore en cours après 15 s', false));
 const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
 
 const STORY = 'qa-forms-message-composer--acceptance';
@@ -81,7 +83,7 @@ async function open(ctx, id = STORY, theme = 'default') {
   await page.waitForSelector('lc-message-composer', { state: 'attached', timeout: 15000 }); // en attente du code : le composant n'existe pas encore
   await page.evaluate(INIT);
   await page.evaluate(() => window.Q.reset());
-  await page.waitForTimeout(300);
+  await rest(page);
   return page;
 }
 // Une section en échec ne masque pas les suivantes.
@@ -186,13 +188,13 @@ async function behaviour() {
     await reset(page); await patch(page, { minRows: 3 }); const m3 = await H();
     check('CA-C4 minRows 3 : trois lignes à vide', near(m3.h - h1.h, 2 * h1.lh, 3), JSON.stringify({ m3, h1 }));
     await reset(page); await ta.fill(Array(30).fill('mot').join(' ')); const wide = await H();
-    await page.setViewportSize({ width: 360, height: 800 }); await page.waitForTimeout(400); const narrow = await H();
-    await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(400); const back = await H();
+    await page.setViewportSize({ width: 360, height: 800 }); await rest(page); const narrow = await H();
+    await page.setViewportSize({ width: 1280, height: 800 }); await rest(page); const back = await H();
     check('CA-C4 un changement de largeur recalcule la hauteur (étroit plus haut, retour identique)', narrow.h > wide.h + narrow.lh / 2 && near(back.h, wide.h, 1), JSON.stringify({ wide: wide.h, narrow: narrow.h, back: back.h }));
 
     // CA-C9 : sending.
     await reset(page); await ta.fill('Texte'); const sb0 = await page.evaluate(() => { const b = Q.send().getBoundingClientRect(); const cs = getComputedStyle(Q.ta()); return { w: b.width, h: b.height, color: cs.color, op: cs.opacity }; });
-    await page.evaluate(() => Q.send().focus()); await patch(page, { sending: true }); await page.waitForTimeout(200);
+    await page.evaluate(() => Q.send().focus()); await patch(page, { sending: true }); await rest(page);
     const s9 = await page.evaluate(() => { const b = Q.send(); const t = Q.ta(); const cs = getComputedStyle(t); const st = [...Q.host().querySelectorAll('[role="status"]')].map((e) => e.textContent.trim()); const r = b.getBoundingClientRect(); return { ad: b.getAttribute('aria-disabled'), busy: b.getAttribute('aria-busy'), focus: document.activeElement === b, ro: t.readOnly, dis: t.disabled, color: cs.color, op: cs.opacity, us: cs.userSelect, st, w: r.width, h: r.height }; });
     check('CA-C9 sending : aria-disabled=true, aria-busy, le focus reste sur l\'envoi', s9.ad === 'true' && s9.busy === 'true' && s9.focus, JSON.stringify(s9));
     check('CA-C9 sending : champ readonly (pas disabled), texte sélectionnable, couleur et opacité inchangées', s9.ro && !s9.dis && s9.us !== 'none' && s9.color === sb0.color && s9.op === sb0.op, JSON.stringify({ s9, sb0 }));
@@ -211,12 +213,12 @@ async function behaviour() {
     await reset(page);
     const f = await page.evaluate(() => { const t = Q.ta(); const d = (t.getAttribute('aria-describedby') ?? '').split(' ').map((i) => document.getElementById(i)?.textContent.trim()); return { d, name: t.getAttribute('aria-labelledby') || t.getAttribute('aria-label') || t.labels?.[0]?.textContent.trim(), label: !!document.querySelector('label, [id]') }; });
     check('CA-C13 libellé et aide de lc-form-field appliqués au champ (nom accessible « Votre message », aria-describedby → aide)', (await page.getByRole('textbox', { name: 'Votre message' }).count()) === 1 && f.d.some((x) => x?.includes('Aide du champ')), JSON.stringify(f));
-    await patch(page, { errors: ['Erreur QA'] }); await page.focus(TA); await page.evaluate(() => Q.ta().blur()); await page.waitForTimeout(200);
+    await patch(page, { errors: ['Erreur QA'] }); await page.focus(TA); await page.evaluate(() => Q.ta().blur()); await rest(page);
     const inv = await page.evaluate(() => { const t = Q.ta(); return { ai: t.getAttribute('aria-invalid'), d: (t.getAttribute('aria-describedby') ?? '').split(' ').map((i) => document.getElementById(i)?.textContent.trim()) }; });
     check('CA-C13 erreur du champ : aria-invalid=true et aria-describedby → message, après la sortie du champ', inv.ai === 'true' && inv.d.some((x) => x?.includes('Erreur QA')), JSON.stringify(inv));
     await reset(page); await ta.fill('depuis la saisie');
     check('CA-C13 [(value)] : la saisie met à jour le modèle', (await page.evaluate(() => __composer.value())) === 'depuis la saisie');
-    await page.evaluate(() => __composer.set('depuis le modèle')); await page.waitForTimeout(100);
+    await page.evaluate(() => __composer.set('depuis le modèle')); await rest(page);
     check('CA-C13 [(value)] : le modèle met à jour le champ', (await ta.inputValue()) === 'depuis le modèle');
     check('CA-C13 dans lc-form-field : aucun avertissement d\'accessibilité en console', !page.logs.some((l) => /aria-?label/i.test(l)), page.logs.join(' | '));
 
@@ -228,7 +230,7 @@ async function behaviour() {
     const c90 = await counter();
     check('CA-C16 compteur affiché à partir de 90 %', c90 !== null && /90\s*\/\s*100/.test(c90.text), JSON.stringify(c90));
     await page.evaluate(() => { window.__live = 0; const ls = [...Q.host().querySelectorAll('[aria-live]:not([aria-live="off"]), [role="status"]')]; const mo = new MutationObserver((m) => { window.__live += m.length; }); for (const l of ls) mo.observe(l, { childList: true, characterData: true, subtree: true }); });
-    await ta.pressSequentially('y'.repeat(9)); await page.waitForTimeout(300);
+    await ta.pressSequentially('y'.repeat(9)); await rest(page);
     const live = await page.evaluate(() => window.__live);
     check('CA-C16 annonce sans répétition à chaque touche (≤ 2 mises à jour de la zone live pour 9 frappes) et compteur hors zone live', live <= 2 && !(await counter())?.live, `mutations=${live} ${JSON.stringify(await counter())}`);
     await ta.fill('z'.repeat(150));
@@ -254,7 +256,7 @@ async function files() {
     const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), clip.click()]);
     check('CA-C5 clic sur le trombone : sélecteur de fichiers multiple', fc.isMultiple());
     await fc.setFiles([{ name: 'a.png', mimeType: 'image/png', buffer: Buffer.from('1') }, { name: 'b.pdf', mimeType: 'application/pdf', buffer: Buffer.from('2') }, { name: 'x.txt', mimeType: 'text/plain', buffer: Buffer.from('3') }]);
-    await page.waitForTimeout(200);
+    await rest(page);
     check('CA-C5 acceptés par filesAdded', JSON.stringify((await ev(page, 'filesAdded')).at(-1)?.detail?.map((f) => f.name)) === '["a.png","b.pdf"]', JSON.stringify(await ev(page)));
     const rej = JSON.stringify(await ev(page, 'rejected'));
     check('CA-C5 refusés par rejected (raison type, x.txt)', /x\.txt/.test(rej) && /"type"/.test(rej), rej);
@@ -263,12 +265,12 @@ async function files() {
     for (const key of ['Enter', 'Space']) {
       await page.evaluate(() => { const a = Q.attach(); window.__clicks = 0; a.addEventListener('click', (e) => { if (e.isTrusted) window.__clicks += 1; }, { once: true }); a.focus(); });
       await page.waitForFunction(() => document.activeElement === Q.attach());
-      await page.keyboard.press(key === 'Space' ? ' ' : key); await page.waitForTimeout(100);
+      await page.keyboard.press(key === 'Space' ? ' ' : key); await rest(page);
       check(`CA-C5 trombone au clavier (${key}) : le bouton est activé (clic reçu, Entrée non interceptée par l'envoi)`, (await page.evaluate(() => window.__clicks)) === 1);
       await page.evaluate(() => document.querySelector('lc-message-composer input[type="file"]')?.dispatchEvent(new Event('cancel')));
     }
     await reset(page);
-    const pick = async (list) => { const [x] = await Promise.all([page.waitForEvent('filechooser'), clip.click()]); await x.setFiles(list); await page.waitForTimeout(150); };
+    const pick = async (list) => { const [x] = await Promise.all([page.waitForEvent('filechooser'), clip.click()]); await x.setFiles(list); await rest(page); };
     const same = { name: 'same.png', mimeType: 'image/png', buffer: Buffer.from('1') };
     await pick([same]); await pick([same]);
     check('CA-C5 le même fichier rechoisi est repris (entrée remise à vide)', (await ev(page, 'filesAdded')).length === 2, String((await ev(page, 'filesAdded')).length));
@@ -292,9 +294,9 @@ async function files() {
     check('CA-C6 le calque s\'allume en duration-fast (transition d\'opacité)', lit.anims.some((a) => /opacity/.test(a.p) && near(a.d, t.fast, 0.5)), JSON.stringify({ lit, fast: t.fast }));
     const flick = await page.evaluate(async () => { const ta = Q.ta(), ob = Q.attach(); const dt = Q.dt([Q.file('p.png')]); const o = []; Q.fire(ta, 'dragleave', dt, { relatedTarget: ob }); Q.fire(ob, 'dragenter', dt, { relatedTarget: ta }); for (let i = 0; i < 6; i++) { await new Promise((r) => requestAnimationFrame(r)); o.push(Q.overlay().opacity); } return o; });
     check('CA-C6 passer d\'un enfant à un autre ne fait pas clignoter (opacité stable)', flick.every((v) => v > 0.95), JSON.stringify(flick));
-    await page.evaluate(() => { const dt = Q.dt([Q.file('p.png')]); Q.fire(Q.ta(), 'dragleave', dt, { relatedTarget: document.body }); }); await page.waitForTimeout(400);
+    await page.evaluate(() => { const dt = Q.dt([Q.file('p.png')]); Q.fire(Q.ta(), 'dragleave', dt, { relatedTarget: document.body }); }); await rest(page);
     check('CA-C6 sortie du rectangle : calque éteint', (await overlay(page)).off);
-    await page.evaluate(async () => { const dt = Q.dt([Q.file('p.png')]); Q.fire(Q.ta(), 'dragenter', dt); Q.fire(Q.ta(), 'dragover', dt); Q.fire(Q.ta(), 'drop', dt); }); await page.waitForTimeout(400);
+    await page.evaluate(async () => { const dt = Q.dt([Q.file('p.png')]); Q.fire(Q.ta(), 'dragenter', dt); Q.fire(Q.ta(), 'dragover', dt); Q.fire(Q.ta(), 'drop', dt); }); await rest(page);
     check('CA-C6 lâcher : calque éteint, fichier émis par filesAdded', (await overlay(page)).off && (await ev(page, 'filesAdded')).length === 1);
     const txt = await page.evaluate(async () => { const dt = Q.dt([], ['du texte']); Q.fire(Q.ta(), 'dragenter', dt); const p = Q.fire(Q.ta(), 'dragover', dt); await Q.raf(); return { p, on: Q.overlay().on }; });
     check('CA-C6 glisser sans fichier : rien n\'est éclairé, dragover non annulé', !txt.p && !txt.on, JSON.stringify(txt));
@@ -310,21 +312,21 @@ async function files() {
     // CA-C7 : vignettes.
     await reset(page);
     const items = [item('p', 'photo.png', 'done', { previewUrl: PNG }), item('u', 'up.pdf', 'uploading', { progress: 62 }), item('e', 'bad.pdf', 'error', { errorMessage: 'Réseau' })];
-    await patch(page, { items }); await page.waitForTimeout(500);
+    await patch(page, { items }); await rest(page);
     const v = await page.evaluate(() => { const th = Q.thumbs(); return { n: th.length, img: !!th[0]?.querySelector('img'), icon1: !!th[1]?.querySelector('svg, lc-icon'), pb: th[1]?.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow'), name: th.map((x) => x.textContent.includes(['photo.png', 'up.pdf', 'bad.pdf'][th.indexOf(x)])), fail: /Échec/.test(th[2]?.textContent ?? ''), retry: !!Q.btn(/^Réessayer/), rm: !!Q.btn(/^Retirer photo\.png$/), listName: !!document.querySelector('[role="list"][aria-label="Pièces jointes"], [role="list"][aria-labelledby]') }; });
     check('CA-C7 trois vignettes (liste « Pièces jointes »), aperçu <img>, noms affichés', v.n === 3 && v.img && v.name.every(Boolean) && v.listName, JSON.stringify(v));
     check('CA-C7 uploading : progressbar à 62 ; error : « Échec » et Réessayer ; ✕ nommé « Retirer photo.png »', v.pb === '62' && v.fail && v.retry && v.rm, JSON.stringify(v));
     await page.evaluate(() => Q.btn(/^Réessayer/).click()); await page.evaluate(() => Q.btn(/^Retirer photo\.png$/).click());
     check('CA-C7 Réessayer => retry(id) ; ✕ => remove(id)', (await ev(page, 'retry'))[0]?.detail === 'e' && (await ev(page, 'remove'))[0]?.detail === 'p', JSON.stringify(await ev(page)));
-    await reset(page); await patch(page, { items: [item('a', 'a.png')] }); await page.waitForTimeout(500);
+    await reset(page); await patch(page, { items: [item('a', 'a.png')] }); await rest(page);
     await page.evaluate(() => { window.__before = Q.thumbs().length; });
     await patch(page, { items: [item('a', 'a.png'), item('n', 'new.png')] });
     const ent = await page.evaluate(() => { const li = Q.thumbs()[1]; const normal = Q.ms('--lc-sys-duration-normal'); const out = []; for (const a of li.getAnimations({ subtree: true })) { const tg = a.effect.target; const t = a.effect.getComputedTiming(); a.pause(); a.currentTime = 0; const cs = getComputedStyle(tg); out.push({ p: a.transitionProperty ?? a.animationName, d: t.duration, op: cs.opacity, sc: new DOMMatrix(cs.transform).a }); a.cancel?.(); } return { out, normal }; });
     check('CA-C7 nouvelle vignette : fondu et 0,96 → 1 en duration-normal', ent.out.some((x) => x.op === '0' && near(x.d, ent.normal, 0.5)) && ent.out.some((x) => near(x.sc, 0.96, 0.005) && near(x.d, ent.normal, 0.5)), JSON.stringify(ent));
-    await reset(page); await patch(page, { items: [item('a', 'a.png'), item('b', 'b.png')] }); await page.waitForTimeout(500);
-    await page.evaluate(() => Q.btn(/^Retirer a\.png$/).click()); await patch(page, { items: [item('b', 'b.png')] }); await page.waitForTimeout(300);
+    await reset(page); await patch(page, { items: [item('a', 'a.png'), item('b', 'b.png')] }); await rest(page);
+    await page.evaluate(() => Q.btn(/^Retirer a\.png$/).click()); await patch(page, { items: [item('b', 'b.png')] }); await rest(page);
     check('CA-C7 après retrait : le focus va à la vignette suivante', await page.evaluate(() => Q.thumbs()[0]?.contains(document.activeElement)), await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 80)));
-    await page.evaluate(() => Q.btn(/^Retirer b\.png$/).click()); await patch(page, { items: [] }); await page.waitForTimeout(300);
+    await page.evaluate(() => Q.btn(/^Retirer b\.png$/).click()); await patch(page, { items: [] }); await rest(page);
     check('CA-C7 après retrait de la dernière : le focus va au champ', (await focused(page)) === 'textarea');
 
     });
@@ -341,10 +343,10 @@ async function files() {
     check('CA-C8 le message est sous le rectangle', below);
     const gone = [];
     for (const how of ['saisie', 'ajout', 'retrait']) {
-      await reset(page); await patch(page, { items: [item('a', 'a.png')] }); await dropFiles(page, [{ name: 'x.txt', type: 'text/plain' }]); await page.waitForTimeout(200);
+      await reset(page); await patch(page, { items: [item('a', 'a.png')] }); await dropFiles(page, [{ name: 'x.txt', type: 'text/plain' }]); await rest(page);
       const there = await page.evaluate(() => !!Q.alert()?.textContent.trim());
       if (how === 'saisie') await page.locator(TA).pressSequentially('a'); else if (how === 'ajout') await dropFiles(page, [{ name: 'ok.png' }]); else await page.evaluate(() => Q.btn(/^Retirer a\.png$/).click());
-      await page.waitForTimeout(300); gone.push([how, there, !(await page.evaluate(() => !!Q.alert()?.textContent.trim()))]);
+      await rest(page); gone.push([how, there, !(await page.evaluate(() => !!Q.alert()?.textContent.trim()))]);
     }
     check('CA-C8 le message disparaît à la saisie, à l\'ajout et au retrait', gone.every(([, a, b]) => a && b), JSON.stringify(gone));
 
@@ -354,7 +356,7 @@ async function files() {
     // CA-C15 : éléments ignorés.
     await reset(page);
     const ign = await page.evaluate(async () => { const dt = Q.dt([Q.file('dossier', { type: '', size: 0 }), Q.file('vide.png', { size: 0 })], ['texte']); const ta = Q.ta(); Q.fire(ta, 'dragenter', dt); await Q.raf(); Q.fire(ta, 'drop', dt); await Q.settle(); return { on: Q.overlay().on, ev: Q.events().map((e) => e.type) }; });
-    await page.waitForTimeout(300);
+    await rest(page);
     check('CA-C15 dossier, élément non fichier, fichier de 0 octet : ignorés (aucun événement), calque non coincé, aucune exception', JSON.stringify(ign.ev) === '[]' && (await overlay(page)).off && page.errors.length === 0, JSON.stringify({ ign, errors: page.errors }));
     await dropFiles(page, [{ name: 'vide.png', size: 0 }, { name: 'ok.png' }]);
     check('CA-C15 lot mixte : seul le fichier non vide est ajouté, sans refus', JSON.stringify((await ev(page, 'filesAdded')).map((e) => e.detail.map((f) => f.name))) === '[["ok.png"]]' && (await ev(page, 'rejected')).length === 0, JSON.stringify(await ev(page)));
@@ -381,7 +383,7 @@ async function files() {
     const out = await page.evaluate(() => { const dt = Q.dt([Q.file('p.png')]); const after = document.querySelector('#qa-after'); const o = { over: Q.fire(after, 'dragover', dt), drop: Q.fire(after, 'drop', dt), body: Q.fire(document.body, 'dragover', dt) }; const tx = Q.dt([], ['lien ou texte']); o.txtOver = Q.fire(after, 'dragover', tx); o.txtDrop = Q.fire(after, 'drop', tx); return o; });
     check('CA-C17 fichier lâché hors du rectangle : dragover et drop annulés (le navigateur n\'ouvre pas), rien ajouté', out.over && out.drop && out.body && (await ev(page)).length === 0, JSON.stringify(out));
     check('CA-C17 texte ou lien glissé ailleurs : non bloqué', !out.txtOver && !out.txtDrop, JSON.stringify(out));
-    await page.evaluate(() => __composer.destroy()); await page.waitForTimeout(300);
+    await page.evaluate(() => __composer.destroy()); await rest(page);
     const dead = await page.evaluate(() => { const dt = Q.dt([Q.file('p.png')]); return { over: Q.fire(document.body, 'dragover', dt), drop: Q.fire(document.body, 'drop', dt) }; });
     check('CA-C17 composant détruit : les écouteurs du document sont retirés (ils annulaient avant)', out.over && !dead.over && !dead.drop, JSON.stringify(dead));
     });
@@ -393,18 +395,18 @@ async function files() {
   await withCtx('deskClip', async (c) => {
     const page = await open(c); const ta = page.locator(TA); await ta.click();
     await page.evaluate(async () => { await navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob(['texte brut'], { type: 'text/plain' }), 'text/html': new Blob(['<b>gras</b> <img src=x onerror=alert(1)>'], { type: 'text/html' }) })]); });
-    await page.keyboard.press('Control+V'); await page.waitForTimeout(200);
+    await page.keyboard.press('Control+V'); await rest(page);
     check('CA-C18 collage de texte et d\'HTML : seul le texte brut est inséré, aucune pièce jointe', (await ta.inputValue()) === 'texte brut' && (await ev(page)).length === 0 && !(await page.evaluate(() => window.__alerted)), `${await ta.inputValue()} ${JSON.stringify(await ev(page))}`);
     await reset(page); await ta.click();
     await page.evaluate(async (png) => { const b = await (await fetch(png)).blob(); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); }, PNG);
-    await page.keyboard.press('Control+V'); await page.waitForTimeout(300);
+    await page.keyboard.press('Control+V'); await rest(page);
     check('CA-C18 image collée : filesAdded (accept respecté), aucun texte inséré', (await ev(page, 'filesAdded')).length === 1 && (await ta.inputValue()) === '', JSON.stringify(await ev(page)));
     await reset(page); await ta.click();
     await page.evaluate(async (png) => { const b = await (await fetch(png)).blob(); await navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob(['texte mixte'], { type: 'text/plain' }), 'image/png': b })]); }, PNG);
-    await page.keyboard.press('Control+V'); await page.waitForTimeout(300);
+    await page.keyboard.press('Control+V'); await rest(page);
     check('CA-C18 collage mixte (texte et image) : texte natif inséré, aucune pièce jointe', (await ta.inputValue()) === 'texte mixte' && (await ev(page, 'filesAdded')).length === 0 && (await ev(page, 'rejected')).length === 0, `${await ta.inputValue()} ${JSON.stringify(await ev(page))}`);
     const paste = (files) => page.evaluate((fs) => { const dt = Q.dt(fs.map((f) => Q.file(f.name, f))); const e = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }); Q.ta().dispatchEvent(e); return e.defaultPrevented; }, files);
-    await reset(page); await paste([{ name: 'x.txt', type: 'text/plain' }]); const shook = await page.evaluate(async () => { await Q.raf(); return Q.host().getAnimations({ subtree: true }).some((a) => /transform|shake/i.test(a.transitionProperty ?? a.animationName ?? '')); }); await page.waitForTimeout(200);
+    await reset(page); await paste([{ name: 'x.txt', type: 'text/plain' }]); const shook = await page.evaluate(async () => { await Q.raf(); return Q.host().getAnimations({ subtree: true }).some((a) => /transform|shake/i.test(a.transitionProperty ?? a.animationName ?? '')); }); await rest(page);
     check('CA-C18 fichier collé refusé : rejected, message en role=alert, secousse, aucun texte', (await ev(page, 'rejected')).length === 1 && (await page.evaluate(() => !!Q.alert()?.textContent.includes('x.txt'))) && (await ta.inputValue()) === '' && shook, JSON.stringify({ shook, ev: await ev(page) }));
     for (const [what, p] of [['attachments faux', { attachments: false }], ['disabled', { disabled: true }]]) { await reset(page); await patch(page, p); await paste([{ name: 'p.png' }]); const none = (await ev(page, 'filesAdded')).length === 0 && (await ev(page, 'rejected')).length === 0; await reset(page); await paste([{ name: 'p.png' }]); check(`CA-C18 ${what} : aucun fichier ajouté (le même collage est pris en compte une fois le composant actif)`, none && (await ev(page, 'filesAdded')).length === 1, JSON.stringify({ none, après: await ev(page) })); }
     await page.close();
@@ -415,11 +417,11 @@ async function files() {
     const page = await open(c);
     await sec('CA-S1', async () => {
     const XSS = ['<img src=x onerror=alert(1)>.png', '<script>alert(1)</script>.pdf'];
-    await patch(page, { items: XSS.map((n, i) => item(`x${i}`, n)) }); await page.waitForTimeout(400);
+    await patch(page, { items: XSS.map((n, i) => item(`x${i}`, n)) }); await rest(page);
     const s1 = await page.evaluate((names) => { const h = Q.host(); return { nodes: h.querySelectorAll('img, script, iframe, svg script').length, bad: !!h.querySelector('[onerror]'), texts: Q.thumbs().map((t, i) => t.textContent.includes(names[i])), btn: names.map((n) => !!Q.btn(new RegExp('^Retirer ' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'))), alerted: window.__alerted, bdi: Q.thumbs().every((t) => !!t.querySelector('bdi')) }; }, XSS);
     check('CA-S1 nom HTML : affiché littéralement (texte), aucun nœud img/script/[onerror], rien d\'exécuté', s1.texts.length === 2 && s1.nodes === 0 && !s1.bad && s1.texts.every(Boolean) && !s1.alerted, JSON.stringify(s1));
     check('CA-S1 nom accessible du ✕ littéral', s1.btn.length === 2 && s1.btn.every(Boolean), JSON.stringify(s1));
-    await dropFiles(page, [{ name: '<img src=x onerror=alert(1)>.exe', type: 'application/x-msdownload' }]); await page.waitForTimeout(300);
+    await dropFiles(page, [{ name: '<img src=x onerror=alert(1)>.exe', type: 'application/x-msdownload' }]); await rest(page);
     const s1b = await page.evaluate(() => { const a = Q.alert(); return { text: a?.textContent.includes('<img src=x onerror=alert(1)>'), kids: a?.querySelectorAll('img, script').length, alerted: window.__alerted }; });
     check('CA-S1 message de refus : nom littéral, aucun nœud HTML', s1b.text && s1b.kids === 0 && !s1b.alerted, JSON.stringify(s1b));
     });
@@ -427,11 +429,11 @@ async function files() {
     await sec('CA-S2', async () => {
     // S2.
     await reset(page); const LONG = `${'a'.repeat(296)}.png`;
-    await patch(page, { items: [item('l', LONG)] }); await page.waitForTimeout(400);
+    await patch(page, { items: [item('l', LONG)] }); await rest(page);
     const s2 = await page.evaluate((n) => { const th = Q.thumbs()[0]; const e = [...th.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.includes('aaaa')); const cs = getComputedStyle(e); const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.3; const lab = [...Q.host().querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')); return { h: e.getBoundingClientRect().height, lh, scroll: document.documentElement.scrollWidth <= innerWidth, tw: th.getBoundingClientRect().right <= innerWidth + 0.5, ell: cs.textOverflow, maxLab: Math.max(0, ...lab.map((l) => l.length)), run: lab.some((l) => /a{81,}/.test(l)) }; }, LONG);
     check('CA-S2 nom de 300 caractères : une ligne coupée, pas de défilement horizontal, vignette dans l\'écran à 360 px', s2.h < 2 * s2.lh && s2.scroll && s2.tw, JSON.stringify(s2));
     check('CA-S2 nom accessible plafonné à 80 caractères de nom (+ préfixe)', s2.maxLab > 0 && !s2.run && s2.maxLab <= 80 + 'Retirer '.length + 1, JSON.stringify(s2));
-    await reset(page); await dropFiles(page, [{ name: LONG }]); await page.waitForTimeout(300);
+    await reset(page); await dropFiles(page, [{ name: LONG }]); await rest(page);
     const live = await page.evaluate(() => [...document.querySelectorAll('[aria-live], [role="status"], [role="alert"]')].map((e) => e.textContent).some((t) => /a{81,}/.test(t)));
     check('CA-S2 File.name émis inchangé (300 caractères) ; annonces plafonnées', (await ev(page, 'filesAdded'))[0]?.detail[0].name === LONG && !live, JSON.stringify({ live }));
     });
@@ -439,7 +441,7 @@ async function files() {
     await sec('CA-S3', async () => {
     // S3.
     await reset(page); const BIDI = 'facture‮fdp.exe', CTRL = 'a\u0007b‏c.pdf';
-    await patch(page, { items: [item('b', BIDI), item('c', CTRL)] }); await page.waitForTimeout(400);
+    await patch(page, { items: [item('b', BIDI), item('c', CTRL)] }); await rest(page);
     const s3 = await page.evaluate(() => { const bad = /[\u0000-\u001F\u007F-\u009F‎‏‪-‮⁦-⁩]/; const th = Q.thumbs(); const txt = th.map((t) => t.textContent); const lab = [...Q.host().querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')); return { badText: txt.some((t) => bad.test(t)), badLab: lab.some((l) => bad.test(l)), shown: txt.map((t) => t.includes('facturefdp.exe') || t.includes('abc.pdf')), bdi: th.every((t) => !!t.querySelector('bdi')), bdiTxt: th.map((t) => t.querySelector('bdi')?.textContent) }; });
     check('CA-S3 caractères de contrôle et marqueurs bidi retirés de l\'affichage et du nom accessible', !s3.badText && !s3.badLab && s3.shown.length === 2 && s3.shown.every(Boolean), JSON.stringify(s3));
     check('CA-S3 nom isolé dans <bdi> (facture‮fdp.exe ne s\'inverse pas)', s3.bdi && s3.bdiTxt[0] === 'facturefdp.exe', JSON.stringify(s3));
@@ -454,7 +456,7 @@ async function files() {
     const blob = await page.evaluate(async (png) => URL.createObjectURL(await (await fetch(png)).blob()), PNG);
     const bad = ['javascript:window.__alerted=true', 'data:text/html,<script>window.__alerted=true</script>', 'https://evil.example/x.png', 'http://evil.example/y.png'];
     const good = [blob, PNG, `${base}/favicon.svg`, '/favicon.svg'];
-    await patch(page, { items: [...bad, ...good].map((u, i) => item(`s${i}`, `f${i}.png`, 'done', { previewUrl: u })) }); await page.waitForTimeout(600);
+    await patch(page, { items: [...bad, ...good].map((u, i) => item(`s${i}`, `f${i}.png`, 'done', { previewUrl: u })) }); await rest(page);
     const s4 = await page.evaluate(() => Q.thumbs().map((t) => ({ img: t.querySelector('img')?.getAttribute('src') ?? null, icon: !!t.querySelector('svg, lc-icon') })));
     check('CA-S4 javascript:, data:text/html, http(s) d\'une autre origine : pas d\'<img>, icône de repli, aucun script, aucune requête vers le tiers', s4.length === 8 && s4.slice(0, 4).every((x) => x.img === null && x.icon) && !(await page.evaluate(() => window.__alerted)) && reqs.length === 0, JSON.stringify({ s4: s4.slice(0, 4), reqs }));
     check('CA-S4 blob:, data:image/, même origine : affichés par <img>', s4.length === 8 && s4.slice(4).every((x) => x.img !== null), JSON.stringify(s4.slice(4)));
@@ -463,13 +465,13 @@ async function files() {
     // S6 : documentation (le type déclaré n'est pas un contrôle) et silence console.
     await reset(page); await patch(page, { accept: '.pdf' }); await dropFiles(page, [{ name: 'facture.pdf', type: '' }, { name: 'facture.pdf', type: 'application/x-msdownload' }]);
     check('CA-S6 (documentation) : un exécutable renommé facture.pdf (type vide ou application/x-msdownload) avec accept=".pdf" est accepté', (await ev(page, 'filesAdded'))[0]?.detail.length === 2 && (await ev(page, 'rejected')).length === 0, JSON.stringify(await ev(page)));
-    await reset(page); await page.locator(TA).fill('SECRET-TEXTE-QA'); await dropFiles(page, [{ name: 'SECRET-NOM-QA.png' }, { name: 'SECRET-REFUS-QA.txt', type: 'text/plain' }]); await clickSend(page); await page.waitForTimeout(300);
+    await reset(page); await page.locator(TA).fill('SECRET-TEXTE-QA'); await dropFiles(page, [{ name: 'SECRET-NOM-QA.png' }, { name: 'SECRET-REFUS-QA.txt', type: 'text/plain' }]); await clickSend(page); await rest(page);
     check('CA-S6 aucun nom de fichier ni texte saisi dans la console', !page.logs.some((l) => /SECRET-(TEXTE|NOM|REFUS)-QA/.test(l)), page.logs.filter((l) => /SECRET/.test(l)).join(' | '));
     await page.close();
   });
 
   await withCtx('deskReduced', async (c) => {
-    const page = await open(c); await dropFiles(page, [{ name: 'x.txt', type: 'text/plain' }]); await page.waitForTimeout(300);
+    const page = await open(c); await dropFiles(page, [{ name: 'x.txt', type: 'text/plain' }]); await rest(page);
     const r = await page.evaluate(() => ({ red: Q.reduced(Q.host().parentElement), msg: !!Q.alert()?.textContent.includes('x.txt') }));
     check('CA-C8 réduction des animations : durée nulle (getAnimations), message affiché', r.red && r.msg, JSON.stringify(r));
     await page.close();
@@ -481,7 +483,7 @@ async function style() {
   await withCtx('desk', async (c) => {
     const page = await open(c);
     const R = () => page.evaluate(() => { const r = Q.rect(); const cs = getComputedStyle(r); const ic = (b) => getComputedStyle(b).color; return { bs: cs.borderTopStyle, bw: cs.borderTopWidth, bc: cs.borderTopColor, bg: cs.backgroundColor, att: ic(Q.attach()), send: ic(Q.send()), svg: Q.send().innerHTML, tp: cs.transitionProperty, td: cs.transitionDuration }; });
-    const a = await R(); await patch(page, { note: true }); await page.waitForTimeout(600); const b = await R();
+    const a = await R(); await patch(page, { note: true }); await rest(page); const b = await R();
     const exp = await page.evaluate(() => ({ w: Q.px('--lc-sys-border-width-thick'), warn: Q.probe('color:var(--lc-sys-color-warning)', 'color'), bg: Q.probe('background:var(--lc-sys-color-warning-container)', 'backgroundColor') }));
     check('CA-C10 classe d\'application : bordure en pointillés, épaisseur, couleur et fond redéfinis par les quatre tokens seulement', a.bs === 'solid' && b.bs === 'dashed' && near(parseFloat(b.bw), exp.w, 0.1) && b.bc === exp.warn && b.bg === exp.bg && a.bg !== b.bg, JSON.stringify({ a, b, exp }));
     check('CA-C10 le trombone, l\'envoi (icône et couleur principale) ne changent pas', a.att === b.att && a.send === b.send && a.svg === b.svg, JSON.stringify({ a: [a.att, a.send], b: [b.att, b.send] }));
@@ -493,7 +495,7 @@ async function style() {
     await page.close();
   });
   await withCtx('deskReduced', async (c) => {
-    const page = await open(c); await patch(page, { note: true }); await page.waitForTimeout(100);
+    const page = await open(c); await patch(page, { note: true }); await rest(page);
     const r = await page.evaluate(() => ({ red: Q.reduced(Q.host()), td: getComputedStyle(Q.rect()).transitionDuration }));
     check('CA-C10 réduction des animations : transitions du rectangle supprimées', r.red && r.td.split(',').every((v) => parseFloat(v) * (v.trim().endsWith('ms') ? 1 : 1000) <= 0.01), JSON.stringify(r));
     await page.close();
@@ -517,7 +519,7 @@ async function axe() {
   for (const [w, h] of [[360, 740], [1280, 800]]) for (const theme of ['default', 'dark']) for (const [name, make] of Object.entries(STATES)) {
     const c = await browser.newContext({ viewport: { width: w, height: h } });
     try {
-      const page = await open(c, STORY, theme); await make(page); await page.evaluate(() => window.Q.settle()); await page.waitForTimeout(400);
+      const page = await open(c, STORY, theme); await make(page); await page.evaluate(() => window.Q.settle()); await rest(page);
       await page.addScriptTag({ content: axeSource });
       const res = await page.evaluate(async () => { const run = await window.axe.run(document.querySelector('#storybook-root'), { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] }, resultTypes: ['violations'] }); return { v: run.violations.map((x) => ({ id: x.id, impact: x.impact, n: x.nodes.length, t: x.nodes[0]?.target?.join(' ') })), scroll: document.documentElement.scrollWidth <= innerWidth }; });
       check(`CA-C12 axe ${w} px ${theme.padEnd(7)} « ${name} »`, res.v.length === 0 && res.scroll && page.errors.length === 0, JSON.stringify({ ...res, errors: page.errors }));
@@ -536,7 +538,7 @@ async function cspMode() {
     await patch(page, { items: [item('p', 'photo.png', 'done', { previewUrl: PNG }), item('u', 'u.pdf', 'uploading', { progress: 30 })] });
     await page.locator(TA).fill(Array(10).fill('ligne').join('\n'));
     await page.evaluate(async () => { const dt = Q.dt([Q.file('p.png')]); Q.fire(Q.ta(), 'dragenter', dt); await Q.raf(); Q.fire(Q.ta(), 'dragleave', dt, { relatedTarget: document.body }); await Q.settle(); });
-    await page.waitForTimeout(800);
+    await rest(page);
     check('CA-S5 précondition : les deux vignettes (aperçu data:image/ compris) sont rendues sous la CSP', (await page.evaluate(() => Q.thumbs().length)) === 2);
     const all = await page.evaluate(() => window.__csp); const fresh = all.slice(mark);
     const style = all.filter((v) => /^(img-src|script-src-attr|connect-src|default-src)|\|composant$/.test(v)); // image, réseau, ou tout élément du composant (attribut style compris)

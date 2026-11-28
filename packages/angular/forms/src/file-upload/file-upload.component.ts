@@ -17,7 +17,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { LC_LABELS, LcButtonComponent, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcButtonComponent, LcFillDirective, LcFormatService, LcIconComponent, joinIds, lcUniqueId } from '@lionelcointot/ui-angular';
 import { fileSizeText } from '../shared/file-display';
 import { dragHasFiles, dragLeftZone, filterFiles, type LcFileRefusal, type LcFileRejectionReason } from '../shared/file-filter';
 import { LC_FORM_FIELD, LC_FORM_FIELD_CONTROL, LcFormFieldControl } from '../form-field/form-field-control';
@@ -77,7 +77,7 @@ interface RowView {
  */
 @Component({
   selector: 'lc-file-upload',
-  imports: [LcButtonComponent, LcIconComponent],
+  imports: [LcButtonComponent, LcFillDirective, LcIconComponent],
   template: `
     <div class="lc-file-upload__zone" [class.lc-file-upload__zone--active]="dragging()"
       (dragenter)="onDrag($event)" (dragover)="onDrag($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
@@ -120,7 +120,7 @@ interface RowView {
                 <div class="lc-file-upload__bar" [class.lc-file-upload__bar--indeterminate]="row.progress === null"
                   role="progressbar" aria-valuemin="0" aria-valuemax="100"
                   [attr.aria-valuenow]="row.progress" [attr.aria-label]="row.progressLabel">
-                  <span class="lc-file-upload__bar-fill" [style.width.%]="row.progress"></span>
+                  <span class="lc-file-upload__bar-fill" [lcFill]="(row.progress ?? 100) / 100"></span>
                 </div>
               }
               @if (row.item.status === 'error') {

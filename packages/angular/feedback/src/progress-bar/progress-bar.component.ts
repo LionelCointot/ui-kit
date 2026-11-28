@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input } from '@angular/core';
+import { LcFillDirective, lcGaugeArrival } from '@lionelcointot/ui-angular';
 
 /** Barre de progression (`role="progressbar"`) : valeur de 0 à 100, ou `null` pour une progression indéterminée. */
 @Component({
   selector: 'lc-progress-bar',
-  template: '<span class="lc-progress-bar__fill" [style.width.%]="percent() ?? null"></span>',
+  imports: [LcFillDirective],
+  template: '<span class="lc-progress-bar__fill" [lcFill]="(percent() ?? 100) / 100" [lcFillIndex]="rank"></span>',
   styleUrl: './progress-bar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -19,6 +21,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 export class LcProgressBarComponent {
   readonly value = input<number | null>(null);
   readonly label = input<string>();
+  /** Rang d'arrivée parmi les barres sœurs : leur entrée est décalée d'un `--lc-sys-motion-stagger-normal` chacune, sans numérotation. */
+  protected readonly rank = lcGaugeArrival(inject(ElementRef, { skipSelf: true, optional: true })?.nativeElement);
 
   protected readonly percent = computed(() => {
     const value = this.value();

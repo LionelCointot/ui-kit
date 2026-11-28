@@ -1,19 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { LcSpace } from '@lionelcointot/ui-angular';
+import { LcStaggerBatch, type LcSpace } from '@lionelcointot/ui-angular';
 import { LcResponsiveNumber, lcSpaceVar, resolveResponsive } from '../space';
 
 /**
  * Grille de mise en page. Les colonnes s'adaptent à la largeur du **conteneur** (requêtes de conteneur,
  * seuils sm 360, md 768, lg 1024, xl 1280 px) et non à celle de la fenêtre : un module embarqué
- * s'adapte à la place qu'on lui donne.
+ * s'adapte à la place qu'on lui donne. Ses enfants qui entrent (`lc-card`, `lc-kpi-card`, `lcReveal`) arrivent en cascade, sans `lcStagger`.
  */
 @Component({
   selector: 'lc-grid',
   template: '<div class="lc-grid__inner"><ng-content /></div>',
   styleUrl: './grid.component.css',
+  providers: [LcStaggerBatch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-grid',
+    // Cascade de ses enfants (ordre du DOM, rythme des cartes) : même contrat que `lcStagger="cards"`.
+    // Rythme par défaut des enfants : `--lc-reveal-pace` (pas `--lc-stagger-pace`, qui l'emporterait sur le rythme propre de `tilt`, 70 ms).
+    '[style.--lc-reveal-pace]': "'var(--lc-sys-motion-stagger-cards)'",
     '[style.--_gap]': 'gapValue()',
     '[style.--_cols]': 'cols().base',
     '[style.--_cols-sm]': 'cols().sm',

@@ -97,7 +97,7 @@ export const Animation: Story = {
           <button lcButton fillMode="outline" size="small" (click)="next()">Rejouer</button>
           <div aria-hidden="true" style="display:flex;align-items:flex-end;gap:var(--lc-sys-space-3);block-size:10rem;margin-block-start:var(--lc-sys-space-8)">
             @for (bar of bars; track bar.label; let i = $index) {
-              <div style="position:relative;flex:1;max-inline-size:3rem" [style.block-size]="bar.height"
+              <div style="position:relative;flex:1;max-inline-size:3rem;transition:none" [style.block-size]="bar.height"
                 [style.background]="hot() === i ? 'var(--lc-sys-color-on-surface)' : 'var(--lc-sys-color-border-strong)'">
                 @if (hot() === i) {
                   <span style="position:absolute;inset-block-end:100%;inset-inline-start:50%;translate:-50% calc(-1 * var(--lc-sys-space-1));white-space:nowrap;padding:var(--lc-sys-space-1) var(--lc-sys-space-2);border-radius:var(--lc-sys-radius-sm);background:var(--lc-sys-color-on-surface);color:var(--lc-sys-color-surface)">{{ bar.label }}</span>

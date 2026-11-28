@@ -25,7 +25,9 @@ const storybookDir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'story
 const { chromium } = require('playwright');
 
 /** Table `dNN → story id (future), sélecteurs, déclencheur`. `story` : id Storybook attendu (les ids de composants sans story Animation aujourd'hui sont ceux que T3 à T16 doivent créer). */
-const rejouer = (id) => ({ name: 'Rejouer', mode: 'anim', cat: `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")` });
+/** `opts` (mode anim) : `props` = seules propriétés comparées (des deux côtés) ; `keep` = cibles de la story retenues (regex, filtre le bruit des composants voisins : boutons focalisés, autre barre du même stepper) ; `skip` = cibles ignorées des deux côtés ;
+ *  `edges` = bords d'indicateur comparés en progression 0 → 1 (le catalogue anime `left`/`right`, le kit `left`/clip-path/`translate`) ; `relative` = amplitude de translation ramenée à 100 (la hauteur de la feuille diffère). */
+const rejouer = (id, opts) => ({ name: 'Rejouer', mode: 'anim', cat: `[data-replay="${id}"]`, story: `[data-demo="${id}"] >> button:has-text("Rejouer")`, ...opts });
 /** Déclencheur autre que « Rejouer » (quand « Rejouer » ne lance pas le mouvement) : côté story, l'élément porte `data-trigger`. `action` : 'click' (défaut), 'hover', { drag: dx } ou { key }. */
 const acting = (id, name, cat, action = 'click') => ({ name, mode: 'anim', action, cat, story: `[data-demo="${id}"] [data-trigger]` });
 /** `storyRead` : lecture côté story quand le rendu n'est pas celui du catalogue (ECharts, en SVG, anime par sa boucle rAF : ni CSS ni WAAPI) ; les unités diffèrent alors, seules les courbes normalisées se comparent. */
@@ -37,24 +39,30 @@ const DEMOS = {
   d02: ['layout-page--animation', 'lc-page : trait sous le titre'],
   d03: ['data-kpi-card--animation', 'lc-kpi-card : entrée tilt'],
   d05: ['layout-app-shell--animation', 'lc-app-shell : entrée de la barre du haut'],
-  d06: ['data-activity-feed--animation', 'lc-activity-feed, lc-tree-table, lc-description-list : cascade (lcStagger)'],
+  // Le catalogue anime les 28 jours d'un calendrier (4 rangées de 7, un délai par rangée) et 3 repères `.ev` en fin de cascade ; la story anime les 4 lignes d'un fil : `distinct` compare un exemplaire par (délai, durée, courbe, valeurs), `skip` écarte les repères.
+  d06: ['data-activity-feed--animation', 'lc-activity-feed, lc-tree-table, lc-description-list : cascade (lcStagger)', [rejouer('d06', { distinct: true, skip: '^div\\.ev' })]],
   d07: ['data-data-table--animation', 'lc-data-table, lc-table : lignes en cascade ; cascade de lc-activity-feed'],
   d08: ['data-data-table--animation', 'lc-data-table : changement de filtre'],
-  d09: ['feedback-progress-bar--animation', 'lc-progress-bar : lcFill'],
-  d10: ['navigation-tabs--animation', 'lc-tabs, lc-nav-list : indicateur à deux bords'],
-  d13: ['navigation-stepper--animation', 'lc-stepper : barres tracées'],
+  // d09 : le catalogue rejoue la scène du Planner (onglets des jours et note, comparés en d03/d45 et par lcReveal) autour de deux jauges ; la story rejoue trois lc-progress-bar. Seule la forme du remplissage se compare (`shapes`).
+  d09: ['feedback-progress-bar--animation', 'lc-progress-bar : lcFill', [rejouer('d09', { skip: '^(button\\.day|p\\.pl-note)', keep: '\\.lc-fill\\b', shapes: true })]],
+  d10: ['navigation-tabs--animation', 'lc-tabs, lc-nav-list : indicateur à deux bords', [rejouer('d10', { edges: true, keep: 'lc-tabs__indicator' })]],
+  d13: ['navigation-stepper--animation', 'lc-stepper : points de progression en pop', [rejouer('d13', { keep: 'stepper__badge' })]],
   d14: ['data-kpi-card--animation', 'lc-kpi-card : lcCountUp (rAF)', [sampled('d14', 'Rejouer (échantillonné)', '#d14s [data-cu]', 'text')]],
-  d15: ['data-kpi-card--animation', 'lc-kpi-card : aucun effet au survol'],
-  d16: ['data-kpi-card--animation', 'lc-kpi-card : lcFlash'],
+  // d15 : le « Rejouer » du catalogue rejoue un tracé (lcDraw, 1100 ms) dans une carte qui en porte un ; lc-kpi-card n'en a pas (le tracé est comparé en d19, le compteur en d14), la story rejoue l'entrée `tilt`.
+  d15: ['data-kpi-card--animation', 'lc-kpi-card : aucun effet au survol', [catalogueOnly(rejouer('d15'), 'tracé de la carte du catalogue absent de lc-kpi-card (lcDraw : d19)')]],
+  // d16 : « Rejouer » réinsère la carte (entrée `tilt` et sortie des anciennes), puis change la valeur ; seul le flash est celui du catalogue.
+  d16: ['data-kpi-card--animation', 'lc-kpi-card : lcFlash', [rejouer('d16', { keep: 'lc-flash' })]],
   d17: ['feedback-status-badge--animation', 'lc-status-badge : aucun mouvement'],
   d19: ['charts-sparkline--animation', 'lc-chart : sparkline 1 000 ms', [catalogueOnly(rejouer('d19'), 'ECharts : tracé par clipPath en rAF, aucune animation CSS ; couvert par l\'échantillonnage'), sampled('d19', 'Rejouer (échantillonné)', '#d19s path.draw', 'css:stroke-dashoffset', undefined, 'echarts:clip-width')]],
-  d21: ['feedback-progress-bar--animation', 'lc-timeline-bar, barres de lc-file-upload et lc-message-composer : lcFill'],
+  // d21 : le catalogue enchaîne cinq barres en une cascade ; la story en a trois (lc-timeline-bar) + une (lc-file-upload) + une (lc-message-composer, dont la miniature n'est pas un remplissage) qui repartent chacune de 0. Seule la forme du remplissage se compare.
+  d21: ['feedback-progress-bar--animation', 'lc-timeline-bar, barres de lc-file-upload et lc-message-composer : lcFill', [rejouer('d21', { keep: '\\.lc-fill\\b', shapes: true })]],
   d24: ['charts-bar-chart--animation', 'lc-chart : re-calcul 480 ms, décalage 20 ms', [catalogueOnly(rejouer('d24'), 'ECharts : entrée initiale des barres en rAF, aucune animation CSS ni WAAPI ; la story ne rejoue que le re-calcul'), sampled('d24', 'Changer la période (échantillonné)', '#d24svg rect', 'attr:height', '#d24btn', 'echarts:bar-height')]],
   d25: ['overlays-drawer--animation', 'lc-drawer'],
-  d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur'],
+  d26: ['overlays-dialog--animation', 'lc-dialog : ouverture depuis le déclencheur', [rejouer('d26', { keep: '^(cdk-dialog-container|div\\.cdk-overlay-backdrop)' })]],
   d28: ['navigation-menu--animation', 'lc-menu, liste de lc-combobox, calendriers : pop depuis l\'ancrage', [acting('d28', 'Ouvrir le menu', '#d28btn')]], // Rejouer du catalogue ouvre puis referme aussitôt (le clic hors du menu le ferme)
-  d29: ['feedback-toast--animation', 'lc-toast'],
-  d31: ['layout-card--animation', 'lc-card : .lc-lift au survol', [rejouer('d31'), acting('d31', 'Survol de la carte', '#d31s .lift-card', 'hover')]],
+  d29: ['feedback-toast--animation', 'lc-toast', [rejouer('d29', { skip: 'trow', early: true })]], // les lignes `.trow` (FLIP du catalogue) ne sont pas le toast
+  // d31 : le « Rejouer » du catalogue montre un aller-retour de 4 px (700 ms, `out`), sans équivalent dans le site ni dans CA-30 ; la story rejoue la variante `card` de lcReveal (talmo-source.md, cascade de cartes : y 26, échelle 0,985, 800 ms expo.out ; prouvée par CA-40, motion-final-browser.mjs). Le soulèvement réel est comparé au survol.
+  d31: ['layout-card--animation', 'lc-card : .lc-lift au survol', [catalogueOnly(rejouer('d31'), 'aller-retour de 700 ms propre au catalogue ; variante card de lcReveal prouvée par CA-40'), acting('d31', 'Survol de la carte', '#d31s .lift-card', 'hover')]],
   d33: ['data-data-table--animation', 'lc-data-table : suppression, voisines qui glissent', [acting('d33', 'Glisser la barre A (les suivantes suivent)', '#d33a', { drag: 120 })]],
   d36: ['data-data-table--animation', 'lc-data-table : tri, lignes qui glissent', [acting('d36', 'Flèche droite sur la barre', '#d36bar', { key: 'ArrowRight' })]],
   d37: ['buttons-theme-toggle--animation', 'lc-theme-toggle : révélation circulaire'],
@@ -63,20 +71,24 @@ const DEMOS = {
   d42: ['feedback-spinner--animation', 'lc-spinner : valeurs recalées sur les tokens'],
   d44: ['feedback-status-badge--animation', 'lc-status-badge : changement de statut, aucun mouvement'],
   d45: ['navigation-tabs--animation', 'lc-tabs : cascade du panneau à la première ouverture'],
-  d46: ['forms-switch--animation', 'lc-switch : bouton qui glisse'],
-  d48: ['layout-disclosure--animation', 'lc-disclosure, lc-nav-group : ouverture et fermeture'],
+  d46: ['forms-switch--animation', 'lc-switch : bouton qui glisse', [rejouer('d46', { edges: true, props: '^(left|translate)$' })]],
+  // gridTemplateRows : le style calculé est en px et dépend de la hauteur du contenu (68 px pour la story, 31 px pour le catalogue, plancher de 10 px du remplissage), seuls durée, délai et courbe se comparent.
+  d48: ['layout-disclosure--animation', 'lc-disclosure, lc-nav-group : ouverture et fermeture', [rejouer('d48', { timingOnly: '^gridTemplateRows$' })]],
   d50: ['overlays-tooltip--animation', 'lc-tooltip, survol de barre : aucun mouvement'],
-  d51: ['navigation-stepper--animation', 'lc-stepper : pastille courante en pop'],
+  d51: ['navigation-stepper--animation', 'lc-stepper : barres tracées', [rejouer('d51', { keep: 'stepper__fill' })]],
   d53: ['layout-app-shell--animation', 'téléphone : empilement iOS'],
   d54: ['overlays-sheet--animation', 'lc-sheet : feuille auto-hauteur'],
   d55: ['overlays-sheet--animation', 'lc-sheet : feuille à contenu long'],
-  d56: ['overlays-sheet--animation', 'lc-dialog présenté en lc-sheet'],
-  d57: ['layout-app-shell--animation', 'téléphone : barre d\'onglets du bas'],
+  d56: ['overlays-sheet--animation', 'lc-dialog présenté en lc-sheet', [rejouer('d56', { relative: true })]],
+  d57: ['layout-app-shell--animation', 'téléphone : barre d\'onglets du bas', [rejouer('d57', { keep: 'lc-tabbar' })]],
   d59: ['layout-app-shell--animation', 'téléphone : titre de l\'en-tête au défilement'],
-  d60: ['feedback-toast--animation', 'téléphone : lc-toast au-dessus de la barre d\'onglets'],
+  // Le « Rejouer » du catalogue ouvre et ferme le menu (m-pop, ~1,8 s) puis affiche le toast (entrée à ~2,2 s, sortie 3,27 s plus tard) : `quiet` (catalogue seulement) attend la sortie du toast, `skip` écarte le menu, que la story ne joue pas ; `live` : les animations ne restent pas en pause (la fermeture du menu attend la fin de la sienne avant le toast), leurs valeurs sont relevées à l'apparition.
+  d60: ['feedback-toast--animation', 'téléphone : lc-toast au-dessus de la barre d\'onglets', [rejouer('d60', { skip: 'm-pop', quiet: 3600, live: true })]],
   d61: ['forms-date-input--animation', 'calendrier : glissement du changement de mois'],
-  d62: ['forms-segmented-control--animation', 'lc-segmented-control : pastille à deux bords'],
-  d63: ['forms-segmented-control--animation', 'lc-segmented-control à 360 px'],
+  // d62 : `color` ignoré (edges) : le catalogue anime la couleur du texte (300 ms), le kit ne transitionne que l'indicateur (left, width, clip-path), voir segmented-control.component.css
+  d62: ['forms-segmented-control--animation', 'lc-segmented-control : pastille à deux bords', [rejouer('d62', { edges: true })]],
+  // d63 : le « Rejouer » du catalogue rejoue la barre du bas, la feuille et son voile à 390 px (d54 à d57), pas le contrôle segmenté, que la spec ne traite qu'en largeur (pas de débordement à 360 px).
+  d63: ['forms-segmented-control--animation', 'lc-segmented-control à 360 px', [catalogueOnly(rejouer('d63'), 'le catalogue rejoue la barre du bas et la feuille (d54 à d57), le contrôle segmenté n\'a pas de mouvement propre')]],
 };
 const TABLE = Object.fromEntries(Object.entries(DEMOS).map(([id, [story, label, triggers]]) => [id, {
   story, label, viewport: +id.slice(1) >= 53 && +id.slice(1) <= 63 ? 390 : 1280,
@@ -89,13 +101,13 @@ const TABLE = Object.fromEntries(Object.entries(DEMOS).map(([id, [story, label, 
 const startScan = (el) => { window.__fid = { before: new Set(document.getAnimations()), t0: performance.now() }; el?.click(); };
 
 /** Après le déclencheur : relève chaque nouvelle animation à sa première apparition (puis la met en pause à 0), ou échantillonne `sampler` en rAF. */
-const finishScan = async ({ mode, sampler, scope }) => {
+const finishScan = async ({ mode, sampler, scope, quiet, live, early }) => {
   const { before, t0 } = window.__fid;
   const frame = () => new Promise((resolve) => requestAnimationFrame(resolve)); // résout avec l'horodatage de l'image
   const r3 = (n) => Math.round(n * 1000) / 1000;
   const SKIP = new Set(['offset', 'computedOffset', 'easing', 'composite']);
   const FAMILY = new Set(['transform', 'translate', 'scale', 'rotate', 'opacity']);
-  const MIN_MS = 700, QUIET_MS = 1600, MAX_MS = 8000; // 1,6 s de calme : certains « Rejouer » enchaînent (d61 : 300 ms puis 1,4 s ; d63 : 1,2 s)
+  const MIN_MS = 700, QUIET_MS = quiet ?? 1600, MAX_MS = 8000; // 1,6 s de calme : certains « Rejouer » enchaînent (d61 : 300 ms puis 1,4 s ; d63 : 1,2 s)
   let lastNew = performance.now();
 
   if (mode === 'raf') {
@@ -123,25 +135,6 @@ const finishScan = async ({ mode, sampler, scope }) => {
   const kind = (a) => (a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'animation' : 'waapi');
   const describe = (el) => `${el.localName}${el.id ? `#${el.id}` : ''}${typeof el.className === 'string' && el.className.trim() ? `.${el.className.trim().split(/\s+/).join('.')}` : ''}`;
   const rootEl = scope ? document.querySelector(scope) : null;
-  while (performance.now() - t0 < MAX_MS) {
-    for (const a of document.getAnimations()) {
-      if (before.has(a) || seen.has(a) || !a.effect?.target) continue;
-      seen.add(a);
-      const { target, pseudoElement } = a.effect;
-      if (rootEl && !rootEl.contains(target) && !pseudoElement) continue;
-      const timing = a.effect.getComputedTiming();
-      // Une CSSAnimation porte sa courbe sur ses keyframes (animation-timing-function), l'effet reste `linear` : on retient la courbe effective.
-      const frames = a.effect.getKeyframes();
-      const easing = timing.easing === 'linear' && frames[0]?.easing && frames[0].easing !== 'linear' ? frames[0].easing : timing.easing;
-      const keyframes = a.effect.getKeyframes().map((k) => Object.fromEntries(Object.entries(k).filter(([p]) => p !== 'computedOffset').map(([p, v]) => [p, typeof v === 'number' ? r3(v) : String(v)])));
-      const props = [...new Set(keyframes.flatMap((k) => Object.keys(k)))].filter((p) => !SKIP.has(p));
-      recs.push({ a, target, pseudo: pseudoElement ?? '', rec: { type: kind(a), name: a.animationName ?? a.transitionProperty ?? null, target: describe(target) + (pseudoElement ?? ''), seenAtMs: r3(performance.now() - t0), delay: r3(timing.delay), duration: r3(timing.duration), endDelay: r3(timing.endDelay), iterations: timing.iterations, direction: timing.direction, easing, props, keyframes } });
-      a.pause();
-      lastNew = performance.now();
-    }
-    if (performance.now() - t0 > MIN_MS && performance.now() - lastNew > QUIET_MS) break;
-    await frame();
-  }
   const len = (v, ref) => (v.endsWith('%') ? (parseFloat(v) / 100) * ref : parseFloat(v));
   const state = ({ target, pseudo, rec }) => {
     const out = {};
@@ -160,10 +153,40 @@ const finishScan = async ({ mode, sampler, scope }) => {
     for (const p of rec.props) if (!FAMILY.has(p)) out[p] = cs.getPropertyValue(p.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
     return out;
   };
+  while (performance.now() - t0 < MAX_MS) {
+    for (const a of document.getAnimations()) {
+      if (before.has(a) || seen.has(a) || !a.effect?.target) continue;
+      seen.add(a);
+      const { target, pseudoElement } = a.effect;
+      if (rootEl && !rootEl.contains(target) && !pseudoElement) continue;
+      const timing = a.effect.getComputedTiming();
+      // Une CSSAnimation porte sa courbe sur ses keyframes (animation-timing-function), l'effet reste `linear` : on retient la courbe effective.
+      const frames = a.effect.getKeyframes();
+      const easing = timing.easing === 'linear' && frames[0]?.easing && frames[0].easing !== 'linear' ? frames[0].easing : timing.easing;
+      const keyframes = a.effect.getKeyframes().map((k) => Object.fromEntries(Object.entries(k).filter(([p]) => p !== 'computedOffset').map(([p, v]) => [p, typeof v === 'number' ? r3(v) : String(v)])));
+      const props = [...new Set(keyframes.flatMap((k) => Object.keys(k)))].filter((p) => !SKIP.has(p));
+      recs.push({ a, target, pseudo: pseudoElement ?? '', rec: { type: kind(a), name: a.animationName ?? a.transitionProperty ?? null, target: describe(target) + (pseudoElement ?? ''), seenAtMs: r3(performance.now() - t0), delay: r3(timing.delay), duration: r3(timing.duration), endDelay: r3(timing.endDelay), iterations: timing.iterations, direction: timing.direction, easing, props, keyframes } });
+      const resume = a.currentTime;
+      a.pause();
+      const last = recs.at(-1);
+      if (early || live) last.early = [0, 25, 50, 75, 100].map((pct) => { a.currentTime = last.rec.delay + (pct / 100) * last.rec.duration - (pct === 100 ? 0.01 : 0); return state(last); }); a.currentTime = 0; if (live) { a.currentTime = resume; a.play(); last.live = true; } // relevé dès l'apparition (option `early`, d29 et d60 : la sortie du toast est retirée avant la fin du relevé) ; sans l'option, lire le style en cours de route crée des transitions parasites (d31, d45)
+      lastNew = performance.now();
+    }
+    if (performance.now() - t0 > MIN_MS && performance.now() - lastNew > QUIET_MS) break;
+    await frame();
+  }
   for (const entry of recs) entry.rec.values = [];
-  for (const pct of [0, 25, 50, 75, 100]) {
-    for (const { a, rec } of recs) a.currentTime = rec.delay + (pct / 100) * rec.duration - (pct === 100 ? 0.01 : 0);
-    for (const entry of recs) entry.rec.values.push(state(entry));
+  // Deux animations qui touchent les mêmes propriétés de la même cible (sortie puis entrée du toast, d29 et d60) se masqueraient : chacune est relevée seule, l'autre étant placée avant sa phase active.
+  const overlaps = (x, y) => x !== y && x.target === y.target && x.pseudo === y.pseudo && x.rec.props.some((p) => y.rec.props.includes(p));
+  const at = (entry, pct) => { entry.a.currentTime = entry.rec.delay + (pct / 100) * entry.rec.duration - (pct === 100 ? 0.01 : 0); };
+  for (const [index, pct] of [0, 25, 50, 75, 100].entries()) {
+    for (const entry of recs) at(entry, pct);
+    for (const entry of recs) if (!recs.some((other) => overlaps(entry, other))) entry.rec.values.push(entry.target.isConnected && !entry.live || !entry.early ? state(entry) : entry.early[index]);
+    for (const entry of recs.filter((e) => recs.some((other) => overlaps(e, other)))) {
+      for (const other of recs) if (overlaps(entry, other)) { other.a.effect.updateTiming({ fill: 'none' }); other.a.currentTime = -1; } // sans remplissage `backwards`, sinon la 1re image clé de l'autre s'applique encore
+      at(entry, pct);
+      entry.rec.values.push(entry.target.isConnected && !entry.live || !entry.early ? state(entry) : entry.early[index]);
+    }
   }
   return { animations: recs.map((e) => e.rec) };
 };
@@ -188,6 +211,7 @@ const settle = async () => {
 async function measure(browser, url, viewport, entry, trigger, { scope, catalogue }) {
   const context = await browser.newContext({ viewport: { width: viewport, height: 900 }, reducedMotion: 'no-preference' });
   const page = await context.newPage();
+  page.setDefaultTimeout(5000); // un sélecteur absent échoue en 5 s, pas 30
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(url);
@@ -197,7 +221,8 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
   if (!(await page.evaluate(settle))) throw new Error('animations finies encore en cours après 15 s, avant le déclencheur');
   const selector = catalogue ? trigger.cat : trigger.story;
   // d37 : la position du cercle se compare au centre du bouton, pas en px absolus (la mise en page de la story n'est pas celle du catalogue).
-  const toggle = catalogue ? null : await page.locator(`${rootSel} lc-theme-toggle button`).first().boundingBox().catch(() => null);
+  const toggleButton = catalogue ? null : page.locator(`${rootSel} lc-theme-toggle button`).first();
+  const toggle = toggleButton && (await toggleButton.count()) > 0 ? await toggleButton.boundingBox() : null; // seul d37 en a un : pas d'attente à vide
   const sampler = trigger.sampler ? { sel: catalogue ? trigger.sampler.cat : trigger.sampler.story, read: catalogue ? trigger.sampler.read : (trigger.sampler.storyRead ?? trigger.sampler.read) } : null;
   const target = page.locator(selector).first();
   const action = trigger.action ?? 'click';
@@ -215,7 +240,7 @@ async function measure(browser, url, viewport, entry, trigger, { scope, catalogu
       await page.mouse.up();
     }
   }
-  const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null });
+  const result = await page.evaluate(finishScan, { mode: trigger.mode, sampler, scope: catalogue ? scope : null, quiet: catalogue ? trigger.quiet : null, live: trigger.live, early: trigger.early });
   // Survol, glissement, touche : la latence de Playwright n'est pas celle de la démo, l'origine est le premier changement de valeur (2e échantillon : le 1er est la valeur au repos).
   if (result.series && action !== 'click' && result.series.length > 1) { const [origin] = result.series[1]; result.series = result.series.map(([t, v]) => [t - origin, v]); }
   await context.close();
@@ -296,6 +321,30 @@ function iosProgress(expected, got) {
 }
 const r6 = (n) => Math.round(n * 1e6) / 1e6;
 
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+/** Progression 0 → 1 de la première grandeur qui varie parmi les 5 valeurs (bord d'indicateur : `left`, `right`, inset du clip-path, translation X). */
+const progress = (xs) => { const k = xs[0].findIndex((_, j) => xs.some((x) => x[j] !== xs[0][j])); return xs.map((x) => r6(k < 0 ? 0 : (x[k] - xs[0][k]) / (xs[4][k] - xs[0][k] || 1))); };
+/** Mise en forme des deux côtés avant comparaison : bruit retiré, animations sans effet visible retirées (un remplissage 0 → 0), puis `edges` et `relative` du déclencheur. */
+function shape(list, trigger, story) {
+  const [keep, skip, props] = [trigger.keep, trigger.skip, trigger.props].map((r) => r && new RegExp(r));
+  let out = list.filter((a) => a.name !== 'lc-page-entering' && !(skip && skip.test(a.target)) && !(story && keep && !keep.test(a.target)) && !(props && !props.test(a.props[0])) && !a.values.every((v) => same(v, a.values[0])));
+  if (trigger.distinct) out = out.filter((a, i) => out.findIndex((b) => [b.delay, b.duration, b.easing, JSON.stringify(b.values)].join() === [a.delay, a.duration, a.easing, JSON.stringify(a.values)].join()) === i);
+  if (trigger.shapes) { // une seule animation par forme (durée, courbe, progression), sans le délai ni l'amplitude : les cascades de la story et du catalogue n'ont pas la même composition ni les mêmes valeurs finales
+    const unit = (a) => ({ ...a, delay: 0, values: a.values.map((v) => (v.m?.[0] && a.values[4]?.m?.[0] ? { ...v, m: v.m.map((x, i) => (i === 0 ? r6(x / a.values[4].m[0]) : x)) } : v)) });
+    const key = (a) => [a.duration, a.easing, JSON.stringify(a.values.map((v) => v.m?.map((x) => Math.round(x * 10) / 10)))].join();
+    out = out.map(unit).filter((a, i, all) => all.findIndex((b) => key(b) === key(a)) === i);
+  }
+  if (trigger.timingOnly) out = out.map((a) => (new RegExp(trigger.timingOnly).test(a.props[0]) ? { ...a, values: a.values.map(() => ({})) } : a));
+  if (trigger.edges) {
+    out = out.filter((a) => !['width', 'color'].includes(a.props[0])).map((a) => { // width : même bord que `left` ; color : le kit ne l'anime pas sur ces indicateurs
+      const edge = a.props.length === 1 && (/^(left|right|clipPath|--lc-m-pill-[lr])$/.test(a.props[0]) ? a.values.map((v) => numbers(v[a.props[0]])) : a.props[0] === 'translate' ? a.values.map((v) => [v.m[4]]) : null);
+      return edge ? { ...a, props: ['p'], values: progress(edge).map((p) => ({ p: String(p) })) } : a;
+    });
+  }
+  if (trigger.relative) out = out.map((a) => (a.values[0].m?.[5] ? { ...a, values: a.values.map((v) => ({ ...v, m: v.m.map((x, i) => (i === 5 ? r6((x * 100) / a.values[0].m[5]) : x)) })) } : a));
+  return out;
+}
+
 function compareAnimations(expected, got, rows = false) {
   const problems = [];
   got = iosProgress(expected, got);
@@ -325,7 +374,7 @@ function timeAtProgress(raw, fromFirstMove = false) {
   const range = Math.max(...raw.map(([, v]) => v)) - Math.min(...raw.map(([, v]) => v));
   const series = raw.length > 2 && Math.abs(raw[0][1] - raw.at(-1)[1]) <= 0.01 * range ? raw.slice(raw.findIndex(([, v]) => v === Math.min(...raw.map(([, x]) => x)))) : raw; // repart du point le plus bas (la remise à zéro), quel que soit le nombre de lectures avant elle
   const [v0, vN] = [series[0][1], series.at(-1)[1]];
-  const origin = fromFirstMove ? series[1][0] : 0; // d19 : le tracé d'ECharts naît dans Angular, une image après le clic ; on compte depuis le premier mouvement des deux côtés
+  const origin = fromFirstMove ? series[1][0] : 0; // d19, d24 : le tracé d'ECharts naît dans Angular, une image après le clic ; on compte depuis le premier mouvement des deux côtés (pas depuis un seuil de progression : il décalerait selon la pente de la courbe)
   return [25, 50, 75, 100].map((p) => {
     const target = v0 + ((vN - v0) * p) / 100;
     const k = series.findIndex(([, v]) => (vN >= v0 ? v >= target : v <= target));
@@ -335,11 +384,12 @@ function timeAtProgress(raw, fromFirstMove = false) {
   });
 }
 
-function compareSeries(expected, got, unitless, fromFirstMove = false) {
+function compareSeries(expected, got, unitless, fromFirstMove = false, lines = [], text = false) {
   if (got.length < 2) return [`échantillons en rAF : ${got.length} valeur(s) distincte(s)`];
   const [e, g] = [timeAtProgress(expected, fromFirstMove), timeAtProgress(got, fromFirstMove)];
-  console.log(`   rAF, temps à 25/50/75/100 % : story ${g.map((t) => t.toFixed(1)).join(' / ')} ms ; catalogue ${e.map((t) => t.toFixed(1)).join(' / ')} ms ; écart ${g.map((t, i) => (t - e[i]).toFixed(1)).join(' / ')} ms`);
-  const problems = e.flatMap((t, i) => (near(t, g[i], 16.7) ? [] : [`temps à ${[25, 50, 75, 100][i]} % : ${g[i].toFixed(1)} ms attendu ${t.toFixed(1)} ms (±16,7)`]));
+  lines.push(`   rAF, temps à 25/50/75/100 % : story ${g.map((t) => t.toFixed(1)).join(' / ')} ms ; catalogue ${e.map((t) => t.toFixed(1)).join(' / ')} ms ; écart ${g.map((t, i) => (t - e[i]).toFixed(1)).join(' / ')} ms`);
+  // Compteur affiché (`text`) : le dernier chiffre est atteint à l'arrondi près (au plus proche pour le catalogue, 1,04 s ; au dernier instant pour le kit, 1,2 s), le temps à 100 % ne mesure pas la durée ; 25, 50 et 75 % la fixent.
+  const problems = e.flatMap((t, i) => (near(t, g[i], 16.7) || (text && i === 3) ? [] : [`temps à ${[25, 50, 75, 100][i]} % : ${g[i].toFixed(1)} ms attendu ${t.toFixed(1)} ms (±16,7)`]));
   if (!unitless && !near(expected.at(-1)[1], got.at(-1)[1], Math.abs(expected.at(-1)[1] - expected[0][1]) * 0.01)) problems.push(`valeur finale ${got.at(-1)[1]} attendu ${expected.at(-1)[1]}`);
   return problems;
 }
@@ -396,36 +446,47 @@ function circleProblems(expected, got, toggle) {
   return got.length === 1 ? problems : [...problems, `${got.length} animations au lieu de 1 (hors cercle : ${got.filter((a) => a !== g).map((a) => a.target).join(', ')})`];
 }
 
+const POOL = 3; // pages simultanées dans un seul navigateur (4 cœurs)
+
 async function compare(browser, ids, self) {
   const data = JSON.parse(await readFile(fidelityFile, 'utf8'));
   const index = self ? null : JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
   const server = self ? null : await staticServer(storybookDir);
   const base = server?.base;
-  let failures = 0;
-  const report = (ok, label, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
-  for (const id of ids.length ? ids : Object.keys(TABLE)) {
+  const checkOne = async (id) => { // entrée indépendante : renvoie ses lignes de journal et ses échecs
+    const lines = [];
+    let failed = 0;
+    const report = (ok, label, detail = '') => { if (!ok) failed += 1; lines.push(`${ok ? 'OK ' : 'KO '} ${label}${ok ? '' : ` : ${detail}`}`); };
     const entry = data.table[id];
     const fingerprint = data.fingerprints[id];
-    if (!entry) { report(false, `CA-20 ${id}`, 'aucune ligne dans la table'); continue; }
-    if (!fingerprint) { report(false, `CA-20 ${id}`, 'aucune empreinte : lancer --record'); continue; }
-    if (!self && !index.entries[entry.story]) { report(false, `CA-20 ${id} story ${entry.story}`, 'démo citée sans story dans l\'index de Storybook'); continue; }
+    if (!entry) { report(false, `CA-20 ${id}`, 'aucune ligne dans la table'); return { id, lines, failed }; }
+    if (!fingerprint) { report(false, `CA-20 ${id}`, 'aucune empreinte : lancer --record'); return { id, lines, failed }; }
+    if (!self && !index.entries[entry.story]) { report(false, `CA-20 ${id} story ${entry.story}`, 'démo citée sans story dans l\'index de Storybook'); return { id, lines, failed }; }
     for (const [i, trigger] of entry.triggers.entries()) {
       const expected = fingerprint.triggers[i];
       if (!expected) { report(false, `CA-20 ${id} ${trigger.name}`, 'déclencheur sans empreinte'); continue; }
-      if (!self && trigger.notInStory) { console.log(`-- CA-20 ${id} ${trigger.name} non comparable : ${trigger.notInStory}`); continue; }
+      if (!self && trigger.notInStory) { lines.push(`-- CA-20 ${id} ${trigger.name} non comparable : ${trigger.notInStory}`); continue; }
+      const t0 = Date.now();
       try {
         const url = self ? catalogueUrl : `${base}/iframe.html?id=${entry.story}&viewMode=story`;
-        const got = await measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
-        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(expected.animations, got.animations ?? [], id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19');
+        const measureOnce = () => measure(browser, url, entry.viewport, entry, trigger, { scope: entry.catalogue, catalogue: self });
+        const got = await measureOnce().catch((e) => (/Timeout/.test(e.message) ? measureOnce() : Promise.reject(e))); // délai de 5 s dépassé : une seule reprise avant KO
+        const problems = id === 'd37' && !self ? circleProblems(expected.animations, got.animations ?? [], got.toggle) : expected.animations ? compareAnimations(shape(expected.animations, trigger, false), shape(got.animations ?? [], trigger, !self), id === 'd61') : compareSeries(expected.series, got.series ?? [], !self && !!trigger.sampler?.storyRead, id === 'd19' || id === 'd24', lines, trigger.sampler?.read === 'text');
         if (got.errors.length) problems.push(`erreurs page : ${got.errors.join(' | ')}`);
         report(problems.length === 0, `CA-20 ${id} ${entry.story} ${trigger.name}`, problems.slice(0, 6).join(' ; ') + (problems.length > 6 ? ` ; … (${problems.length} écarts)` : ''));
       } catch (error) {
         report(false, `CA-20 ${id} ${entry.story} ${trigger.name}`, error.message.split('\n')[0]);
       }
+      lines.push(`   (${Date.now() - t0} ms)`);
     }
-  }
+    return { id, lines, failed };
+  };
+  const queue = [...(ids.length ? ids : Object.keys(TABLE))];
+  const results = [];
+  await Promise.all(Array.from({ length: Math.min(POOL, queue.length) }, async () => { for (let id; (id = queue.shift());) results.push(await checkOne(id)); }));
+  for (const r of results.sort((a, b) => a.id.localeCompare(b.id))) console.log(r.lines.join('\n'));
   server?.close();
-  return failures;
+  return results.reduce((n, r) => n + r.failed, 0);
 }
 
 const args = process.argv.slice(2);

@@ -2,19 +2,17 @@
 //   node tools/qa/ios-motion-browser.mjs sheet|collapse|chips|overlays|misc|hover|all [...]
 //   sheet : CA-24 (spec 2026-12-mouvement-v2, T9b) + CA-S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 F1 R1 · collapse : H1 H2 H3 H5 R1 · chips : H4 R1 · overlays : O1 O2 O3 R1 · misc : T1 C1 A1 R1 · hover : V1
 // Stories : QA/Overlays/iOS motion (overlay), QA/Motion/Data table, Layout/Disclosure, Navigation/Nav group, etc. Code de sortie 1 au moindre échec.
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(await readFile(f)); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir);
+const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };
@@ -101,7 +99,7 @@ async function sheet() {
   await withCtx('phone', async (c) => {
     const page = await open(c, SHEET_STORY);
     const t = await page.evaluate(() => ({ enter: Q.ms('--lc-sheet-enter-duration'), exit: Q.ms('--lc-sheet-exit-duration'), spring: Q.ms('--lc-sheet-spring-duration'), radius: Q.px('--lc-sheet-top-radius'), ratio: getComputedStyle(document.documentElement).getPropertyValue('--lc-sheet-dismiss-ratio').trim(), enterEase: Q.ease('--lc-sheet-enter-easing'), exitEase: Q.ease('--lc-sheet-exit-easing') }));
-    check('CA-24 jetons : ouverture 600 ms, fermeture 300 ms, ressort 500 ms, coins 24 px', t.enter === 600 && t.exit === 300 && t.spring === 500 && t.radius === 24, JSON.stringify(t));
+    check('CA-24 jetons : ouverture 550 ms, fermeture 300 ms, ressort 500 ms, coins 24 px', t.enter === 550 && t.exit === 300 && t.spring === 500 && t.radius === 24, JSON.stringify(t));
     check('CA-24 le seuil de fermeture est une constante du code : plus de jeton --lc-sheet-dismiss-ratio', t.ratio === '', t.ratio);
     // CA-24 ouverture : durée, courbe et départ mesurés dans le même evaluate que le clic.
     const op = await page.evaluate(async () => { const b = document.querySelector('#qa-open-sheet'); b.focus(); b.click(); await Q.raf(); const d = document.querySelector('lc-sheet dialog'); const s = Q.slide(d); const h = d.getBoundingClientRect().height; const y = Q.ty(d); const r = { s, h, y, bd: Q.anims(d).filter((x) => x.pseudo === '::backdrop').length }; await Q.settle(); return r; });
@@ -209,7 +207,7 @@ async function sheet() {
     const g = await page.evaluate((s) => { const d = document.querySelector(s); const r = d.getBoundingClientRect(); const cs = getComputedStyle(d); return { top: r.top, bottom: r.bottom, h: r.height, tl: parseFloat(cs.borderTopLeftRadius), tr: parseFloat(cs.borderTopRightRadius), bl: parseFloat(cs.borderBottomLeftRadius), tableTop: document.querySelector('.lc-data-table__scroll, lc-data-table').getBoundingClientRect().top }; }, SD);
     check('CA-S1/CA-24 ancrée en bas, hauteur ≤ 92 dvh, coins hauts 24 px (--lc-sheet-top-radius), bas droit', near(g.bottom, e.vh, 1) && g.h <= 0.92 * e.vh + 1 && near(g.tl, t.radius, 0.5) && near(g.tr, t.radius, 0.5) && g.tl === 24 && g.bl === 0, JSON.stringify({ g, t }));
     check('CA-S1 poignée présente ; le tableau reste au-dessus de la feuille', e.hd && g.tableTop < g.top, JSON.stringify({ hd: e.hd, tableTop: g.tableTop, top: g.top }));
-    check('CA-S1/CA-24 entrée : translateY 100 % → 0 en --lc-sheet-enter-duration (600 ms)', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)) && t.enter === 600, JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
+    check('CA-S1/CA-24 entrée : translateY 100 % → 0 en --lc-sheet-enter-duration (550 ms)', near(e.y0, e.h, 1) && e.tr.length > 0 && e.tr.every((d) => near(d, t.enter, 0.5)) && t.enter === 550, JSON.stringify({ y0: e.y0, h: e.h, tr: e.tr, enter: t.enter }));
     check('CA-S1 fond ::backdrop = --lc-sys-color-backdrop, en fondu', e.bg === t.bd && e.bdAnim, JSON.stringify({ bg: e.bg, attendu: t.bd, fondu: e.bdAnim }));
     // CA-S9 à 360 px : « Annuler » en tête de l’en-tête, avant le titre ; sans icône ni aria-label ; autofocus.
     const s9 = await page.evaluate((s) => { const d = document.querySelector(s); const h = d.querySelector('.lc-sheet__header'); const b = h.firstElementChild; const title = h.querySelector('.lc-sheet__title'); return { first: b.matches('button.lc-sheet__close'), text: b.textContent.trim(), icon: !!b.querySelector('svg, lc-icon, img'), label: b.getAttribute('aria-label'), before: !!(b.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING), auto: b.hasAttribute('autofocus'), focused: document.activeElement === b, left: b.getBoundingClientRect().left < title.getBoundingClientRect().left }; }, SD);
@@ -283,7 +281,7 @@ async function sheet() {
 // ---------- hauteurs animées ----------
 const CASES = {
   section: { story: 'qa-motion-data-table--table', ctx: 'phone', pre: async (p) => { await p.click('button[id$="-filters"]'); await p.waitForFunction(() => document.querySelector('lc-sheet dialog')?.open); await p.waitForTimeout(700); }, toggle: 'lc-sheet dialog .lc-data-table__section-toggle', box: 'section', deg: 180 },
-  disclosure: { story: 'layout-disclosure--accordion', ctx: 'desk', toggle: 'lc-disclosure button[aria-expanded]', box: 'lc-disclosure', deg: 90 },
+  disclosure: { story: 'layout-disclosure--accordion', ctx: 'desk', toggle: 'lc-disclosure button[aria-expanded]', box: 'lc-disclosure', deg: 180 },
   'nav-group': { story: 'navigation-nav-group--collapsible', ctx: 'desk', toggle: '.lc-nav-group__toggle', box: 'lc-nav-group', deg: 90 },
 };
 async function collapse() {
@@ -292,43 +290,48 @@ async function collapse() {
       const page = await open(c, k.story); await k.pre?.(page);
       const found = await page.evaluate(async ([ts, bs]) => { const t = [...document.querySelectorAll(ts)].find((x) => x.closest(bs)?.nextElementSibling); if (!t) return false; t.setAttribute('data-qa-t', ''); t.closest(bs).setAttribute('data-qa-c', ''); if (t.getAttribute('aria-expanded') === 'true') { t.click(); await Q.settle(); } return true; }, [k.toggle, k.box]);
       if (!found) { check(`CA-H ${name} : élément dépliable avec voisin`, false, 'introuvable'); return; }
+      // `gap` : écart au voisin et non sa position, car dans une feuille ancrée en bas l'ouverture fait monter le haut de la feuille et le voisin du bas ne bouge pas (case `section`).
       const run = (open) => page.evaluate(async ([isOpen, deg]) => {
-        const t = document.querySelector('[data-qa-t]'); const box = document.querySelector('[data-qa-c]'); const region = document.getElementById(t.getAttribute('aria-controls')); const next = box.nextElementSibling;
-        const dur = Q.ms('--lc-collapse-duration'); const out = { icons: t.querySelectorAll('lc-icon').length, svg0: t.innerHTML };
-        const top0 = next.getBoundingClientRect().top, h0 = region.getBoundingClientRect().height;
+        const t = document.querySelector('[data-qa-t]'); const box = document.querySelector('[data-qa-c]'); const region = document.getElementById(t.getAttribute('aria-controls')); const next = box.nextElementSibling; const gap = () => next.getBoundingClientRect().top - box.getBoundingClientRect().top; // écart au voisin, pas sa position : dans une feuille ancrée en bas, l'ouverture fait monter le haut de la feuille et le voisin du bas ne bouge pas
+        const dur = Q.ms(isOpen ? '--lc-disclosure-enter-duration' : '--lc-disclosure-exit-duration'); const out = { icons: t.querySelectorAll('lc-icon').length, svg0: t.innerHTML, chevDur: Q.ms('--lc-disclosure-chevron-duration'), offset: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-disclosure-offset')) };
+        const body = region.firstElementChild?.firstElementChild; const bodyY = () => { const v = getComputedStyle(body).translate; return v === 'none' ? 0 : parseFloat(v.split(' ')[1] ?? '0'); };
+        const top0 = gap(), h0 = region.getBoundingClientRect().height;
         t.click(); await Q.until(() => (t.getAttribute('aria-expanded') === 'true') === isOpen); await Q.raf();
         out.expanded = t.getAttribute('aria-expanded'); out.inert = region.inert; out.vis = getComputedStyle(region).visibility;
         const all = Q.anims(box);
         const gr = all.filter((x) => x.prop === 'grid-template-rows');
         out.gr = gr.map((x) => ({ d: x.t.duration, e: x.ease })); out.easeTok = Q.ease('--lc-sys-easing-standard');
         out.chev = all.filter((x) => x.prop === 'transform' && t.contains(x.el)).map((x) => x.t.duration); out.dur = dur;
-        const tops = [], hs = [];
-        for (let ms = 0; ms <= dur; ms += 16.7) { Q.at(box, ms); tops.push(next.getBoundingClientRect().top); hs.push(region.getBoundingClientRect().height); }
-        Q.at(box, dur); tops.push(next.getBoundingClientRect().top); hs.push(region.getBoundingClientRect().height);
+        out.body = all.filter((x) => (x.prop === 'opacity' || x.prop === 'translate') && x.el === body).map((x) => ({ p: x.prop, d: x.t.duration, e: x.ease }));
+        const tops = [], hs = []; const step = dur / 24; // pas relatif : le repli ne dure que 100 ms
+        for (let ms = 0; ms <= dur; ms += step) { Q.at(box, ms); tops.push(gap()); hs.push(region.getBoundingClientRect().height); if (ms === 0) { out.body0 = { o: Number(getComputedStyle(body).opacity), y: bodyY() }; } }
+        Q.at(box, dur); tops.push(gap()); hs.push(region.getBoundingClientRect().height); out.bodyEnd = { o: Number(getComputedStyle(body).opacity), y: bodyY() };
         box.getAnimations({ subtree: true }).forEach((a) => a.finish()); await Q.raf();
-        const topEnd = next.getBoundingClientRect().top, hEnd = region.getBoundingClientRect().height;
+        const topEnd = gap(), hEnd = region.getBoundingClientRect().height;
         out.hStart = hs[0]; out.hEnd = hEnd; out.top0 = top0; out.topEnd = topEnd; out.h0 = h0; out.tops = tops;
-        out.visEnd = getComputedStyle(region).visibility; out.regionText = region.innerText.trim().slice(0, 20);
+        out.visEnd = getComputedStyle(region).visibility; out.bodyOpacity = Number(getComputedStyle(body).opacity); out.regionText = region.innerText.trim().slice(0, 20);
         const m = new DOMMatrix(getComputedStyle(t.querySelector('lc-icon, svg')).transform); out.angle = Math.round(Math.abs(Math.atan2(m.b, m.a) * 180 / Math.PI));
         out.svg1 = t.innerHTML; return out;
       }, [open, k.deg]);
       const sameEase = (a, b) => a.startsWith('cubic-bezier') && (a.match(/-?[\d.]+/g) ?? []).every((n, i) => Math.abs(n - (b.match(/-?[\d.]+/g) ?? [])[i]) < 1e-3);
       const mono = (tops, dir, total) => tops.every((v, i) => i === 0 || (dir * (v - tops[i - 1]) >= -0.01 && Math.abs(v - tops[i - 1]) <= 0.25 * total + 0.5));
       const o = await run(true);
-      check(`CA-H1 ${name} ouverture : transition grid-template-rows en --lc-collapse-duration, courbe easing-standard`, o.gr.length > 0 && o.gr.every((x) => near(x.d, o.dur, 0.5) && sameEase(x.e, o.easeTok)), JSON.stringify({ gr: o.gr, dur: o.dur, e: o.easeTok }));
+      check(`CA-H1 ${name} ouverture : transition grid-template-rows en --lc-disclosure-enter-duration (300 ms), courbe easing-standard`, o.gr.length > 0 && o.gr.every((x) => near(x.d, o.dur, 0.5) && sameEase(x.e, o.easeTok)), JSON.stringify({ gr: o.gr, dur: o.dur, e: o.easeTok }));
       const total = o.topEnd - o.top0;
       check(`CA-H1 ${name} ouverture : hauteur 0 → finale (± 1), voisin monotone, ≤ 25 % par pas`, total > 5 && o.hStart <= 1 && near(o.hEnd, total, 1) && mono(o.tops, 1, total), JSON.stringify({ total, hStart: o.hStart, hEnd: o.hEnd, tops: o.tops.map(Math.round) }));
       check(`CA-H2 ${name} ouverture : visible dès la première image, aria-expanded=true, pas inert`, o.vis === 'visible' && o.expanded === 'true' && !o.inert, JSON.stringify({ vis: o.vis, exp: o.expanded, inert: o.inert }));
-      check(`CA-H3 ${name} chevron : transition de même durée, rotation ${k.deg}°, une seule icône`, o.chev.length > 0 && o.chev.every((d) => near(d, o.dur, 0.5)) && o.angle === k.deg && o.icons === 1 && o.svg0 === o.svg1, JSON.stringify({ chev: o.chev, angle: o.angle, icons: o.icons, mêmeIcône: o.svg0 === o.svg1 }));
+      check(`CA-H1 ${name} ouverture : le contenu s'estompe (0 → 1) et glisse de --lc-disclosure-offset (−5 px) à 0 pendant la même durée`, o.body.length === 2 && o.body.every((x) => near(x.d, o.dur, 0.5) && sameEase(x.e, o.easeTok)) && near(o.body0.o, 0, 0.02) && near(o.body0.y, o.offset, 0.5) && near(o.bodyEnd.o, 1, 0.02) && near(o.bodyEnd.y, 0, 0.5), JSON.stringify({ body: o.body, body0: o.body0, bodyEnd: o.bodyEnd, offset: o.offset }));
+      check(`CA-H3 ${name} chevron : transition en --lc-disclosure-chevron-duration (300 ms), rotation ${k.deg}°, une seule icône`, o.chev.length > 0 && o.chev.every((d) => near(d, o.chevDur, 0.5)) && o.angle === k.deg && o.icons === 1 && o.svg0 === o.svg1, JSON.stringify({ chev: o.chev, angle: o.angle, icons: o.icons, mêmeIcône: o.svg0 === o.svg1 }));
       const cl = await run(false);
-      check(`CA-H1 ${name} repli : transition grid-template-rows, hauteur finale → 0, voisin monotone ≤ 25 % par pas`, cl.gr.length > 0 && cl.gr.every((x) => near(x.d, cl.dur, 0.5)) && near(cl.hStart, total, 1) && cl.hEnd <= 1 && mono(cl.tops, -1, total), JSON.stringify({ gr: cl.gr, hStart: cl.hStart, hEnd: cl.hEnd, tops: cl.tops.map(Math.round) }));
-      check(`CA-H2 ${name} repli : inert dès le repli, visibility:hidden après, aria-expanded=false`, cl.inert && cl.visEnd === 'hidden' && cl.expanded === 'false', JSON.stringify({ inert: cl.inert, visEnd: cl.visEnd, exp: cl.expanded }));
+      check(`CA-H1 ${name} repli : transition grid-template-rows en --lc-disclosure-exit-duration (100 ms, plus court que l'ouverture), hauteur finale → 0, voisin monotone ≤ 25 % par pas`, cl.gr.length > 0 && cl.gr.every((x) => near(x.d, cl.dur, 0.5)) && near(cl.hStart, total, 1) && cl.hEnd <= 1 && mono(cl.tops, -1, total), JSON.stringify({ gr: cl.gr, hStart: cl.hStart, hEnd: cl.hEnd, tops: cl.tops.map(Math.round) }));
+      check(`CA-H1 ${name} repli : durée du repli < durée d'ouverture, le contenu s'estompe (1 → 0) et remonte à --lc-disclosure-offset`, cl.dur < o.dur && cl.body.every((x) => near(x.d, cl.dur, 0.5)) && near(cl.body0.o, 1, 0.02) && near(cl.body0.y, 0, 0.5) && near(cl.bodyEnd.o, 0, 0.02) && near(cl.bodyEnd.y, cl.offset, 0.5), JSON.stringify({ dur: cl.dur, enter: o.dur, body: cl.body, body0: cl.body0, bodyEnd: cl.bodyEnd }));
+      check(`CA-H2 ${name} repli : inert dès le repli, contenu masqué après (visibility:hidden ou opacité 0), aria-expanded=false`, cl.inert && (cl.visEnd === 'hidden' || cl.bodyOpacity === 0) && cl.expanded === 'false', JSON.stringify({ inert: cl.inert, visEnd: cl.visEnd, opacité: cl.bodyOpacity, exp: cl.expanded }));
       await page.focus('[data-qa-t]'); let leaked = false;
       for (let i = 0; i < 8; i++) { await page.keyboard.press('Tab'); leaked ||= await page.evaluate(() => document.getElementById(document.querySelector('[data-qa-t]').getAttribute('aria-controls')).contains(document.activeElement)); }
       const snap = await page.locator('[data-qa-c]').ariaSnapshot();
       check(`CA-H2 ${name} replié : Tab n’entre jamais dans la région, absente de l’instantané d’accessibilité`, !leaked && (!cl.regionText || !snap.includes(cl.regionText)), JSON.stringify({ leaked, texte: cl.regionText }));
       // CA-H5 : repli à mi-ouverture.
-      const h5 = await page.evaluate(async () => { const t = document.querySelector('[data-qa-t]'); const box = document.querySelector('[data-qa-c]'); const region = document.getElementById(t.getAttribute('aria-controls')); const dur = Q.ms('--lc-collapse-duration'); t.click(); await Q.until(() => t.getAttribute('aria-expanded') === 'true'); await Q.raf(); Q.at(box, dur / 2); const mid = region.getBoundingClientRect().height; t.click(); await Q.until(() => t.getAttribute('aria-expanded') === 'false'); await Q.raf(); Q.at(box, 0); const start = region.getBoundingClientRect().height; box.getAnimations({ subtree: true }).forEach((a) => a.finish()); await Q.raf(); t.click(); await Q.until(() => t.getAttribute('aria-expanded') === 'true'); box.getAnimations({ subtree: true }).forEach((a) => a.finish()); const full = region.getBoundingClientRect().height; return { mid, start, full }; });
+      const h5 = await page.evaluate(async () => { const t = document.querySelector('[data-qa-t]'); const box = document.querySelector('[data-qa-c]'); const region = document.getElementById(t.getAttribute('aria-controls')); const dur = Q.ms('--lc-disclosure-enter-duration'); t.click(); await Q.until(() => t.getAttribute('aria-expanded') === 'true'); await Q.raf(); Q.at(box, dur / 2); const mid = region.getBoundingClientRect().height; t.click(); await Q.until(() => t.getAttribute('aria-expanded') === 'false'); await Q.raf(); Q.at(box, 0); const start = region.getBoundingClientRect().height; box.getAnimations({ subtree: true }).forEach((a) => a.finish()); await Q.raf(); t.click(); await Q.until(() => t.getAttribute('aria-expanded') === 'true'); box.getAnimations({ subtree: true }).forEach((a) => a.finish()); const full = region.getBoundingClientRect().height; return { mid, start, full }; });
       check(`CA-H5 ${name} : repli à mi-ouverture repart de la hauteur courante (± 5 %)`, h5.mid > 0.05 * h5.full && h5.mid < 0.95 * h5.full && Math.abs(h5.start - h5.mid) <= 0.05 * h5.full, JSON.stringify(h5));
       await page.close();
     });
@@ -370,8 +373,8 @@ async function chips() {
 }
 
 // ---------- tiroir, dialogue, fonds (spec 2026-12-mouvement-v2, §5.4.1, T9a) ----------
-// Valeurs de la spec, en ms : tiroir 550 entrée / 300 sortie, voile 300 / 200 ; dialogue 500 / 150, voile 250 / 150 ; échelle 0,91 à l'entrée, 0,95 à la sortie.
-const OV = { drawer: { enter: 550, exit: 300, bdEnter: 300, bdExit: 200 }, dialog: { enter: 500, exit: 150, bdEnter: 250, bdExit: 150 } };
+// Valeurs de la spec, en ms : tiroir 600 entrée / 320 sortie, voile 300 / 200 ; dialogue 500 / 200, voile 250 / 150 ; échelle 0,86 à l'entrée, 0,94 à la sortie.
+const OV = { drawer: { enter: 600, exit: 320, bdEnter: 300, bdExit: 200 }, dialog: { enter: 500, exit: 200, bdEnter: 250, bdExit: 150 } };
 /** Côté page : relève chaque animation de la surcouche à sa première image, la mesure à 0 et à sa fin (rectangle, opacité), puis la laisse en pause ; `window.__w.stop()` les termine. */
 const WATCH = () => {
   const w = (window.__w = { recs: [], seen: new Set() });
@@ -410,7 +413,7 @@ async function overlays() {
       if (reduced) check(`CA-3 ${kind} et son voile à l'entrée : aucune animation > 0,01 ms ni en cours`, en.recs.every((r) => r.d <= 0.01 && r.delay <= 0.01) && en.running === 0, JSON.stringify(en));
       else {
         if (kind === 'drawer') check(`CA-20 tiroir : entrée par glissement de toute sa largeur en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.dx, r.width, 1.5)), JSON.stringify(en.recs));
-        else check(`CA-20 dialogue : entrée en fondu et échelle 0,91 → 1 en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.ratio, 0.91, 0.005) && r.o0 === '0'), JSON.stringify(en.recs));
+        else check(`CA-20 dialogue : entrée en fondu et échelle 0,86 → 1 en ${V.enter} ms`, panel.length > 0 && panel.every((r) => near(r.d, V.enter) && near(r.ratio, 0.86, 0.005) && r.o0 === '0'), JSON.stringify(en.recs));
         check(`CA-20 voile du ${kind} : ${V.bdEnter} ms à l'entrée`, bd.length > 0 && bd.every((r) => near(r.d, V.bdEnter) && r.o0 === '0' && r.o1 === '1'), JSON.stringify(bd));
       }
       // Sortie par « Valider » : valeur conservée, `closed` à la fin de la sortie.
@@ -424,7 +427,7 @@ async function overlays() {
       const gone = !(await page.locator(pane).count());
       if (reduced) check(`CA-3 ${kind} sortie immédiate, valeur rendue`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && Date.now() - t0 < 1000 + 350 && ex.recs.every((r) => r.d <= 0.01) && ex.running === 0, JSON.stringify({ res, ex }));
       else {
-        const o = kind === 'dialog' ? exitPanel.every((r) => near(r.ratio, 0.95, 0.005) && r.o1 === '0') : exitPanel.every((r) => near(r.dx, r.width, 1.5));
+        const o = kind === 'dialog' ? exitPanel.every((r) => near(r.ratio, 0.94, 0.005) && r.o1 === '0') : exitPanel.every((r) => near(r.dx, r.width, 1.5));
         check(`CA-20 ${kind} : sortie animée ${V.exit} ms (panneau encore dans le DOM), puis quitte le DOM`, ex.there && exitPanel.length > 0 && exitPanel.every((r) => near(r.d, V.exit)) && o && gone, JSON.stringify({ ex: ex.recs, gone }));
         check(`CA-20 voile du ${kind} : ${V.bdExit} ms à la sortie`, exitBd.length > 0 && exitBd.every((r) => near(r.d, V.bdExit) && r.o0 === '1' && r.o1 === '0'), JSON.stringify(exitBd));
         check(`CA-20 ${kind} : closed émis avec la valeur, après la fin de la sortie`, res?.[1] === `valeur-${kind === 'drawer' ? 'tiroir' : 'dialogue'}` && res[2] - t0 >= V.exit - 40, JSON.stringify({ res, elapsed: res?.[2] - t0 }));
@@ -448,12 +451,37 @@ async function overlays() {
 async function misc() {
   await withCtx('desk', async (c) => {
     let page = await open(c, 'navigation-tabs--playground');
-    const r = await page.evaluate(async () => { const tabs = [...document.querySelectorAll('[role="tab"]')]; tabs[1].click(); await Q.until(() => tabs[1].getAttribute('aria-selected') === 'true'); await Q.raf(); const p = document.querySelector('[role="tabpanel"]:not([hidden])'); const a = Q.anims(p).filter((x) => x.prop === 'opacity'); const normal = Q.ms('--lc-sys-duration-normal'); Q.at(p, 0); return { n: a.length, d: a.map((x) => x.t.duration), normal, o: getComputedStyle(p).opacity }; });
-    check('CA-T1 onglets : panneau affiché en fondu de 200 ms (opacité 0 au départ)', r.n > 0 && r.d.every((d) => near(d, r.normal, 0.5)) && r.o === '0', JSON.stringify(r));
+    // D-21 (spec 2026-12-mouvement-v2, CA-21) : plus de fondu de 200 ms du panneau ; les enfants du panneau s'affichent en cascade (`lc-reveal-in`, tokens `reveal.*`, décalage `stagger-normal`) à la première ouverture seulement.
+    const r = await page.evaluate(async () => {
+      const tabs = [...document.querySelectorAll('[role="tab"]')];
+      const panel = () => document.querySelector('[role="tabpanel"]:not([hidden])');
+      const select = async (i) => { tabs[i].click(); await Q.until(() => tabs[i].getAttribute('aria-selected') === 'true'); await Q.raf(); };
+      const cascade = () => { const p = panel(); const a = Q.anims(p).filter((x) => x.prop === 'lc-reveal-in' && x.el.parentElement === p); return { n: a.length, d: a.map((x) => x.t.duration), delay: a.map((x) => x.t.delay).sort((x, y) => x - y), ease: a.map((x) => x.a.effect.getKeyframes()[0].easing), whole: Q.anims(p).filter((x) => x.el === p).length }; };
+      const initial = cascade().n;
+      await select(1);
+      const first = cascade();
+      await Q.settle(); await select(0); await Q.settle(); await select(1);
+      const again = cascade();
+      return { initial, first, again, reveal: Q.ms('--lc-reveal-duration'), ease: Q.ease('--lc-reveal-easing'), stagger: Q.ms('--lc-sys-motion-stagger-normal'), cap: Number(getComputedStyle(document.documentElement).getPropertyValue('--lc-sys-motion-stagger-cap')) };
+    });
+    const sameEase = (a, b) => (a.match(/-?[\d.]+/g) ?? []).length === 4 && (a.match(/-?[\d.]+/g) ?? []).every((n, i) => Math.abs(n - (b.match(/-?[\d.]+/g) ?? [])[i]) < 1e-3);
+    check('CA-T1 onglets : l\'onglet de départ ne joue aucune cascade', r.initial === 0, JSON.stringify(r.initial));
+    check('CA-T1 onglets : première ouverture = cascade des enfants du panneau en --lc-reveal-duration, courbe --lc-reveal-easing, décalage --lc-sys-motion-stagger-normal (plafonné)', r.first.n > 0 && r.first.d.every((d) => near(d, r.reveal, 0.5)) && r.first.ease.every((e) => sameEase(e, r.ease)) && r.first.delay.every((d, i) => near(d - r.first.delay[0], Math.min(i, r.cap) * r.stagger, 0.5)), JSON.stringify({ first: r.first, reveal: r.reveal, ease: r.ease, stagger: r.stagger }));
+    check('CA-T1 onglets : le panneau lui-même ne fond plus (aucune animation de 200 ms sur le panneau)', r.first.whole === 0, JSON.stringify(r.first));
+    check('CA-T1 onglets : un onglet déjà ouvert ne rejoue pas la cascade', r.again.n === 0, JSON.stringify(r.again));
     await page.close();
     page = await open(c, 'qa-calendar-panel-internal--jours');
-    const k = await page.evaluate(async () => { const p = document.querySelector('lc-calendar-panel'); if (!p) return { none: true }; const nxt = p.querySelector('.lc-calendar__nav--next'); nxt.click(); await Q.raf(); const a = Q.anims(p).filter((x) => x.prop === 'opacity' || x.prop?.includes('fade')); const normal = Q.ms('--lc-sys-duration-normal'); return { n: a.length, d: a.map((x) => x.t.duration), normal }; });
-    check('CA-C1 calendrier : grille en fondu de 200 ms au changement de mois', !k.none && k.n > 0 && k.d.every((d) => near(d, k.normal, 0.5)), JSON.stringify(k));
+    // CA-20 d61 (T9c) : glissement du mois au niveau des jours (cellules par ligne, --lc-calendar-slide-duration, --lc-calendar-row-stagger), plus de fondu de 200 ms de la grille.
+    const k = await page.evaluate(async () => {
+      const p = document.querySelector('lc-calendar-panel'); if (!p) return { none: true };
+      const before = new Set(document.getAnimations());
+      p.querySelector('.lc-calendar__nav--next').click(); await Q.raf();
+      const fresh = Q.anims(p).filter((x) => !before.has(x.a));
+      const rowOf = (el) => { const tr = el.closest('tr'); return [...tr.parentElement.children].indexOf(tr); };
+      const cells = fresh.filter((x) => x.el.closest?.('.lc-calendar__grid tbody tr'));
+      return { n: cells.length, rows: cells.map((x) => ({ row: rowOf(x.el), d: x.t.duration, delay: x.t.delay })), whole: fresh.filter((x) => x.el.matches?.('table, .lc-calendar__grid, tbody')).length, slide: Q.ms('--lc-calendar-slide-duration'), stagger: Q.ms('--lc-calendar-row-stagger') };
+    });
+    check('CA-C1 calendrier : changement de mois = glissement des cellules (durée --lc-calendar-slide-duration, décalage --lc-calendar-row-stagger par ligne), sans fondu de la grille entière', !k.none && k.n >= 28 && k.rows.every((x) => near(x.d, k.slide, 0.5) && near(x.delay, x.row * k.stagger, 0.5)) && k.whole === 0, JSON.stringify({ n: k.n, première: k.rows?.[0], whole: k.whole, slide: k.slide, stagger: k.stagger }));
     await page.close();
     page = await open(c, 'layout-app-shell--playground');
     const a = await page.evaluate(async () => { const b = document.querySelector('lc-app-shell button[aria-controls]'); const shell = document.querySelector('lc-app-shell'); b.click(); await Q.raf(); return { d: Q.anims(shell).map((x) => x.t.duration), long: Q.ms('--lc-shell-nav-duration') }; }); // v2 : `duration-long` passe à 600 ms, la barre latérale garde son token propre (350 ms)

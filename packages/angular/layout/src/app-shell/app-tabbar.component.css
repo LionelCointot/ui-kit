@@ -1,0 +1,146 @@
+:host {
+  display: contents;
+}
+
+/* Téléphone seulement : masquée au-dessus par media query (aucun flash au rendu serveur). */
+.lc-tabbar {
+  --_front: var(--lc-tabbar-indicator-front-duration) var(--lc-tabbar-indicator-front-easing);
+  --_back: var(--lc-tabbar-indicator-back-duration) var(--lc-tabbar-indicator-back-easing) var(--lc-tabbar-indicator-back-delay);
+  --_indicator-radius: var(--lc-tabbar-indicator-radius);
+
+  position: fixed;
+  inset-inline: var(--lc-sys-space-3);
+  inset-block-end: calc(var(--lc-sys-space-3) + env(safe-area-inset-bottom));
+  /* Au-dessus de la bande du geste de retour (`.lc-shell__edge`, même couche) : un appui sur la barre n'est jamais pris pour un geste. */
+  z-index: calc(var(--lc-sys-z-sticky) + 1);
+  display: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  box-sizing: border-box;
+  block-size: var(--lc-tabbar-height);
+  padding: var(--lc-sys-space-1);
+  border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
+  border-radius: var(--lc-tabbar-radius, var(--lc-sys-radius-lg));
+  background: var(--lc-tabbar-background, var(--lc-sys-color-surface));
+  box-shadow: var(--lc-sys-shadow-3);
+}
+
+@media (max-width: 767.98px) {
+  .lc-tabbar {
+    display: grid;
+    animation: lc-tabbar-enter var(--lc-tabbar-enter-duration) var(--lc-tabbar-enter-easing) var(--lc-tabbar-enter-delay) backwards;
+  }
+}
+
+.lc-tabbar__tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lc-sys-space-1);
+  min-inline-size: 0;
+  min-block-size: var(--lc-sys-control-height-lg);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lc-tabbar-color, var(--lc-sys-color-on-surface-muted));
+  font: inherit;
+  font-size: var(--lc-sys-font-size-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Deux lignes au plus (« Tableau de bord » à 360 px) : jamais d'ellipse. */
+.lc-tabbar__label {
+  max-inline-size: 100%;
+  max-block-size: 2.3em;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/*
+ * Le texte bascule d'un bloc, jamais en fondu (un fondu passerait par des gris sous 3:1 sur le fond comme sur la pastille) : le composant pose `--under`
+ * sur l'onglet dont le centre d'étiquette est recouvert par la pastille, image par image pendant le glissement.
+ */
+.lc-tabbar__tab--under {
+  color: var(--lc-tabbar-active-color, var(--lc-sys-color-on-primary));
+}
+
+/* Le changement de couleur ci-dessus est instantané : la pastille passe sous le libellé en une image, sans transition de couleur ; sans cette règle, `base.css` (0,01 ms sur `all` sous mouvement réduit) en créerait une par élément. */
+.lc-tabbar__tab,
+.lc-tabbar__tab * {
+  transition: none;
+}
+
+.lc-tabbar__tab:focus-visible {
+  outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
+  outline-offset: calc(var(--lc-sys-focus-ring-width) * -1);
+}
+
+/*
+ * Pastille à deux bords : `left` et `right` (posés par le composant) sont ses deux bords, sans clip-path (la boîte est la zone visible). Le bord avant,
+ * côté de l'onglet d'arrivée, prend la durée « avant », l'autre la durée « arrière » décalée.
+ */
+.lc-tabbar__indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  inset-block: var(--lc-sys-space-1);
+  border-radius: var(--_indicator-radius);
+  background: var(--lc-tabbar-active-background, var(--lc-sys-color-primary));
+  pointer-events: none;
+}
+
+.lc-tabbar__indicator--hidden {
+  opacity: 0;
+}
+
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator {
+  transition:
+    left var(--_back),
+    right var(--_front);
+}
+
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator[data-direction='backward'] {
+  transition:
+    left var(--_front),
+    right var(--_back);
+}
+
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator--instant,
+:host(.lc-app-tabbar--ready) .lc-tabbar__indicator--instant[data-direction='backward'] {
+  transition: none;
+}
+
+/* Mouvement réduit : la barre apparaît et la pastille saute, sans objet animation. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-tabbar {
+    animation: none;
+  }
+
+  :host(.lc-app-tabbar--ready) .lc-tabbar__indicator,
+  :host(.lc-app-tabbar--ready) .lc-tabbar__indicator[data-direction='backward'] {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lc-tabbar {
+    border-color: CanvasText;
+  }
+
+  .lc-tabbar__indicator {
+    display: none;
+  }
+
+  .lc-tabbar__tab[aria-current='page'],
+  .lc-tabbar__tab--active {
+    color: Highlight;
+    text-decoration: underline;
+  }
+}

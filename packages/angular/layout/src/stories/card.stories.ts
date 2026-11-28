@@ -1,7 +1,43 @@
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcGridItemComponent } from '@lionelcointot/ui-angular/layout';
+
+/** Demo of the `Animation` story: cards in an `lc-grid`, then in a hand-made grid (a plain `div`), without any attribute. */
+@Component({
+  selector: 'lc-card-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcButtonComponent, StoryMotionNoticeComponent],
+  styles: `.lc-demo__handmade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--lc-sys-space-4); }`,
+  template: `
+    <lc-story-motion-notice />
+    <section #root data-demo="d31">
+      <h3>lc-grid<button lcButton fillMode="outline" size="small" (click)="grid.replay(root)">Rejouer</button></h3>
+      @for (key of grid.keys(); track key) {
+        <lc-grid [columns]="3" gap="4">
+          @for (name of names; track name) {
+            <lc-card class="lc-lift" [attr.data-trigger]="$first ? '' : null"><lc-card-header [title]="name" subtitle="Mis à jour aujourd'hui" /><p>Trois tâches ouvertes.</p></lc-card>
+          }
+        </lc-grid>
+      }
+    </section>
+    <section #plain>
+      <h3>Plain div <button lcButton fillMode="outline" size="small" (click)="handmade.replay(plain)">Rejouer</button></h3>
+      @for (key of handmade.keys(); track key) {
+        <div class="lc-demo__handmade">
+          @for (name of names; track name) {
+            <lc-card><lc-card-header [title]="name" /><p>Rang pris d'après la position.</p></lc-card>
+          }
+        </div>
+      }
+    </section>`,
+})
+class CardAnimationDemoComponent {
+  protected readonly names = ['Atlas', 'Boréal', 'Cèdre', 'Delta', 'Embruns', 'Falaise'];
+  protected readonly grid = replayable();
+  protected readonly handmade = replayable();
+}
 
 /**
  * Card: an elevated surface with an optional header (`lc-card-header`: title, subtitle, actions) and footer (`[lcCardFooter]`).
@@ -13,7 +49,7 @@ const meta: Meta<LcCardComponent> = {
   title: 'Layout/Card',
   component: LcCardComponent,
   decorators: [moduleMetadata({
-    imports: [LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcGridItemComponent, LcButtonComponent],
+    imports: [LcCardComponent, LcCardHeaderComponent, LcGridComponent, LcGridItemComponent, LcButtonComponent, CardAnimationDemoComponent],
   })],
   args: { elevation: 1, padding: '5', collapsible: false, expanded: true },
   argTypes: {
@@ -53,6 +89,18 @@ export const WithActions: Story = {
   }),
 };
 
+/** Card inside a dialog whose title is an `h2`: `headingLevel="3"` keeps the outline in order (`2 | 3 | 4`, default `2`). */
+export const InDialog: Story = {
+  parameters: fixedExample,
+  render: () => ({
+    template: `
+      <lc-card style="max-width:28rem">
+        <lc-card-header title="Équipe design" subtitle="5 membres" [headingLevel]="3" />
+        <p>Prochaine réunion : jeudi à 10 h.</p>
+      </lc-card>`,
+  }),
+};
+
 /** Collapsible card: the header toggles the content and the footer. */
 export const Collapsible: Story = {
   parameters: fixedExample,
@@ -86,4 +134,35 @@ export const CardGrid: Story = {
         }
       </lc-grid>`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcCardComponent, LcCardHeaderComponent, LcGridComponent } from '@lionelcointot/ui-angular/layout';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcCardComponent, LcCardHeaderComponent, LcGridComponent],
+  template: \`
+    <!-- Nothing to write: a card enters by itself, one after the other. -->
+    <lc-grid [columns]="3">
+      @for (project of projects; track project.id) {
+        <lc-card><lc-card-header [title]="project.name" /></lc-card>
+      }
+    </lc-grid>
+
+    <!-- Same in your own grid: the rank follows the position among siblings. -->
+    <div class="my-grid">
+      @for (project of projects; track project.id) {
+        <lc-card><lc-card-header [title]="project.name" /></lc-card>
+      }
+    </div>\`,
+})
+export class ExampleComponent {
+  protected readonly projects = [{ id: 1, name: 'Atlas' }, { id: 2, name: 'Boréal' }];
+}`;
+
+/** Each card rises 26 px with a slight scale in 800 ms, one every 60 ms, with no attribute to write: in an `lc-grid` and in a plain `div`. "Rejouer" shows them again. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({ template: '<lc-card-animation-demo />' }),
 };

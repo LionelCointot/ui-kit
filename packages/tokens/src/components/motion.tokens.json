@@ -15,6 +15,15 @@
     },
     "enter-scale": { "$value": "0.6", "$type": "number" }
   },
+  "reveal": {
+    "duration": { "$value": "550ms", "$type": "duration", "$description": "Entry of the base variants of lcReveal (Talmo: 550 ms)." },
+    "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" },
+    "tilt-duration": { "$value": "{sys.duration.title}", "$type": "duration", "$description": "Entry of the tilt variant (Talmo KPI: 850 ms), with the overshoot curve of the pop variant." },
+    "tilt-pace": { "$value": "70ms", "$type": "duration", "$description": "Gap between two tilt entries in a row (Talmo KPI: stagger .07)." },
+    "card-duration": { "$value": "800ms", "$type": "duration", "$description": "Entry of the card variant of lcReveal (Talmo cards: 800 ms, expo.out); the card cascade runs at the cards pace." },
+    "card-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
+    "card-scale": { "$value": "0.985", "$type": "number", "$description": "Scale the card variant starts from (unitless number)." }
+  },
   "tabs": {
     "indicator-front-duration": { "$value": "380ms", "$type": "duration" },
     "indicator-front-easing": { "$value": "{sys.easing.title}", "$type": "cubicBezier" },
@@ -37,9 +46,12 @@
     "indicator-back-delay": { "$value": "75ms", "$type": "duration" }
   },
   "tabbar": {
-    "enter-duration": { "$value": "750ms", "$type": "duration" },
-    "enter-delay": { "$value": "265ms", "$type": "duration" },
+    "enter-duration": { "$value": "{sys.duration.view}", "$type": "duration" },
+    "enter-delay": { "$value": "200ms", "$type": "duration" },
+    "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier", "$description": "expo.out of the Talmo site." },
     "enter-offset": { "$value": "90px", "$type": "dimension" },
+    "height": { "$value": "66px", "$type": "dimension", "$description": "Bottom tab bar height (Talmo site)." },
+    "indicator-radius": { "$value": "16px", "$type": "dimension", "$description": "Corner radius of the active pill (Talmo site)." },
     "indicator-front-duration": { "$value": "{segmented-control.indicator-front-duration}", "$type": "duration" },
     "indicator-front-easing": { "$value": "{segmented-control.indicator-front-easing}", "$type": "cubicBezier" },
     "indicator-back-duration": { "$value": "{segmented-control.indicator-back-duration}", "$type": "duration" },
@@ -49,11 +61,7 @@
   "overlay": {
     "enter-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
     "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" },
-    "easing": { "$value": "{sys.easing.standard}", "$type": "cubicBezier" },
-    "offset": { "$value": "{sys.motion.offset-sm}", "$type": "dimension" }
-  },
-  "collapse": {
-    "duration": { "$value": "{sys.duration.move}", "$type": "duration" }
+    "easing": { "$value": "{sys.easing.standard}", "$type": "cubicBezier" }
   },
   "chip": {
     "enter-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
@@ -75,14 +83,19 @@
     "stack-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
     "stack-easing": { "$value": "{sys.easing.stack}", "$type": "cubicBezier" },
     "stack-recede": { "$value": "30%", "$type": "dimension", "$description": "Share of its width the previous page recedes by while the new one stacks on top." },
+    "layer-kpi": { "$value": "100ms", "$type": "duration", "$description": "Delay of the KPI cards while a page enters (median of the Talmo pages)." },
+    "layer-cards": { "$value": "120ms", "$type": "duration" },
+    "layer-rows": { "$value": "400ms", "$type": "duration", "$description": "Rows and lists." },
+    "layer-gauges": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Bars and gauges (lcFill, lcDraw)." },
+    "layer-dots": { "$value": "800ms", "$type": "duration", "$description": "Status dots." },
+    "layer-window": { "$value": "1500ms", "$type": "duration", "$description": "How long lc-page counts as entering; longer than the latest layer delay plus its cascade (800 ms + 8 ranks)." },
     "stack-dim": { "$value": "0.12", "$type": "number", "$description": "Veil opacity over the receding page (unitless number)." }
   },
   "sheet": {
-    "top-gap": { "$value": "{sys.space.10}", "$type": "dimension" },
     "radius": { "$value": "{sys.radius.lg}", "$type": "dimension" },
     "top-radius": { "$value": "24px", "$type": "dimension", "$description": "Top corners of the bottom sheet on phones." },
     "max-height": { "$value": "92dvh", "$type": "dimension", "$description": "Maximum height of the bottom sheet on phones." },
-    "enter-duration": { "$value": "{sys.duration.long}", "$type": "duration" },
+    "enter-duration": { "$value": "550ms", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
     "exit-duration": { "$value": "300ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
@@ -104,23 +117,26 @@
   "dialog": {
     "enter-scale": {
       "$description": "Scale a dialog starts from when it opens (unitless number).",
-      "$value": "0.91",
+      "$value": "0.86",
       "$type": "number"
     },
     "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
-    "exit-scale": { "$value": "{sys.motion.scale-enter}", "$type": "number" },
-    "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" },
-    "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
-    "sheet-radius": { "$value": "20px", "$type": "dimension", "$description": "Top corners of a dialog presented as a bottom sheet on phones." }
+    "exit-scale": { "$value": "0.94", "$type": "number" },
+    "exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" },
+    "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" }
   },
   "drawer": {
-    "enter-duration": { "$value": "550ms", "$type": "duration" },
+    "enter-duration": { "$value": "{sys.duration.long}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.entrance}", "$type": "cubicBezier" },
-    "exit-duration": { "$value": "300ms", "$type": "duration" },
+    "exit-duration": { "$value": "320ms", "$type": "duration" },
     "exit-easing": { "$value": "{sys.easing.exit}", "$type": "cubicBezier" },
     "backdrop-enter-duration": { "$value": "300ms", "$type": "duration" },
-    "backdrop-exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" }
+    "backdrop-exit-duration": { "$value": "{sys.duration.exit}", "$type": "duration" },
+    "content-offset": { "$value": "14px", "$type": "dimension", "$description": "Rise of the content lines of the drawer (Talmo: y 14 px)." },
+    "content-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Entry of each content line (Talmo: 500 ms, power3.out)." },
+    "content-delay": { "$value": "120ms", "$type": "duration", "$description": "Start of the content cascade, after the panel begins to slide." },
+    "content-stagger": { "$value": "{sys.motion.stagger-normal}", "$type": "duration", "$description": "Gap between two content lines (Talmo: 40 ms)." }
   },
   "popover": {
     "enter-duration": { "$value": "{sys.duration.enter}", "$type": "duration" },
@@ -130,18 +146,20 @@
     "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
   },
   "menu": {
-    "enter-duration": { "$value": "{sys.duration.slow}", "$type": "duration" },
+    "enter-duration": { "$value": "400ms", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
-    "enter-scale": { "$value": "{sys.motion.scale-pop}", "$type": "number" },
-    "enter-offset": { "$value": "-5px", "$type": "dimension", "$description": "Vertical start of the pop, towards the anchor (the sign flips when the panel opens above)." },
-    "exit-duration": { "$value": "140ms", "$type": "duration" }
+    "enter-scale": { "$value": "0.92", "$type": "number" },
+    "enter-offset": { "$value": "-6px", "$type": "dimension", "$description": "Vertical start of the pop, towards the anchor (the sign flips when the panel opens above)." },
+    "exit-duration": { "$value": "{sys.duration.fast}", "$type": "duration" }
   },
   "toast": {
     "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
     "enter-easing": { "$value": "{sys.easing.pop}", "$type": "cubicBezier" },
-    "enter-offset": { "$value": "28px", "$type": "dimension" },
-    "enter-scale": { "$value": "{sys.motion.scale-enter}", "$type": "number" },
+    "enter-offset": { "$value": "30px", "$type": "dimension" },
+    "enter-scale": { "$value": "0.94", "$type": "number" },
     "exit-duration": { "$value": "{sys.duration.normal}", "$type": "duration" },
+    "exit-offset": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Vertical travel of the exit (Talmo: y 16 px)." },
+    "exit-easing": { "$value": "cubic-bezier(0.55, 0.085, 0.68, 0.53)", "$type": "cubicBezier", "$description": "power2.in (Talmo)." },
     "tabbar-gap": { "$value": "{sys.motion.offset-md}", "$type": "dimension", "$description": "Space left between a toast and the bottom tab bar on phones." }
   },
   "switch": {
@@ -157,8 +175,11 @@
     "dot-scale": { "$value": "0.6", "$type": "number", "$description": "Scale a step bullet pops in from (unitless number)." },
     "dot-delay": { "$value": "{sys.motion.stagger-normal}", "$type": "duration" }
   },
+  "count-up": {
+    "duration": { "$value": "1200ms", "$type": "duration", "$description": "Counter run time of lcCountUp (Talmo: 1.2 s, power3.out = easing-out)." }
+  },
   "flash": {
-    "duration": { "$value": "950ms", "$type": "duration" },
+    "duration": { "$value": "{sys.duration.fill}", "$type": "duration" },
     "easing": { "$value": "{sys.easing.title}", "$type": "cubicBezier" }
   },
   "title": {
@@ -167,9 +188,9 @@
     "letter-offset": { "$value": "115%", "$type": "dimension", "$description": "Distance each letter travels from, as a share of its own height." },
     "letter-rotate": { "$value": "{sys.motion.rotate-char}", "$type": "dimension" },
     "letter-stagger": { "$value": "{sys.motion.stagger-chars}", "$type": "duration" },
-    "line-duration": { "$value": "550ms", "$type": "duration" },
+    "line-duration": { "$value": "{sys.duration.view}", "$type": "duration" },
     "line-easing": { "$value": "{sys.easing.inout}", "$type": "cubicBezier" },
-    "line-delay": { "$value": "390ms", "$type": "duration", "$description": "Delay after the first letter starts." }
+    "line-delay": { "$value": "320ms", "$type": "duration", "$description": "Delay after the first letter starts." }
   },
   "live": {
     "duration": { "$value": "2000ms", "$type": "duration" },
@@ -178,7 +199,8 @@
   },
   "lift": {
     "offset": { "$value": "-4px", "$type": "dimension" },
-    "duration": { "$value": "{sys.duration.slow}", "$type": "duration" },
+    "duration": { "$value": "{sys.duration.enter}", "$type": "duration", "$description": "Rise on hover (Talmo site: 450 ms)." },
+    "leave-duration": { "$value": "{sys.duration.move}", "$type": "duration", "$description": "Return when the pointer leaves (Talmo site: 500 ms)." },
     "easing": { "$value": "{sys.easing.out}", "$type": "cubicBezier" }
   },
   "calendar": {
@@ -190,14 +212,15 @@
     "row-stagger": { "$value": "30ms", "$type": "duration" }
   },
   "chart": {
-    "sparkline-duration": { "$value": "1000ms", "$type": "duration" },
-    "update-duration": { "$value": "480ms", "$type": "duration" },
+    "sparkline-duration": { "$value": "1300ms", "$type": "duration" },
+    "update-duration": { "$value": "{sys.duration.view}", "$type": "duration" },
     "update-stagger": { "$value": "20ms", "$type": "duration" }
   },
   "topbar": {
     "enter-offset": { "$value": "10px", "$type": "dimension" },
-    "enter-duration": { "$value": "{sys.duration.enter}", "$type": "duration" },
-    "enter-stagger": { "$value": "33ms", "$type": "duration" }
+    "enter-duration": { "$value": "{sys.duration.move}", "$type": "duration" },
+    "enter-stagger": { "$value": "30ms", "$type": "duration" },
+    "enter-delay": { "$value": "80ms", "$type": "duration", "$description": "Start of the load-time entrance of the top bar (Talmo site)." }
   },
   "disclosure": {
     "enter-duration": { "$value": "300ms", "$type": "duration" },

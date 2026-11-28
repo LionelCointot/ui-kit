@@ -7,7 +7,7 @@ import path from 'node:path';
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ico': 'image/x-icon' };
 
-export async function staticServer(dir, { spa = false, base = process.env.BASE } = {}) {
+export async function staticServer(dir, { spa = false, base = process.env.BASE, headers = () => ({}) } = {}) { // `headers` : en-têtes ajoutés à chaque réponse (évalué à chaque requête)
   if (base) return { base, close() {} };
   const server = createServer(async (request, response) => {
     const requested = path.normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname)).replace(/^(\.\.[/\\])+/, '');
@@ -19,7 +19,7 @@ export async function staticServer(dir, { spa = false, base = process.env.BASE }
       response.writeHead(404).end();
       return;
     }
-    response.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' }).end(body);
+    response.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream', ...headers() }).end(body);
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   return { base: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };

@@ -56,8 +56,9 @@ describe('lcPageTransitions : copie figée et sens', () => {
     const fixture = TestBed.createComponent(Host);
     const router = TestBed.inject(Router);
     const root = fixture.nativeElement as HTMLElement;
+    const destroy = () => fixture.destroy();
     const go = async (url: string) => { await router.navigateByUrl(url); await fixture.whenStable(); fixture.detectChanges(); await new Promise((resolve) => setTimeout(resolve, 20)); };
-    return { root, go };
+    return { root, go, destroy };
   }
   const translateOf = (animation: Played, index: number) => String(animation.keyframes[index]['translate']);
 
@@ -151,10 +152,13 @@ describe('lcPageTransitions : copie figée et sens', () => {
     expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
   });
 
-  it('destruction : plus d\'écoute du routeur, aucune copie ne naît', async () => {
-    const { root, go } = await setup();
+  it('destruction : plus d\'écoute du routeur, aucune copie ne naît et rien ne joue à la navigation suivante', async () => {
+    const { root, go, destroy } = await setup();
     await go('/a');
-    TestBed.resetTestingModule();
+    played.length = 0;
+    destroy();
+    await go('/a/b'); // le routeur (racine) vit encore : seule la directive est détruite
+    expect(played).toEqual([]);
     expect(root.querySelector('[data-lc-page-copy]')).toBeNull();
   });
 });

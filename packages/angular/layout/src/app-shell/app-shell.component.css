@@ -39,10 +39,24 @@
 
 .lc-shell__header-content {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--lc-sys-space-3);
+  gap: var(--lc-sys-space-1) var(--lc-sys-space-3);
   min-width: 0;
+}
+
+/* Entrée au premier rendu : la classe est retirée à la fin de la fenêtre (animation témoin), donc jamais rejouée ; les éléments projetés suivent le rang de leur position. */
+@media (prefers-reduced-motion: no-preference) {
+  .lc-shell__header--entering {
+    animation: lc-page-entering calc(var(--lc-topbar-enter-delay) + var(--lc-topbar-enter-duration) + var(--lc-sys-motion-stagger-cap) * var(--lc-topbar-enter-stagger));
+  }
+
+  .lc-shell__header--entering > button {
+    animation: lc-topbar-enter var(--lc-topbar-enter-duration) var(--lc-sys-easing-out) backwards;
+    animation-delay: var(--lc-topbar-enter-delay);
+  }
+  /* Le contenu projeté `[lcShellHeader]` échappe à l'encapsulation : ses règles d'entrée sont dans `styles/motion.css`. */
 }
 
 .lc-shell__body {
@@ -102,7 +116,80 @@
   outline: none;
 }
 
+/* En-tête mobile (< 768 px) : bouton retour `‹ titre parent`, titre de la page qui apparaît au défilement, bande du geste de retour. */
+.lc-shell__back,
+.lc-shell__title,
+.lc-shell__edge {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .lc-shell__back {
+    display: inline-flex;
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    max-inline-size: 50%;
+  }
+
+  .lc-shell__back-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lc-shell__title {
+    display: block;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* Le titre (transparent tant que la page n'a pas défilé) cède sa place d'abord : le contenu projeté ne doit jamais être écrasé par un texte invisible. */
+    flex: 0 100 auto;
+    font-weight: var(--lc-sys-font-weight-semibold);
+    opacity: 0;
+    transition: opacity var(--lc-sys-duration-exit) var(--lc-sys-easing-standard);
+  }
+
+  .lc-shell__title--shown {
+    /* Visible, le titre garde de quoi montrer quelques caractères et l'ellipse, même devant un contenu projeté large. */
+    min-inline-size: var(--lc-sys-space-12);
+    opacity: 1;
+  }
+
+  .lc-shell__edge {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: var(--lc-sys-z-sticky);
+    display: block;
+    inline-size: var(--lc-sys-space-5);
+    touch-action: pan-y;
+  }
+
+  /*
+   * Barre d'onglets du bas : « Plus » remplace le bouton de menu, et le contenu garde sa place au-dessus de la barre.
+   * `--lc-shell-tabbar-space` (espace pris en bas par la barre : hauteur, marge, zone sûre) est définie sur `:root` par `styles/ui-angular.css`,
+   * tant que la barre est présente (classe `lc-has-tabbar` posée par le shell) : le toast, qui vit hors de ce composant, la lit aussi.
+   */
+  :host(.lc-app-shell--tabbar) .lc-shell__menu {
+    display: none;
+  }
+
+  :host(.lc-app-shell--tabbar) .lc-shell__main {
+    padding-block-end: calc(var(--lc-shell-tabbar-space) + var(--lc-sys-space-3));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .lc-shell__title,
+  .lc-shell__main {
+    transition: none;
+  }
+
+  .lc-shell__edge {
+    display: none;
+  }
+
   .lc-shell__nav,
   .lc-shell__nav--drawer,
   .lc-shell__nav--drawer.lc-shell__nav--open {

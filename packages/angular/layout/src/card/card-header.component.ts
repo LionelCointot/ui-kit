@@ -15,7 +15,17 @@ import { LcCardComponent } from './card.component';
           <span class="lc-card-header__title">{{ title() }}</span>
         </button>
       } @else {
-        <h3 class="lc-card-header__title">{{ title() }}</h3>
+        @switch (headingLevel()) {
+          @case (3) {
+            <h3 class="lc-card-header__title">{{ title() }}</h3>
+          }
+          @case (4) {
+            <h4 class="lc-card-header__title">{{ title() }}</h4>
+          }
+          @default {
+            <h2 class="lc-card-header__title">{{ title() }}</h2>
+          }
+        }
       }
       @if (subtitle()) {
         <p class="lc-card-header__subtitle">{{ subtitle() }}</p>
@@ -32,4 +42,6 @@ export class LcCardHeaderComponent {
 
   readonly title = input.required<string>();
   readonly subtitle = input<string>();
+  /** Niveau du titre (`h2` par défaut). Dans un dialogue dont le titre est un `h2`, une carte prend `3` pour ne pas sauter le niveau. Sans effet si la carte est `collapsible` (le titre est alors un bouton). */
+  readonly headingLevel = input<2 | 3 | 4>(2);
 }

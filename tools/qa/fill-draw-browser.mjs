@@ -5,10 +5,9 @@
 //   fill-draw  : `#fill-static` (lcFill 0.7) et `#draw-static` (path, lcDraw 0.7) au chargement ; bouton `#show` monte `#fill-x`, `#fill-y` (axe y), `#draw-path`, `#draw-circle`, `#draw-line`, `#draw-polyline` ;
 //                boutons `#low` (valeur 0.3) et `#zero` (valeur 0) changent la valeur des éléments montés (départ : 0.7)
 //   pulse-lift : `#pulse` (.lc-pulse) et `#lift` (.lc-lift)
-// Contrat de durée et de courbe (choix de QA, la spec dit « avec les tokens ») : lcFill = --lc-sys-duration-draw + --lc-sys-easing-fill ; lcDraw = --lc-sys-duration-draw + --lc-sys-easing-draw ;
+// Contrat de durée et de courbe (choix de QA, la spec dit « avec les tokens ») : lcFill = --lc-sys-duration-fill + --lc-sys-easing-fill ; lcDraw = --lc-sys-duration-draw + --lc-sys-easing-draw ;
 // .lc-pulse = --lc-live-* ; .lc-lift = --lc-lift-* (la transition porte sur `transform`, ADR 0011).
 // Stories d'animation attendues dans l'index (CA-38) : layout-fill--animation, layout-draw--animation, layout-pulse-lift--animation, chacune avec au moins un bouton « Rejouer ».
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -90,7 +89,7 @@ const observe = (page, button, ids) => page.evaluate(async ([button, ids, keyOf,
 // ---------- CA-12, CA-13 : rendu initial, apparition, changement de valeur ----------
 await section(1, async () => {
   const { page, context } = await open(story('fill-draw'), { wait: '#fill-static' });
-  const tok = await page.evaluate(() => { const q = window.__q; return { draw: q.ms('--lc-sys-duration-draw'), fill: q.flat(q.raw('--lc-sys-easing-fill')), curve: q.flat(q.raw('--lc-sys-easing-draw')) }; });
+  const tok = await page.evaluate(() => { const q = window.__q; return { draw: q.ms('--lc-sys-duration-draw'), fillMs: q.ms('--lc-sys-duration-fill'), fill: q.flat(q.raw('--lc-sys-easing-fill')), curve: q.flat(q.raw('--lc-sys-easing-draw')) }; });
   await idle(page);
   const st = await page.evaluate(() => {
     const f = document.getElementById('fill-static'), d = document.getElementById('draw-static');
@@ -109,7 +108,8 @@ await section(1, async () => {
     check(!r.missing, `CA-12/13 ${id} : animation (${KEY(id)}) à l'apparition`, 'aucune animation de ' + KEY(id));
     if (r.missing) continue;
     const curve = id.startsWith('fill') ? tok.fill : tok.curve;
-    check(near(r.duration, tok.draw, 0.01), `CA-12/13 ${id} apparition : durée = --lc-sys-duration-draw (${tok.draw} ms)`, String(r.duration));
+    const dur = id.startsWith('fill') ? tok.fillMs : tok.draw;
+    check(near(r.duration, dur, 0.01), `CA-12/13 ${id} apparition : durée = ${id.startsWith('fill') ? '--lc-sys-duration-fill' : '--lc-sys-duration-draw'} (${dur} ms)`, String(r.duration));
     check(r.easings.includes(curve), `CA-12/13 ${id} apparition : courbe = ${id.startsWith('fill') ? 'easing-fill' : 'easing-draw'} (${curve})`, JSON.stringify(r.easings));
     const from = progress(id, r.start), to = progress(id, r.last);
     if (id.startsWith('fill')) check(near(from, 0) && near(to, 0.7, 0.02), `CA-12 ${id} apparition : de 0 à 0.7`, `${r.start} → ${r.last}`);
@@ -130,7 +130,7 @@ await section(1, async () => {
     check(!r.missing, `CA-12/13 ${id} : animation au changement de valeur`, 'aucune animation de ' + KEY(id));
     if (r.missing) continue;
     const curve = id.startsWith('fill') ? tok.fill : tok.curve;
-    check(near(r.duration, tok.draw, 0.01) && r.easings.includes(curve), `CA-12/13 ${id} changement : durée et courbe = tokens`, `${r.duration} ${JSON.stringify(r.easings)}`);
+    check(near(r.duration, id.startsWith('fill') ? tok.fillMs : tok.draw, 0.01) && r.easings.includes(curve), `CA-12/13 ${id} changement : durée et courbe = tokens`, `${r.duration} ${JSON.stringify(r.easings)}`);
     const [a, b] = id.startsWith('fill') ? [0.7, 0.3] : [0.3, 0.7];
     check(near(progress(id, r.start), a) && near(progress(id, r.last), b, 0.02), `CA-12/13 ${id} changement 0.7 → 0.3 : de ${a} à ${b}`, `${r.start} → ${r.last}`);
   }
@@ -199,19 +199,22 @@ const liftState = (page) => page.evaluate(() => {
 });
 await section(4, async () => {
   const { page, context } = await open(story('pulse-lift'), { wait: '#lift' });
-  const tok = await page.evaluate(() => { const q = window.__q; return { fine: matchMedia('(pointer: fine)').matches, offset: q.px('--lc-lift-offset'), duration: q.ms('--lc-lift-duration'), easing: q.flat(q.raw('--lc-lift-easing')), out: q.flat(q.raw('--lc-sys-easing-out')) }; });
+  const tok = await page.evaluate(() => { const q = window.__q; return { fine: matchMedia('(pointer: fine)').matches, offset: q.px('--lc-lift-offset'), duration: q.ms('--lc-lift-duration'), leave: q.ms('--lc-lift-leave-duration'), easing: q.flat(q.raw('--lc-lift-easing')), out: q.flat(q.raw('--lc-sys-easing-out')) }; });
   check(tok.fine, 'CA-30 précondition : (pointer: fine) vrai', JSON.stringify(tok));
-  check(tok.offset === -4 && tok.duration === 350 && tok.easing === tok.out, 'CA-30 tokens lift.* = −4 px, 350 ms, courbe out (spec)', JSON.stringify(tok));
+  check(tok.offset === -4 && tok.duration === 450 && tok.leave === 500 && tok.easing === tok.out, 'CA-30 tokens lift.* = −4 px, 450 ms à l\'entrée, 500 ms au retour, courbe out (relevé du site)', JSON.stringify(tok));
   check((await liftState(page)).ty === 0, 'CA-30 .lc-lift au repos : aucun décalage');
   await page.locator('#lift').hover();
   let s = { transitions: [] };
   for (let i = 0; i < 20 && !s.transitions.length; i += 1) { await frames(page, 1); s = await liftState(page); }
   check(s.transitions.length === 1 && s.transitions[0].prop === 'transform', 'CA-30 survol : une seule transition, sur `transform` (ADR 0011, CA-5)', JSON.stringify(s.transitions));
-  if (s.transitions[0]) check(s.transitions[0].duration === tok.duration && s.transitions[0].easings.includes(tok.easing), 'CA-30 survol : 350 ms, courbe --lc-lift-easing', JSON.stringify(s.transitions[0]));
+  if (s.transitions[0]) check(s.transitions[0].duration === tok.duration && s.transitions[0].easings.includes(tok.easing), 'CA-30 survol : 450 ms, courbe --lc-lift-easing', JSON.stringify(s.transitions[0]));
   await idle(page);
   s = await liftState(page);
   check(near(s.ty, -4, 0.01), 'CA-30 .lc-lift au survol : soulevé de 4 px (translateY −4)', String(s.ty));
   await page.mouse.move(0, 0);
+  s = { transitions: [] };
+  for (let i = 0; i < 20 && !s.transitions.length; i += 1) { await frames(page, 1); s = await liftState(page); }
+  check(s.transitions.length === 1 && s.transitions[0].duration === 500 && s.transitions[0].easings.includes(tok.easing), 'CA-30 retour : 500 ms, courbe out', JSON.stringify(s.transitions));
   await idle(page);
   check(near((await liftState(page)).ty, 0, 0.01), 'CA-30 .lc-lift : retour à 0 hors survol');
   await context.close();
@@ -236,18 +239,7 @@ await section(6, async () => {
   await context.close();
 });
 
-// ---------- CA-38 : stories Animation des trois primitives ----------
-await section(7, async () => {
-  const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-  for (const id of ['layout-fill--animation', 'layout-draw--animation', 'layout-pulse-lift--animation']) {
-    check(!!index.entries[id], `CA-38 ${id} existe dans l'index (mesurée ensuite par la boucle CA-3 / CA-5 / CA-31 de storybook-browser.mjs motion)`, 'story absente');
-    if (!index.entries[id]) continue;
-    const { page, context } = await open(id, { wait: '#storybook-root > *' });
-    const count = await page.getByRole('button', { name: 'Rejouer' }).count();
-    check(count >= 1, `CA-38 ${id} porte au moins un bouton « Rejouer »`, `${count}`);
-    await context.close();
-  }
-});
+// CA-38 (stories Animation des trois primitives) : vérifié une fois dans `storybook-browser.mjs motion`.
 
 await browser.close();
 server?.close();

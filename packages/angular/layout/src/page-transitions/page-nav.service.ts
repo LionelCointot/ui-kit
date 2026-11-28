@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationStart, ResolveEnd, Router, type ActivatedRouteSnapshot } from '@angular/router';
@@ -24,7 +25,9 @@ function resolve(root: ActivatedRouteSnapshot, level: number): Resolved {
   const chain = [root];
   while (chain[chain.length - 1].firstChild) chain.push(chain[chain.length - 1].firstChild!);
   const leaf = chain[chain.length - 1];
-  const ancestor = level > 1 ? chain.slice(0, -1).reverse().find((route) => route.title) : undefined;
+  // Une route d'ancêtre à chemin vide hérite du titre et a la même URL que la feuille : ce n'est pas une page parente.
+  const leafUrl = urlOf(leaf);
+  const ancestor = level > 1 ? chain.slice(0, -1).reverse().find((route) => route.title && urlOf(route) !== leafUrl) : undefined;
   return {
     title: leaf.title ?? '',
     parent: ancestor ? { title: ancestor.title!, url: urlOf(ancestor) } : null,
@@ -42,6 +45,7 @@ function resolve(root: ActivatedRouteSnapshot, level: number): Resolved {
 export class LcPageNav {
   private readonly registry = inject(LcNavRegistry);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   private readonly _direction = signal<LcPageDirection>('none');
   private readonly _level = signal(1);
@@ -58,6 +62,14 @@ export class LcPageNav {
   /** @internal Vrai entre le `ResolveEnd` et le `NavigationEnd` d'une navigation qui va transitionner : seule règle d'éligibilité, lue par `lcPageTransitions` pour ne copier la page quittée que si une transition suit. */
   willTransition(): boolean {
     return this.transitions;
+  }
+
+  /** @internal Retour : vers la page parente (`parent()`), sinon d'un cran dans l'historique. Commun au bouton `‹ titre` de l'en-tête mobile et au geste. */
+  back(): Promise<boolean> {
+    const parent = this.parent();
+    if (parent) return this.router.navigateByUrl(parent.url);
+    this.location.back();
+    return Promise.resolve(true);
   }
 
   constructor() {
@@ -80,10 +92,10 @@ export class LcPageNav {
         const to = pathOf(event.urlAfterRedirects);
         this._level.set(lcPathLevel(to));
         this._resolved.set(resolved);
-        // shortcut: après un saut du navigateur vers une URL absente de la pile, la pile et l'index du navigateur divergent ; le sens est jugé au niveau. À lever si une transition est jugée fausse.
         // skipLocationChange : le navigateur n'a pas bougé, la pile non plus.
         if (step.skip) return;
         const from = history.urls[history.index] ?? null;
+        // shortcut: après un saut du navigateur vers une URL absente de la pile, la pile et l'index du navigateur divergent ; le sens est jugé au niveau. À lever si une transition est jugée fausse.
         const next = lcNavStep(history, { url: to, ...step }, this.registry.items().map((item) => item.url));
         history = next.history;
         if (from === to || !resolved.transition) return;

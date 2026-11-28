@@ -1,6 +1,37 @@
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
+import { LcButtonComponent } from '@lionelcointot/ui-angular';
 import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot/ui-angular/data';
+
+/** Demo of the `Animation` story: a feed whose events appear in cascade; "Ajouter" adds one more, alone. */
+@Component({
+  selector: 'lc-feed-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcActivityFeedComponent, LcActivityItemComponent, LcButtonComponent, StoryMotionNoticeComponent],
+  template: `
+    <lc-story-motion-notice />
+    <section #root data-demo="d06">
+      <p>
+        <button lcButton fillMode="outline" size="small" (click)="replay.replay(root)">Rejouer</button>
+        <button lcButton fillMode="outline" size="small" (click)="add()">Ajouter</button>
+      </p>
+      @for (key of replay.keys(); track key) {
+        <ol lcActivityFeed style="max-width:24rem">
+          @for (event of events(); track event) {
+            <li lcActivityItem icon="check" [heading]="'Étape ' + event" date="12 mars"></li>
+          }
+        </ol>
+      }
+    </section>`,
+})
+class FeedAnimationDemoComponent {
+  protected readonly events = signal([1, 2, 3, 4]);
+  protected readonly replay = replayable();
+  protected add(): void {
+    this.events.update((list) => [...list, list.length + 1]);
+  }
+}
 
 const LONG = 'Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious_Supercalifragilisticexpialidocious';
 
@@ -73,4 +104,28 @@ export const EdgeCases: Story = {
       <li lcActivityItem icon="pencil" [heading]="long" date="12 mars 2026" dateTime="2026-03-12">{{ long }}</li>
     </ol>`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component } from '@angular/core';
+import { LcActivityFeedComponent, LcActivityItemComponent } from '@lionelcointot/ui-angular/data';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcActivityFeedComponent, LcActivityItemComponent],
+  template: \`
+    <ol lcActivityFeed>
+      @for (event of events; track event.id) {
+        <li lcActivityItem [heading]="event.title" [date]="event.date"></li>
+      }
+    </ol>\`,
+})
+export class ExampleComponent {
+  protected readonly events = [{ id: 1, title: 'Étape 1', date: '12 mars' }];
+}`;
+
+/** The events appear one after the other (8 px, 550 ms, 40 ms apart); an event added later arrives alone, without delay. "Rejouer" shows them again. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  decorators: [moduleMetadata({ imports: [FeedAnimationDemoComponent] })],
+  render: () => ({ template: '<lc-feed-animation-demo />' }),
 };

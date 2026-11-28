@@ -510,17 +510,13 @@ lc-data-table {
   border-block-start: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
 }
 
-/* Cascade des lignes (`lcReveal`) : à l'ouverture, courbe `soft` ; après un changement de filtre, courbe `entrance` et départ après `table.refill-delay` (invisibles pendant leur délai). */
-.lc-data-table__table tbody tr.lc-reveal {
-  --lc-reveal-curve: var(--lc-sys-easing-soft);
+/* Cascade des lignes (`lcReveal`) : courbe `out` (power3.out du site), à l'ouverture comme après un changement de filtre ; après un filtre, départ après `table.refill-delay` (invisibles pendant leur délai). */
+.lc-data-table__table tr.lc-reveal {
+  --lc-layer: var(--lc-layer-rows);
 }
 
 .lc-data-table__body--refill {
   --lc-reveal-offset: var(--lc-table-refill-delay);
-}
-
-.lc-data-table__table .lc-data-table__body--refill tr.lc-reveal {
-  --lc-reveal-curve: var(--lc-sys-easing-entrance);
 }
 
 /* ---------- Panneau des filtres (téléphone) : contenu de `lc-sheet` ---------- */
@@ -565,7 +561,7 @@ lc-data-table {
 
 .lc-data-table__section-toggle > lc-icon {
   color: var(--lc-sys-color-on-surface-muted);
-  transition: transform var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard);
+  transition: transform var(--lc-disclosure-chevron-duration) var(--lc-sys-easing-standard);
 }
 
 .lc-data-table__section-toggle[aria-expanded='true'] > lc-icon {
@@ -590,19 +586,23 @@ lc-data-table {
   font-weight: var(--lc-sys-font-weight-medium);
 }
 
-/* Hauteur animée : 0fr -> 1fr ; `visibility` ne passe à hidden qu'à la fin du repli. Le padding est porté par le petit-enfant. */
+/*
+ * Bascule comme `lc-disclosure` (tokens `disclosure.*`) : hauteur animée 0fr -> 1fr, contenu qui s'estompe en glissant de `--lc-disclosure-offset` ;
+ * la durée vient de l'état d'arrivée (ouverture 300 ms, repli 100 ms). `visibility` ne passe à hidden qu'à la fin du repli. Le padding est porté par le petit-enfant.
+ */
 .lc-data-table__section-body {
   display: grid;
   grid-template-rows: 0fr;
   visibility: hidden;
   transition:
-    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
-    visibility var(--lc-collapse-duration, var(--lc-sys-duration-move));
+    grid-template-rows var(--lc-disclosure-exit-duration) var(--lc-sys-easing-standard),
+    visibility var(--lc-disclosure-exit-duration);
 }
 
 .lc-data-table__section-body--open {
   grid-template-rows: 1fr;
   visibility: visible;
+  transition-duration: var(--lc-disclosure-enter-duration);
 }
 
 /* Le rognage n'a ni padding ni bordure (sinon la section ne descendrait pas sous leur hauteur) : le padding est sur le contenu. */
@@ -613,6 +613,17 @@ lc-data-table {
 
 .lc-data-table__section-content {
   padding-block-end: var(--lc-sys-space-4);
+  opacity: 0;
+  translate: 0 var(--lc-disclosure-offset);
+  transition:
+    opacity var(--lc-disclosure-exit-duration) var(--lc-sys-easing-standard),
+    translate var(--lc-disclosure-exit-duration) var(--lc-sys-easing-standard);
+}
+
+.lc-data-table__section-body--open .lc-data-table__section-content {
+  opacity: 1;
+  translate: 0 0;
+  transition-duration: var(--lc-disclosure-enter-duration);
 }
 
 @starting-style {
@@ -626,6 +637,8 @@ lc-data-table {
   .lc-data-table__section-toggle > lc-icon,
   .lc-data-table__section-body,
   .lc-data-table__section-body--open,
+  .lc-data-table__section-content,
+  .lc-data-table__section-body--open .lc-data-table__section-content,
   .lc-data-table__chip {
     transition: none;
   }

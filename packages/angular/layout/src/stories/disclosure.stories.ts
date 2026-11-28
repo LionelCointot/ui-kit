@@ -1,7 +1,45 @@
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcButtonComponent, LcIconComponent } from '@lionelcointot/ui-angular';
 import { LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective } from '@lionelcointot/ui-angular/layout';
+
+/** Demo of the `Animation` story (d48). */
+@Component({
+  selector: 'lc-disclosure-animation-demo',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LcDisclosureComponent, LcButtonComponent, StoryMotionNoticeComponent],
+  template: `
+    <lc-story-motion-notice />
+    <div #root data-demo="d48" style="max-width:32rem">
+      <button lcButton fillMode="outline" size="small" style="margin-bottom:var(--lc-sys-space-4)" (click)="demo.replay(root)">Rejouer</button>
+      @for (key of demo.keys(); track key) {
+        <lc-disclosure bordered [(expanded)]="first"><span lcDisclosureSummary>Détail des frais</span><p>Frais de dossier, garantie et assurance, détaillés ligne à ligne.</p></lc-disclosure>
+        <lc-disclosure bordered [(expanded)]="second"><span lcDisclosureSummary>Conditions</span><p>Conditions générales et mentions légales.</p></lc-disclosure>
+      }
+    </div>`,
+})
+class DisclosureAnimationDemoComponent {
+  protected readonly first = signal(true);
+  protected readonly second = signal(false);
+  protected readonly demo = replayable({
+    destroyRef: inject(DestroyRef),
+    reset: () => { this.first.set(true); this.second.set(false); },
+    play: (later) => { this.first.set(false); later(1800, () => this.first.set(true)); },
+  });
+}
+
+const ANIMATION_CODE = `import { Component, signal } from '@angular/core';
+import { LcDisclosureComponent } from '@lionelcointot/ui-angular/layout';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcDisclosureComponent],
+  template: \`<lc-disclosure [(expanded)]="open"><span lcDisclosureSummary>Détail</span><p>Contenu</p></lc-disclosure>\`,
+})
+export class ExampleComponent {
+  protected readonly open = signal(false);
+}`;
 
 /**
  * Expandable row: a summary line that shows or hides its content. Optional actions, heading semantics,
@@ -13,7 +51,7 @@ const meta: Meta<LcDisclosureComponent> = {
   title: 'Layout/Disclosure',
   component: LcDisclosureComponent,
   decorators: [moduleMetadata({
-    imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, LcButtonComponent, LcIconComponent],
+    imports: [LcDisclosureComponent, LcDisclosureContentDirective, LcDisclosureGroupDirective, LcButtonComponent, LcIconComponent, DisclosureAnimationDemoComponent],
   })],
   args: { expanded: false, headingLevel: null, disabled: false, lazy: false, bordered: false },
   argTypes: { headingLevel: { control: 'select', options: [null, 2, 3, 4, 5, 6] } },
@@ -57,6 +95,12 @@ export const List: Story = {
         <ng-template lcDisclosureContent><p>Contenu C</p></ng-template>
       </lc-disclosure>`,
   }),
+};
+
+/** Opening takes about 300 ms (height grows, content fades in from 5 px above), closing 100 ms, the chevron turns in 300 ms. "Rejouer" closes the first row, then opens it again. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({ template: '<lc-disclosure-animation-demo />' }),
 };
 
 /** Accordion: in an `exclusive` `lcDisclosureGroup`, opening a row closes the others (the parent drives `exclusive`, for instance by width). */

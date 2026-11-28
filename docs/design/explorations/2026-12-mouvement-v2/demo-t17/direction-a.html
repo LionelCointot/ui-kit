@@ -1,0 +1,65 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Direction A : une application complète</title><style>
+@import url("../../../../../packages/tokens/dist/css/lc-tokens.css");
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--lc-sys-font-family-base,system-ui,sans-serif);font-size:var(--lc-sys-font-size-md,1rem);background:var(--lc-sys-color-background,#f9f9f7);color:var(--lc-sys-color-on-surface,#1a1a19)}
+.note{margin:0;padding:var(--lc-sys-space-2,8px) var(--lc-sys-space-4,16px);background:var(--lc-sys-color-info-container,#cde2fb);color:var(--lc-sys-color-on-info-container,#0d366b);font-size:var(--lc-sys-font-size-sm,.875rem)}
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 40px)}
+nav.side{background:var(--lc-sys-color-surface,#fff);border-right:1px solid var(--lc-sys-color-border,#e1e0d9);padding:var(--lc-sys-space-4,16px);display:flex;flex-direction:column;gap:var(--lc-sys-space-1,4px)}
+nav.side b{padding:var(--lc-sys-space-2,8px) var(--lc-sys-space-3,12px);font-size:var(--lc-sys-font-size-lg,1.125rem)}
+nav button,.tab{all:unset;cursor:pointer;display:flex;align-items:center;gap:var(--lc-sys-space-2,8px);min-height:44px;padding:0 var(--lc-sys-space-3,12px);border-radius:var(--lc-sys-radius-md,8px);color:var(--lc-sys-color-on-surface-muted,#52514e)}
+nav button[aria-current=page]{background:var(--lc-sys-color-primary-container,#cde2fb);color:var(--lc-sys-color-on-primary-container,#0d366b);font-weight:600}
+nav button:focus-visible,button:focus-visible{outline:2px solid var(--lc-sys-color-focus-ring,#2a78d6);outline-offset:2px}
+main{padding:var(--lc-sys-space-8,32px);max-width:1040px;width:100%}
+h1{margin:0 0 var(--lc-sys-space-1,4px);font-size:var(--lc-sys-font-size-3xl,2rem);line-height:1.15}
+.sub{margin:0 0 var(--lc-sys-space-6,24px);color:var(--lc-sys-color-on-surface-muted,#52514e)}
+.rule{height:2px;width:56px;background:var(--lc-sys-color-primary,#256abf);margin:var(--lc-sys-space-2,8px) 0 var(--lc-sys-space-4,16px)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--lc-sys-space-4,16px);margin-bottom:var(--lc-sys-space-4,16px)}
+.grid.c2{grid-template-columns:2fr 1fr}.grid.c3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--lc-sys-color-surface,#fff);border:1px solid var(--lc-sys-color-border,#e1e0d9);border-radius:var(--lc-sys-radius-lg,12px);padding:var(--lc-sys-space-4,16px);box-shadow:var(--lc-sys-shadow-1,none)}
+.card h2{margin:0 0 var(--lc-sys-space-3,12px);font-size:var(--lc-sys-font-size-md,1rem)}
+.kpi small{color:var(--lc-sys-color-on-surface-muted,#52514e)}.kpi strong{display:block;font-size:var(--lc-sys-font-size-2xl,1.5rem);font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:99px;background:var(--lc-sys-color-surface-sunken,#f0efec);overflow:hidden;margin:6px 0 12px}.bar i{display:block;height:100%;width:var(--w);background:var(--lc-sys-color-primary,#256abf);transform-origin:left}
+.bars{display:flex;align-items:end;gap:8px;height:120px}.bars i{flex:1;height:var(--h);background:var(--lc-sys-color-primary,#256abf);border-radius:4px 4px 0 0;transform-origin:bottom}
+ul.feed{list-style:none;margin:0;padding:0}.feed li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--lc-sys-color-border,#e1e0d9)}
+.dot{width:8px;height:8px;border-radius:99px;background:var(--lc-sys-color-success,#0ca30c)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-top:1px solid var(--lc-sys-color-border,#e1e0d9)}
+.seg{display:inline-flex;background:var(--lc-sys-color-surface-sunken,#f0efec);border-radius:99px;padding:3px;margin-bottom:var(--lc-sys-space-3,12px)}.seg button{all:unset;cursor:pointer;padding:0 14px;min-height:36px;display:flex;align-items:center;position:relative}
+.seg [aria-pressed=true]{background:var(--lc-sys-color-surface,#fff);border-radius:99px;box-shadow:var(--lc-sys-shadow-1,none)}
+.btn{all:unset;cursor:pointer;min-height:44px;padding:0 18px;display:inline-flex;align-items:center;border-radius:var(--lc-sys-radius-md,8px);background:var(--lc-sys-color-primary,#256abf);color:var(--lc-sys-color-on-primary,#fff)}
+.btn.ghost{background:none;color:var(--lc-sys-color-primary,#256abf);border:1px solid var(--lc-sys-color-border-strong,#c3c2b7)}
+label.f{display:block;margin-bottom:12px}label.f input{display:block;width:100%;min-height:44px;margin-top:4px;padding:0 12px;border:1px solid var(--lc-sys-color-border-strong,#c3c2b7);border-radius:var(--lc-sys-radius-md,8px);font:inherit}
+.sw{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.toast{position:fixed;right:24px;bottom:24px;background:var(--lc-sys-color-on-surface,#1a1a19);color:var(--lc-sys-color-surface,#fff);padding:12px 18px;border-radius:var(--lc-sys-radius-md,8px);opacity:0;transform:translateY(16px);transition:.4s}.toast.on{opacity:1;transform:none}
+.tabbar{display:none}
+/* Couches d'entrée : délais des tokens de T10 */
+.play .l{animation:in .8s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}
+.play .kpi{--d:100ms}.play .card.l{--d:120ms}.play .row{--d:400ms}.play .bar i,.play .bars i{animation:grow .8s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(500ms + var(--i,0)*35ms)}.play .dot{animation:pop .4s both;animation-delay:800ms}
+.play h1{animation:in .8s both}.play .rule{animation:draw .7s .1s both;transform-origin:left}
+@keyframes in{from{opacity:0;transform:translateY(26px) scale(.985)}}@keyframes grow{from{transform:scaleX(0)}}@keyframes pop{from{transform:scale(0)}}@keyframes draw{from{transform:scaleX(0)}}
+.play .bars i{animation-name:growy}@keyframes growy{from{transform:scaleY(0)}}
+.page{animation:none}.slide-f{animation:slide .7s cubic-bezier(.16,1,.3,1)}@keyframes slide{from{opacity:0;transform:translateY(26px)}}
+@media(max-width:760px){.shell{grid-template-columns:1fr}nav.side{display:none}main{padding:var(--lc-sys-space-4,16px) var(--lc-sys-space-4,16px) 96px}h1{font-size:var(--lc-sys-font-size-2xl,1.5rem)}.grid,.grid.c2,.grid.c3{grid-template-columns:1fr 1fr}.grid.c2,.grid.c3{grid-template-columns:1fr}
+.tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--lc-sys-color-surface,#fff);border-top:1px solid var(--lc-sys-color-border,#e1e0d9);padding-bottom:env(safe-area-inset-bottom)}.tabbar button{all:unset;flex:1;min-height:56px;display:flex;align-items:center;justify-content:center;font-size:var(--lc-sys-font-size-sm,.875rem);color:var(--lc-sys-color-on-surface-muted,#52514e)}.tabbar [aria-current=page]{color:var(--lc-sys-color-primary,#256abf);font-weight:600}
+.hide-m{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><p class="note">Direction A, maquette statique : l’application complète (barre latérale, trois rubriques, niveau 2). Cliquez les rubriques pour rejouer les couches. Valeurs d’exemple.</p>
+<div class="shell"><nav class="side" aria-label="Navigation"><b>Atelier</b><button data-go="tdb" aria-current="page">Tableau de bord</button><button data-go="liste">Liste</button><button data-go="regl">Réglages</button></nav>
+<main class="play"><section class="page" id="tdb"><h1>Tableau de bord</h1><div class="rule"></div><p class="sub">Vue d’ensemble des projets de l’équipe (valeurs d’exemple).</p>
+<div class="grid"><div class="card kpi l"><small>Projets actifs</small><strong>24</strong></div><div class="card kpi l"><small>Tâches terminées</small><strong>1 248</strong></div><div class="card kpi l"><small>En retard</small><strong>7</strong></div><div class="card kpi l"><small>Taux de livraison</small><strong>92 %</strong></div></div>
+<div class="grid c2"><div class="card l"><h2>Tâches par semaine</h2><div class="bars"><i style="--h:40%"></i><i style="--h:65%"></i><i style="--h:50%"></i><i style="--h:85%"></i><i style="--h:70%"></i><i style="--h:95%"></i></div></div>
+<div class="card l"><h2>Avancement</h2>Refonte du site<div class="bar"><i style="--w:72%"></i></div>Migration des données<div class="bar"><i style="--w:45%"></i></div>Documentation<div class="bar"><i style="--w:90%"></i></div></div></div>
+<div class="card l"><h2>Activité récente</h2><ul class="feed"><li class="row"><span class="dot"></span>Camille a terminé « Maquette de l’accueil »</li><li class="row"><span class="dot"></span>Yanis a commenté « Plan de test »</li><li class="row"><span class="dot"></span>Nadia a créé « Atelier de lancement »</li></ul></div></section><section class="page" id="liste" hidden><h1>Liste des tâches</h1><div class="rule"></div><p class="sub">Filtrez, triez, supprimez : les lignes bougent sans délai de couche.</p>
+<div class="seg" role="group"><button aria-pressed="true">Toutes</button><button aria-pressed="false">En cours</button><button aria-pressed="false">Terminées</button></div>
+<div class="card l"><table><thead><tr><th>Tâche</th><th>Équipe</th><th>État</th><th></th></tr></thead><tbody>
+<tr class="row"><td><button class="tab" data-go="detail" style="color:inherit">Maquette de l’accueil</button></td><td>Design</td><td>En cours</td><td><button class="btn ghost" data-del>Supprimer</button></td></tr>
+<tr class="row"><td>Plan de test</td><td>Qualité</td><td>Terminée</td><td><button class="btn ghost" data-del>Supprimer</button></td></tr>
+<tr class="row"><td>Atelier de lancement</td><td>Produit</td><td>En cours</td><td><button class="btn ghost" data-del>Supprimer</button></td></tr>
+<tr class="row"><td>Migration des données</td><td>Technique</td><td>En retard</td><td><button class="btn ghost" data-del>Supprimer</button></td></tr></tbody></table></div></section><section class="page" id="detail" hidden><button class="btn ghost" data-go="liste">‹ Liste des tâches</button><h1 style="margin-top:16px">Maquette de l’accueil</h1><div class="rule"></div><p class="sub">Niveau 2 : la page arrive par la droite, la liste recule ; sur téléphone, le geste depuis le bord gauche revient.</p><div class="card l"><h2>Détails</h2>Équipe Design · échéance 12 décembre · 3 sous-tâches</div></section><section class="page" id="regl" hidden><h1>Réglages</h1><div class="rule"></div><p class="sub">Enregistrez : un message de confirmation apparaît.</p>
+<div class="card l"><label class="f">Nom de l’équipe<input value="Équipe Design"></label><label class="f">Adresse de contact<input type="email" value="equipe@exemple.fr"></label><div class="sw">Notifications par e-mail<input type="checkbox" role="switch" checked style="width:44px;height:24px"></div><details style="margin:12px 0"><summary style="min-height:44px;cursor:pointer;display:flex;align-items:center">Options avancées</summary>Fuseau horaire et langue.</details><button class="btn" data-toast>Enregistrer</button></div></section></main></div>
+<div class="tabbar"><button data-go="tdb" aria-current="page">Tableau</button><button data-go="liste">Liste</button><button data-go="regl">Réglages</button></div><div class="toast" role="status">Réglages enregistrés</div>
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+function go(id){document.querySelectorAll('[data-go]').forEach(b=>b.toggleAttribute('aria-current',b.dataset.go===id)||0);document.querySelectorAll('[data-go]').forEach(b=>b.dataset.go===id?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+ document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==id);const p=$('#'+id);const m=$('main');m.classList.remove('play');void m.offsetWidth;m.classList.add('play');p.querySelectorAll('.bar i,.bars i').forEach((e,i)=>e.style.setProperty('--i',i))}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);if(e.target.closest('[data-toast]')){const t=$('.toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200)}if(e.target.closest('[data-del]'))e.target.closest('tr').remove()});
+go('tdb')</script></body></html>

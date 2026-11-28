@@ -40,7 +40,8 @@ describe('mouvement des graphiques : plafond de cascade et jetons', () => {
 describe('easing de la série de ligne', () => {
   it('la série porte la courbe draw (le défaut `linear` des séries de ligne ignorerait l\'option globale)', () => {
     const theme = readChartTheme(style(TOKENS), flags);
-    const option = buildSparklineOption({ values: [1, 2, 3], summary: '', theme, showEndPoint: false }) as { series: { animationEasing: string }[] };
+    const option = buildSparklineOption({ values: [1, 2, 3], summary: '', theme, showEndPoint: false }) as { series: { animationEasing: string; animationEasingUpdate: string }[] };
     expect(option.series[0].animationEasing).toBe(LC_CHART_EASING['draw']);
+    expect(option.series[0].animationEasingUpdate).toBe(LC_CHART_EASING['draw']);
   });
 });

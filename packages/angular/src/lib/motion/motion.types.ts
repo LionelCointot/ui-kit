@@ -3,14 +3,14 @@
  *
  * @internal Réservé aux points d'entrée du kit : le contrat public est le type `LcMotionDuration`.
  */
-export const LC_MOTION_DURATIONS = ['fast', 'exit', 'normal', 'slow', 'enter', 'move', 'long', 'view', 'title', 'draw'] as const;
+export const LC_MOTION_DURATIONS = ['fast', 'exit', 'normal', 'enter', 'move', 'long', 'view', 'title', 'draw', 'fill'] as const;
 
 /**
  * Rôles de courbe : `--lc-sys-easing-<rôle>`. Égal aux `sys.easing.*` hors `emphasized` (vérifié par `motion.types.spec.ts`).
  *
  * @internal Réservé aux points d'entrée du kit : le contrat public est le type `LcMotionEasing`.
  */
-export const LC_MOTION_EASINGS = ['standard', 'entrance', 'fill', 'soft', 'out', 'pop', 'pop-strong', 'title', 'draw', 'inout', 'exit', 'stack'] as const;
+export const LC_MOTION_EASINGS = ['standard', 'entrance', 'fill', 'out', 'pop', 'pop-strong', 'title', 'draw', 'inout', 'exit', 'stack'] as const;
 
 /** Rôle de durée (`'enter'` lit `--lc-sys-duration-enter`). */
 export type LcMotionDuration = (typeof LC_MOTION_DURATIONS)[number];

@@ -264,15 +264,16 @@ lc-form-field [lcSuffix] {
   outline: none;
 }
 
-/* Cascade du contenu : courbe « soft » du catalogue (la variante pop garde la sienne). */
-.lc-drawer .lc-reveal:not(.lc-reveal--pop) {
-  --lc-reveal-curve: var(--lc-sys-easing-soft);
-}
-
 /* Plein écran seulement pour un tiroir `dismissible: false` : les autres se présentent en feuille du bas sous 768 px. */
 @media (max-width: 767.98px) {
   .lc-drawer-panel {
     inline-size: 100vw;
+  }
+
+  /* Barre d'onglets du bas de lc-app-shell (classe posée par le shell sur `:root`) : espace qu'elle prend, et pile de toasts à 16 px au-dessus. */
+  :root.lc-has-tabbar {
+    --lc-shell-tabbar-space: calc(var(--lc-tabbar-height) + var(--lc-sys-space-3) + env(safe-area-inset-bottom));
+    --lc-toast-above-tabbar: calc(var(--lc-shell-tabbar-space) + var(--lc-sys-space-4));
   }
 }
 

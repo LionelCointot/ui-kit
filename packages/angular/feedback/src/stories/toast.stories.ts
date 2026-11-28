@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, inject, input } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
 import { LcButtonComponent, type LcStatusKind } from '@lionelcointot/ui-angular';
-import { fixedExample } from '@lc/storybook';
+import { StoryMotionNoticeComponent, fixedExample, replayable } from '@lc/storybook';
 import { LcToastOutletComponent, LcToastService } from '@lionelcointot/ui-angular/feedback';
 
 const KINDS: readonly LcStatusKind[] = ['info', 'success', 'warning', 'error'];
@@ -52,6 +52,43 @@ class ToastDemoComponent implements OnDestroy {
   }
 }
 
+/** Demo of the `Animation` story (d29, d60): a toast rises 30 px while growing, then leaves 16 px lower. Shown by script, closed by the demo. */
+@Component({
+  selector: 'toast-animation-demo',
+  imports: [LcButtonComponent, LcToastOutletComponent, StoryMotionNoticeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <lc-story-motion-notice />
+    <div #root data-demo="d29">
+      <button lcButton fillMode="outline" size="small" (click)="demo.replay(root)">Rejouer</button>
+    </div>
+    <div #phone data-demo="d60" style="margin-top:var(--lc-sys-space-4)">
+      <button lcButton fillMode="outline" size="small" (click)="demo.replay(phone)">Rejouer (téléphone)</button>
+    </div>
+    <lc-toast-outlet />`,
+})
+class ToastAnimationDemoComponent implements OnDestroy {
+  private readonly service = inject(LcToastService);
+  // A toast is already on screen when the story opens: "Rejouer" plays its exit (250 ms), then the next one enters.
+  private readonly shown = this.show();
+  protected readonly demo = replayable({
+    reset: () => this.service.dismissAll(),
+    wait: 300,
+    play: (later) => {
+      this.show();
+      later(2500, () => this.service.dismissAll());
+    },
+  });
+
+  private show(): void {
+    this.service.show({ kind: 'success', message: 'Le document a été enregistré.', durationMs: 60_000 });
+  }
+
+  ngOnDestroy(): void {
+    this.service.dismissAll();
+  }
+}
+
 interface ToastArgs {
   kind: LcStatusKind;
   message: string;
@@ -69,7 +106,7 @@ interface ToastArgs {
 const meta: Meta<ToastArgs> = {
   title: 'Feedback/Toast',
   component: LcToastOutletComponent,
-  decorators: [moduleMetadata({ imports: [ToastDemoComponent, LcToastOutletComponent] })],
+  decorators: [moduleMetadata({ imports: [ToastDemoComponent, ToastAnimationDemoComponent, LcToastOutletComponent] })],
   args: { kind: 'success', message: 'Le document a été enregistré.', durationMs: 5000, withAction: false },
   argTypes: {
     kind: { control: 'inline-radio', options: [...KINDS] },
@@ -103,6 +140,27 @@ export const WithAction: Story = {
   render: () => ({
     template: `<toast-demo kind="success" message="Fichier supprimé." [withAction]="true" /><lc-toast-outlet />`,
   }),
+};
+
+const ANIMATION_CODE = `import { Component, inject } from '@angular/core';
+import { LcToastOutletComponent, LcToastService } from '@lionelcointot/ui-angular/feedback';
+
+@Component({
+  selector: 'app-example',
+  imports: [LcToastOutletComponent],
+  template: \`<button (click)="save()">Enregistrer</button> <lc-toast-outlet />\`,
+})
+export class ExampleComponent {
+  private readonly toasts = inject(LcToastService);
+  protected save(): void {
+    this.toasts.show({ kind: 'success', message: 'Le document a été enregistré.' });
+  }
+}`;
+
+/** A toast rises 30 px while growing from 94 % (500 ms) and leaves 16 px lower (250 ms). "Rejouer" shows one, then closes it. */
+export const Animation: Story = {
+  parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
+  render: () => ({ template: `<toast-animation-demo />` }),
 };
 
 /** Click repeatedly: at most three toasts stay visible, the oldest non-error one is dropped first. */

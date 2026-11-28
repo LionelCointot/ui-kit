@@ -185,7 +185,7 @@ export class LcTabsComponent {
     this.ready.set(true);
   }
 
-  /** Première ouverture d'un onglet : ses enfants directs entrent l'un après l'autre (`lc-reveal`, rang = position, courbe « soft »). */
+  /** Première ouverture d'un onglet : ses enfants directs entrent l'un après l'autre (`lc-reveal`, rang = position). */
   private revealPanel(id: string): void {
     const panel = this.panels().find((ref) => ref.nativeElement.id === this.panelId(id))?.nativeElement;
     if (!panel || lcPrefersReducedMotion()) return;
@@ -193,7 +193,6 @@ export class LcTabsComponent {
       const element = child as HTMLElement;
       element.classList.add('lc-reveal');
       element.style.setProperty('--lc-reveal-rank', `${rank}`);
-      element.style.setProperty('--lc-reveal-curve', 'var(--lc-sys-easing-soft)');
     });
   }
 
@@ -203,7 +202,6 @@ export class LcTabsComponent {
     if (event.animationName !== 'lc-reveal-in' || child.parentElement !== event.currentTarget) return;
     child.classList.remove('lc-reveal');
     child.style.removeProperty('--lc-reveal-rank');
-    child.style.removeProperty('--lc-reveal-curve');
   }
 
   protected onSwipe(index: number): void {

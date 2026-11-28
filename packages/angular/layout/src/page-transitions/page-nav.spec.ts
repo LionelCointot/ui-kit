@@ -12,6 +12,7 @@ class BlankComponent {}
 const page = (path: string, title?: string) => ({ path, component: BlankComponent, ...(title ? { title } : {}) });
 const routes: Routes = [
   { path: 'credit', title: 'Crédit', children: [page('detail', 'Détail'), page('', undefined)] },
+  { path: 'dossier', title: 'Dossiers', children: [{ path: ':id', title: 'Dossier', children: [page('', undefined), page('histo', 'Histo')] }] },
   { path: 'a', children: [{ path: 'b', title: 'B', children: [page('c', 'C')] }] },
   page('aide', 'Aide'),
   { ...page('muet', 'Muet'), data: { lcPageTransition: false } },
@@ -68,6 +69,15 @@ describe('LcPageNav : titres et pile', () => {
     await go('/a/b/c');
     expect(nav.title()).toBe('C');
     expect(nav.parent()).toEqual({ title: 'B', url: '/a/b' });
+  });
+
+  it('feuille à chemin vide sous une route titrée : le parent est la page du dessus, pas la route qui porte la même URL', async () => {
+    const { nav, go } = setup();
+    await go('/dossier/42');
+    expect(nav.title()).toBe('Dossier');
+    expect(nav.parent()).toEqual({ title: 'Dossiers', url: '/dossier' });
+    await go('/dossier/42/histo');
+    expect(nav.parent()).toEqual({ title: 'Dossier', url: '/dossier/42' });
   });
 
   it('route à chemin vide : titre hérité du parent par le routeur ; niveau 1 : pas de parent', async () => {

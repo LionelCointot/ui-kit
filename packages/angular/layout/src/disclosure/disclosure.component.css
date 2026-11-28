@@ -63,11 +63,11 @@
 
 .lc-disclosure__chevron {
   flex: none;
-  transition: transform var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard);
+  transition: transform var(--lc-disclosure-chevron-duration) var(--lc-sys-easing-standard);
 }
 
 :host(.lc-disclosure--expanded) .lc-disclosure__chevron {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 
 .lc-disclosure__actions {
@@ -87,13 +87,15 @@
   grid-template-rows: 0fr;
   visibility: hidden;
   transition:
-    grid-template-rows var(--lc-collapse-duration, var(--lc-sys-duration-move)) var(--lc-sys-easing-standard),
-    visibility var(--lc-collapse-duration, var(--lc-sys-duration-move));
+    grid-template-rows var(--lc-disclosure-exit-duration) var(--lc-sys-easing-standard),
+    visibility var(--lc-disclosure-exit-duration);
 }
 
+/* La durée vient de l'état d'arrivée : ouverture 300 ms, repli 100 ms (tokens `disclosure.*`). */
 :host(.lc-disclosure--expanded) .lc-disclosure__region {
   grid-template-rows: 1fr;
   visibility: visible;
+  transition-duration: var(--lc-disclosure-enter-duration);
 }
 
 /* Le rognage n'a ni padding ni bordure (sinon la ligne ne descendrait pas sous leur hauteur) : le padding est sur le contenu. */
@@ -105,12 +107,25 @@
 .lc-disclosure__region-body {
   padding-inline: var(--lc-sys-space-2);
   padding-block-end: var(--lc-sys-space-3);
+  opacity: 0;
+  translate: 0 var(--lc-disclosure-offset);
+  transition:
+    opacity var(--lc-disclosure-exit-duration) var(--lc-sys-easing-standard),
+    translate var(--lc-disclosure-exit-duration) var(--lc-sys-easing-standard);
+}
+
+:host(.lc-disclosure--expanded) .lc-disclosure__region-body {
+  opacity: 1;
+  translate: 0 0;
+  transition-duration: var(--lc-disclosure-enter-duration);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lc-disclosure__chevron,
   .lc-disclosure__region,
-  :host(.lc-disclosure--expanded) .lc-disclosure__region {
+  :host(.lc-disclosure--expanded) .lc-disclosure__region,
+  .lc-disclosure__region-body,
+  :host(.lc-disclosure--expanded) .lc-disclosure__region-body {
     transition: none;
   }
 }

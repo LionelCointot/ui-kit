@@ -1,18 +1,17 @@
 // Vérifications dans un vrai navigateur (Chromium via Playwright) sur le Storybook statique (`npm run build-storybook`) :
-//   node tools/qa/storybook-browser.mjs axe [fragment-d-id ...]   axe-core sur chaque story, thèmes clair et sombre
+//   node tools/qa/storybook-browser.mjs axe [fragment-d-id ... | --hors-mouvement]   axe-core sur chaque story, thèmes clair et sombre (même page) ; sans argument : stories de mouvement (`--animation`, `qa-motion`) ; `--hors-mouvement` : status-badge, tree-table, slider, theme-builder…
 //   node tools/qa/storybook-browser.mjs perf                      temps de rendu des 2 000 lignes de lc-tree-table (CA-K3.5)
 //   node tools/qa/storybook-browser.mjs treegrid                  clavier complet de lc-tree-table, focus après re-rendu, tri sur 2 000 lignes
 //   node tools/qa/storybook-browser.mjs filter-date               filtre de période de lc-data-table : calendrier dans le menu (CA-P5), panneau 360 px natif (CA-P10b)
-//   node tools/qa/storybook-browser.mjs motion                    mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px ; puis, sur chaque story d'animation de l'index, toute animation (CSSTransition, CSSAnimation, WAAPI) : CA-3, CA-5, CA-31 de 2026-12-mouvement-v2
+//   node tools/qa/storybook-browser.mjs motion [fragment-d-id ...]                  mouvement (spec 2026-11-mouvement) : appui du bouton, lcReveal, entrée et sortie des panneaux ; contextes normal, réduction, forced-colors, 360 et 1280 px ; puis, sur chaque story d'animation de l'index, toute animation (CSSTransition, CSSAnimation, WAAPI) : CA-3, CA-5, CA-31 de 2026-12-mouvement-v2, puis CA-16a à CA-16c de 2026-11-mouvement (ouverture sans erreur, « Rejouer », bandeau de réduction)
 //   node tools/qa/storybook-browser.mjs swipe                     lc-swipe-panels, lc-tabs en swipe, fond du segmenté (spec 2026-11-bande-a-panneaux-et-reperes, CA-1 à CA-11) ; normal et mouvement réduit à 360 px, colonnes à 1280 px
-//   node tools/qa/storybook-browser.mjs stories-motion           stories de mouvement (liste dérivée de l'index, CA-38) : ouverture sans erreur, « Rejouer », bandeau de réduction (CA-16a à CA-16c)
 //   node tools/qa/storybook-browser.mjs dom                       comportements qui dépendent du CSS (sélection, repli, tabulation)
 // Sortie : un résumé par story ; code de sortie 1 au moindre échec. Aucun accès réseau (serveur local sur dist/storybook).
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -20,25 +19,15 @@ const storybookDir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'story
 const { chromium } = require('playwright');
 const axeSource = await readFile(require.resolve('axe-core/axe.min.js'), 'utf8');
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ico': 'image/x-icon' };
-
-function serve() {
-  const server = createServer(async (request, response) => {
-    const url = new URL(request.url ?? '/', 'http://localhost');
-    const file = path.join(storybookDir, path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, ''));
-    let body;
-    try {
-      body = await readFile(file);
-    } catch {
-      response.writeHead(404).end();
-      return;
-    }
-    response.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' }).end(body);
-  });
-  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
-}
-
+/** `axe` sans argument : les stories de mouvement (ce qu'étaient `axe --animation` et `axe qa-motion`). `axe --hors-mouvement` : les stories des autres lots. */
+const MOTION_AXE_FRAGMENTS = ['--animation', 'qa-motion'];
 const NEW_STORY_FRAGMENTS = ['feedback-status-badge', 'data-tree-table', 'navigation-nav-group', 'bar-chart--by-role', 'area-chart--by-role', 'buttons-button--variants', 'forms-slider', 'theme-builder'];
+
+/** Rendu fini : police chargée, deux images, plus aucune animation finie en cours (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées), sinon axe mesure le contraste d'un texte à mi-fondu. */
+async function settled(page) {
+  await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
+  await page.waitForFunction(() => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending)), null, { timeout: 15000 });
+}
 
 async function openStory(browser, base, id, theme) {
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
@@ -48,17 +37,28 @@ async function openStory(browser, base, id, theme) {
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
   // `attached` : une story dont le seul enfant est en `position:fixed` (overlays-tooltip--near-edges) a un hôte sans boîte, jamais « visible ».
   await page.waitForSelector('#storybook-root > *, #storybook-docs', { state: 'attached', timeout: 20000 });
-  await page.waitForTimeout(400);
-  if (id.includes('--animation') || id.startsWith('qa-motion')) await page.waitForFunction(() => document.getAnimations().every((a) => !Number.isFinite(a.effect.getComputedTiming().endTime)), null, { timeout: 15000 }); // fin de la cascade (les boucles infinies, comme .lc-pulse, ne finissent jamais : ignorées) : sinon axe mesure le contraste d'un texte à mi-fondu
+  await settled(page).catch(() => errors.push('animations finies encore en cours après 15 s')); // un KO écrit, pas un plantage
   return { page, context, errors };
 }
 
 async function axeRun(browser, base, entries) {
   let failures = 0;
   for (const [id, title] of entries) {
+    const t0 = Date.now();
+    const { page, context, errors } = await openStory(browser, base, id, 'default');
+    await page.addScriptTag({ content: axeSource });
     for (const theme of ['default', 'dark']) {
-      const { page, context, errors } = await openStory(browser, base, id, theme);
-      await page.addScriptTag({ content: axeSource });
+      if (theme === 'dark') { // même page : le sélecteur de thème de Storybook ne fait que poser ces deux attributs (.storybook/preview.ts)
+        // Graphiques : ChartThemeService relit les tokens sur mutation de `data-theme` puis ECharts redessine ; état observable = le tracé (canvas ou svg) a changé puis ne bouge plus 5 images (5 s au plus : un graphique sans texte ni couleur de thème ne change pas).
+        const sig = () => [...document.querySelectorAll('lc-chart-host canvas, lc-chart-host svg')].map((e) => (e.tagName === 'CANVAS' ? e.toDataURL() : e.outerHTML)).join('|');
+        const hadChart = await page.evaluate(`(() => { window.__sigBefore = (${sig.toString()})(); return window.__sigBefore !== ''; })()`);
+        await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); document.documentElement.style.colorScheme = 'dark'; });
+        if (hadChart) {
+          await page.waitForFunction(`(${sig.toString()})() !== window.__sigBefore`, null, { timeout: 5000 }).catch(() => undefined);
+          await page.evaluate(`(async () => { const sig = ${sig.toString()}; let last = sig(), same = 0; while (same < 5) { await new Promise((r) => requestAnimationFrame(r)); const now = sig(); same = now === last ? same + 1 : 0; last = now; } })()`);
+        }
+        await settled(page).catch(() => errors.push('animations finies encore en cours après 15 s'));
+      }
       const result = await page.evaluate(async () => {
         // L'addon a11y de Storybook peut avoir son propre axe.run en cours (sous charge) : attendre qu'il finisse.
         let run;
@@ -75,8 +75,9 @@ async function axeRun(browser, base, entries) {
       const ok = result.length === 0 && errors.length === 0;
       if (!ok) failures += 1;
       console.log(`${ok ? 'OK ' : 'KO '} ${theme.padEnd(7)} ${id}${ok ? '' : `\n     ${JSON.stringify(result)}${errors.length ? ` erreurs page: ${errors.join(' ; ')}` : ''}`}`);
-      await context.close();
     }
+    await context.close();
+    console.log(`TEMPS axe ${id} ${Date.now() - t0} ms`);
   }
   return failures;
 }
@@ -139,9 +140,13 @@ async function dom(browser, base) {
     await page.waitForTimeout(200);
     const after = await toggle.getAttribute('aria-expanded');
     const links = page.locator('lc-nav-group').first().locator('a');
-    const hiddenLinks = await links.evaluateAll((nodes) => nodes.map((node) => node.offsetParent === null || getComputedStyle(node).visibility === 'hidden'));
+    // Replié, le contenu reste mis en page (grille à 0fr, mouvement-ios : `hidden` remplacé par `inert`) : hors tabulation et hors arbre d'accessibilité par `inert`.
+    const hiddenLinks = await links.evaluateAll((nodes) => nodes.map((node) => node.closest('[inert]') !== null || node.offsetParent === null || getComputedStyle(node).visibility === 'hidden'));
+    await page.keyboard.press('Tab');
+    const tabbedInto = await page.evaluate(() => !!document.activeElement?.closest('lc-nav-group a'));
     check('CA-K8.2 Entrée bascule aria-expanded', before !== after, `${before} -> ${after}`);
-    check('CA-K8.2 liens repliés non rendus (hors tabulation)', hiddenLinks.length > 0 && hiddenLinks.every(Boolean));
+    check('CA-K8.2 liens repliés non rendus (hors tabulation)', hiddenLinks.length > 0 && hiddenLinks.every(Boolean) && !tabbedInto, `inert ou masqués : ${hiddenLinks.join()} ; Tab entre dans un lien : ${tabbedInto}`);
+    await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Space');
     await page.waitForTimeout(200);
     check('CA-K8.2 Espace rouvre le groupe', (await toggle.getAttribute('aria-expanded')) === before);
@@ -281,7 +286,7 @@ async function treegrid(browser, base) {
   }
 
   {
-    const { page, context } = await open('données-tableau-hiérarchique--defaut');
+    const { page, context } = await open('data-tree-table--playground');
     const start = await state(page);
     const current = await press(page, '*');
     check('* : déplie tous les frères repliés du niveau, focus conservé', current.isRow && current.index === 0 && current.count > start.count && current.expanded === 'true', JSON.stringify({ start: start.count, current }));
@@ -292,7 +297,7 @@ async function treegrid(browser, base) {
 
   {
     // Clic souris sur le bouton de dépliage : la ligne bascule, aucune erreur ; le focus clavier reste cohérent ensuite.
-    const { page, context, errors } = await open('données-tableau-hiérarchique--defaut');
+    const { page, context, errors } = await open('data-tree-table--playground');
     const toggle = page.locator('lc-tree-table tbody tr[aria-level="1"] .lc-tree-table__toggle').first();
     await toggle.click();
     await page.waitForTimeout(100);
@@ -672,7 +677,7 @@ const MOTION_INIT = () => {
       cascades: q.cardSnaps.length - r.cardSnapsBefore,
       snaps: q.cardSnaps.slice(r.cardSnapsBefore).map((s) => ({ t: s.t, rows: s.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) })),
       frames: r.frames, changedAt: r.changedAt, leavingSeen: r.leavingSeen,
-      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-sys-duration-enter'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
+      move: q.tokenMs('--lc-list-move-duration'), moveEase: q.easing('--lc-list-move-easing'), exit: q.tokenMs('--lc-sys-duration-exit'), reveal: q.tokenMs('--lc-reveal-duration'), refill: (() => { try { return q.tokenMs('--lc-table-refill-delay'); } catch { return NaN; } })(), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), entrance: q.easing('--lc-sys-easing-entrance'), out: q.easing('--lc-sys-easing-out'), draw: q.easing('--lc-sys-easing-draw'), soft: q.easing('--lc-sys-easing-soft'),
     };
   };
 };
@@ -687,7 +692,7 @@ const popRef = (demo, target) => {
   return { opacity: { ms: opacity.duration, easing: opacity.easing }, move: { ms: move.duration, easing: move.easing }, ty, scale };
 };
 // Valeurs de la spec (§5.4.1) : `menu.*` pour le menu, la liste du combobox, les calendriers et le menu de filtre ; `popover.*` pour lc-toggletip.
-const MENU = { tokens: 'menu', enterMs: 350, exitMs: 140, scale: 0.94, ref: popRef('d28', 'div.menu-panel') };
+const MENU = { tokens: 'menu', enterMs: 400, exitMs: 150, scale: 0.92, ref: popRef('d28', 'div.menu-panel') };
 const POPOVER = { tokens: 'popover', enterMs: 450, exitMs: 150, scale: 0.95, ref: popRef('d39', 'div#d39pop'), revive: false };
 const PANELS = {
   menu: { ...MENU, pane: '.cdk-overlay-pane.lc-menu-overlay', open: '#trigger', host: '#trigger', reopen: 'Enter' },
@@ -701,8 +706,8 @@ const PANELS = {
 };
 const panelStory = (spec, control, place) => (spec.table ? ['qa-motion-data-table--table', `place:${place}`] : ['qa-motion-acceptance--panel', `control:${control};place:${place}`]);
 const msList = (value) => value.split(',').map((v) => v.trim()).map((v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000));
-/** Feuille du téléphone (d54 de fidelite.json) : glissement 600 ms à l'ouverture, 300 ms à la fermeture ; fondu du voile 300 ms. */
-const SHEET = { enter: 600, exit: 300, backdrop: 300 };
+/** Feuille du téléphone : glissement 550 ms à l'ouverture (talmo-source.md, ligne lc-sheet : « entrée 550 ms »), 300 ms à la fermeture ; fondu du voile 300 ms. */
+const SHEET = { enter: 550, exit: 300, backdrop: 300 };
 /** Décalage vertical (m42) d'un `transform` calculé : `none`, `matrix(a,b,c,d,e,f)` ou `matrix3d(…)` (lu à la main : DOMMatrix n'existe pas côté Node). */
 const m42 = (value) => (value === 'none' ? 0 : parseFloat(value.slice(value.indexOf('(') + 1, -1).split(',')[value.startsWith('matrix3d') ? 13 : 5]));
 /** Le panneau a été mesuré à l'ouverture (5 s au plus) ; sinon un échec écrit, pas un délai de 30 s qui interrompt la suite. */
@@ -732,7 +737,7 @@ async function motionPhone(context, base, reduced, tag, check) {
     await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1);
     return { page, errors };
   };
-  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-sys-duration-enter'), offset: q.tokenPx('--lc-overlay-offset') }; });
+  const tokens = (page) => page.evaluate(() => { const q = window.__qa; return { enter: q.tokenMs('--lc-overlay-enter-duration'), slideEnter: q.tokenMs('--lc-slide-enter-duration'), slideExit: q.tokenMs('--lc-slide-exit-duration'), exit: q.tokenMs('--lc-overlay-exit-duration'), chip: q.tokenMs('--lc-chip-enter-duration'), stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), reveal: q.tokenMs('--lc-reveal-duration'), offset: q.tokenPx('--lc-sys-motion-offset-sm') }; });
   const emitted = (page) => page.evaluate(() => (window.__emitted ?? []).length);
   const openPanel = async (page) => { await page.click(FILTERS); await page.waitForFunction(() => window.__qa.dlg.enter && document.querySelector('lc-sheet dialog').open); };
   const tick = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -1087,7 +1092,7 @@ const closePanels = async (page) => {
   }
 };
 /** Liste de lc-data-table (spec mouvement-v2, T7) : CA-26 sur de vraies actions ; cartes à 360 px, lignes à 1 280 px.
- *  Attendus tirés de la spec (§5.4.2) et des démos d07, d08, d33, d36 du catalogue, pas du code : filtre (et retrait du filtre) = liste vidée, puis cascade après 200 ms (40 ms par rang, 450 ms, 8 rangs au plus) ;
+ *  Attendus tirés de la spec (§5.4.2) et des démos d07, d08, d33, d36 du catalogue, pas du code : filtre (et retrait du filtre) = liste vidée, puis cascade après 200 ms (40 ms par rang, 550 ms, 8 rangs au plus) ;
  *  tri = glissement de 420 ms `draw` des lignes qui changent de place, rien d'autre ; suppression = sortie `lc-leave` (token d'exit, sans fondu propre), puis glissement des voisines (420 ms `draw`). */
 async function motionList(context, base, reduced, tag, phone, check) {
   const ID = 'qa-motion-data-table--table';
@@ -1136,7 +1141,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
     }
   };
 
-  /** Filtre : liste vidée d'un coup (rien ne sort), puis cascade des lignes affichées après `refill` (200 ms, d08), 40 ms par rang, 450 ms, rang plafonné à 8. */
+  /** Filtre : liste vidée d'un coup (rien ne sort), puis cascade des lignes affichées après `refill` (200 ms, d08), 40 ms par rang, 550 ms, rang plafonné à 8. */
   const refill = (r, label, expectCount) => {
     if (reduced) {
       check(r.anims.length === 0, `CA-23 ${tag} ${label} aucune animation de ligne en réduction`, `animations=${JSON.stringify(r.anims.map((a) => [a.key, a.kind, a.props.join('+')]))}`);
@@ -1147,14 +1152,14 @@ async function motionList(context, base, reduced, tag, phone, check) {
     check(r.changedAt !== null && !r.leavingSeen && !r.anims.some((a) => a.leaving || a.name === 'lc-leave' || (a.props.includes('opacity') && String(a.last.opacity) === '0' && a.kind === 'waapi')), `CA-26 ${tag} ${label} rien ne sort : aucune ligne retirée n'est animée en sortie`, `changement vu=${r.changedAt !== null}, sortie vue=${r.leavingSeen}`);
     const during = r.frames.filter((f) => r.changedAt !== null && f.t >= r.changedAt + 40 && f.t <= r.changedAt + r.refill - 40);
     check(during.length >= 3 && during.every((f) => f.visible === 0), `CA-26 ${tag} ${label} liste vidée : aucune ligne visible pendant le délai de ${r.refill} ms`, `images=${during.length}, lignes visibles=${during.map((f) => f.visible)}`);
-    check(near(r.refill, 200) && near(r.stagger, 40) && near(r.reveal, 450), `CA-26 ${tag} ${label} tokens : délai 200 ms, rang 40 ms, entrée 450 ms`, `refill=${r.refill} stagger=${r.stagger} reveal=${r.reveal}`);
+    check(near(r.refill, 200) && near(r.stagger, 40) && near(r.reveal, 550), `CA-26 ${tag} ${label} tokens : délai 200 ms, rang 40 ms, entrée 550 ms`, `refill=${r.refill} stagger=${r.stagger} reveal=${r.reveal}`);
     // Cascade lue dans l'instantané pris à l'insertion des lignes (les entrées sont terminées aussitôt) : celui qui compte le plus de lignes animées.
     const snap = [...r.snaps].sort((x, y) => y.rows.filter((c) => c.reveal).length - x.rows.filter((c) => c.reveal).length)[0];
     const rows = snap?.rows ?? [];
     const first = snap ? snap.t + rows[0]?.delay : NaN;
     // Rangs 0 à 7 : une entrée chacun (délai = rang × 40 ms) ; au-delà (cascade plafonnée, comme les cartes de CA-12) : pas d'entrée obligatoire, mais jamais après le plafond.
-    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !sameEase(c.easing, r.entrance) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
-    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 450 ms entrance (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
+    const bad = rows.map((c, i) => ({ c, i })).filter(({ c, i }) => (i < 8 && (!c.reveal || !near(c.delay - rows[0].delay, i * 40, 1.5))) || (c.reveal && (!near(c.duration, r.reveal) || !sameEase(c.easing, r.out) || c.startOpacity !== '0' || c.delay - rows[0].delay > 8 * 40 + 1.5)));
+    check(!!snap && rows.length === expectCount && bad.length === 0 && rows.slice(0, 8).every((c) => c.reveal), `CA-26 ${tag} ${label} cascade : une entrée par rang (8 au plus), 550 ms out (d08), 40 ms par rang`, `instantanés=${r.snaps.length}, lignes=${rows.length}, hors contrat=${JSON.stringify(bad.map(({ c, i }) => [i, c.reveal, c.delay, c.duration]))}`);
     check(!!snap && first - r.changedAt >= r.refill - 40 && first - r.changedAt <= r.refill + 60, `CA-26 ${tag} ${label} la première ligne entre ${r.refill} ms après le changement (à une image près)`, `écart=${(first - r.changedAt).toFixed(1)} ms`);
     check(!waapiOf(r).some((a) => a.props.includes('transform')), `CA-26 ${tag} ${label} aucune glissade de ligne (la liste est reconstruite)`, `glissades=${waapiOf(r).filter((a) => a.props.includes('transform')).map((a) => a.key)}`);
   };
@@ -1232,7 +1237,7 @@ async function motionList(context, base, reduced, tag, phone, check) {
   await page.close();
 }
 
-async function motion(browser, base) {
+async function motion(browser, base, fragments = []) {
   let failures = 0;
   const check = (ok, label, detail = '') => {
     if (!ok) failures += 1;
@@ -1240,8 +1245,23 @@ async function motion(browser, base) {
   };
   const contexts = [['normal', {}], ['reduced', { reducedMotion: 'reduce' }], ['forced', { forcedColors: 'active' }]];
   const sizes = [[1280, 720], [360, 640]];
-  const animationIds = await animationStoryIds();
-  for (const id of T9C_STORIES) check(animationIds.includes(id), `CA-38 T9c story ${id} dans l'index`);
+  const animationIds = await animationStoryIds(fragments);
+  if (fragments.length > 0 && animationIds.length === 0) check(false, `aucune story d'animation ne correspond à ${fragments.join(' ')}`);
+  if (fragments.length > 0) { // relance ciblée : seulement la boucle générale (CA-3, CA-5, CA-31, CA-16) des stories dont l'id contient un fragment
+    console.log(`${animationIds.length} story(ies) d'animation`);
+    for (const [name, options] of contexts.slice(0, 2)) {
+      for (const [width, height] of sizes) {
+        const context = await browser.newContext({ viewport: { width, height }, ...options });
+        await context.addInitScript(MOTION_INIT);
+        await motionAnimations(context, base, animationIds, name === 'reduced', width, check);
+        await context.close();
+      }
+    }
+    return failures;
+  }
+  // CA-38 : seule vérification de présence (sans chargement de page) ; les boutons « Rejouer » sont comptés par la boucle générale, les démos citées par la fidélité (motion-fidelity.mjs).
+  const fromTable = Object.values(JSON.parse(await readFile(path.join(root, 'docs', 'design', 'explorations', '2026-12-mouvement-v2', 'fidelite.json'), 'utf8')).table).map((e) => e.story);
+  for (const id of new Set([...fromTable, ...CA38_PRIMITIVES])) check(animationIds.includes(id), `CA-38 story ${id} dans l'index`);
   for (const [name, options] of contexts) {
     const reduced = name === 'reduced';
     for (const [width, height] of sizes) {
@@ -1281,12 +1301,12 @@ async function motion(browser, base) {
       // lc-data-table (T6) : téléphone seulement ici ; le menu de filtre est dans la boucle des panneaux.
       if (width === 360 && name !== 'forced') await motionPhone(context, base, reduced, tag, check);
       if (width === 1280 && name === 'normal') {
-        // Spec v2 §5.4.1 (d07 relevé à 1280 px) : cascade à l'ouverture aussi sur ordinateur, 450 ms `soft`, 40 ms par rang, 8 px.
+        // Spec v2 §5.4.1 (d07 relevé à 1280 px) : cascade à l'ouverture aussi sur ordinateur, 550 ms `out`, 40 ms par rang, 8 px.
         const { page } = await motionPage(context, base, 'qa-motion-data-table--table');
         await page.waitForFunction(() => window.__qa.cardSnaps.length >= 1, undefined, { timeout: 5000 }).catch(() => {});
-        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], soft: window.__qa.easing('--lc-sys-easing-soft'), reveal: window.__qa.tokenMs('--lc-sys-duration-enter') }));
+        const open = await page.evaluate(() => ({ snap: window.__qa.cardSnaps[0]?.map((c) => ({ reveal: c.reveal, delay: c.delays[0], duration: c.durations[0], easing: c.easings?.[0], startOpacity: c.startOpacity })) ?? [], out: window.__qa.easing('--lc-sys-easing-out'), reveal: window.__qa.tokenMs('--lc-reveal-duration') }));
         const rows8 = open.snap.slice(0, 8);
-        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 450) && near(open.reveal, 450) && sameEase(c.easing, open.soft) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 450 ms soft, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
+        check(rows8.length === 8 && rows8.every((c, i) => c.reveal && near(c.delay, i * 40, 1.5) && near(c.duration, 550) && near(open.reveal, 550) && sameEase(c.easing, open.out) && c.startOpacity === '0'), `CA-26 ${tag} cascade à l'ouverture sur ordinateur : 550 ms out, 40 ms par rang`, JSON.stringify(rows8.map((c) => [c.reveal, c.delay, c.duration])));
         await page.close();
       }
 
@@ -1306,7 +1326,7 @@ async function motion(browser, base) {
             const timing = a?.effect.getComputedTiming();
             return { i: Number(el.dataset.i), delay: timing?.delay ?? null, duration: timing?.duration ?? null, cssDelay: getComputedStyle(el).animationDelay, cssDuration: getComputedStyle(el).animationDuration };
           });
-          return { rows, stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), enter: q.tokenMs('--lc-sys-duration-enter'), cap: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-sys-motion-stagger-cap')) };
+          return { rows, stagger: q.tokenMs('--lc-sys-motion-stagger-normal'), enter: q.tokenMs('--lc-reveal-duration'), cap: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lc-sys-motion-stagger-cap')) };
         });
         if (reduced) {
           await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -1484,27 +1504,32 @@ async function motionCalendar(context, base, reduced, tag, check) {
   await page.close();
 }
 
-/** Stories d'animation attendues par T9c (CA-38, CA-20 : démos d28, d39, d41, d61, d50) : présentes dans l'index de Storybook. */
-const T9C_STORIES = ['navigation-menu--animation', 'overlays-toggletip--animation', 'overlays-tooltip--animation', 'forms-date-input--animation'];
+/** CA-38 : primitives sans démo dNN dans la table de fidélité. */
+const CA38_PRIMITIVES = ['layout-fill--animation', 'layout-draw--animation', 'layout-pulse-lift--animation', 'layout-count-up--animation', 'layout-flash--animation', 'layout-reveal--animation'];
 
 /** Stories d'animation, dérivées de l'index de Storybook (CA-38 de 2026-12-mouvement-v2 : plus de liste codée en dur) : toute story `Animation*`, la page Foundations/Motion et les deux pages gardées de 2026-11 (Elevation, Playground de Reveal). */
 const ANIMATION_STORY = /--animation|^foundations-(motion|elevation)--|^layout-reveal--playground$/;
-async function animationStoryIds() {
+async function animationStoryIds(fragments = []) {
   const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-  return Object.values(index.entries).filter((entry) => entry.type === 'story' && ANIMATION_STORY.test(entry.id)).map((entry) => entry.id);
+  return Object.values(index.entries).filter((entry) => entry.type === 'story' && ANIMATION_STORY.test(entry.id) && (fragments.length === 0 || fragments.some((f) => entry.id.includes(f)))).map((entry) => entry.id);
 }
 
 /** Toute animation (CSSTransition, CSSAnimation, WAAPI) d'une story d'animation, relevée une image après chaque « Rejouer » (spec 2026-12-mouvement-v2) :
  *  CA-3 (mouvement réduit : durées et délais ≤ 0,01 ms, rien en cours), CA-5 (propriétés animées), CA-31 (aucun défilement horizontal à 360 px à 0, 50 et 100 %). */
 const CA5_PROPS = new Set(['opacity', 'transform', 'translate', 'scale', 'rotate', 'strokeDashoffset']);
 const CA5_INDICATORS = '.lc-tabs__indicator, .lc-nav-list__indicator, .lc-segmented-control__indicator, .lc-switch__thumb';
-const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, .lc-switch__track, .lc-switch__thumb'; // lc-switch : contrôle de formulaire, piste et bouton changent de couleur à la bascule (d46, retour d'état);
+const CA5_CONTROLS = 'button[lcbutton], button.lc-button, [lcinput], input, textarea, select, .lc-switch__track'; // lc-switch : la piste change de couleur à la bascule (d46, retour d'état) ; le bouton ne fait que se déplacer (`translate`)
 /** Liste blanche de CA-5 : [propriétés, sélecteur de l'élément animé, préfixe du pseudo-élément animé (absent : l'élément lui-même), 'transition' : transitions seulement]. Tout le reste est un écart. */
+/** Stories dont « Rejouer » n'a volontairement aucun effet visible : exemptées de CA-16b, avec la raison (motion-fidelity.mjs marque d17 « aucun mouvement »). */
+const REPLAY_NO_EFFECT = new Map([['feedback-status-badge--animation', 'd17 lc-status-badge : aucun mouvement, le rejeu ne change rien de visible (voulu)']]);
 const CA5_ALLOW = [
   [['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'], CA5_CONTROLS, undefined, 'transition'], // retour d'état des contrôles (survol, focus, appui)
   [['color'], '.lc-flash'], // lcFlash : l'hôte porte `lc-flash` (contrat fixé par la QA de T5, tools/qa/count-flash-browser.mjs)
   [['gridTemplateRows'], '.lc-disclosure__region, .lc-nav-group__items'],
+  [['visibility'], '.lc-disclosure__region', undefined, 'transition'], // propriété discrète : ne passe à hidden qu'à la fin du repli (décision de l'orchestrateur), sans effet visible
   [['inlineSize'], '.lc-shell__nav'], // barre latérale de lc-app-shell
+  [['left', 'right'], '.lc-tabbar__indicator', undefined, 'transition'], // pastille de la barre du bas : deux bords, `left` et `right` (lcPlaceIndicator, mode edges), sans clip-path
+  [['color'], '.lc-tabbar__tab', undefined, 'transition'], // le texte de l'onglet bascule d'un bloc (durée 0, délai) quand le bord de la pastille le recouvre
   [['clipPath'], CA5_INDICATORS], // pastilles à deux bords
   [['clipPath'], ':root', '::view-transition'],
   [['width', 'height', 'left', 'top', 'insetInlineStart', 'insetBlockStart'], CA5_INDICATORS],
@@ -1513,29 +1538,47 @@ const CA5_ALLOW = [
 const NO_FINITE_ANIMATION = () => !document.getAnimations().some((a) => Number.isFinite(a.effect?.getComputedTiming().endTime) && (a.playState === 'running' || a.pending));
 /** Attend la fin des animations finies ; une expiration est un échec écrit, pas un silence. */
 const finiteIdle = (page, label, check, timeout = 15000) => page.waitForFunction(NO_FINITE_ANIMATION, null, { timeout }).then(() => true, () => { check(false, `${label} animations finies encore en cours après ${timeout} ms`); return false; });
+/** CA-16c : le bandeau accompagne la page Motion et les stories `Animation` (spec 5.4) ; ni Elevation ni le Playground de Reveal n'en ont. */
+const NOTICE = 'Les animations sont réduites par votre système : rien ne bouge dans cette démo.';
+const chains = new Set(); // stories où une animation démarre après la première image suivant le clic (relevé en mouvement normal, relu en réduit)
+let freshPageCa31 = false; // `--ca31-page-neuve` : ancien mode de CA-31 (page neuve pour chaque « Rejouer »), pour comparer
 async function motionAnimations(context, base, ids, reduced, width, check) {
   const tag = `${reduced ? 'reduced' : 'normal'} ${width}px`;
   for (const id of ids) {
     if (id.startsWith('foundations-')) continue; // pages de documentation : pas de story d'animation à mesurer
+    const t0 = Date.now();
     const page = await context.newPage();
     const errors = [];
-    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+    page.on('console', (message) => message.type() === 'error' && errors.push(`console: ${message.text()}`)); // CA-16a
     await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
     await page.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 }).catch((error) => errors.push(`rendu : ${error.message.split('\n')[0]}`));
     const buttons = page.getByRole('button', { name: 'Rejouer' });
     const count = await buttons.count();
+    if (id.includes('--animation')) { // contrat de docs/storybook/CONVENTIONS.md : un « Rejouer » par démo (couvre aussi lcReveal + lcStagger de layout-reveal--animation)
+      const demos = await page.locator('[data-demo]').count();
+      check(count >= Math.max(1, demos, id === 'layout-reveal--animation' ? 2 : 0), `CA-16b CA-38 ${tag} ${id} au moins un « Rejouer » par démo (deux pour layout-reveal : lcReveal et lcStagger)`, `${count} bouton(s) pour ${demos} démo(s)`);
+    }
     for (let n = 0; n < count; n += 1) {
       const label = `${tag} ${id} « Rejouer » n°${n + 1}/${count}`;
       await finiteIdle(page, label, check);
       // Dans le même `evaluate` que le clic : les animations sont relevées à leur première apparition (certains « Rejouer » démarrent après un rendu Angular).
-      // Fenêtre de relevé : 900 ms au moins, prolongée tant qu'une nouvelle animation apparaît (600 ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s).
+      // Fenêtre de relevé : `min` ms au moins (900 ; 400 en réduit sauf chaîne), prolongée tant qu'une nouvelle animation apparaît (`quiet` ms de calme), 4 s au plus (une chaîne de « Rejouer » comme d61 : 300 ms puis 1,4 s) ;
+      // `waitFirst` : tant qu'aucune animation nouvelle n'est apparue, on attend jusqu'à 8 s (démarrage tardif) ; seules comptent les animations absentes de l'instantané pris juste avant le clic.
       // `scrub` (CA-31) : chaque animation est mise en pause à sa première vue, puis amenée à 0, 50 et 100 % ; sinon on ne touche à rien.
-      const scrubRun = async (button, { scrub, allow }) => {
-        const MIN_MS = 900, QUIET_MS = 600, MAX_MS = 4000;
+      // `late` : animations apparues après la première image suivant le clic = chaîne (une animation qui démarre à la fin d'une autre) : la mise en pause la casserait, CA-31 repasse alors sur une page neuve.
+      const scrubRun = async (button, { scrub, allow, min, quiet, waitFirst }) => {
+        const MAX_MS = 4000;
         const kind = (a) => (a instanceof CSSTransition ? 'transition' : a instanceof CSSAnimation ? 'animation' : 'waapi');
         const skip = new Set(['offset', 'computedOffset', 'easing', 'composite']);
         const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+        const before = new Set(document.getAnimations());
         const seen = new Map();
+        // Rejeu piloté en JavaScript (compteur, canvas, style posé par script) : aucune animation du navigateur, mais le DOM ou les pixels d'un canvas changent après le clic.
+        const root = document.querySelector('#storybook-root');
+        const snap = () => root.outerHTML + [...root.querySelectorAll('canvas')].map((c) => { try { return c.toDataURL(); } catch { return ''; } }).join(); // toDataURL seulement par canvas présent
+        const base = snap();
+        let changed = false;
         const row = (a) => {
           const timing = a.effect.getComputedTiming();
           const target = a.effect.target;
@@ -1545,13 +1588,15 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           return { kind: kind(a), state: a.playState, pending: a.pending, delay: timing.delay, duration: timing.duration, target: `${target.localName}.${String(target.className?.baseVal ?? target.className).split(' ')[0]}${pseudo}`, props, listed };
         };
         let lastNew = performance.now();
-        const collect = () => document.getAnimations().forEach((a) => { if (!seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } });
+        const collect = () => { changed ||= snap() !== base; document.getAnimations().forEach((a) => { if (!before.has(a) && !seen.has(a)) { seen.set(a, row(a)); lastNew = performance.now(); if (scrub) a.pause(); } }); };
         button.click();
         const t0 = performance.now();
         await frame();
+        collect();
+        const early = seen.size;
         await frame();
         const running = document.getAnimations().filter((a) => a.playState === 'running' || a.pending).map(row); // une image après l'action
-        for (let now = t0; now - t0 < MAX_MS && (now - t0 < MIN_MS || now - lastNew < QUIET_MS); now = performance.now()) { collect(); await frame(); }
+        for (let now = t0; now - t0 < (waitFirst ? 8000 : MAX_MS) && ((waitFirst && seen.size === 0 && !changed) || (now - t0 < MAX_MS && (now - t0 < min || now - lastNew < quiet))); now = performance.now()) { collect(); await frame(); }
         collect();
         const overflow = [];
         if (scrub) {
@@ -1562,73 +1607,48 @@ async function motionAnimations(context, base, ids, reduced, width, check) {
           }
           finite.forEach((a) => a.finish());
         }
-        return { rows: [...seen.values()], running, overflow };
+        const rows = [...seen.values()];
+        return { rows, running, overflow, late: rows.length - early, changed };
       };
-      const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW });
+      const win = reduced ? { min: chains.has(id) ? 900 : 400, quiet: 250 } : { min: 900, quiet: 600, waitFirst: true };
+      const got = await buttons.nth(n).evaluate(scrubRun, { scrub: false, allow: CA5_ALLOW, ...win });
       if (reduced) {
         const bad = got.rows.filter((r) => r.duration > 0.01 || r.delay > 0.01);
         check(bad.length === 0 && got.running.length === 0, `CA-3 ${label} aucune animation en cours après une image, durées et délais ≤ 0,01 ms`, JSON.stringify([...got.running, ...bad].slice(0, 3)));
       } else {
+        if (got.late > 0) chains.add(id);
+        if (REPLAY_NO_EFFECT.has(id)) console.log(`EXEMPT CA-16b ${label} : ${REPLAY_NO_EFFECT.get(id)}`);
+        else check(got.rows.length > 0 || got.changed, `CA-16b ${label} relance une animation`); // CA-16b : « Rejouer » démarre une animation du navigateur, ou change le DOM ou un canvas (démo pilotée en JavaScript)
         const bad = got.rows.flatMap((r) => r.props.filter((p) => !CA5_PROPS.has(p) && !r.listed.includes(p)).map((p) => `${r.kind}:${p}@${r.target}`));
         check(bad.length === 0, `CA-5 ${label} propriétés animées (${got.rows.length} animation(s))`, [...new Set(bad)].join(', '));
       }
       await closePanels(page);
       if (width === 360 && !reduced) {
-        const fresh = await context.newPage(); // page neuve : les animations de la première passe ont été laissées en l'état
-        await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
-        await fresh.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
-        await finiteIdle(fresh, `${label} (page neuve)`, check);
-        const scrubbed = await fresh.getByRole('button', { name: 'Rejouer' }).nth(n).evaluate(scrubRun, { scrub: true, allow: CA5_ALLOW });
-        await fresh.close();
+        // Même page que CA-5 (seconde lecture) ; page neuve seulement pour une chaîne d'animations (`late`), que la mise en pause casserait.
+        let target = page, fresh = null;
+        if (got.late > 0 || freshPageCa31) {
+          if (got.late > 0) console.log(`INFO ${label} chaîne d'animations (${got.late} tardive(s)) : CA-31 sur page neuve`);
+          fresh = await context.newPage();
+          await fresh.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
+          await fresh.waitForSelector('#storybook-root > *', { state: 'attached', timeout: 20000 });
+          target = fresh;
+        }
+        await finiteIdle(target, `${label}${fresh ? ' (page neuve)' : ' (relecture)'}`, check);
+        const scrubbed = await target.getByRole('button', { name: 'Rejouer' }).nth(n).evaluate(scrubRun, { scrub: true, allow: CA5_ALLOW, ...win });
+        await fresh?.close();
+        if (!fresh) await closePanels(page);
         check(!scrubbed.overflow.some(Boolean), `CA-31 ${label} aucun défilement horizontal à 0, 50, 100 %`, JSON.stringify(scrubbed.overflow));
       }
     }
-    check(errors.length === 0, `erreurs page ${tag} ${id}`, errors.join(' ; '));
-    await page.close();
-  }
-}
-
-/** Stories de mouvement (spec 2026-11-mouvement, T7) : CA-16a (ouverture sans erreur), CA-16b (« Rejouer » relance une animation), CA-16c (bandeau selon `prefers-reduced-motion`). */
-const NOTICE = 'Les animations sont réduites par votre système : rien ne bouge dans cette démo.';
-
-async function storiesMotion(browser, base) {
-  let failures = 0;
-  const check = (label, ok, detail = '') => { console.log(`${ok ? 'OK  ' : 'KO  '} ${label}${ok ? '' : ` ${detail}`}`); if (!ok) failures++; };
-  const poll = (page, fn, arg, timeout = 8000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true, () => false);
-  for (const id of await animationStoryIds()) {
-    for (const reducedMotion of ['no-preference', 'reduce']) {
-      const wide = id.endsWith('desktop') || !id.startsWith('data-');
-      const context = await browser.newContext({ viewport: { width: wide ? 1280 : 360, height: 800 }, reducedMotion });
-      const page = await context.newPage();
-      const errors = [];
-      page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
-      page.on('console', (message) => message.type() === 'error' && errors.push(`console: ${message.text()}`));
-      await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
-      await page.waitForSelector('#storybook-root > *, #storybook-docs', { timeout: 20000 }).catch((error) => errors.push(`rendu : ${error.message.split('\n')[0]}`));
-      await page.waitForTimeout(400);
-      const tag = `${id} [${reducedMotion}]`;
+    // CA-16c : bandeau selon `prefers-reduced-motion` (le contexte porte la préférence)
+    if (id.includes('motion') || id.includes('--animation')) {
       const notice = await page.locator(`text=${NOTICE}`).count();
-      // CA-16c : le bandeau accompagne la page Motion et les stories `Animation` (spec 5.4) ; ni Elevation ni le Playground de Reveal n'en ont
-      if (id.includes('motion') || id.includes('--animation')) check(`CA-16c ${tag} bandeau ${reducedMotion === 'reduce' ? 'présent' : 'absent'}`, notice === (reducedMotion === 'reduce' ? 1 : 0), `(${notice})`);
-      else console.log(`INFO ${tag} bandeau : ${notice}`);
-      if (reducedMotion === 'no-preference') {
-        const buttons = page.getByRole('button', { name: 'Rejouer' });
-        const count = await buttons.count();
-        console.log(`INFO ${id} : ${count} bouton(s) « Rejouer »`);
-        for (let n = 0; n < count; n++) {
-          await poll(page, () => document.getAnimations().length === 0, null, 12000); // l'animation d'entrée est finie : le clic seul peut relancer
-          const before = await page.evaluate(() => document.getAnimations().length);
-          await buttons.nth(n).click();
-          const started = await poll(page, () => document.getAnimations().length > 0, null);
-          check(`CA-16b ${id} « Rejouer » n°${n + 1}/${count} relance une animation (avant : ${before})`, started);
-          await closePanels(page);
-        }
-      }
-      check(`CA-16a ${tag} sans erreur de page ni de console`, errors.length === 0, errors.join(' | '));
-      await context.close();
+      check(notice === (reduced ? 1 : 0), `CA-16c ${tag} ${id} bandeau ${reduced ? 'présent' : 'absent'}`, `(${notice})`);
     }
+    check(errors.length === 0, `CA-16a erreurs page ou console ${tag} ${id}`, errors.join(' | '));
+    await page.close();
+    console.log(`TEMPS ${tag} ${id} ${Date.now() - t0} ms`);
   }
-  return failures;
 }
 
 /** lc-swipe-panels, lc-tabs en swipe, lc-segmented-control suivi (spec 2026-11-bande-a-panneaux-et-reperes) : CA-1 à CA-11, 360 px, mouvement normal et réduit, 1 280 px en colonnes. */
@@ -1894,18 +1914,21 @@ async function swipe(browser, base) {
   return failures;
 }
 
-const server = await serve();
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(storybookDir); // BASE (variable d'environnement) : serveur partagé du lanceur `run.mjs`
+const { base } = server;
 const browser = await chromium.launch();
 let failures = 0;
 try {
-  const [mode, ...fragments] = process.argv.slice(2);
+  const [mode, ...rest] = process.argv.slice(2);
+  freshPageCa31 = rest.includes('--ca31-page-neuve');
+  const fragments = rest.filter((a) => a !== '--ca31-page-neuve');
   if (mode === 'axe') {
     const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
-    const wanted = fragments.length > 0 ? fragments : NEW_STORY_FRAGMENTS;
+    const wanted = fragments.length === 0 ? MOTION_AXE_FRAGMENTS : fragments[0] === '--hors-mouvement' ? NEW_STORY_FRAGMENTS : fragments;
     const entries = Object.entries(index.entries).filter(([id, entry]) => entry.type === 'story' && wanted.some((fragment) => id.includes(fragment))).map(([id, entry]) => [id, entry.title]);
     console.log(`${entries.length} stories × 2 thèmes`);
-    failures = await axeRun(browser, base, entries);
+    if (entries.length === 0) { console.log(`KO aucune story ne correspond à ${wanted.join(' ')}`); failures = 1; }
+    failures += await axeRun(browser, base, entries);
   } else if (mode === 'dom') {
     failures = await dom(browser, base);
   } else if (mode === 'filter-date') {
@@ -1913,15 +1936,13 @@ try {
   } else if (mode === 'treegrid') {
     failures = await treegrid(browser, base);
   } else if (mode === 'motion') {
-    failures = await motion(browser, base);
-  } else if (mode === 'stories-motion') {
-    failures = await storiesMotion(browser, base);
+    failures = await motion(browser, base, fragments);
   } else if (mode === 'swipe') {
     failures = await swipe(browser, base);
   } else if (mode === 'perf') {
     failures = await perf(browser, base);
   } else {
-    console.error('Usage : storybook-browser.mjs axe [fragments] | perf | motion | swipe | stories-motion | dom | treegrid | filter-date');
+    console.error('Usage : storybook-browser.mjs axe [fragments|--hors-mouvement] | perf | motion | swipe | dom | treegrid | filter-date');
     failures = 1;
   }
 } finally {

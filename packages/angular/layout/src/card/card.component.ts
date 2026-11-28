@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, model } from '@angular/core';
 import type { LcSpace } from '@lionelcointot/ui-angular';
-import { lcUniqueId } from '@lionelcointot/ui-angular';
+import { LcRevealDirective, lcRevealHost, lcUniqueId } from '@lionelcointot/ui-angular';
 import { lcSpaceVar } from '../space';
 
 /**
  * Carte : surface avec élévation. Avec `collapsible`, l'en-tête (`lc-card-header`) devient un bouton
  * (`aria-expanded`, `aria-controls`) qui replie le contenu et le pied.
+ * Elle entre seule (`lcReveal` `card`, rang d'après `lcStagger` ou ses frères) : rien à écrire côté application.
  */
 @Component({
   selector: 'lc-card',
@@ -17,6 +18,8 @@ import { lcSpaceVar } from '../space';
     </div>
   `,
   styleUrl: './card.component.css',
+  providers: lcRevealHost('card'),
+  hostDirectives: [{ directive: LcRevealDirective, inputs: ['lcReveal', 'lcRevealIndex'] }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-card',

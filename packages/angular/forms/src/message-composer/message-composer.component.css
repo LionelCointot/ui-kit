@@ -226,14 +226,15 @@
 
 .lc-message-composer__progress-fill {
   display: block;
+  inline-size: 100%;
   block-size: 100%;
   border-radius: inherit;
   background: var(--lc-sys-color-primary);
-  transition: width var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
 }
 
 .lc-message-composer__progress--indeterminate .lc-message-composer__progress-fill {
   inline-size: 40%;
+  transition: none;
   animation: lc-message-composer-slide var(--lc-message-composer-indeterminate-duration) var(--lc-sys-easing-standard) infinite;
 }
 
@@ -347,9 +348,9 @@
     animation: none;
   }
 
-  /* Vignette en fondu seul, calque immédiat. */
+  /* Vignette sans transition : une durée réduite laisse un fondu `pending` (0,01 ms) que la preuve de mouvement réduit voit encore. */
   .lc-message-composer__thumb {
-    transition: opacity var(--lc-sys-duration-normal) var(--lc-sys-easing-standard);
+    transition: none;
   }
 
   .lc-message-composer__drop {

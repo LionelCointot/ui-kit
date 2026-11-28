@@ -5,6 +5,7 @@ import { LcToast, LcToastService } from './toast.service';
 
 /**
  * Zone d'affichage des toasts de `LcToastService`, à placer une fois à la racine de l'application.
+ * Les annonces aux lecteurs d'écran passent par le seul `LiveAnnouncer` de `LcToastService` (conteneur permanent) : aucun rôle `status` ni `alert` ici, qui doublerait l'annonce.
  * Variable CSS `--lc-toast-offset-block-end` : décalage de la pile vers le haut (ex. au-dessus d'une barre d'actions fixe).
  */
 @Component({
@@ -14,7 +15,7 @@ import { LcToast, LcToastService } from './toast.service';
     @if (toasts().length > 0) {
       <section class="lc-toast-outlet__region" [attr.aria-label]="labels.notifications">
         @for (toast of toasts(); track toast.id) {
-          <div class="lc-toast" [class]="'lc-toast--' + toast.kind"
+          <div class="lc-toast" [class]="'lc-toast--' + toast.kind" animate.enter="lc-toast-enter" animate.leave="lc-toast-leave"
             (mouseenter)="service.pause(toast.id)" (mouseleave)="service.resume(toast.id)"
             (focusin)="service.pause(toast.id)" (focusout)="service.resume(toast.id)">
             <lc-icon class="lc-toast__icon" [name]="icons[toast.kind]" />

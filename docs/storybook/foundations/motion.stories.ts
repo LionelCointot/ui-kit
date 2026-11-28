@@ -1,7 +1,7 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { DocMotionComponent } from './foundation-pages';
+import { DocMotionComponent } from './motion-page';
 
-/** Page de fondations : une story unique, générée depuis les tokens résolus (voir foundation-pages.ts). */
+/** Page de fondations : les attributs de mouvement un besoin à la fois, les courbes, les réglages et les recettes (voir motion-page.ts). */
 const meta: Meta = {
   title: 'Foundations/Motion',
   tags: ['!autodocs'],
@@ -12,16 +12,22 @@ export default meta;
 
 export const Motion: StoryObj = {
   name: 'Motion',
-  // Page de fondations : l'extrait montre l'usage des tokens, la démonstration elle-même est générée (foundation-pages.ts).
+  // Page de fondations : l'extrait montre l'usage des attributs, la démonstration elle-même est dans motion-page.ts.
   parameters: {
     docs: {
       source: {
         code: `import { Component } from '@angular/core';
+import { LcRevealDirective, LcStaggerDirective } from '@lionelcointot/ui-angular';
 
 @Component({
   selector: 'app-example',
-  template: '<div class="panel">Panneau</div>',
-  styles: '.panel { animation: enter var(--lc-sys-duration-normal) var(--lc-sys-easing-standard); } @keyframes enter { from { opacity: 0; transform: translateY(calc(-1 * var(--lc-sys-motion-offset-sm))); } }',
+  imports: [LcRevealDirective, LcStaggerDirective],
+  template: \`
+    <section lcStagger>
+      <article lcReveal>Projet</article>
+      <article lcReveal>Tâches</article>
+      <article lcReveal>Équipe</article>
+    </section>\`,
 })
 export class ExampleComponent {}`,
       },

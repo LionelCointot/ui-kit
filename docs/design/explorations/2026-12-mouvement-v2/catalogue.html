@@ -52,16 +52,16 @@
   --e-inout3:cubic-bezier(0.645,0.045,0.355,1);/* power3.inOut : FLIP */
 
   /* ---------- Durées v2 (tokens proposés par la matrice) ---------- */
-  --d-reveal:450ms; --d-fill:750ms; --d-draw:900ms; --d-ring:1100ms;
-  --d-flash:950ms; --d-pop:550ms; --d-count:900ms; --d-underline:550ms;
+  --d-reveal:550ms; --d-fill:950ms; --d-draw:1100ms; --d-ring:1100ms;
+  --d-flash:950ms; --d-pop:550ms; --d-count:1200ms; --d-underline:700ms;
   --d-view-in:700ms; --d-view-out:180ms; --d-flip:550ms; --d-settle:700ms;
   --d-toast:500ms; --d-sheet:550ms; --d-modal:500ms;
   --d-overlay-in:200ms; --d-overlay-out:100ms;
   --d-breathe:2000ms; --d-spin:700ms;
-  --d-lift:100ms; --d-spark:1000ms; --d-load:900ms; --e-load:cubic-bezier(0.2,1,0.3,1);
+  --d-lift:100ms; --d-spark:1300ms; --d-load:900ms; --e-load:cubic-bezier(0.2,1,0.3,1);
   --d-link:600ms; --d-retween:800ms; --d-hover:100ms; --d-indicator:500ms;
   --st-reveal:40ms; --st-text:22ms; --st-dots:40ms; --st-heat:12ms;
-  --dl-underline:390ms;
+  --dl-underline:320ms;
 }
 
 /* Thème sombre (valeurs résolues de packages/tokens sys/dark) — démo d37 */
@@ -92,7 +92,11 @@ html[data-theme="dark"]{
 body{--lc-m-time:1;--lc-m-dist:10px}
 /* Distances mesurées chez Talmo (départ en dessous, montée vers la position) : calendrier et jours Planner 8 px, lignes 10 px, cartes Tasks 12 px, colonnes Tasks 26 px. */
 body[data-dist="md"] #d06s,body[data-dist="md"] #d09s{--lc-m-dist:8px}
-#d05s{--st-reveal:33ms}
+#d05s{--st-reveal:30ms;--d-reveal:500ms;--lc-m-dist:-10px}
+/* d25 : contenu du tiroir (code du site) : y 14 px, 500 ms power3.out, départ 120 ms, décalage 40 ms */
+#d25s .drawer{--d-reveal:500ms;--st-reveal:40ms;--lc-m-dist:14px}
+#d25s .drawer.is-entering [lcReveal]{animation-delay:calc(120ms * var(--lc-m-time) + var(--i,0) * var(--st-reveal) * var(--lc-m-time))}
+#d05s.is-entering [lcReveal]{animation-delay:calc(80ms * var(--lc-m-time) + var(--i,0) * var(--st-reveal) * var(--lc-m-time))}
 #d07s .kh{animation-duration:calc(600ms * var(--lc-m-time))}
 body[data-dist="md"] #d07s .kh{--lc-m-dist:26px}
 body[data-dist="md"] #d07s .kc{--lc-m-dist:12px}
@@ -170,7 +174,7 @@ h3{font-size:1.0625rem;font-weight:600;line-height:1.3}
 /* ---------- Primitives de mouvement partagées ---------- */
 @keyframes lc-reveal{from{opacity:0;transform:translateY(var(--lc-m-dist))}}
 .is-entering [lcReveal]{
-  animation:lc-reveal calc(var(--d-reveal) * var(--lc-m-time)) cubic-bezier(0.34,1,0.64,1) backwards;
+  animation:lc-reveal calc(var(--d-reveal) * var(--lc-m-time)) var(--e-p3) backwards;
   animation-delay:calc(var(--i,0) * var(--st-reveal) * var(--lc-m-time))}
 @keyframes lc-fill-x{from{transform:scaleX(0)}}
 @keyframes lc-fill-y{from{transform:scaleY(0)}}
@@ -195,10 +199,10 @@ h3{font-size:1.0625rem;font-weight:600;line-height:1.3}
 .fcard{background:var(--lc-sys-color-surface-sunken);border:1px solid var(--lc-sys-color-border);border-radius:8px;padding:.75rem}
 .fc-l{display:block;font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
 .fc-v{display:block;font-size:1.5rem;font-weight:600;line-height:1.25;margin-top:.25rem;font-variant-numeric:tabular-nums}
-.is-entering .fcard{animation:flip-card calc(900ms * var(--lc-m-time)) cubic-bezier(0.34,1.5,0.64,1) backwards;animation-delay:calc(var(--i,0) * 67ms * var(--lc-m-time))}
+.is-entering .fcard{animation:flip-card calc(850ms * var(--lc-m-time)) cubic-bezier(0.34,1.7,0.64,1) backwards;animation-delay:calc(var(--i,0) * 70ms * var(--lc-m-time))}
 @keyframes flip-card{from{opacity:0;transform:translateY(40px) scale(.95) rotate(var(--tilt,0deg))}}
 .srows{margin-top:1rem;border-top:1px solid var(--lc-sys-color-border)}
-.srow{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--lc-sys-color-border);font-size:.875rem}
+.srow{--lc-m-dist:8px;display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--lc-sys-color-border);font-size:.875rem}
 .srow:last-child{border-bottom:0}
 
 /* ================= d04 · Transition de vue direction-aware ================= */
@@ -298,7 +302,7 @@ button.ios-row::after{content:'›';font-size:1.375rem;line-height:1;color:var(-
 .fill{position:absolute;inset:0;border-radius:inherit;background:var(--lc-sys-color-primary)}
 .fill-x{transform-origin:left center;transform:scaleX(var(--lc-fill-v,1))}
 /* d21 : barres de charge Studio mesurées : 900 ms, expo.out (0.2,1,0.3,1), 98 % à ~490 ms, décalage ≈ 39 ms par ligne */
-#d21s.is-entering .fill-x{animation-duration:calc(var(--d-load) * var(--lc-m-time));animation-timing-function:var(--e-load)}
+/* d21 : jauges comme lcFill du site, 950 ms expo.out (--d-fill, --e-in) : pas de réglage propre */
 .pl-numbers{display:flex;flex-direction:column;gap:.75rem;justify-content:center}
 .pl-l{font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
 .pl-v{font-size:1.625rem;font-weight:600;font-variant-numeric:tabular-nums;display:block}
@@ -428,8 +432,8 @@ button.ios-row::after{content:'›';font-size:1.375rem;line-height:1;color:var(-
 .dl-content{padding:1rem;display:flex;flex-direction:column;gap:.5rem}
 .dl-backdrop{position:absolute;inset:0;background:rgb(11 11 11 / .32);opacity:0;transition:opacity calc(200ms * var(--lc-m-time)) var(--e-p3)}
 .stage.open .dl-backdrop{opacity:1;transition-duration:calc(300ms * var(--lc-m-time))}
-.drawer{position:absolute;top:0;right:0;bottom:0;width:min(320px,85%);background:var(--lc-sys-color-surface-raised);border-left:1px solid var(--lc-sys-color-border);box-shadow:var(--lc-sys-shadow-3);transform:translateX(100%);transition:transform calc(300ms * var(--lc-m-time)) var(--e-out2);padding:1rem;display:flex;flex-direction:column;gap:.75rem}
-.stage.open .drawer{transform:none;transition-duration:calc(550ms * var(--lc-m-time));transition-timing-function:var(--e-in)}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:min(320px,85%);background:var(--lc-sys-color-surface-raised);border-left:1px solid var(--lc-sys-color-border);box-shadow:var(--lc-sys-shadow-3);transform:translateX(100%);transition:transform calc(320ms * var(--lc-m-time)) var(--e-out2);padding:1rem;display:flex;flex-direction:column;gap:.75rem}
+.stage.open .drawer{transform:none;transition-duration:calc(600ms * var(--lc-m-time));transition-timing-function:var(--e-in)}
 .drawer h4{margin:0;font-size:1rem;font-weight:600}
 .dl-row{display:flex;justify-content:space-between;font-size:.875rem;padding:.375rem 0;border-bottom:1px solid var(--lc-sys-color-border)}
 .dl-row span:first-child{color:var(--lc-sys-color-on-surface-muted)}
@@ -458,8 +462,8 @@ button.ios-row::after{content:'›';font-size:1.375rem;line-height:1;color:var(-
 .menu-stage{height:280px;padding:1rem}
 .avatar-btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--lc-sys-color-border-strong);background:var(--lc-sys-color-surface-raised);border-radius:9999px;min-height:44px;padding:0 .75rem 0 .375rem;font-size:.875rem}
 .avatar-btn .tb-ava{width:32px;height:32px}
-.menu-panel{position:absolute;top:64px;left:1rem;width:min(240px,80%);background:var(--lc-sys-color-surface-raised);border:1px solid var(--lc-sys-color-border);border-radius:12px;box-shadow:var(--lc-sys-shadow-3);padding:.375rem;transform-origin:top left;transform:translateY(-5px) scale(.936);opacity:0;transition:transform calc(140ms * var(--lc-m-time)) var(--e-out2),opacity calc(120ms * var(--lc-m-time)) var(--e-out2)}
-.menu-stage.open .menu-panel{transform:none;opacity:1;transition:transform calc(350ms * var(--lc-m-time)) cubic-bezier(0.34,1.7,0.64,1),opacity calc(150ms * var(--lc-m-time)) var(--e-p3)}
+.menu-panel{position:absolute;top:64px;left:1rem;width:min(240px,80%);background:var(--lc-sys-color-surface-raised);border:1px solid var(--lc-sys-color-border);border-radius:12px;box-shadow:var(--lc-sys-shadow-3);padding:.375rem;transform-origin:top left;transform:translateY(-6px) scale(.92);opacity:0;transition:transform calc(150ms * var(--lc-m-time)) var(--e-out2),opacity calc(120ms * var(--lc-m-time)) var(--e-out2)}
+.menu-stage.open .menu-panel{transform:none;opacity:1;transition:transform calc(400ms * var(--lc-m-time)) cubic-bezier(0.34,1.7,0.64,1),opacity calc(150ms * var(--lc-m-time)) var(--e-p3)}
 .mi{display:flex;width:100%;text-align:left;border:0;background:none;border-radius:8px;min-height:40px;padding:0 .75rem;font-size:.9375rem;align-items:center;gap:.625rem}
 .mi:hover{background:var(--lc-sys-color-surface-sunken)}
 .mi-sep{height:1px;background:var(--lc-sys-color-border);margin:.375rem .375rem}
@@ -483,8 +487,8 @@ html[data-theme="dark"] .toast button{color:var(--lc-sys-color-primary)}
 .hl-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem}
 .hrow{padding:.625rem .75rem;border-radius:8px;font-size:.9375rem} /* NÉGATIF documenté : hover instantané (transition 0 s mesurée chez Talmo), pas de transition */
 .hrow:hover{background:color-mix(in srgb,var(--lc-sys-color-on-surface) 8%,transparent)}
-.lift-card{border:1px solid var(--lc-sys-color-border);border-radius:12px;background:var(--lc-sys-color-surface-raised);padding:1rem;transition:transform calc(350ms * var(--lc-m-time)) var(--e-p3),box-shadow calc(350ms * var(--lc-m-time)) var(--e-p3)}
-.lift-card:hover{transform:translateY(-4px);box-shadow:var(--lc-sys-shadow-1)}
+.lift-card{border:1px solid var(--lc-sys-color-border);border-radius:12px;background:var(--lc-sys-color-surface-raised);padding:1rem;transition:transform calc(500ms * var(--lc-m-time)) var(--e-p3)}
+.lift-card:hover{transform:translateY(-4px);transition-duration:calc(450ms * var(--lc-m-time))} /* site : 450 ms à l'entrée, 500 ms au retour, power3.out, sans ombre */
 .lift-l{font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)}
 .lift-v{font-size:1.375rem;font-weight:600;margin-top:.25rem;font-variant-numeric:tabular-nums}
 
@@ -530,8 +534,8 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
 .cal2{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;position:relative;max-width:300px}
 .cday2{aspect-ratio:1;border:1px solid transparent;border-radius:6px;background:none;font-size:.8125rem;color:var(--lc-sys-color-on-surface-muted);padding:0}
 .cday2:hover{background:var(--lc-sys-color-surface-sunken)}
-/* re-fade de la liste du jour (Calendar) : mesuré 50 % à ~50 ms, 90 % à ~170 ms, 98 % à ~240 ms, montée de 8 px → expo.out 450 ms */
-#d41evs.is-entering [lcReveal]{--lc-m-dist:8px;animation-timing-function:var(--e-in)}
+/* re-fade de la liste du jour (Calendar) : code du site = power3.out (`out`), 450 ms, montée de 8 px */
+#d41evs.is-entering [lcReveal]{--lc-m-dist:8px;animation-timing-function:var(--e-p3)}
 .sel-ring{position:absolute;width:calc(100% / 7 - 4px);aspect-ratio:1;border:2px solid var(--lc-sys-color-primary);border-radius:6px;pointer-events:none;opacity:0}
 .day-evs{display:flex;flex-direction:column;gap:.375rem;min-width:180px}
 .day-ev{font-size:.8125rem;background:var(--lc-sys-color-surface-sunken);border-radius:6px;padding:.375rem .625rem}
@@ -625,11 +629,11 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
   --lc-m-ease-back:cubic-bezier(0.34,1.56,0.64,1);    /* back.out(1.6) : dépassement ≈ 9 % */
   --lc-button-press-scale:.97;--lc-button-press-duration:100ms;   /* décision : enfoncement du kit, absent chez Talmo */
   /* feuille du bas */
-  --lc-msheet-open:600ms;--lc-msheet-scrim-in:300ms;--lc-msheet-close:300ms;--lc-msheet-scrim-out:250ms;--lc-msheet-snap:500ms;
+  --lc-msheet-open:550ms;--lc-msheet-scrim-in:300ms;--lc-msheet-close:300ms;--lc-msheet-scrim-out:250ms;--lc-msheet-snap:500ms;
   --lc-msheet-commit:.3333;--lc-msheet-flick:.6;--lc-msheet-flick-window:80ms;--lc-msheet-rubber-up:.004;
   --lc-msheet-radius:24px;--lc-msheet-max:92%;--lc-msheet-scrim:rgb(20 18 14 / .36);
   /* barre d'onglets du bas */
-  --lc-tabbar-h:66px;--lc-tabbar-gap:10px;--lc-tabbar-pad:5px;--lc-tabbar-in-y:90px;--lc-tabbar-in-delay:265ms;--lc-tabbar-in:750ms;
+  --lc-tabbar-h:66px;--lc-tabbar-gap:10px;--lc-tabbar-pad:5px;--lc-tabbar-in-y:90px;--lc-tabbar-in-delay:200ms;--lc-tabbar-in:700ms;
   --lc-pill-front:300ms;--lc-pill-front-ease:cubic-bezier(0.215,0.61,0.355,1);   /* bord avant : power3.out */
   --lc-pill-back:410ms;--lc-pill-back-ease:cubic-bezier(0.645,0.045,0.355,1);--lc-pill-lag:75ms;   /* bord arrière : power3.inOut, finit ≈ 0,19 s après l'avant */--lc-pill-inset:6px;--lc-pill-radius:16px;--lc-tab-color:300ms;
   /* changement de vue en fondu */
@@ -638,7 +642,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
   /* barre du haut, pop, toast, calendrier */
   --lc-top-h:56px;--lc-title-fade:200ms;--lc-title-threshold:80px;
   --lc-pop-in:450ms;--lc-pop-out:170ms;--lc-pop-scale0:.936;--lc-pop-y0:-5px;
-  --lc-toast-in:450ms;--lc-toast-out:220ms;--lc-toast-y:25px;--lc-toast-out-y:10px;--lc-toast-scale0:.95;--lc-toast-ttl:3270ms;--lc-toast-gap:16px;
+  --lc-toast-in:500ms;--lc-toast-out:250ms;--lc-toast-y:30px;--lc-toast-out-y:16px;--lc-toast-scale0:.94;--lc-toast-ttl:3270ms;--lc-toast-gap:16px;
   --lc-cal-x:18px;--lc-cal-dur:450ms;--lc-cal-op0:.14;--lc-cal-step:30ms;
   --lc-seg-item:85.25px;
   flex:none;margin-inline:auto;position:relative;overflow:hidden;isolation:isolate;
@@ -650,7 +654,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
 .m-top{position:absolute;inset:0 0 auto 0;z-index:8;height:var(--lc-top-h);display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 16px;background:var(--lc-sys-color-background)}
 .m-top.is-stuck{box-shadow:0 1px 0 var(--lc-sys-color-border)}
 .m-top b{font-size:1.0625rem}
-.m-top-t{position:absolute;left:50%;transform:translateX(-50%);font-weight:600;opacity:0;transition:opacity calc(var(--lc-title-fade) * var(--lc-m-time)) ease;pointer-events:none}
+.m-top-t{position:absolute;left:50%;transform:translateX(-50%);font-weight:600;opacity:0;transition:opacity calc(var(--lc-title-fade) * var(--lc-m-time)) var(--e-std);pointer-events:none}
 .m-top[data-titled] .m-top-t{opacity:1}
 .m-ibtn{min-width:44px;min-height:44px;display:inline-grid;place-items:center;border:0;border-radius:9999px;background:transparent;color:inherit;font-size:1.5rem;line-height:1}
 .m-ibtn:hover{background:var(--lc-sys-color-surface-sunken)}
@@ -851,7 +855,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             <div class="srow" lcReveal style="--i:4"><span>Mar · Atelier maquette</span><span>14 h – 16 h 30</span></div>
           </div>
         </div>
-        <p class="legend">Primitives : <code>[lcReveal]</code> + <code>lcCountUp</code> · flip-cards (Studio, mesuré) : translateY 40 px + scale 0,95 + rotation ±2,5° alternée → 0, fondu · 900 ms <code>cubic-bezier(0.34,1.5,0.64,1)</code> (dépassement ≈ 7 %, ajustement mesuré à 0,4 % près) · stagger 67 ms · lignes : montée 10 px, 450 ms <code>cubic-bezier(0.34,1,0.64,1)</code>, stagger 40 ms · le ~1 s total de Talmo se fait par orchestration des indices, sans moteur de tween</p>
+        <p class="legend">Primitives : <code>[lcReveal]</code> + <code>lcCountUp</code> · flip-cards (Studio, mesuré) : translateY 40 px + scale 0,95 + rotation ±2,5° alternée → 0, fondu · 850 ms <code>cubic-bezier(0.34,1.7,0.64,1)</code> (back.out(1.4) du site Talmo ≈ pop) · stagger 70 ms · lignes : montée 10 px, 550 ms <code>cubic-bezier(0.215,0.61,0.355,1)</code> (power3.out), stagger 40 ms · le ~1 s total de Talmo se fait par orchestration des indices, sans moteur de tween</p>
       </article>
 
       <article class="demo" id="d04">
@@ -922,7 +926,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             <span class="tb-ava" lcReveal aria-hidden="true"></span>
           </div>
         </div>
-        <p class="legend"><code>[lcReveal]</code> sur les blocs chrome, au chargement seulement · montée translateY +10 px (le logo : 18 px) → 0 + fondu, ≈ 330-450 ms <code>cubic-bezier(0.34,1,0.64,1)</code> · stagger ≈ 33 ms/élément (mesuré : début à 272, 305, 339, 372, 389, 422 ms après le chargement) · pas de ré-entrée à la navigation (mesuré) — distance ajustable via <code>--lc-m-dist</code></p>
+        <p class="legend">Barre du haut de <code>lc-app-shell</code>, au premier rendu seulement : marque, liens et outils descendent de y −10 px → 0 + fondu · 500 ms <code>cubic-bezier(0.215,0.61,0.355,1)</code> (power3.out, <code>--lc-sys-easing-out</code>) · départ à 80 ms, 30 ms entre éléments · jamais rejouée à la navigation · coupée sous mouvement réduit</p>
       </article>
 
       <article class="demo" id="d06" data-auto>
@@ -1037,7 +1041,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
       <article class="demo" id="d45" data-auto>
         <header class="demo-h">
           <div><h3>Ré-entrée au changement d'onglet : la cascade se rejoue</h3>
-          <p class="hint">À gauche (Settings) : les lignes descendent en cascade à chaque sous-onglet — nœuds keyés, réinsertion. À droite (Studio) : le filtre vide la timeline (~150 ms) puis reconstruit seulement les lignes gardées.</p></div>
+          <p class="hint">À gauche (Settings) : les lignes descendent en cascade à chaque sous-onglet — nœuds keyés, réinsertion. À droite (Studio) : le filtre vide la timeline (~200 ms) puis reconstruit seulement les lignes gardées.</p></div>
           <button type="button" class="replay" data-replay="d45">Rejouer</button>
         </header>
         <div class="card d45-grid">
@@ -1057,7 +1061,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             <div class="srows d45-panel" id="d45tl"></div>
           </div>
         </div>
-        <p class="legend"><code>[lcReveal]</code> + nœuds keyés par onglet (comme le <code>@for</code> tracké d'Angular) → la réinsertion rejoue la cascade, exactement comme Talmo · lignes : montée 8-10 px, 450 ms <code>cubic-bezier(0.34,1,0.64,1)</code> · stagger 40 ms/ligne plafonné 300 ms (≈ 55 ms mesuré dans Settings) · filtre Studio : sortie en fondu 150 ms (WAAPI) puis reconstruction en stagger — aucune primitive nouvelle · idem pour le segmented Timeline/Agenda du PLANNER : sections groupées par personne rejouent la cascade au switch, et pour l'entrée REPORTS (bloc translateY 26→0 + fondu en chaîne des cartes = même <code>[lcReveal]</code> avec offset-lg)</p>
+        <p class="legend"><code>[lcReveal]</code> + nœuds keyés par onglet (comme le <code>@for</code> tracké d'Angular) → la réinsertion rejoue la cascade, exactement comme Talmo · lignes : montée 8 px, 550 ms <code>out</code> (<code>cubic-bezier(0.215,0.61,0.355,1)</code>) · stagger 40 ms/ligne plafonné 300 ms · filtre Studio : sortie en fondu 200 ms <code>exit</code> (WAAPI) puis reconstruction en stagger — aucune primitive nouvelle · idem pour le segmented Timeline/Agenda du PLANNER : sections groupées par personne rejouent la cascade au switch, et pour l'entrée REPORTS (bloc translateY 26→0 + fondu en chaîne des cartes = même <code>[lcReveal]</code> avec offset-lg)</p>
       </article>
     </section>
 
@@ -1162,12 +1166,12 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
           <button type="button" class="replay" data-replay="d51">Rejouer</button>
         </header>
         <div class="card scene" id="d51s">
-          <p style="font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)">Progression du dossier — 3 étapes sur 5 (valeurs d'exemple)</p>
+          <p style="font-size:.875rem;color:var(--lc-sys-color-on-surface-muted)">Progression du dossier — 4 étapes sur 5, barres tout ou rien comme sur le site (valeurs d'exemple)</p>
           <div class="steps5" aria-hidden="true">
             <span class="s5"><span class="s5f" style="--v:1;--i:0"></span></span>
             <span class="s5"><span class="s5f" style="--v:1;--i:1"></span></span>
             <span class="s5"><span class="s5f" style="--v:1;--i:2"></span></span>
-            <span class="s5"><span class="s5f" style="--v:.75;--i:3"></span></span>
+            <span class="s5"><span class="s5f" style="--v:1;--i:3"></span></span>
             <span class="s5"><span class="s5f" style="--v:0;--i:4"></span></span>
           </div>
         </div>
@@ -1375,7 +1379,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
           <div class="rt-legend"><span><i style="background:var(--lc-sys-color-primary)"></i>Volume</span><span><i style="background:var(--lc-sys-color-highlight)"></i>Tendance</span></div>
           <div style="margin-top:.75rem"><button type="button" class="chip" id="d24btn">Changer la période (S1 → S2)</button></div>
         </div>
-        <p class="legend">ECharts natif : <code>setOption()</code> anime la transition entre états (déjà actif via <code>animation: !theme.reducedMotion</code> dans shared.ts) · durée par token · ici SVG + rAF power2.inOut 480 ms par barre, départs décalés de ~20 ms (re-tween mesuré chez Talmo au changement de Measure : chaque barre 10 % à ~115 ms, 50 % à ~220 ms, 90 % à ~335 ms, 98 % à ~415 ms après son départ, le tout en ~0,8 s ; la fiche d'inventaire annonçait 1,2 s, durée cumulée trop haute) pour rester autonome — aucun travail au-delà du token de durée · Rejouer rejoue l'entrée : scaleY 0→1 ancrée en bas, stagger ~35 ms/barre (la ligne matrice « barres By week » a ces deux moitiés : entrée + re-tween)</p>
+        <p class="legend">ECharts natif : <code>setOption()</code> anime la transition entre états (déjà actif via <code>animation: !theme.reducedMotion</code> dans shared.ts) · durée par token · ici SVG + rAF 700 ms par barre, départs décalés de ~20 ms (re-tween mesuré chez Talmo au changement de Measure : chaque barre 10 % à ~115 ms, 50 % à ~220 ms, 90 % à ~335 ms, 98 % à ~415 ms après son départ, le tout en ~0,8 s ; la fiche d'inventaire annonçait 1,2 s, durée cumulée trop haute) pour rester autonome — aucun travail au-delà du token de durée · Rejouer rejoue l'entrée : scaleY 0→1 ancrée en bas, stagger ~35 ms/barre (la ligne matrice « barres By week » a ces deux moitiés : entrée + re-tween)</p>
       </article>
 
       <article class="demo" id="d49" data-auto>
@@ -1452,7 +1456,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             </aside>
           </div>
         </div>
-        <p class="legend"><strong>Déjà dans le kit</strong> : lc-drawer · glisse à l'entrée et à la sortie · valeurs Talmo mesurées : entrée 550 ms <code>cubic-bezier(0.16,1,0.3,1)</code> (expo.out : 50 % à 55 ms, 98 % à 300 ms), sortie 300 ms <code>cubic-bezier(0.42,0,1,1)</code> (ease-in) · voile : 300 ms à l'ouverture, 200 ms à la fermeture, <code>cubic-bezier(0.215,0.61,0.355,1)</code> — le kit (<code>overlay.enter-duration 200 ms</code> / <code>exit-duration 100 ms</code>) est plus court : à régler par token · même pattern pour le drawer de détail d'une carte Tasks</p>
+        <p class="legend"><strong>Déjà dans le kit</strong> : lc-drawer · glisse à l'entrée et à la sortie · valeurs Talmo mesurées : entrée 550 ms <code>cubic-bezier(0.16,1,0.3,1)</code> (expo.out : 50 % à 55 ms, 98 % à 300 ms), sortie 300 ms <code>cubic-bezier(0.42,0,1,1)</code> (ease-in) · voile : 300 ms à l'ouverture, 200 ms à la fermeture, <code>cubic-bezier(0.215,0.61,0.355,1)</code> — le kit (<code>overlay.enter-duration 200 ms</code> / <code>exit-duration 100 ms</code>) est plus court : à régler par token · contenu (code du site) : y 14 px, 500 ms <code>out</code>, départ 120 ms, décalage 40 ms · même pattern pour le drawer de détail d'une carte Tasks</p>
       </article>
 
       <article class="demo" id="d26">
@@ -1472,7 +1476,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             </div>
           </div>
         </div>
-        <p class="legend">Dans le kit : lc-dialog en fade + scale 0,96→1 (token <code>dialog.enter-scale</code>) — résultat proche, sans overshoot ni origine au clic · version affichée = valeurs Talmo mesurées : scale 0,908 → 1 avec dépassement ≈ 12 % (pic 1,011 vers 250 ms, retour à 1 à ≈ 430 ms), fondu 0,34 → 1 en ≈ 150 ms, <code>cubic-bezier(0.34,1.65,0.64,1)</code> 500 ms, transform-origin au clic · voile 250 ms <code>cubic-bezier(0.215,0.61,0.355,1)</code> · fermeture 150 ms ease-in, scale → 0,953 — option à décider côté kit (le registre préfère le fade+scale sobre)</p>
+        <p class="legend">Dans le kit : lc-dialog en fade + scale 0,96→1 (token <code>dialog.enter-scale</code>) — résultat proche, sans overshoot ni origine au clic · version affichée = valeurs Talmo mesurées : scale 0,908 → 1 avec dépassement ≈ 12 % (pic 1,011 vers 250 ms, retour à 1 à ≈ 430 ms), fondu 0,34 → 1 en ≈ 150 ms, <code>pop</code> du kit <code>cubic-bezier(0.34,1.7,0.64,1)</code> (approximation de back.out(1.5) des deux côtés ; le kit garde 1,7) 500 ms, transform-origin au clic · voile 250 ms <code>cubic-bezier(0.215,0.61,0.355,1)</code> · fermeture 150 ms ease-in, scale → 0,953 — option à décider côté kit (le registre préfère le fade+scale sobre)</p>
       </article>
 
       <article class="demo" id="d27">
@@ -1556,7 +1560,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             <div class="toast-area"><div class="toast" id="d29toast" role="status" hidden><span id="d29msg"></span><button type="button" id="d29undo" hidden>Annuler</button></div></div>
           </div>
         </div>
-        <p class="legend"><strong>Déjà dans le kit</strong> : lc-toast-outlet + action { label: 'Annuler', run } native dans toast.service.ts · version affichée = Talmo mesuré : entrée y 28→0 px + scale 0,949→1 + fondu (≈ 180 ms), dépassement ≈ 12 % (−3,3 px vers 280 ms), <code>cubic-bezier(0.34,1.65,0.64,1)</code> 500 ms ; sortie 250 ms ease-in, y +13 px + fondu (WAAPI optionnelle) · TTL 3,2 s / 5,5 s si Undo · pattern Undo systématique sur toute mutation réversible</p>
+        <p class="legend"><strong>Déjà dans le kit</strong> : lc-toast-outlet + action { label: 'Annuler', run } native dans toast.service.ts · version affichée = Talmo mesuré : entrée y 28→0 px + scale 0,949→1 + fondu (≈ 180 ms), dépassement ≈ 12 % (−3,3 px vers 280 ms), <code>pop</code> du kit <code>cubic-bezier(0.34,1.7,0.64,1)</code> 500 ms ; sortie 250 ms power2.in <code>cubic-bezier(0.55,0.085,0.68,0.53)</code>, y +13 px + fondu (WAAPI optionnelle) · TTL 3,2 s / 5,5 s si Undo · pattern Undo systématique sur toute mutation réversible</p>
       </article>
     </section>
 
@@ -1817,7 +1821,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
             <div class="day-ev" lcReveal>17 h 30 · Point équipe</div>
           </div>
         </div>
-        <p class="legend">Anneau = classe d'état SANS transition (mesuré sur Talmo : <code>box-shadow</code> inset 2 px, transition 0 s, présent dès la 1re image) + re-fade de la liste via <code>[lcReveal]</code> sur le nouveau contenu : montée de 8 px, 450 ms <code>cubic-bezier(0.16,1,0.3,1)</code> (50 % à ~50 ms, 90 % à ~170 ms, 98 % à ~240 ms)</p>
+        <p class="legend">Anneau = classe d'état SANS transition (mesuré sur Talmo : <code>box-shadow</code> inset 2 px, transition 0 s, présent dès la 1re image) + re-fade de la liste via <code>[lcReveal]</code> sur le nouveau contenu : montée de 8 px, 450 ms <code>out</code> (power3.out, <code>cubic-bezier(0.215,0.61,0.355,1)</code> : code du site)</p>
       </article>
 
       <article class="demo" id="d42">
@@ -1949,7 +1953,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
           </section>
         </div></div></div>
         <p class="m-read" id="d57read">Barre : en attente.</p>
-        <p class="legend">Barre d'onglets du bas du kit · <b>entrée</b> <code>translateY 90→0</code> après <code>--lc-tabbar-in-delay</code> 265 ms, <code>--lc-tabbar-in</code> 750 ms expo.out : 99 % à +0,47 s (Talmo : retard ≈ 0,3 s après la barre du haut, ≈ 0,45 s jusqu'à 99 %, fin ≈ 0,75 s ; valeurs ajustées sur sa série rAF) · <b>pastille</b> : un seul span plein dont seul le <code>clip-path: inset(6px R 6px L round 16px)</code> est animé via deux <code>@property</code> longueur : bord avant <code>--lc-pill-front</code> 300 ms <code>power3.out</code> (le bord droit en allant à droite, le gauche en allant à gauche : symétrique, mesuré), bord arrière <code>--lc-pill-back</code> 410 ms <code>power3.inOut</code> après <code>--lc-pill-lag</code> 75 ms : il finit ≈ 0,19 s après l'avant (≈ 0,57 s au total) ; ajusté sur la série rAF du site (écart moyen 0,3 px) · texte actif en clair via <code>aria-current</code> · barre 66 px, bord à 10 px, onglets de 72 px à 390 px · <b>More</b> : feuille d54 en 92 % ; aucune cascade du contenu (mesuré : opacité 1 dès le premier échantillon). Boutons : enfoncement du kit (Talmo : aucun).</p>
+        <p class="legend">Barre d'onglets du bas du kit · <b>entrée</b> <code>translateY 90→0</code> après <code>--lc-tabbar-in-delay</code> 200 ms, <code>--lc-tabbar-in</code> 700 ms <code>entrance</code> (expo.out) : valeurs du kit ratifiées (talmo-source.md ; l'ajustement à la série rAF donnait 265 / 750 ms) · <b>pastille</b> : un seul span plein dont seul le <code>clip-path: inset(6px R 6px L round 16px)</code> est animé via deux <code>@property</code> longueur : bord avant <code>--lc-pill-front</code> 300 ms <code>power3.out</code> (le bord droit en allant à droite, le gauche en allant à gauche : symétrique, mesuré), bord arrière <code>--lc-pill-back</code> 410 ms <code>power3.inOut</code> après <code>--lc-pill-lag</code> 75 ms : il finit ≈ 0,19 s après l'avant (≈ 0,57 s au total) ; ajusté sur la série rAF du site (écart moyen 0,3 px) · texte actif en clair via <code>aria-current</code> · barre 66 px, bord à 10 px, onglets de 72 px à 390 px · <b>More</b> : feuille d54 en 92 % ; aucune cascade du contenu (mesuré : opacité 1 dès le premier échantillon). Boutons : enfoncement du kit (Talmo : aucun).</p>
       </article>
 
       <article class="demo" id="d59">
@@ -1963,7 +1967,7 @@ kbd{font-family:var(--lc-sys-font-family-mono);font-size:.75rem;background:var(-
           <div class="m-scroll" id="d59sc"><h2 class="m-h">Planner</h2><div id="d59list"></div></div>
         </div></div></div>
         <p class="m-read" id="d59read">Défilement : 0 px.</p>
-        <p class="legend"><code>lc-app-shell</code> / <code>lc-top-bar</code> · au-delà de <code>--lc-title-threshold</code> 80 px de défilement (Talmo : entre 60 et 100 px, soit la sortie du grand titre) la barre reçoit <code>data-titled</code> · <code>opacity 0→1</code> en <code>--lc-title-fade</code> 200 ms <code>ease</code> (seule vraie transition CSS du site mobile : 0,07 à +17 ms, 0,41 à +52, 0,80 à +105, 1,0 à +197) · en remontant, fondu inverse · l'ombre de la barre (<code>is-stuck</code>) apparaît dès les premiers pixels, sans animation mesurée.</p>
+        <p class="legend"><code>lc-app-shell</code> / <code>lc-top-bar</code> · au-delà de <code>--lc-title-threshold</code> 80 px de défilement (Talmo : entre 60 et 100 px, soit la sortie du grand titre) la barre reçoit <code>data-titled</code> · <code>opacity 0→1</code> en <code>--lc-title-fade</code> 200 ms <code>standard</code> (seule vraie transition CSS du site mobile : 0,07 à +17 ms, 0,41 à +52, 0,80 à +105, 1,0 à +197) · en remontant, fondu inverse · l'ombre de la barre (<code>is-stuck</code>) apparaît dès les premiers pixels, sans animation mesurée.</p>
       </article>
 
       <article class="demo" id="d60">
@@ -2120,6 +2124,7 @@ function tagStagger(root) {
 
 /* Count-up : rAF + easing échantillonné (un texte ne se tween pas en CSS). */
 const easeP3out = t => 1 - Math.pow(1 - t, 3);
+const easeP3inout = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const easeP2inout = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 function countUp(el, to, { from = 0, dur = 900, fmt = n => Math.round(n).toLocaleString('fr-FR'), ease = easeP3out } = {}) {
   if (RM()) { el.textContent = fmt(to); return; }
@@ -2210,9 +2215,9 @@ splitTitle($('#d02s .big-title'), 'Rapports');
 R.d02 = () => replay($('#d02s'), 'is-split');
 
 /* ---------- d03 · Chorégraphie STUDIO ---------- */
-function playCounters(root, delay) {
+function playCounters(root, delay, dur) {
   setTimeout(() => {
-    $$('[data-cu]', root).forEach(el => countUp(el, +el.dataset.cu));
+    $$('[data-cu]', root).forEach(el => countUp(el, +el.dataset.cu, { dur }));
     $$('[data-cu-eur]', root).forEach(el => countUp(el, +el.dataset.cuEur, { fmt: frEUR }));
     $$('[data-cu-pct]', root).forEach(el => countUp(el, +el.dataset.cuPct, { fmt: n => Math.round(n) + ' %' }));
   }, T(delay));
@@ -2438,7 +2443,7 @@ R.d05 = () => replay($('#d05s'), 'is-entering');
     /* Comme Talmo : la liste est remplacée d'un coup (aucune sortie), puis toutes les lignes visibles ré-entrent après ~200 ms, en cascade. */
     $$('.frow', list).forEach(r => { r.hidden = !(f === 'all' || r.dataset.status === f); });
     $$('.frow:not([hidden])', list).forEach((r, i) => {
-      if (!RM()) r.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: T(450), easing: EASE.in, delay: T(200 + i * 40), fill: 'backwards' });
+      if (!RM()) r.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: T(550), easing: EASE.p3, delay: T(200 + i * 40), fill: 'backwards' });
     });
   }
   chips.forEach(c => c.addEventListener('click', () => apply(c.dataset.f)));
@@ -2538,19 +2543,19 @@ R.d12 = () => d12.next();
     if (!s || step >= 2) return;
     step++; render(true);
   });
-  R.d13 = () => { replay($('#d13s'), 'is-dots'); countUp($('#d13pct'), 62, { fmt: n => Math.round(n) + ' %', dur: 700 }); step = 0; render(false); };
+  R.d13 = () => { replay($('#d13s'), 'is-dots'); countUp($('#d13pct'), 62, { fmt: n => Math.round(n) + ' %', dur: 1200 }); step = 0; render(false); };
 })();
 
 /* ---------- d14 · Count-up KPI ---------- */
-R.d14 = () => playCounters($('#d14s'), 0);
+R.d14 = () => playCounters($('#d14s'), 0, 1200); /* lcCountUp : 1,2 s (talmo-source.md) */
 
 /* ---------- d15 · Hover KPI ---------- */
 (function () {
   const v = $('#d15v'), line = $('#d15line');
   /* NÉGATIF : aucun listener de survol. Rejouer ne rejoue que l'entrée (count-up + tracé), comme au chargement de la vue. */
   function play() {
-    countUp(v, 72, { from: 0, dur: 900 });
-    if (!RM()) line.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: T(900), easing: EASE.p3, fill: 'forwards' });
+    countUp(v, 72, { from: 0, dur: 1200 });
+    if (!RM()) line.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: T(1100), easing: EASE.p3, fill: 'forwards' });
     else line.style.strokeDashoffset = 0;
   }
   R.d15 = play;
@@ -2613,7 +2618,7 @@ R.d19 = () => replay($('#d19s'), 'is-drawn');
     if (RM()) { ring.style.strokeDashoffset = C * (1 - p); v.textContent = Math.round(p * 100) + ' %'; cur = p; return; }
     const from = cur;
     ring.animate([{ strokeDashoffset: C * (1 - from) }, { strokeDashoffset: C * (1 - p) }], { duration: T(1100), easing: EASE.in, fill: 'forwards' });
-    countUp(v, Math.round(p * 100), { from: Math.round(from * 100), dur: 1100, fmt: n => Math.round(n) + ' %', ease: easeP2inout });
+    countUp(v, Math.round(p * 100), { from: Math.round(from * 100), dur: 1200, fmt: n => Math.round(n) + ' %' });
     cur = p;
   }
   $('#d20btn').addEventListener('click', () => { vi = (vi + 1) % vals.length; set(vals[vi]); });
@@ -2680,9 +2685,9 @@ R.d22 = () => replay($('#d22hm').parentElement, 'is-entering');
     const from = cur.slice(), t0 = performance.now();
     cancelAnimationFrame(svg._raf);
     const step = now => {
-      /* mesuré sur Talmo (changement de Measure) : chaque barre met 480 ms (power2.inOut), départs décalés de ~20 ms */
-      const ps = from.map((f, i) => Math.min(1, Math.max(0, (now - t0 - T(i * 20)) / T(480))));
-      cur = from.map((f, i) => f + (to[i] - f) * easeP2inout(ps[i]));
+      /* mesuré sur Talmo (changement de Measure) : chaque barre met 700 ms (power3.inOut, source Talmo), départs décalés de ~20 ms */
+      const ps = from.map((f, i) => Math.min(1, Math.max(0, (now - t0 - T(i * 20)) / T(700))));
+      cur = from.map((f, i) => f + (to[i] - f) * easeP3inout(ps[i]));
       draw(cur);
       if (ps.some(p => p < 1)) svg._raf = requestAnimationFrame(step);
     };
@@ -2726,12 +2731,12 @@ R.d22 = () => replay($('#d22hm').parentElement, 'is-entering');
     if (RM()) return;
     const r = dlg.getBoundingClientRect();
     dlg.style.transformOrigin = `${x - r.left}px ${y - r.top}px`;
-    dlg.animate([{ opacity: 0, transform: 'scale(.908)' }, { opacity: 1, transform: 'scale(1)' }], { duration: T(500), easing: 'cubic-bezier(0.34,1.65,0.64,1)', fill: 'backwards' });
+    dlg.animate([{ opacity: 0, transform: 'scale(.86)' }, { opacity: 1, transform: 'scale(1)' }], { duration: T(500), easing: 'cubic-bezier(0.34,1.7,0.64,1)', fill: 'backwards' });
     back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: T(250), easing: EASE.p3, fill: 'forwards' });
   }
   function close() {
     if (RM()) { back.hidden = true; dlg.hidden = true; return; }
-    const a = dlg.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.953)' }], { duration: T(150), easing: EASE.out2 });
+    const a = dlg.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.94)' }], { duration: T(200), easing: EASE.out2 });
     a.onfinish = () => { back.hidden = true; dlg.hidden = true; };
     back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: T(150), easing: EASE.out2, fill: 'forwards' });
   }
@@ -2814,13 +2819,13 @@ R.d22 = () => replay($('#d22hm').parentElement, 'is-entering');
     msg.textContent = text;
     undo.hidden = !withUndo;
     toast.hidden = false; reflow(toast);
-    if (!RM()) toast.animate([{ opacity: 0, transform: 'translateY(28px) scale(.949)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: T(500), easing: 'cubic-bezier(0.34,1.65,0.64,1)', fill: 'backwards' });
+    if (!RM()) toast.animate([{ opacity: 0, transform: 'translateY(30px) scale(.94)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: T(500), easing: 'cubic-bezier(0.34,1.7,0.64,1)', fill: 'backwards' });
     ttl = setTimeout(hideToast, withUndo ? 5500 : 3200); /* TTL fonctionnel : non coupé par le reduced-motion */
   }
   function hideToast() {
     clearTimeout(ttl);
     if (RM()) { toast.hidden = true; return; }
-    const a = toast.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(13px)' }], { duration: T(250), easing: EASE.out2 });
+    const a = toast.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(16px)' }], { duration: T(250), easing: 'cubic-bezier(0.55,0.085,0.68,0.53)' }); /* power2.in du site, y 16 px (code du site) */
     a.onfinish = () => { toast.hidden = true; };
   }
   function del() {
@@ -3208,8 +3213,8 @@ R.d42 = () => replay($('#d42s'), 'is-on');
   }
   function renderB() {
     if (RM()) { buildB(true); return; }
-    $$('.srow', tl).forEach(r => r.animate([{ opacity: 1 }, { opacity: 0 }], { duration: T(150), easing: EASE.std, fill: 'forwards' }));
-    setTimeout(() => buildB(true), T(160)); /* la timeline se vide, puis se reconstruit en stagger */
+    $$('.srow', tl).forEach(r => r.animate([{ opacity: 1 }, { opacity: 0 }], { duration: T(200), easing: EASE.out2, fill: 'forwards' }));
+    setTimeout(() => buildB(true), T(210)); /* la timeline se vide, puis se reconstruit en stagger */
   }
   const segBtns = $$('#d45seg button');
   segBtns.forEach((b, i) => b.addEventListener('click', () => {
@@ -3571,7 +3576,7 @@ function fillPages(el, onPick) {
     clearTimeout(tt); box.replaceChildren();
     const el = mel('div', 'm-toast', msg); box.appendChild(el);
     el.animate([{ opacity: 0, transform: `translateY(${mnum(ph, '--lc-toast-y')}px) scale(${mnum(ph, '--lc-toast-scale0')})` }, { opacity: 1, transform: 'none' }],
-      { duration: mms(ph, '--lc-toast-in'), easing: mcs(ph, '--lc-m-ease-back') });
+      { duration: mms(ph, '--lc-toast-in'), easing: 'cubic-bezier(0.34,1.7,0.64,1)' }); /* comme d29 */
     tt = setTimeout(async () => {
       const a = el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${mnum(ph, '--lc-toast-out-y')}px)` }],
         { duration: mms(ph, '--lc-toast-out'), easing: mcs(ph, '--lc-m-ease-in'), fill: 'forwards' });

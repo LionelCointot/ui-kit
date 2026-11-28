@@ -1,5 +1,5 @@
 // CA-4 de la spec vitrine : dans chaque story « Playground », chaque contrôle doit changer le rendu.
-// Usage : npm run build-storybook:public && node tools/qa/storybook-controls.mjs [fragment-d-id ...]
+// Usage : npm run build-storybook && node tools/qa/storybook-controls.mjs [fragment-d-id ...]
 // Pour chaque contrôle simple (booléen, liste, texte, nombre), la valeur est changée via le canal Storybook
 // (comme le panneau Controls) et le HTML de l'aperçu est comparé. Code de sortie 1 si un contrôle n'a aucun effet.
 // Un contrôle qui n'agit que dans un état précis (message de liste vide, erreur après interaction…) est déclaré
@@ -64,7 +64,7 @@ const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const index = JSON.parse(await readFile(path.join(storybookDir, 'index.json'), 'utf8'));
 const ids = Object.values(index.entries)
-  .filter((entry) => entry.type === 'story' && entry.id.endsWith('--playground'))
+  .filter((entry) => entry.type === 'story' && !entry.title.startsWith('QA/') && entry.id.endsWith('--playground'))
   .map((entry) => entry.id)
   .filter((id) => filters.length === 0 || filters.some((fragment) => id.includes(fragment)));
 

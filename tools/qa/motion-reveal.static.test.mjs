@@ -22,7 +22,8 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
   test('ui-angular.css ne contient plus de règle [lcReveal] ni de jeton --lc-reveal-*', () => {
     const css = strip(read(sheet));
     assert.doesNotMatch(css, /\[lcReveal\]/i, 'le sélecteur [lcReveal] existe encore dans ui-angular.css');
-    assert.doesNotMatch(css, /--lc-reveal-/, 'un jeton --lc-reveal-* est encore lu par ui-angular.css');
+    // `--lc-reveal-curve` est la variable locale de motion.css (§13 T3) : le tiroir la surcharge (cascade en courbe soft) ; tout autre --lc-reveal-* reste interdit.
+    assert.doesNotMatch(css, /--lc-reveal-(?!curve\b)/, 'un jeton --lc-reveal-* (hors --lc-reveal-curve) est encore lu par ui-angular.css');
   });
 
   test('ui-angular.css importe motion.css', () => {
@@ -44,8 +45,8 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
     assert.ok(existsSync(motion), 'packages/angular/styles/motion.css absent');
     const css = strip(read(motion));
     assert.doesNotMatch(css, /cubic-bezier\(/, 'une courbe en dur apparaît dans motion.css');
-    assert.match(css, /--lc-sys-duration-enter/, 'la durée d\'entrée doit lire --lc-sys-duration-enter');
-    assert.match(css, /--lc-sys-easing-entrance/, 'la courbe d\'entrée doit lire --lc-sys-easing-entrance');
+    assert.match(css, /--lc-reveal-duration/, 'la durée d\'entrée doit lire --lc-reveal-duration');
+    assert.match(css, /--lc-reveal-curve: var\(--lc-reveal-easing\)/, 'la courbe d\'entrée par défaut doit lire --lc-reveal-easing (Talmo : power3.out)');
     assert.match(css, /--lc-sys-duration-exit/, 'la durée de sortie doit lire --lc-sys-duration-exit');
     assert.match(css, /--lc-sys-motion-stagger-cap/, 'le plafond de rang doit lire --lc-sys-motion-stagger-cap');
   });
@@ -53,18 +54,18 @@ describe('ancien bloc [lcReveal] retiré, motion.css en place (CA-7, §5.1)', ()
 
 describe('@keyframes, .animate( et getAnimations hors des emplacements autorisés (CA-7, CA-5 d\'architecture)', () => {
   const ALLOWED_DIRS = ['src/lib/motion/', 'styles/motion.css'];
-  /** Liste blanche écrite : composants existants avant T3, avec la raison et la tâche qui les migre (une entrée en trop ne fait jamais échouer le test). Toute autre occurrence est un échec. */
+  /** Liste blanche écrite, réduite aux exceptions justifiées (boucles de chargement, bandes indéterminées, défilement du texte tronqué : pas des entrées ni des sorties). Stricte : une entrée sans occurrence fait échouer le test. */
   const KEYFRAMES = {
     'src/lib/skeleton/skeleton.component.css': ['lc-skeleton-pulse'], // boucle de chargement, hors périmètre des primitives
     'src/lib/spinner/spinner.component.css': ['lc-spinner-spin', 'lc-spinner-pulse'], // boucle de chargement
     'src/lib/button/button.component.css': ['lc-button-spin'], // bouton en chargement
     'feedback/src/progress-bar/progress-bar.component.css': ['lc-progress-slide'], // bande indéterminée, gardée
-    'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // composant existant, migré en T4
+    'forms/src/message-composer/message-composer.component.css': ['lc-message-composer-spin', 'lc-message-composer-slide', 'lc-message-composer-shake'], // bande indéterminée, rotation d'envoi et secousse de refus, gardées (la barre de progression passe par lcFill)
     'forms/src/file-upload/file-upload.component.css': ['lc-file-upload-slide'], // bande indéterminée, gardée
     'data/src/data-table/column-filter.component.css': ['lc-column-filter-spin'], // indicateur de chargement
-    'styles/ui-angular.css': ['lc-truncate-scroll'], // truncate : T12 (dialogue et tiroir migrés par T9a ; pops d'ancrage et calendrier migrés par T9c)
+    'styles/ui-angular.css': ['lc-truncate-scroll'], // défilement du texte tronqué au survol (T12)
   };
-  const WAAPI = {}; // data-table et message-thread (migrés par T7) n'y figurent plus : leurs animations passent par lib/motion/
+  const WAAPI = {}; // aucune exception : toute animation WAAPI passe par lib/motion/ (lcAnimate)
 
   test('aucun @keyframes hors lib/motion/, motion.css et la liste blanche', () => {
     const offenders = [];
@@ -76,6 +77,17 @@ describe('@keyframes, .animate( et getAnimations hors des emplacements autorisé
       }
     }
     assert.deepEqual(offenders, []);
+  });
+
+  test('liste blanche stricte : chaque @keyframes listé existe encore dans son fichier', () => {
+    const stale = [];
+    for (const [where, names] of Object.entries(KEYFRAMES)) {
+      const file = join(angular, where);
+      const css = existsSync(file) ? strip(read(file)) : '';
+      for (const name of names) if (!new RegExp(`@keyframes\\s+${name}\\b`).test(css)) stale.push(`${where} : ${name}`);
+    }
+    assert.deepEqual(stale, [], 'entrée sans occurrence : la retirer de la liste blanche');
+    assert.deepEqual(Object.keys(WAAPI).filter((where) => !existsSync(join(angular, where)) || !/\.animate\(|getAnimations/.test(strip(read(join(angular, where))))), []);
   });
 
   test('aucun .animate( ni getAnimations hors lib/motion/ et la liste blanche', () => {
@@ -205,6 +217,9 @@ describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
     assert.deepEqual(offenders, []);
   });
 
+  /** Exceptions écrites (T10b, ADR 0011) : l'hôte est lui-même l'élément qui entre (carte, ligne d'un fil) et n'a pas d'`animate.leave` propre ; une carte entre seule, sans attribut côté application. */
+  const HOST_ENTERS = ['layout/src/card/card.component.ts', 'data/src/kpi-card/kpi-card.component.ts', 'data/src/activity-feed/activity-item.component.ts'];
+
   test('aucun lcReveal ni animate.leave sur l\'hôte d\'un composant du kit (host: {} et hostDirectives)', () => {
     const offenders = [];
     for (const file of sources(angular, ['.component.ts']).filter((f) => !/\/testing\//.test(f))) {
@@ -216,7 +231,7 @@ describe('tests d\'architecture (ADR 0011, spec §5.1 point 4)', () => {
       }
       for (const m of code.matchAll(/\bhostDirectives\s*:\s*\[/g)) {
         const end = code.indexOf(']', m.index);
-        if (/LcRevealDirective/.test(code.slice(m.index, end))) offenders.push(`${relative(angular, file)} : hostDirectives`);
+        if (/LcRevealDirective/.test(code.slice(m.index, end)) && !HOST_ENTERS.includes(relative(angular, file))) offenders.push(`${relative(angular, file)} : hostDirectives`);
       }
     }
     assert.deepEqual(offenders, []);
@@ -260,5 +275,56 @@ describe('T4 : .lc-pulse, .lc-lift, lcFill, lcDraw dans motion.css (CA-12, CA-13
     assert.match(index, /directives\/fill\.directive/);
     assert.match(index, /directives\/draw\.directive/);
     assert.match(read(join(angular, 'src/lib/motion/directives/fill.directive.ts')), /export type LcFillAxis\s*=\s*'x'\s*\|\s*'y'/);
+  });
+});
+
+describe('T10a : barres en lcFill, toast, disclosure lisent leurs tokens (CA-25, §5.4.1)', () => {
+  const css = (f) => strip(read(join(angular, f)));
+  const ts = (f) => strip(read(join(angular, f)));
+
+  test('les barres ne transitionnent plus width et passent par [lcFill] ; la bande indéterminée reste', () => {
+    for (const [c, t, band] of [
+      ['feedback/src/progress-bar/progress-bar.component.css', 'feedback/src/progress-bar/progress-bar.component.ts', 'lc-progress-slide'],
+      ['forms/src/file-upload/file-upload.component.css', 'forms/src/file-upload/file-upload.component.ts', 'lc-file-upload-slide'],
+      ['forms/src/message-composer/message-composer.component.css', 'forms/src/message-composer/message-composer.component.ts', 'lc-message-composer-slide'],
+    ]) {
+      assert.doesNotMatch(css(c), /transition:\s*width/, `${c} : transition sur width`);
+      assert.match(css(c), new RegExp(`@keyframes\\s+${band}`), `${c} : bande indéterminée retirée`);
+      assert.match(ts(t), /\[lcFill\]/, `${t} : [lcFill] absent`);
+      assert.doesNotMatch(ts(t), /\[style\.width\.%\]/, `${t} : width inline`);
+    }
+    assert.match(ts('data/src/timeline-bar/timeline-bar.component.ts'), /\[lcFill\]/);
+    assert.match(css('data/src/timeline-bar/timeline-bar.component.css'), /var\(--lc-fill-transition\)/);
+  });
+
+  test('toast : animate.enter / animate.leave, keyframes dans motion.css sur les tokens toast.*', () => {
+    const outlet = ts('feedback/src/toast/toast-outlet.component.ts');
+    assert.match(outlet, /animate\.enter="lc-toast-enter"/);
+    assert.match(outlet, /animate\.leave="lc-toast-leave"/);
+    const motion = css('styles/motion.css');
+    for (const t of ['enter-offset', 'enter-scale', 'enter-duration', 'enter-easing', 'exit-offset', 'exit-duration', 'exit-easing']) assert.match(motion, new RegExp(`--lc-toast-${t}`), `--lc-toast-${t} non lu`);
+  });
+
+  test('disclosure : durées d\'ouverture et de repli, décalage et chevron depuis disclosure.*', () => {
+    const c = css('layout/src/disclosure/disclosure.component.css');
+    for (const t of ['enter-duration', 'exit-duration', 'offset', 'chevron-duration']) assert.match(c, new RegExp(`--lc-disclosure-${t}`), `--lc-disclosure-${t} non lu`);
+    assert.doesNotMatch(c, /--lc-collapse-duration/);
+  });
+});
+
+describe('fidélité au site Talmo (d08, d25, d46)', () => {
+  test('d08 : les lignes de data-table gardent la courbe `out` après un filtre (aucune surcharge de --lc-reveal-curve)', () => {
+    assert.doesNotMatch(read(join(angular, 'data/src/data-table/data-table.component.css')), /--lc-reveal-curve/);
+  });
+  test('d25 : le contenu du tiroir lit les jetons drawer.content-* (y, durée, départ, rythme)', () => {
+    const css = read(join(angular, 'styles/motion.css'));
+    // Départ et rythme sont hérités du conteneur (un lcStagger de l'application garde la priorité) ; y et durée vivent sur la ligne.
+    const rule = (css.match(/\.lc-drawer__content \{([^}]*)\}/)?.[1] ?? '') + (css.match(/\.lc-drawer__content \.lc-reveal \{([^}]*)\}/)?.[1] ?? '');
+    for (const name of ['offset', 'duration', 'delay', 'stagger']) assert.match(rule, new RegExp(`var\\(--lc-drawer-content-${name}\\)`));
+  });
+  test('d46 : l\'interrupteur n\'anime que la couleur de la piste et le glissement du bouton', () => {
+    const css = read(join(angular, 'forms/src/switch/switch.component.css'));
+    assert.equal((css.match(/transition:/g) ?? []).length, 3); // piste, bouton, mouvement réduit
+    assert.doesNotMatch(css, /border-color var/);
   });
 });

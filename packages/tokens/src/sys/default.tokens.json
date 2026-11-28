@@ -377,10 +377,6 @@
         "$value": "{ref.duration.normal}",
         "$type": "duration"
       },
-      "slow": {
-        "$value": "{ref.duration.slow}",
-        "$type": "duration"
-      },
       "enter": {
         "$value": "{ref.duration.enter}",
         "$type": "duration"
@@ -404,6 +400,10 @@
       "draw": {
         "$value": "{ref.duration.draw}",
         "$type": "duration"
+      },
+      "fill": {
+        "$value": "{ref.duration.fill}",
+        "$type": "duration"
       }
     },
     "easing": {
@@ -421,10 +421,6 @@
       },
       "fill": {
         "$value": "{ref.easing.fill}",
-        "$type": "cubicBezier"
-      },
-      "soft": {
-        "$value": "{ref.easing.soft}",
         "$type": "cubicBezier"
       },
       "out": {

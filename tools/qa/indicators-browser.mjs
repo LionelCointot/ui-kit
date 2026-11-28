@@ -236,7 +236,7 @@ await run('bloc 3', async () => {
       for (const a of list) byRow.set(a.text, Math.min(byRow.get(a.text) ?? Infinity, a.delay));
       const delays = [...byRow.values()].sort((x, y) => x - y);
       check(delays.length === 3 && delays.every((d, i) => near(d, i * 40)), `D-21 ${label} : trois lignes en cascade, décalage 40 ms (0, 40, 80)`, JSON.stringify([...byRow]));
-      check(list.length > 0 && list.every((a) => near(a.duration, 450) && sameCurve(a.easing, EASE.soft)), `D-21 ${label} : 450 ms, courbe « soft »`, JSON.stringify(list.slice(0, 2)));
+      check(list.length > 0 && list.every((a) => near(a.duration, 550) && sameCurve(a.easing, EASE.out)), `D-21 ${label} : 550 ms, courbe « out » (lcReveal, spec 2026-12-mouvement-v2 §13 « Alignement sur le code du site Talmo »)`, JSON.stringify(list.slice(0, 2)));
     };
     await page.evaluate(() => window.__t8.frames(30));
     check((await since(page, 0, 'lc-tabs')).length === 0 && (await events(page, 'lc-tabs')) === 0, 'D-21 premier affichage du panneau ouvert : aucune animation', 'animation(s) au premier affichage');
@@ -416,11 +416,8 @@ await run('contrat des stories', async () => {
   const index = await (await fetch(`${base}/index.json`)).json();
   const CONTRACT = { 'navigation-tabs--animation': ['d10', 'd45'], 'navigation-stepper--animation': ['d13', 'd51'], 'forms-switch--animation': ['d46'], 'forms-segmented-control--animation': ['d62'], 'navigation-nav-group--animation': ['d48'], 'buttons-button--animation': [] };
   for (const [id, demos] of Object.entries(CONTRACT)) {
-    check(!!index.entries[id], `CA-38 story ${id} dans l'index`, 'story absente');
-    if (!index.entries[id]) continue;
+    if (!index.entries[id]) { check(false, `CA-20 story ${id} dans l'index`, 'story absente'); continue; } // CA-38 : vérifié dans `storybook-browser.mjs motion`
     const { context, page } = await open(id);
-    const rejouer = await page.getByRole('button', { name: 'Rejouer' }).count();
-    check(rejouer >= Math.max(1, demos.length), `CA-38 ${id} : au moins ${Math.max(1, demos.length)} bouton(s) « Rejouer »`, `${rejouer}`);
     for (const d of demos) {
       const inside = await page.locator(`[data-demo="${d}"] >> button:has-text("Rejouer")`).count();
       check(inside === 1, `CA-20 ${id} : [data-demo="${d}"] contient son bouton « Rejouer »`, `${inside} bouton(s)`);

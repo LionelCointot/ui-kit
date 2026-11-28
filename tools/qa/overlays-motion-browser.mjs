@@ -1,5 +1,5 @@
 // Acceptation navigateur de la tâche T9a de docs/specs/2026-12-mouvement-v2.md (Chromium, Storybook statique dist/storybook ; STORYBOOK_DIR pour une autre construction).
-//   node tools/qa/overlays-motion-browser.mjs      CA-23 (présentation en lc-sheet à 767 / 768 px, origine du dialogue souris et clavier) + cascade du contenu du tiroir (§5.4.1)
+//   node tools/qa/overlays-motion-browser.mjs      CA-23 (présentation en lc-sheet à 767 / 768 px, origine du dialogue souris et clavier)
 // Story : QA/Overlays/Motion v2 (`qa-overlays-motion-v2--overlays`). Les valeurs attendues viennent de la spec (§5.4.1), pas du code.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -12,7 +12,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(await readFile(f)); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
+const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { try { const f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); const body = await readFile(f); rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(body); } catch { rs.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => ok(s)); });
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
 let failures = 0;
@@ -91,27 +91,12 @@ for (const [way, button] of [['souris', '#qa-open-dialog'], ['clavier', '#qa-ope
   const rec = await page.waitForFunction(() => window.__origin.rec, null, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => null);
   const cx = r.x + r.width / 2 - (rec?.left ?? 0), cy = r.y + r.height / 2 - (rec?.top ?? 0);
   check(`CA-23 ${way} : origine de transformation = centre du déclencheur`, rec !== null && near(rec.ox, cx, 1) && near(rec.oy, cy, 1), `origine=${rec?.ox},${rec?.oy} attendu ${cx},${cy} (animation d'échelle ${rec ? 'trouvée' : 'absente'})`);
-  check(`CA-23 ${way} : échelle de départ 0,91 en 500 ms`, rec !== null && near(rec.scale0, 0.91, 0.005) && near(rec.d, 500), `échelle=${rec?.scale0} durée=${rec?.d}`);
+  check(`CA-23 ${way} : échelle de départ 0,86 en 500 ms`, rec !== null && near(rec.scale0, 0.86, 0.005) && near(rec.d, 500), `échelle=${rec?.scale0} durée=${rec?.d}`);
   check(`CA-23 ${way} : sans erreur de page`, errors.length === 0, errors.join(' ; '));
   await context.close();
 }
 
-// Tiroir (§5.4.1) : contenu en cascade, 450 ms, décalage 40 ms par rang, un `lcStagger` posé par lc-drawer.
-{
-  const { context, page, errors } = await open(1280);
-  await page.evaluate(() => {
-    const w = (window.__rows = new Map());
-    const loop = () => { document.querySelectorAll('.qa-row').forEach((el, i) => { for (const a of el.getAnimations()) if (!w.has(a)) { const t = a.effect.getComputedTiming(); w.set(a, { i, delay: t.delay, duration: t.duration }); } }); requestAnimationFrame(loop); };
-    loop();
-  });
-  await page.click('#qa-open-drawer');
-  await page.waitForTimeout(1200);
-  const rows = await page.evaluate(() => [...window.__rows.values()]);
-  const byRow = [0, 1, 2, 3].map((i) => rows.filter((x) => x.i === i));
-  check('Tiroir : chaque ligne s\'anime en 450 ms avec un décalage de 40 ms par rang', byRow.every((l, i) => l.some((x) => near(x.duration, 450) && near(x.delay, i * 40))), JSON.stringify(rows));
-  check('Tiroir : sans erreur de page', errors.length === 0, errors.join(' ; '));
-  await context.close();
-}
+// La cascade du contenu du tiroir (CA-20, §5.4.1) est comparée à la démo d25 par `motion-fidelity.mjs`.
 
 await browser.close();
 server.close();

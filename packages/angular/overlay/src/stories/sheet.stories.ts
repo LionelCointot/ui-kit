@@ -109,7 +109,7 @@ export class ExampleComponent {
   protected readonly shown = signal(false);
 }`;
 
-/** On a phone the sheet rises in 600 ms and goes down in 300 ms, follows a finger pulling its handle (the backdrop follows too) and springs back if released early; on a wide screen it is a card that rises and fades. "Rejouer" reopens it. Two more sheets: one as tall as its content (d54), one with long content capped at its maximum height (d55). */
+/** On a phone the sheet rises in 550 ms and goes down in 300 ms, follows a finger pulling its handle (the backdrop follows too) and springs back if released early; on a wide screen it is a card that rises and fades. "Rejouer" reopens it. Two more sheets: one as tall as its content (d54), one with long content capped at its maximum height (d55). */
 export const Animation: Story = {
   parameters: { ...fixedExample, docs: { source: { code: ANIMATION_CODE } } },
   render: () => {

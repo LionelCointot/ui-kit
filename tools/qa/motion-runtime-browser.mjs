@@ -2,19 +2,17 @@
 // Chrome réel (Playwright, channel chrome) sur le Storybook statique (`npm run build-storybook`, dist/storybook ; STORYBOOK_DIR pour une autre construction).
 //   node tools/qa/motion-runtime-browser.mjs
 // Story : QA/Motion/Runtime (packages/angular/src/lib/motion/stories/motion-runtime.acceptance.qa.stories.ts). Les valeurs attendues viennent de la spec (§5.2). Code de sortie 1 au moindre échec.
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { staticServer } from './static-server.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = process.env.STORYBOOK_DIR ?? path.join(root, 'dist', 'storybook');
 const { chromium } = require('playwright');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
-const server = await new Promise((ok) => { const s = createServer(async (rq, rs) => { let body; let f; try { f = path.join(dir, path.normalize(decodeURIComponent(new URL(rq.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')); body = await readFile(f); } catch { rs.writeHead(404).end(); return; } rs.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream' }).end(body); }); s.listen(0, '127.0.0.1', () => ok(s)); });
-const base = `http://127.0.0.1:${server.address().port}`;
+const server = await staticServer(dir);
+const { base } = server;
 const browser = await chromium.launch({ channel: 'chrome' });
 let failures = 0;
 const check = (name, ok, detail = '') => { if (!ok) failures += 1; console.log(`${ok ? 'OK ' : 'KO '} ${name}${ok ? '' : ` : ${detail}`}`); };
@@ -56,10 +54,10 @@ try {
       check('CA-19 courbe « entrance » = cubic-bezier(0.16, 1, 0.3, 1) (§5.2)', sameBezier(first.easing, [0.16, 1, 0.3, 1]), String(first.easing));
       check('CA-19 mouvement normal : l\'animation n\'est pas déjà finie', first.playState === 'running' || first.playState === 'pending', first.playState);
       const other = await run(page, { selector: '#qa-default', duration: 'draw', easing: 'pop' });
-      check('CA-19 autre rôle : « draw » = 900 ms, « pop » = cubic-bezier(0.34, 1.7, 0.64, 1)', other.duration === 900 && sameBezier(other.easing, [0.34, 1.7, 0.64, 1]), JSON.stringify(other));
+      check('CA-19 autre rôle : « draw » = 1100 ms (duration-draw, spec v2 §5.2 et brief Talmo), « pop » = cubic-bezier(0.34, 1.7, 0.64, 1)', other.duration === 1100 && sameBezier(other.easing, [0.34, 1.7, 0.64, 1]), JSON.stringify(other));
       const own = await run(page, { selector: '#qa-override', duration: 'enter', easing: 'entrance' });
       check('CA-19 tokens posés sur l\'élément : 123 ms et cubic-bezier(0.1, 0.2, 0.3, 0.4)', own.duration === 123 && sameBezier(own.easing, [0.1, 0.2, 0.3, 0.4]), JSON.stringify(own));
-      const inherited = await run(page, { selector: '#qa-inherit', duration: 'slow', easing: 'out' });
+      const inherited = await run(page, { selector: '#qa-inherit', duration: 'fast', easing: 'out' });
       check('CA-19 tokens hérités d\'un ancêtre : 77 ms et cubic-bezier(0.4, 0.5, 0.6, 0.7)', inherited.duration === 77 && sameBezier(inherited.easing, [0.4, 0.5, 0.6, 0.7]), JSON.stringify(inherited));
       await page.evaluate(() => document.querySelector('#qa-default').style.setProperty('--lc-sys-duration-enter', '321ms'));
       const reread = await run(page, { selector: '#qa-default', duration: 'enter', easing: 'entrance' });

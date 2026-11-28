@@ -9,8 +9,15 @@ export interface LcLabels {
   readonly showData: string;
   readonly hideData: string;
   readonly skipToContent: string;
+  /** Bouton retour de l'en-tête mobile quand aucune page parente n'a de titre. */
+  readonly back: string;
+  /** Nom accessible du bouton retour : contient le texte visible (le titre de la page parente). */
+  readonly backTo: (title: string) => string;
   readonly openNavigation: string;
   readonly closeNavigation: string;
+  /** Barre d'onglets de `lc-app-shell` : nom du repère de navigation et onglet qui ouvre le tiroir. */
+  readonly primaryNavigation: string;
+  readonly moreNavigation: string;
   readonly other: string;
   readonly confirm: string;
   readonly cancel: string;
@@ -632,8 +639,12 @@ export const LC_LABELS_FR: LcLabels = {
   showData: 'Voir les données',
   hideData: 'Masquer les données',
   skipToContent: 'Aller au contenu',
+  back: 'Retour',
+  backTo: (title) => `Retour à ${title}`,
   openNavigation: 'Ouvrir la navigation',
   closeNavigation: 'Fermer la navigation',
+  primaryNavigation: 'Navigation principale',
+  moreNavigation: 'Plus',
   other: 'Autres',
   confirm: 'Confirmer',
   cancel: 'Annuler',
@@ -871,8 +882,12 @@ export const LC_LABELS_EN: LcLabels = {
   showData: 'Show data',
   hideData: 'Hide data',
   skipToContent: 'Skip to content',
+  back: 'Back',
+  backTo: (title) => `Back to ${title}`,
   openNavigation: 'Open navigation',
   closeNavigation: 'Close navigation',
+  primaryNavigation: 'Main navigation',
+  moreNavigation: 'More',
   other: 'Other',
   confirm: 'Confirm',
   cancel: 'Cancel',

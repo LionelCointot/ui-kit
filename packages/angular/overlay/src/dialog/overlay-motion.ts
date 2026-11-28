@@ -12,6 +12,12 @@ const BACKDROP = {
 /** Le panneau animé est le conteneur CDK (ses voisins sont les ancres du piège à focus) ; le `panelClass` lui-même ne bouge pas (taille et position du CDK). */
 const panelOf = (overlayRef: OverlayRef): HTMLElement | null => overlayRef.overlayElement.querySelector(':scope > .cdk-dialog-container');
 
+/** Panneau à animer à l'entrée, sauf si la fermeture a déjà commencé ou le panneau est retiré (`close()` avant le premier rendu) : rien ne doit rejouer sur un panneau qui part. */
+const panelToEnter = (overlayRef: OverlayRef): HTMLElement | null => {
+  const panel = panelOf(overlayRef);
+  return panel?.isConnected && !overlayRef.overlayElement.classList.contains(LC_OVERLAY_CLOSING_CLASS) ? panel : null;
+};
+
 const numberToken = (element: Element, name: string): number => parseFloat(getComputedStyle(element).getPropertyValue(name));
 
 /** Écart de glissement du tiroir : 100 % de sa largeur vers son bord (inversé en écriture de droite à gauche). */
@@ -32,7 +38,7 @@ function fadeBackdrop(overlayRef: OverlayRef, kind: Kind, entering: boolean): An
  * À appeler une fois le dialogue rendu et positionné : l'origine se mesure dans le repère du conteneur.
  */
 export function lcDialogEnter(overlayRef: OverlayRef, trigger: Element | null): void {
-  const panel = panelOf(overlayRef);
+  const panel = panelToEnter(overlayRef);
   if (!panel) return;
   const from = trigger?.getBoundingClientRect();
   if (from && (from.width || from.height)) {
@@ -47,7 +53,7 @@ export function lcDialogEnter(overlayRef: OverlayRef, trigger: Element | null): 
 
 /** Entrée du tiroir : glissement de toute sa largeur depuis son bord. */
 export function lcDrawerEnter(overlayRef: OverlayRef, side: 'start' | 'end'): void {
-  const panel = panelOf(overlayRef);
+  const panel = panelToEnter(overlayRef);
   if (!panel) return;
   lcAnimate(panel, [{ translate: slide(panel, side) }, { translate: '0 0' }], { duration: '--lc-drawer-enter-duration', easing: '--lc-drawer-enter-easing' });
   fadeBackdrop(overlayRef, 'drawer', true);
