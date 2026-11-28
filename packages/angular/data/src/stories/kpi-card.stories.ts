@@ -210,17 +210,18 @@ export const Horizontal: Story = {
 /** Tiles of different content heights in one row: the footers line up on the bottom edge. */
 export const Row: Story = {
   parameters: fixedExample,
+  decorators: [moduleMetadata({ imports: [LcKpiCardLinkDirective] })],
   render: () => ({
     props: { delta: FILLED_DELTA },
     template: `<div style="display:grid;gap:var(--lc-sys-space-4);grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;max-width:64rem">
       <lc-kpi-card label="Commandes" [value]="1248" format="integer" hint="Aujourd'hui" />
-      <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" [delta]="delta" />
+      <lc-kpi-card label="Panier moyen" [value]="86.4" format="money" [delta]="delta"><a lcKpiCardLink href="#opened"></a></lc-kpi-card>
       <lc-kpi-card label="Taux de conversion sur les sept derniers jours" [value]="3.2" format="percent" [delta]="delta" hint="Depuis minuit, hors retours" />
       <lc-kpi-card themeColor="primary" fillMode="solid" label="Retours" [value]="37" format="integer" hint="Ce mois" /></div>`,
   }),
 };
 
-const ANIMATION_CODE =`import { Component } from '@angular/core';
+const ANIMATION_CODE = `import { Component } from '@angular/core';
 import { LcGridComponent } from '@lionelcointot/ui-angular/layout';
 import { LcKpiCardComponent } from '@lionelcointot/ui-angular/data';
 

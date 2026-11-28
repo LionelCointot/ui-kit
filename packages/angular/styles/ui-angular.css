@@ -191,24 +191,15 @@ lc-form-field [lcSuffix] {
 
 /* ---------- a[lcKpiCardLink] : toute la carte lc-kpi-card (position: relative) est la zone cliquable de l'ancre ---------- */
 .lc-kpi-card-link {
-  border-radius: inherit;
+  position: absolute;
+  inset: 0;
+  border-radius: var(--lc-kpi-card-radius, var(--lc-sys-radius-xl));
   color: inherit;
   text-decoration: none;
 }
 
-.lc-kpi-card-link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: var(--lc-kpi-card-radius, var(--lc-sys-radius-xl));
-}
-
 /* Focus de l'ancre dessiné sur la carte entière. */
 .lc-kpi-card-link:focus-visible {
-  outline: none;
-}
-
-.lc-kpi-card-link:focus-visible::after {
   outline: var(--lc-sys-focus-ring-width) solid var(--lc-sys-color-focus-ring);
   outline-offset: var(--lc-sys-focus-ring-offset);
 }
