@@ -73,7 +73,7 @@
 
 /* Sous mouvement réduit, `base.css` met toute durée de transition à 0,01 ms sur `all` : le changement de couleur ci-dessus créerait une transition par élément. */
 .lc-tabbar__tab,
-.lc-tabbar__tab :is(lc-icon, .lc-tabbar__label) {
+.lc-tabbar__tab * {
   transition: none;
 }
 
