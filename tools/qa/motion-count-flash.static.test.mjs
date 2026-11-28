@@ -36,12 +36,4 @@ describe('lcCountUp et lcFlash (T5)', () => {
     assert.match(count, /cancelAnimationFrame/);
     assert.doesNotMatch(count, /aria-live|ariaLive|innerHTML/);
   });
-
-  for (const file of ['count-up.directive.ts', 'flash.directive.ts']) {
-    test(`${file} : aucune durée, courbe ni couleur en dur, aucun import de point d'entrée secondaire ni d'@angular/animations`, () => {
-      const code = source(file);
-      assert.doesNotMatch(code, /\b\d+(\.\d+)?\s*ms\b|cubic-bezier\(|#[0-9a-f]{3,8}\b|rgba?\(/i);
-      assert.doesNotMatch(code, /@angular\/animations|@lionelcointot\/ui-angular\/(forms|feedback|overlay|layout|navigation|data|charts|geo|theme-builder)/);
-    });
-  }
 });

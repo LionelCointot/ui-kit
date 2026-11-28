@@ -25,6 +25,11 @@ describe('couches de l\'entrée de page (CA-40)', () => {
     for (const [, name] of defs) assert.match(media[1], new RegExp(`--lc-layer-${name}: var\\(--lc-page-layer-${name}\\)`));
   });
 
+  test('lcFill et lcDraw lisent --lc-layer-gauges, nul par défaut', () => {
+    assert.match(css, /--lc-fill-transition:[^;]*var\(--lc-layer-gauges, 0ms\)/);
+    assert.match(css, /\.lc-draw \{[^}]*transition:[^;]*var\(--lc-layer-gauges, 0ms\)/);
+  });
+
   test('l\'animation de .lc-reveal ajoute --lc-layer (non hérité) au délai', () => {
     assert.match(css, /@property --lc-layer\s*\{[^}]*inherits: false/);
     assert.match(css, /animation-delay: calc\(\s*var\(--lc-layer\)/);
