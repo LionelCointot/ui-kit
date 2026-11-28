@@ -14,7 +14,8 @@ import { lcActiveTab } from './tabbar-tabs';
   imports: [LcIconComponent, RouterLink],
   template: `
     <nav class="lc-tabbar" [attr.aria-label]="labels.primaryNavigation">
-      <span #indicator class="lc-tabbar__indicator lc-tabbar__indicator--hidden" aria-hidden="true"></span>
+      <span #indicator class="lc-tabbar__indicator lc-tabbar__indicator--hidden" aria-hidden="true"
+        (transitionrun)="glide(1)" (transitionend)="glide(-1)" (transitioncancel)="glide(-1)"></span>
       @for (tab of tabs(); track tab.url; let index = $index) {
         <a #item class="lc-tabbar__tab" [routerLink]="parse(tab.url)" [attr.aria-current]="index === active() ? 'page' : null">
           @if (tab.icon) {
@@ -59,6 +60,8 @@ export class LcAppTabbarComponent {
   private readonly moreButton = viewChildren<ElementRef<HTMLButtonElement>>('more');
   private placed = -2;
   private frame = 0;
+  /** Transitions de bord de la pastille en cours (`left`, `right`). */
+  private gliding = 0;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => cancelAnimationFrame(this.frame));
@@ -102,7 +105,15 @@ export class LcAppTabbarComponent {
     lcPlaceIndicator(indicator, 'x', item.offsetLeft, item.offsetLeft + item.offsetWidth, bar.clientWidth, 'edges');
     this.ready.set(true);
     cancelAnimationFrame(this.frame);
+    this.frame = 0;
     this.syncLabels(indicator);
+  }
+
+  /** Une transition de bord démarre (+1) ou finit (-1) : les libellés suivent la pastille image par image tant qu'il en reste une. */
+  protected glide(delta: 1 | -1): void {
+    this.gliding = Math.max(0, this.gliding + delta);
+    const indicator = this.indicator()[0]?.nativeElement;
+    if (indicator && this.gliding && !this.frame) this.syncLabels(indicator);
   }
 
   /** Le libellé d'un onglet passe « sur la pastille » à l'image où elle recouvre son centre, et en sort de même : image par image tant qu'elle glisse. */
@@ -116,6 +127,6 @@ export class LcAppTabbarComponent {
       return pill.width > 0 && center >= pill.left && center <= pill.right;
     });
     tabs.forEach((tab, index) => tab.classList.toggle('lc-tabbar__tab--under', under[index]));
-    if (indicator.getAnimations?.().length) this.frame = requestAnimationFrame(() => this.syncLabels(indicator));
+    this.frame = this.gliding ? requestAnimationFrame(() => this.syncLabels(indicator)) : 0;
   }
 }

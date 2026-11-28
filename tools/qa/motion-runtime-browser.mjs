@@ -57,7 +57,7 @@ try {
       check('CA-19 autre rôle : « draw » = 1100 ms (duration-draw, spec v2 §5.2 et brief Talmo), « pop » = cubic-bezier(0.34, 1.7, 0.64, 1)', other.duration === 1100 && sameBezier(other.easing, [0.34, 1.7, 0.64, 1]), JSON.stringify(other));
       const own = await run(page, { selector: '#qa-override', duration: 'enter', easing: 'entrance' });
       check('CA-19 tokens posés sur l\'élément : 123 ms et cubic-bezier(0.1, 0.2, 0.3, 0.4)', own.duration === 123 && sameBezier(own.easing, [0.1, 0.2, 0.3, 0.4]), JSON.stringify(own));
-      const inherited = await run(page, { selector: '#qa-inherit', duration: 'slow', easing: 'out' });
+      const inherited = await run(page, { selector: '#qa-inherit', duration: 'fast', easing: 'out' });
       check('CA-19 tokens hérités d\'un ancêtre : 77 ms et cubic-bezier(0.4, 0.5, 0.6, 0.7)', inherited.duration === 77 && sameBezier(inherited.easing, [0.4, 0.5, 0.6, 0.7]), JSON.stringify(inherited));
       await page.evaluate(() => document.querySelector('#qa-default').style.setProperty('--lc-sys-duration-enter', '321ms'));
       const reread = await run(page, { selector: '#qa-default', duration: 'enter', easing: 'entrance' });

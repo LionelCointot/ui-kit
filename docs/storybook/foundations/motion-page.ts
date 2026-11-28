@@ -406,7 +406,7 @@ export class DocMotionComponent {
   /** Durées dites en mots : libellé, réglage lu, où. */
   protected readonly words = [
     { label: 'Clin d’œil', cssVar: '--lc-sys-duration-fast', where: 'Appui d’un bouton, petits fondus' },
-    { label: 'Survol', cssVar: '--lc-sys-duration-slow', where: 'Une carte qui se soulève' },
+    { label: 'Survol', cssVar: '--lc-sys-duration-enter', where: 'Une carte qui se soulève' },
     { label: 'Apparition', cssVar: '--lc-reveal-duration', where: 'Un bloc ou une ligne qui entre' },
     { label: 'Déplacement', cssVar: '--lc-sys-duration-move', where: 'Un panneau ou un indicateur qui glisse' },
     { label: 'Panneau', cssVar: '--lc-sys-duration-normal', where: 'Un menu ou une fenêtre qui s’ouvre' },

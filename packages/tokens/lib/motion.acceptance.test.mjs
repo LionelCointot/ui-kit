@@ -18,11 +18,10 @@ for (const theme of ['theme-default', 'theme-dark']) {
     assert.equal(decl(theme, '--lc-sys-motion-stagger'), undefined);
   });
 
-  test(`CA-1 : les durées revalorisées fast 150, normal 250, slow 350 (${theme} : sys)`, () => {
+  test(`CA-1 : les durées revalorisées fast 150, normal 250 (${theme} : sys)`, () => {
     assert.equal(decl('lc-tokens', '--lc-ref-duration-fast'), '150ms');
     assert.equal(decl('lc-tokens', '--lc-ref-duration-normal'), '250ms');
-    assert.equal(decl('lc-tokens', '--lc-ref-duration-slow'), '350ms');
-    for (const role of ['fast', 'normal', 'slow']) assert.equal(decl(theme, `--lc-sys-duration-${role}`), `var(--lc-ref-duration-${role})`);
+    for (const role of ['fast', 'normal']) assert.equal(decl(theme, `--lc-sys-duration-${role}`), `var(--lc-ref-duration-${role})`);
   });
 
   test(`CA-1 : motion-offset (feuille) n'existe plus, space-2 inchangé (${theme} : sys)`, () => {

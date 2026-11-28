@@ -18,7 +18,7 @@ const EASINGS = {
   pop: [0.34, 1.7, 0.64, 1], 'pop-strong': [0.34, 2, 0.64, 1], title: [0.22, 1, 0.36, 1], draw: [0.455, 0.03, 0.515, 0.955],
   inout: [0.645, 0.045, 0.355, 1], exit: [0.42, 0, 1, 1], stack: [0.32, 0.72, 0, 1],
 };
-const DURATIONS = { fast: 150, exit: 200, normal: 250, slow: 350, enter: 450, move: 500, long: 600, view: 700, title: 850, draw: 1100, fill: 950 };
+const DURATIONS = { fast: 150, exit: 200, normal: 250, enter: 450, move: 500, long: 600, view: 700, title: 850, draw: 1100, fill: 950 };
 const OTHERS = {
   'motion-offset-sm': '8px', 'motion-offset-md': '16px', 'motion-offset-lg': '26px', 'motion-offset-xl': '40px',
   'motion-stagger-fine': '12ms', 'motion-stagger-normal': '40ms', 'motion-stagger-cards': '60ms', 'motion-stagger-chars': '22ms',
@@ -114,13 +114,12 @@ test('CA-1/CA-22 : --lc-button-press-duration vaut 100ms, découplé de duration
   assert.equal(resolve(map, '--lc-button-press-scale').value, '0.97');
 });
 
-test('CA-1 : --lc-spinner-duration vaut 700ms ; --lc-skeleton-duration existe (1500ms, valeur gardée) ; tous deux découplés de duration-slow', () => {
+test('CA-1 : --lc-spinner-duration vaut 700ms ; --lc-skeleton-duration existe (1500ms, valeur gardée) ', () => {
   const map = tokenMap(css, 'default');
   const spinner = resolve(map, '--lc-spinner-duration');
   assert.equal(toMs(spinner.value), 700);
   const skeleton = resolve(map, '--lc-skeleton-duration');
   assert.equal(toMs(skeleton.value), 1500);
-  for (const t of [spinner, skeleton]) assert.ok(!t.chain.includes('--lc-sys-duration-slow'), 'doit être découplé de --lc-sys-duration-slow (350 ms)');
 });
 
 test('CA-36 : --lc-tabbar-enter-easing = expo.out du site (sys entrance), barre de 66px, pastille de rayon 16px', () => {

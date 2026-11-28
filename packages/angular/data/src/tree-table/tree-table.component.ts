@@ -1,9 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
+  ChangeDetectionStrategy, Component, afterNextRender, ElementRef, TemplateRef, booleanAttribute, computed, contentChildren, effect, inject, input, isDevMode,
   linkedSignal, model, output, signal, viewChild,
 } from '@angular/core';
-import { LC_LABELS, LcFormatService, LcIconComponent, LcRevealDirective, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LC_REVEAL_ANIMATION, LcFormatService, LcIconComponent, LcStaggerDirective, lcUniqueId } from '@lionelcointot/ui-angular';
 import { LcCellDirective } from '../table/cell.directive';
 import { LcSort, LcTableColumn, nextSort } from '../table/table-model';
 import { ariaSort, cellClass, cellText, sortDirection, sortIcon } from '../table/table-shared';
@@ -18,7 +18,7 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
  */
 @Component({
   selector: 'lc-tree-table',
-  imports: [NgTemplateOutlet, LcIconComponent, LcRevealDirective],
+  imports: [NgTemplateOutlet, LcIconComponent],
   hostDirectives: [LcStaggerDirective],
   template: `
     <div class="lc-table__scroll">
@@ -40,9 +40,9 @@ import { LC_TREE_TABLE_MAX_ROWS, LcTreeTableRow, buildTreeTableModel } from './t
             }
           </tr>
         </thead>
-        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)">
+        <tbody #body (keydown)="onKeydown($event)" (focusin)="onFocusin($event)" (mousedown)="onMousedown($event)" (click)="onClick($event)" (animationend)="onRevealEnd($event)" (animationcancel)="onRevealEnd($event)">
           @for (row of rows(); track row.key; let rowIndex = $index) {
-            <tr lcReveal class="lc-tree-table__row" role="row" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
+            <tr class="lc-tree-table__row" role="row" [class.lc-reveal]="entering() && rowIndex < revealRows" [style.--lc-reveal-rank]="rowIndex" [attr.aria-level]="row.level" [attr.aria-posinset]="row.position"
               [attr.aria-setsize]="row.setSize" [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
               [attr.tabindex]="rowIndex === activeIndex() ? 0 : -1" [style.--_level]="row.level - 1">
               @for (view of columnViews(); track view.column.id; let first = $first) {
@@ -126,6 +126,13 @@ export class LcTreeTableComponent<T> {
   readonly rowToggled = output<{ node: T; expanded: boolean }>();
 
   protected readonly maxRows = LC_TREE_TABLE_MAX_ROWS;
+  /** Lignes de l'entrée en cascade : celles de la première page ; les suivantes, hors écran, apparaissent d'un coup (pas une animation par ligne d'un grand arbre). */
+  protected readonly revealRows = 30;
+  /**
+   * Vrai jusqu'à la fin de l'entrée en cascade de l'affichage initial. Ensuite, ni dépli ni repli ne rejouent rien : `lcReveal` (sortie `animate.leave`) garderait
+   * les lignes repliées dans le DOM le temps de leur sortie, et la navigation au clavier, qui vise les lignes par leur position dans le DOM, perdrait le focus.
+   */
+  protected readonly entering = signal(true);
   protected readonly captionId = lcUniqueId('tree-table-caption');
   /** Dernière ligne active : sa clé et son index (la clé seule ne distingue pas deux lignes de même identité). */
   private readonly activeRow = signal<{ key: string; index: number } | null>(null);
@@ -165,6 +172,11 @@ export class LcTreeTableComponent<T> {
   });
 
   constructor() {
+    // Aucune animation en cours au premier rendu d'un arbre non vide (animations coupées) : ni fin ni annulation n'arriveront, l'entrée est close.
+    afterNextRender(() => {
+      const body = this.body().nativeElement;
+      if (this.rows().length && typeof body.getAnimations === 'function' && !body.getAnimations({ subtree: true }).length) this.entering.set(false);
+    });
     if (isDevMode()) {
       effect(() => {
         if (this.model().truncated) {
@@ -197,6 +209,12 @@ export class LcTreeTableComponent<T> {
     const element = event.target;
     if (!(element instanceof HTMLTableRowElement) || element.parentElement !== this.body().nativeElement) return null;
     return { element, index: element.sectionRowIndex };
+  }
+
+  /** Fin (ou annulation : ligne retirée) de l'entrée d'une ligne ; la dernière de la cascade clôt l'entrée. */
+  protected onRevealEnd(event: AnimationEvent): void {
+    const row = this.rowOf(event);
+    if (row && event.animationName === LC_REVEAL_ANIMATION && row.index >= Math.min(this.rows().length, this.revealRows) - 1) this.entering.set(false);
   }
 
   protected onFocusin(event: FocusEvent): void {

@@ -206,4 +206,34 @@ describe('LcAppShellComponent : barre d\'onglets (CA-36)', () => {
       expect(document.activeElement).toBe(root.querySelector('lc-app-tabbar button'));
     });
   });
+
+  it('glide : le suivi des libellés (une image à la fois) dure tant qu\'une transition tourne, y compris après transitioncancel', async () => {
+    const { bar } = await setup(four);
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => frames.push(callback));
+    const indicator = bar()!.querySelector('.lc-tabbar__indicator')!;
+    // Chaque passage de syncLabels mesure la pastille une fois.
+    const reads = vi.spyOn(indicator, 'getBoundingClientRect');
+    const fire = (type: string) => indicator.dispatchEvent(new Event(type));
+    const flush = () => frames.splice(0).forEach((callback) => callback(0));
+
+    fire('transitionrun'); // compteur 1 : le suivi démarre
+    fire('transitionrun'); // compteur 2 : un seul suivi, pas deux
+    expect(reads).toHaveBeenCalledTimes(1);
+    flush();
+    expect(reads).toHaveBeenCalledTimes(2); // il continue
+    fire('transitionend'); // compteur 1
+    flush();
+    expect(reads).toHaveBeenCalledTimes(3); // une transition tourne encore
+    fire('transitioncancel'); // compteur 0
+    flush();
+    expect(reads).toHaveBeenCalledTimes(4); // dernière image
+    flush();
+    expect(reads).toHaveBeenCalledTimes(4); // le suivi est arrêté
+
+    fire('transitionend'); // en trop : le compteur reste à 0, jamais négatif
+    fire('transitionrun');
+    expect(reads).toHaveBeenCalledTimes(5); // le suivi repart
+    vi.restoreAllMocks();
+  });
 });
