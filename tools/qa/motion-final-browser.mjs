@@ -166,7 +166,8 @@ if (!wanted.length || wanted.includes('tabbar')) {
         window.__tab.push({ t: Math.round(performance.now()), tab: tab.textContent.trim(), current: tab.getAttribute('aria-current'), color: getComputedStyle(label).color, behind, ratio: ratio(getComputedStyle(label).color, behind) });
       }
     };
-    const loop = () => { sample(); window.__raf = requestAnimationFrame(loop); };
+    // Relevé après les rappels d'image (setTimeout dans le rAF) : l'état peint de la même image. Un relevé dans le rAF passe avant celui du composant (enregistré plus tard) et lit sa classe d'une image trop tôt.
+    const loop = () => { window.__raf = requestAnimationFrame(() => { setTimeout(sample, 0); loop(); }); };
     window.__start = () => { window.__tab.length = 0; loop(); };
   });
   await page.evaluate(() => window.__start());
