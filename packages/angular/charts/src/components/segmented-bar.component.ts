@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, isDevMode, model, output } from '@angular/core';
-import { LC_LABELS, LcFormatService, LcValueFormat } from '@lionelcointot/ui-angular';
+import { LC_LABELS, LcFormatService, LcValueFormat, lcDataState } from '@lionelcointot/ui-angular';
 import type { EChartsCoreOption } from '../echarts-registry';
 import { LcChartFrameComponent } from '../base/chart-frame.component';
 import { buildSegmentedBarOption, prepareParts } from '../builders/segmented-bar.builder';
@@ -16,7 +16,7 @@ import type { LcChartPointSelect, LcColorSlot, LcLegendItem, LcPart } from '../t
   imports: [LcChartFrameComponent],
   template: `
     <lc-chart-frame [title]="title()" [titleHidden]="titleHidden()" [description]="description()" [height]="resolvedHeight()"
-      [loading]="loading()" [stale]="stale()" [empty]="empty()" [emptyMessage]="emptyMessage()"
+      [loading]="state() === 'loading'" [stale]="stale()" [empty]="empty()" [emptyMessage]="emptyMessage()"
       [legend]="legend()" [legendToggleable]="false" [legendPosition]="resolvedLegendPosition() === 'bottom' ? 'bottom' : 'top'" [table]="table()" [(showDataTable)]="showDataTable" [option]="option()"
       [navigation]="navigation()" (pointSelect)="pointSelect.emit($event)" />
   `,
@@ -39,7 +39,8 @@ export class LcSegmentedBarComponent {
   readonly stale = input(false, { transform: booleanAttribute });
   readonly emptyMessage = input<string>();
   readonly showDataTable = model(false);
-  readonly parts = input.required<readonly LcPart[]>();
+  /** `undefined` : squelette ; `null` : état vide. */
+  readonly parts = input.required<readonly LcPart[] | null | undefined>();
   readonly format = input<LcValueFormat>('number');
   readonly variant = input<'tall' | 'thin'>('tall');
   /** Total de référence : si supérieur à la somme des parts, un segment « Non réparti » est ajouté. */
@@ -54,16 +55,18 @@ export class LcSegmentedBarComponent {
 
   protected readonly resolvedHeight = computed(() => this.height() ?? (this.variant() === 'tall' ? '72px' : '20px'));
   protected readonly resolvedLegendPosition = computed(() => this.legendPosition() ?? (this.variant() === 'tall' ? 'top' : 'none'));
+  protected readonly state = computed(() => lcDataState(this.parts(), this.loading()));
   private readonly prepared = computed(() => {
-    const prepared = prepareParts(this.parts(), this.total(), this.colorMemory, this.themeService.theme(), this.labels, this.palette());
+    const parts = this.parts() ?? [];
+    const prepared = prepareParts(parts, this.total(), this.colorMemory, this.themeService.theme(), this.labels, this.palette());
     if (isDevMode()) {
-      if (this.parts().length > 6) console.warn(`[lc-segmented-bar] Plus de 6 parts : les dernières sont regroupées en « ${this.labels.other} ».`);
+      if (parts.length > 6) console.warn(`[lc-segmented-bar] Plus de 6 parts : les dernières sont regroupées en « ${this.labels.other} ».`);
       if (prepared.inconsistentTotal) console.error('[lc-segmented-bar] `total` est inférieur à la somme des parts.');
     }
     return prepared;
   });
 
-  protected readonly empty = computed(() => this.prepared().parts.length === 0);
+  protected readonly empty = computed(() => this.state() === 'empty' || this.prepared().parts.length === 0);
   protected readonly legend = computed<readonly LcLegendItem[]>(() =>
     this.resolvedLegendPosition() === 'none' ? [] : this.prepared().parts.map((part) => ({
       id: part.id, label: part.label, color: part.color, shape: 'rect', hidden: false,
