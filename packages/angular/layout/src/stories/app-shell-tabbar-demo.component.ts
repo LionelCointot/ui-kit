@@ -2,6 +2,7 @@ import { Component, Directive, ElementRef, Injector, afterNextRender, inject, in
 import { Router, RouterLink, RouterOutlet, type Routes } from '@angular/router';
 import { LcButtonComponent, LcNavRegistry } from '@lionelcointot/ui-angular';
 import { LcAppShellComponent, LcPageComponent } from '../public-api';
+import { LC_PHONE_QUERY } from '../phone-query';
 
 @Component({ imports: [LcPageComponent], template: `<lc-page title="Page"><p>Le contenu de la rubrique.</p></lc-page>` })
 class TabPageComponent {}
@@ -47,14 +48,11 @@ export class StoryNavDirective {
   imports: [LcAppShellComponent, LcButtonComponent, RouterLink, RouterOutlet, StoryNavDirective],
   host: { 'data-demo': 'd57' },
   // Les coquilles de la page écoutent toutes le défilement de la fenêtre (une seule par application) : le titre d'en-tête se démontre dans d53 / d59, pas ici.
-  // La barre du bas n'existe que sous 768 px : au-dessus, la démo est masquée (une seule coquille, donc un seul repère banner et main, par page).
-  styles: `
-    :host ::ng-deep lc-app-shell .lc-shell__title { transition: none; }
-    @media (min-width: 768px) { :host { display: none; } }`,
+  styles: `:host ::ng-deep lc-app-shell .lc-shell__title { transition: none; }`,
   template: `
     <button lcButton fillMode="outline" size="small" type="button" (click)="replay()">Rejouer</button>
     @if (shown()) {
-      <lc-app-shell>
+      <lc-app-shell [attr.inert]="phone ? null : ''">
         <strong lcShellHeader>Studio</strong>
         <ul lcShellNav style="margin:0;padding:0;list-style:none">
           <li><a lcStoryNav routerLink="/tab-studio" icon="house" [primary]="true">Studio</a></li>
@@ -71,6 +69,9 @@ export class AppShellTabbarDemoComponent {
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   protected readonly shown = signal(true);
+  // La barre du bas n'existe que sous 768 px : au-dessus la coquille est inerte, pour qu'un seul repère banner et main soit exposé par page (axe).
+  // shortcut: lu une fois à la création, pas réactif au redimensionnement.
+  protected readonly phone = matchMedia(LC_PHONE_QUERY).matches;
 
   constructor() {
     // S'ajoute aux routes déjà posées par les autres démos de la story.
