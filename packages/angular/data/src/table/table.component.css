@@ -6,6 +6,7 @@
 .lc-table__scroll {
   max-inline-size: 100%;
   overflow: auto;
+  container-type: inline-size;
   border: var(--lc-sys-border-width-thin) solid var(--lc-sys-color-border);
   border-radius: var(--lc-table-radius, var(--lc-sys-radius-md));
 }
@@ -27,6 +28,11 @@
 }
 
 .lc-table__caption {
+  /* Le titre reste à gauche pendant le défilement horizontal : sa boîte ne doit pas couvrir toute la largeur du tableau. */
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: fit-content;
+  max-inline-size: 100cqw;
   padding: var(--lc-sys-space-3) var(--lc-sys-space-4);
   font-weight: var(--lc-sys-font-weight-semibold);
   text-align: start;

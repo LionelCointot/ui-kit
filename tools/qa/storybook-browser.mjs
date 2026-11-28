@@ -244,6 +244,25 @@ async function dom(browser, base) {
     check('CA-K1.3 forced-colors : bordure du badge visible (non transparente)', borders.length === 6 && borders.every((color) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'), borders.join(' | '));
     await context.close();
   }
+  // Titre de tableau : reste en place, entier, pendant le défilement horizontal (téléphone).
+  for (const id of ['data-table--external-sorting', 'data-tree-table--small-screen']) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`);
+    await page.waitForSelector('caption', { state: 'attached' });
+    const info = await page.evaluate(async () => {
+      const scroll = document.querySelector('.lc-table__scroll');
+      scroll.scrollLeft = scroll.scrollWidth;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const frame = scroll.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(document.querySelector('caption'));
+      const text = range.getBoundingClientRect();
+      return { scrolled: scroll.scrollLeft, left: Math.round(text.left - frame.left), right: Math.round(text.right - frame.right) };
+    });
+    check(`titre de tableau ${id} : visible en entier après défilement`, info.scrolled > 0 && info.left >= 0 && info.right <= 0, JSON.stringify(info));
+    await context.close();
+  }
   results.push(await skeletonHeights(browser, base));
   return results.every(Boolean) ? 0 : 1;
 }
