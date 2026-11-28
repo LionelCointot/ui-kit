@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input } from '@angular/core';
-import { LcCountUpDirective, LcFlashDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, LcValueFormat, lcRevealHost } from '@lionelcointot/ui-angular';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, contentChild, effect, inject, input } from '@angular/core';
+import { LC_LABELS, LcCountUpDirective, LcFlashDirective, LcFormatService, LcIconComponent, LcRevealDirective, LcSkeletonComponent, LcThemeColor, LcValueFormat, lcRevealHost } from '@lionelcointot/ui-angular';
+import { LcKpiCardLinkDirective } from './kpi-card-link.directive';
 
 export interface LcKpiDelta {
   readonly value: number;
@@ -8,11 +9,11 @@ export interface LcKpiDelta {
   readonly sentiment: 'positive' | 'negative' | 'neutral';
 }
 
-const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as const;
+const TREND_ICONS = { up: 'arrow-up', down: 'arrow-down', flat: 'arrow-right' } as const;
 
 /**
- * Carte indicateur (entrée `tilt`, chiffre qui compte) : libellé, valeur principale (chiffres proportionnels), variation (icône de tendance,
- * signe et texte : jamais la couleur seule) et précision. L'emplacement `[lcKpiVisual]` accueille une sparkline.
+ * Carte indicateur (entrée `tilt`, chiffre qui compte) : libellé, valeur principale (chiffres tabulaires), pied ancré en bas avec la variation
+ * (flèche de tendance et signe à l'écran, mot de tendance pour les lecteurs d'écran : jamais la couleur seule) et la précision. `fillMode="solid"` : tuile pleine de `themeColor`. L'emplacement `[lcKpiVisual]` accueille une sparkline.
  */
 @Component({
   selector: 'lc-kpi-card',
@@ -30,29 +31,42 @@ const TREND_ICONS = { up: 'chevron-up', down: 'chevron-down', flat: 'minus' } as
       } @else {
         <p class="lc-kpi-card__value" [class.lc-kpi-card__value--stale]="stale()">{{ displayText() }}</p>
       }
-      @if (delta(); as change) {
-        <p class="lc-kpi-card__delta" [class]="'lc-kpi-card__delta--' + change.sentiment">
-          <lc-icon [name]="trendIcon()" />
-          <span>{{ deltaText() }}</span>
-        </p>
-      }
-      @if (hint()) {
-        <p class="lc-kpi-card__hint">{{ hint() }}</p>
-      }
+      <div class="lc-kpi-card__footer">
+        @if (delta(); as change) {
+          <p class="lc-kpi-card__delta" [class]="'lc-kpi-card__delta--' + change.sentiment">
+            <lc-icon [name]="trendIcon()" />
+            <span>{{ deltaText() }}</span>
+            <span class="lc-kpi-card__trend lc-visually-hidden">{{ trendWord() }}</span>
+          </p>
+        }
+        @if (hint()) {
+          <p class="lc-kpi-card__hint">{{ hint() }}</p>
+        }
+        @if (link()) {
+          <lc-icon class="lc-kpi-card__chevron" name="chevron-right" aria-hidden="true" />
+        }
+      </div>
     }
     <div class="lc-kpi-card__visual"><ng-content select="[lcKpiVisual]" /></div>
+    <ng-content select="a[lcKpiCardLink]" />
   `,
   styleUrl: './kpi-card.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'lc-kpi-card',
-    role: 'group',
-    '[attr.aria-label]': 'accessibleName()',
+    '[class]': 'variantClass()',
+    '[attr.role]': "link() ? null : 'group'",
+    '[attr.aria-label]': 'link() ? null : accessibleName()',
     '[attr.aria-busy]': "loading() ? 'true' : null",
   },
 })
 export class LcKpiCardComponent {
   private readonly formatService = inject(LcFormatService);
+  private readonly labels = inject(LC_LABELS);
+
+  constructor() {
+    effect(() => this.link()?.name.set(this.linkName()));
+  }
 
   readonly label = input.required<string>();
   readonly value = input<number | null>(null);
@@ -67,13 +81,36 @@ export class LcKpiCardComponent {
   readonly loading = input(false, { transform: booleanAttribute });
   /** Valeur atténuée pendant un recalcul. */
   readonly stale = input(false, { transform: booleanAttribute });
+  /** Couleur de la tuile pleine (`fillMode="solid"`) ; sans effet en contour. */
+  readonly themeColor = input<LcThemeColor>('neutral');
+  readonly fillMode = input<'outline' | 'solid'>('outline');
+  /** `horizontal` : libellé et pied à gauche, chiffre à droite. */
+  readonly layout = input<'vertical' | 'horizontal'>('vertical');
+
+  /** Ancre projetée : toute la carte devient le lien (le nom accessible passe de la carte à l'ancre). */
+  protected readonly link = contentChild(LcKpiCardLinkDirective);
+
+  protected readonly variantClass = computed(
+    () => `lc-kpi-card--${this.fillMode()} lc-kpi-card--${this.themeColor()} lc-kpi-card--${this.layout()}${this.link() ? ' lc-kpi-card--linked' : ''}`,
+  );
 
   /** Une valeur numérique sans texte libre : le chiffre compte jusqu'à elle (`lcCountUp`) et flashe à chaque changement. */
   protected readonly counted = computed(() => this.valueText() === null && this.value() !== null);
   protected readonly displayText = computed(() => this.valueText() ?? this.formatService.format(this.value(), this.format()));
   /** Nom du groupe : libellé et valeur affichée (le texte libre remplace le nombre). */
-  protected readonly accessibleName = computed(() => (this.loading() ? this.label() : `${this.label()} : ${this.displayText()}`));
+  protected readonly accessibleName = computed(() => this.labels.kpiCardName({ label: this.label(), value: this.loading() ? undefined : this.displayText() }));
+  /** Libellé, valeur, variation et tendance, précision : les parties absentes sont omises (en chargement, le libellé seul). */
+  protected readonly linkName = computed(() => {
+    if (this.loading()) return this.accessibleName();
+    const change = this.delta();
+    return this.labels.kpiCardName({ label: this.label(), value: this.displayText(), delta: change && `${this.deltaText()} ${this.trendWord()}`, hint: this.hint() });
+  });
   protected readonly trendIcon = computed(() => TREND_ICONS[this.delta()?.trend ?? 'flat']);
+  /** Mot de la tendance, jamais sans `delta` (le gabarit le garde) : une variation nulle dit « stable » (`flat`). */
+  protected readonly trendWord = computed(() => {
+    const { kpiTrendUp, kpiTrendDown, kpiTrendFlat } = this.labels;
+    return { up: kpiTrendUp, down: kpiTrendDown, flat: kpiTrendFlat }[this.delta()?.trend ?? 'flat'];
+  });
   protected readonly deltaText = computed(() => {
     const delta = this.delta();
     if (!delta) return '';

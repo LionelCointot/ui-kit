@@ -231,10 +231,10 @@ export class DocSpacingComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2>Elevation</h2>
-    <p class="lead">Four shadow levels, from resting cards to dialogs. Dark theme shadows are tuned separately.</p>
+    <p class="lead">Four shadow levels, from resting cards to dialogs. Levels 1 and 2 are two-layer relief shadows; a card adds the hairline <code>--lc-sys-color-line</code> as an inset first layer. Dark theme shadows are tuned separately.</p>
     <div class="shadows">
       @for (row of shadows; track row.key) {
-        <div class="card" [style.box-shadow]="'var(' + row.cssVar + ')'"><strong>{{ row.cssVar }}</strong></div>
+        <div class="card" [style.box-shadow]="'inset 0 0 0 1px var(--lc-sys-color-line), var(' + row.cssVar + ')'"><strong>{{ row.cssVar }}</strong></div>
       }
     </div>
 
@@ -250,8 +250,8 @@ export class DocSpacingComponent {
   styles: [
     PAGE_STYLES,
     `
-    .shadows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--lc-sys-space-6); padding: var(--lc-sys-space-4); background: var(--lc-sys-color-background); border-radius: var(--lc-sys-radius-lg); }
-    .card { padding: var(--lc-sys-space-8) var(--lc-sys-space-4); background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-lg); font-size: var(--lc-sys-font-size-xs); }
+    .shadows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--lc-sys-space-6); padding: var(--lc-sys-space-4); background: var(--lc-sys-color-surface-sunken); border-radius: var(--lc-sys-radius-xl); }
+    .card { padding: var(--lc-sys-space-8) var(--lc-sys-space-4); background: var(--lc-sys-color-surface-raised); border-radius: var(--lc-sys-radius-xl); font-size: var(--lc-sys-font-size-xs); }
     `,
   ],
 })

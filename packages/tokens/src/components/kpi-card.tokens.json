@@ -1,0 +1,40 @@
+{
+  "kpi-card": {
+    "shadow": {
+      "$value": "{sys.shadow.1}",
+      "$type": "shadow"
+    },
+    "border-color": {
+      "$value": "{sys.color.line}",
+      "$type": "color"
+    },
+    "radius": {
+      "$value": "{sys.radius.xl}",
+      "$type": "dimension"
+    },
+    "background": {
+      "$value": "{sys.color.surface-raised}",
+      "$type": "color"
+    },
+    "color": {
+      "$value": "{sys.color.on-surface}",
+      "$type": "color"
+    },
+    "label-color": {
+      "$value": "{sys.color.on-surface-muted}",
+      "$type": "color"
+    },
+    "label-weight": {
+      "$value": "{sys.font.weight.regular}",
+      "$type": "fontWeight"
+    },
+    "value-weight": {
+      "$value": "{sys.font.weight.bold}",
+      "$type": "fontWeight"
+    },
+    "value-letter-spacing": {
+      "$value": "0em",
+      "$type": "dimension"
+    }
+  }
+}
